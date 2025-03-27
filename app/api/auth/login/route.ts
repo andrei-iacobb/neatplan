@@ -23,12 +23,23 @@ export async function POST(request: Request) {
 
     // Generate JWT token
     const token = sign(
-      { userId: user.rows[0].id, username: user.rows[0].username },
+      {
+        userId: user.rows[0].id,
+        username: user.rows[0].username,
+        role: user.rows[0].role,
+      },
       process.env.JWT_SECRET || "default_secret",
-      { expiresIn: "1h" },
+      { expiresIn: "7d" },
     )
 
-    return NextResponse.json({ access_token: token })
+    return NextResponse.json({
+      access_token: token,
+      user: {
+        id: user.rows[0].id,
+        username: user.rows[0].username,
+        role: user.rows[0].role,
+      },
+    })
   } catch (error) {
     console.error("Login error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
