@@ -1,0 +1,422 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/You_belong_here.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/Meeting05.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/Meeting04.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/Meeting03.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/Meeting02.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/Meeting01.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/Working03.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/Working02.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/Working01.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/Ordering.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/Counter_Service02.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/Counter_Service01.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/Making_Coffee02.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/Making_Coffee03.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/Making_Coffee01.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/Laughter.aac",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/Steam.aac",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/How_do_you_take_care.aac",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/But_it_helps_to_have_friends.aac",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/Self_care_is.aac",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/With_everyone_I_can.aac",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/Everything_I_do.aac",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/What_is_self_care.aac",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/90bpm_exotica.m4a"
+            ],
+            "minVersion": "15.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/Improve_Audio-Project.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepItems": [
+                        {
+                            "text": "Improve your audio",
+                            "type": "heading"
+                        },
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/30e5b3e0-3b36-484e-bfd8-172691e66668.mp4"
+                        },
+                        {
+                            "text": "<br>Most videos for social media include at least one music track, some dialogue, and maybe even a few sound effects. For professional-sounding videos, it's important to mix all the audio tracks so that they're the right loudness and evenly balanced. The easiest way to create a balanced sound mix is with the <$Essential Sound$> panel.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Essential Sound"
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "You just opened the <$Essential Sound$> panel, which appears on the right side of the interface. (Depending on your screen size and resolution, you may need to expand the panel to see all its controls.) In the next step, you'll add music and voiceover tracks to your sequence. Then, you'll use the <$Essential Sound$> panel to adjust the audio."
+                                        ]
+                                    },
+                                    "text": "In the main menu, choose <$Window$> > <$Essential Sound$>."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "text": "Assign an audio type",
+                            "type": "heading"
+                        },
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/8db60a70-18a4-4d08-8f68-484bc9103f1d.mp4"
+                        },
+                        {
+                            "text": "<br>Our project has voice-over, but the volume of the clips is not consistent. To help Premiere Pro correctly adjust the loudness of our clips, we need to tag the clips as dialogue and then auto-match them.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to begin playback so you can hear the Inconsistencies in the voice-over's volume."
+                                },
+                                {
+                                    "text": "In the Timeline panel, click and drag your mouse across all of the clips in the track <$A3$>."
+                                },
+                                {
+                                    "text": "In the<$ Essential Sound$> panel, select the Audio Type <$Dialogue$>."
+                                },
+                                {
+                                    "text": "Click on <$Loudness$>, then click the <$Auto-Match$> button to automatically match the volume of each clip."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "Once you set the audio type for a clip, the <$Essential Sound$> panel displays the most relevant audio settings you'd need to adjust. By auto-matching the loudness, Premiere Pro automatically set the loudness of the music to a standard level."
+                                        ]
+                                    },
+                                    "text": "Play back the sequence to hear how the voice over sounds now."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "text": "Adjust the volume of a clip",
+                            "type": "heading"
+                        },
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/fe86499f-5e85-45a3-8295-d19e037b6f08.mp4"
+                        },
+                        {
+                            "text": "<br>You may have noticed the <$Essential Sound$> panel has settings for both <$Loudness$> and <$Clip Volume$>. We're not going to cover the technical difference between loudness and volume in this tutorial, but the important thing to know is that when you auto-match loudness, you may still need to adjust the overall volume of the clip for a balanced audio mix.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Click the green <$M$> button in track <$A2$> to unmute the music, then press the <%{KEY.SPACEBAR}%> to listen to the music and voice-over together."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isClipSelected",
+                                            "payload": {
+                                                "clipName": "90bpm_exotica.m4a"
+                                            }
+                                        }
+                                    ],
+                                    "text": "In the Timeline panel, select the \"90bpm_exotica.m4a\" clip."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "90bpm_exotica.m4a",
+                                                "comment": "componentMatchName= e0b23f05-f1a7-4ef7-9b50-7ec3e3002058 -> Clip Volume, param=2 -> Level",
+                                                "componentMatchName": "e0b23f05-f1a7-4ef7-9b50-7ec3e3002058",
+                                                "componentParameter": 2,
+                                                "value": [
+                                                    0.1,
+                                                    0.61
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "You just lowered the volume of the music clip by 6 decibels. When you play back the clip, you'll notice that you can now clearly hear the voice-over, while the music has moved to the background."
+                                        ]
+                                    },
+                                    "text": "At the bottom of the <$Essential Sound$> panel, in the <$Clip Volume$> section, set the <$Level$> around <$-6 dB$>."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "text": "Lower the volume of music during dialogue",
+                            "type": "heading"
+                        },
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/c123abac-f0f0-4d16-aeb0-f59c3b2e7dc0.mp4"
+                        },
+                        {
+                            "text": "<br>When a music track is too loud for a dialogue track, you'll need to make the music quieter while the dialogue is playing. This process is called \"ducking\" and can be tedious to do manually. However, the automatic <$Ducking$> feature in the <$Essential Sound$> panel does all the hard work for you.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isClipSelected",
+                                            "payload": {
+                                                "clipName": "90bpm_exotica.m4a"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Make sure your music track is selected."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "90bpm_exotica.m4a",
+                                                "comment": "componentMatchName= f14fee7d-fe5f-4202-b790-f53209e56411 -> Ducking, param=1 -> any param to check that the component is available at all",
+                                                "componentMatchName": "f14fee7d-fe5f-4202-b790-f53209e56411",
+                                                "componentParameter": 1,
+                                                "value": [
+                                                    0,
+                                                    1
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "text": "In the Essential Sound panel, under <$Preset$>, choose <$Smooth Vocal Ducking$>. This automatically enables ducking and adjusts the auto-ducking settings for you."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "90bpm_exotica.m4a",
+                                                "comment": "componentMatchName= f14fee7d-fe5f-4202-b790-f53209e56411 -> Ducking, param=3 -> this param will change timed value on keyframe generation",
+                                                "componentMatchName": "f14fee7d-fe5f-4202-b790-f53209e56411",
+                                                "componentParameter": 3,
+                                                "time": "3305510208000",
+                                                "value": [
+                                                    0,
+                                                    0.61
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "Look at the music track in the Timeline panel. Do you see how gray keyframes have been added and the music track has been lowered in places where vocals are playing? If you don't like the results, in the next step, we'll cover how you can manually adjust these keyframes directly within the Timeline panel."
+                                        ]
+                                    },
+                                    "text": "Click <$Generate Keyframes$> at the bottom of the <$Ducking$> parameters."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "text": "Adjust ducking keyframes",
+                            "type": "heading"
+                        },
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/029-improve-your-audio/84b84429-e2c6-4547-9b78-7b9eb2bafc70.mp4"
+                        },
+                        {
+                            "text": "<br>Auto-ducking saved us time by automatically adding all those keyframes and adjusting the volume where needed. But if you play back the sequence, the volume is now too low in certain places. Let's adjust the <$Ducking$> settings and try it again.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Check to make sure the music clip is selected."
+                                },
+                                {
+                                    "text": "In the <$Essential Sound$> panel, change the <$Duck Amount$> to about <$-10.0 dB$>."
+                                },
+                                {
+                                    "showOnComplete": {
+                                        "heading": "",
+                                        "texts": []
+                                    },
+                                    "text": "Click the <$Generate Keyframes$> button to create keyframes for the new ducking amount."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "Now we have a much better balance for the audio in our project. The voice over can be clearly heard and understood, while the background music supports the message."
+                                        ]
+                                    },
+                                    "text": "Move the playhead to the beginning of the project, then press the <%{KEY.SPACEBAR}%> to listen to the audio."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "successHeading": "Nicely done!",
+                            "successText": "You just learned how to create a basic audio mix and improve the quality of your audio. In the next tutorial, you'll learn how to add captions to your videos to make them more accessible.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "430a85f1-d420-3f67-9d43-6ac69dfb49aa",
+            "versions": [
+                1
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "430a85f1-d420-3f67-9d43-6ac69dfb49aa",
+                "versions": [
+                    1
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/029-improve-your-audio",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Improve audio for polished results",
+            "short": "Improve audio for polished results",
+            "long": "Automatically set audio clips to the right audio level, and use automatic ducking to lower music level during sections of speech."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/f7c3167a-7530-38f2-923d-fec3df062bb7/029-improve-your-audio_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/f7c3167a-7530-38f2-923d-fec3df062bb7/029-improve-your-audio_300x190.jpg"
+        },
+        "title": "Improve audio for polished results",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "300",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "audio",
+            "social-media"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Audio",
+                    "id": "da0d60b4b806415f931d9ba3a1ee6d02",
+                    "internalId": "audio",
+                    "name": "Audio"
+                },
+                {
+                    "enName": "Social media graphics",
+                    "id": "058148b95a584a6faacb6d8877b2f85f",
+                    "internalId": "social-media",
+                    "name": "Social media graphics"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2021-08-27T16:10:07.322Z",
+    "modified_on": "2024-05-03T21:50:04.525Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "f7c3167a-7530-38f2-923d-fec3df062bb7",
+    "commitId": "40db770ff51cf4b894c40e6c87fc77c6cc2e8bd7",
+    "type": "project"
+}

@@ -1,0 +1,189 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/auto-reframe/skateboard-at-skatepark.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/auto-reframe/skateboarding-at-sunset.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/auto-reframe/girl-on-a-skateboard-in-the-park-2.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/auto-reframe/Skate-park-clip.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/auto-reframe/Half-pipe-4.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/auto-reframe/girl-skateboarding-in-park.mp4"
+            ],
+            "minVersion": "20.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/auto-reframe/Auto_Reframe.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/auto-reframe/f978c014-2857-4f9c-8c1c-493f49d0c6b5.mp4"
+                        },
+                        {
+                            "text": "Using Auto Reframe",
+                            "type": "heading"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Awesome!",
+                                        "texts": [
+                                            "Click <$Next$> when you're ready to explore Auto Reframe."
+                                        ]
+                                    },
+                                    "text": "Watch the video you'll be reframing first."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "If you haven't already, check out <a href=\"https://www.youtube.com/watch?v=heZER5uObkE&feature=youtu.be\">Premiere Gal's full length tutorial detailing how she created this graphic, on Youtube</a>. While you watch, work along side Premiere Gal using the assets in this course."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "imgUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/auto-reframe/0f768582-e331-46f8-82f0-e942feb2a3e2.png",
+                            "type": "imageFullLarge"
+                        },
+                        {
+                            "text": "Practice Auto Reframe",
+                            "type": "heading"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Project$> panel, right click on the <$Skateboard Video$> sequence. Then, select <$Auto Reframe Sequence$> to create a Vertical 9:16 version."
+                                },
+                                {
+                                    "text": "Explore some of the other <$Auto Reframe$> options such as square 1:1."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "successHeading": "Great Job!",
+                            "successText": "Fantastic job using Auto Reframe to create versions of this video to share on different social media platforms. If you want to keep learning with Premiere Gal, check out her Youtube channel for more tutorials.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "a54e7657-f004-366e-9f9f-59a3724f3435",
+            "versions": [
+                1
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "a54e7657-f004-366e-9f9f-59a3724f3435",
+                "versions": [
+                    1
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/auto-reframe",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Share your videos on all your socials with auto reframe.",
+            "short": "Share your videos on all your socials with auto reframe.",
+            "long": "Share your videos on all your socials with auto reframe."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/8c7c8103-b409-3ad2-8d4b-a444142cfe30/auto-reframe_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/8c7c8103-b409-3ad2-8d4b-a444142cfe30/auto-reframe_300x190.jpg"
+        },
+        "title": "Reframe your project automatically",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "60",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "intermediate",
+        "stage": "practice",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "social-media-videos",
+            "video-editing"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Social media videos",
+                    "id": "d1994573d7c6491dbcd936bdafe89167",
+                    "internalId": "social-media-videos",
+                    "name": "Social media videos"
+                },
+                {
+                    "enName": "Video editing",
+                    "id": "1a4bf81f09114391ae2330bf04b5fd6d",
+                    "internalId": "video-editing",
+                    "name": "Video editing"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2022-07-18T21:09:14.150Z",
+    "modified_on": "2024-05-03T22:30:52.551Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "8c7c8103-b409-3ad2-8d4b-a444142cfe30",
+    "commitId": "785a798f2a7061501c126ee9fe021dee074c1c41",
+    "type": "project"
+}

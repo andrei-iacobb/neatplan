@@ -1,0 +1,352 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "0.1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/037-improve-your-voiceovers/footage/Apply_makeup.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/037-improve-your-voiceovers/footage/VO_take1.aif",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/037-improve-your-voiceovers/footage/VO_take2.aif",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/037-improve-your-voiceovers/footage/VO_take3.aif"
+            ],
+            "minVersion": "15.4",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/037-improve-your-voiceovers/Michelle-Phan_Makeup2.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openSequenceByName",
+                            "payload": {
+                                "sequenceName": "Apply makeup - audio"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/037-improve-your-voiceovers/44f7537b-7a21-47cd-aecd-0d427413b6f2.mp4"
+                        },
+                        {
+                            "text": "Browse for music",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "In this section, I'll show you how to enhance the overall sound of your video by making your voiceover sound professional. I like to work with music first because it allows me to find a rhythm for the edit.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Essential Sound"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Open the <$Essential Sound$> panel by choosing <$Window$> > <$Essential Sound$>."
+                                },
+                                {
+                                    "text": "In the <$Browse$> tab, browse music from Adobe Stock. Click the play button on various tracks to sample them alongside the video."
+                                },
+                                {
+                                    "text": "Once you find music that works for you (\"That Chillhop\" is my favorite), drag it to the beginning of the <$A2$> audio track in the <$Timeline$> panel to add it to your project."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiStopped"
+                                        },
+                                        {
+                                            "check": "ctiMoved"
+                                        },
+                                        {
+                                            "check": "ctiStopped"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Great!",
+                                        "texts": [
+                                            "You sampled music on Adobe Stock (featuring tracks from sound library partners Epidemic Sound and Jamendo) and added a selection to your sequence. License the music later with one click."
+                                        ]
+                                    },
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to play the sequence and hear the added music."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "Adding music to a sequence automatically adds it to the <$Project$> panel within a new <$Stock Audio Media$> folder."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/037-improve-your-voiceovers/65f918b1-01da-4dc1-ba05-91e531aff9dd.mp4"
+                        },
+                        {
+                            "text": "Enhance the music",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Get in the habit of labeling all the audio in your sequence. Doing so reveals specific effects that you can apply to each type of audio.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Select the music clip in the <$Timeline$> panel."
+                                },
+                                {
+                                    "text": "Click the <$Edit$> tab of the <$Essential Sound$> panel."
+                                },
+                                {
+                                    "text": "Click the <$Music$> tag."
+                                },
+                                {
+                                    "text": "In the <$Preset$> selector, choose <$Balanced Background Music$>."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiStopped"
+                                        },
+                                        {
+                                            "check": "ctiMoved"
+                                        },
+                                        {
+                                            "check": "ctiStopped"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Success!",
+                                        "texts": [
+                                            "Listen for the improvements you automatically made to the music level."
+                                        ]
+                                    },
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to play the sequence."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/037-improve-your-voiceovers/fc559eb2-9e9f-450c-9b8d-5ff73acecb0b.mp4"
+                        },
+                        {
+                            "text": "Add the voiceover",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Now it's time to add your voiceover, isolate it, and make it sound professional.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Project$> panel, select a voiceover clip from the Audio bin (there are three to choose from) and drag it to the <$A1$> track of the <$Timeline$> panel, aligning it with the green marker in the sequence (at about 2 seconds)."
+                                },
+                                {
+                                    "text": "Select the voiceover clip and, in the <$Edit$> tab of the <$Essential Sound$> panel, click the <$Dialogue$> tag."
+                                },
+                                {
+                                    "text": "In the <$Loudness$> section of the <$Essential Sound$> panel, click <$Auto-Match$> to quickly adjust the audio level of the voiceover clip."
+                                },
+                                {
+                                    "text": "In the <$Timeline$> panel, click <$S$> (it'll turn yellow) to solo the voiceover track."
+                                },
+                                {
+                                    "text": "In the <$Repair$> section of the <$Essential Sound$> panel, click the <$Reduce Noise$> option. Play the sequence and move the slider until you like what you hear."
+                                },
+                                {
+                                    "text": "If the sibilants (s's) sound sharp, click the <$DeEss$> option. Play the sequence and move the slider slightly below the default value (5) to soften them."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/037-improve-your-voiceovers/f5191781-c587-411f-a50a-e84d7541a125.mp4"
+                        },
+                        {
+                            "text": "Apply music ducking",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Finally, blend the background music with the voiceover so it won't compete for attention. This is called audio ducking (powered by Adobe Sensei).",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Timeline$> panel, click the yellow <$S$> to no longer solo the voiceover track."
+                                },
+                                {
+                                    "text": "Select the music clip in the <$Timeline$> panel. In the <$Essential Sound$> panel, click the <$Ducking$> checkbox to enable that feature."
+                                },
+                                {
+                                    "text": "Confirm that the <$Dialogue$> icon in the <$Duck Against$> section is blue so that ducking is set against Dialogue clips. Click it if it's not."
+                                },
+                                {
+                                    "text": "Click <$Generate Keyframes$>."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiStopped"
+                                        },
+                                        {
+                                            "check": "ctiMoved"
+                                        },
+                                        {
+                                            "check": "ctiStopped"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Excellent!",
+                                        "texts": [
+                                            "Feel free to adjust the Ducking settings. Don't forget to click <$Generate Keyframes$> again to hear those changes take effect."
+                                        ]
+                                    },
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to play the sequence and note that the music dips so you can hear the voiceover more clearly."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "additionalInfo": "",
+                            "successHeading": "Congratulations!",
+                            "successText": "You made your voiceover sound professional by repairing common audio issues and applying audio ducking to blend in background music without it competing for attention.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "ae600645-dd8e-39cc-8e24-ab45b7468e44",
+            "versions": [
+                0
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "ae600645-dd8e-39cc-8e24-ab45b7468e44",
+                "versions": [
+                    0
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/037-improve-your-voiceovers",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Improve your voiceovers",
+            "short": "Improve your voiceovers",
+            "long": "Enhance the overall sound of your video by making your voiceover sound professional."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/322eb1a4-c91e-3408-9b4e-08f7b176b045/037-improve-your-voiceovers_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/322eb1a4-c91e-3408-9b4e-08f7b176b045/037-improve-your-voiceovers_300x190.jpg"
+        },
+        "title": "Improve your voiceovers",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "420",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "social-media",
+            "audio"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Social media graphics",
+                    "id": "058148b95a584a6faacb6d8877b2f85f",
+                    "internalId": "social-media",
+                    "name": "Social media graphics"
+                },
+                {
+                    "enName": "Audio",
+                    "id": "da0d60b4b806415f931d9ba3a1ee6d02",
+                    "internalId": "audio",
+                    "name": "Audio"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2021-11-08T18:43:12.147Z",
+    "modified_on": "2024-05-03T22:05:38.445Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "322eb1a4-c91e-3408-9b4e-08f7b176b045",
+    "commitId": "40db770ff51cf4b894c40e6c87fc77c6cc2e8bd7",
+    "type": "project"
+}

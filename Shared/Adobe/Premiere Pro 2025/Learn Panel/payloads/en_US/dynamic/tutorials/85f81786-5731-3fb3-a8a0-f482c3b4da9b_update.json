@@ -1,0 +1,510 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "0.1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/038-create-a-dreamy-look/footage/Glowing_skin.mp4"
+            ],
+            "minVersion": "15.4",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/038-create-a-dreamy-look/Michelle-Phan_Makeup3.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openSequenceByName",
+                            "payload": {
+                                "sequenceName": "Glowing skin"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/038-create-a-dreamy-look/13d80730-f2b1-4196-a455-4f9f15dff5b7.mp4"
+                        },
+                        {
+                            "text": "Set up a duplicate video clip",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "In the makeup world, highlighter illuminates the skin. Here's a simple technique I always use to achieve a glowing skin effect — without makeup.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Duplicate the video clip in the <$Timeline$> panel so the original remains untouched."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "clipAdded",
+                                            "payload": {
+                                                "clipName": "Glowing skin.mp4",
+                                                "layerName": "Video 2"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Press the <%{KEY.OPTION_ALT.{{osName}}}%> key while dragging the clip to the <$V2$> track."
+                                },
+                                {
+                                    "text": "Select the upper, duplicate clip in the <$Timeline$> panel and choose <$Clip$> > <$Rename$>."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isCtiOverClip",
+                                            "payload": {
+                                                "clipName": "v2"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Type \"v2\" (without quotes) in the <$Rename Clip$> dialog box and click <$OK$>."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/038-create-a-dreamy-look/ccb68dbf-3429-4b8e-bfa9-e9e44d5596e7.mp4"
+                        },
+                        {
+                            "text": "Define the highlights",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "In this step, you define the highlight regions by making extreme adjustments to the \"v2\" clip on the <$V2$> track.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Color"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Open the <$Lumetri Color$> panel by choosing <$Window$> > <$Lumetri Color$>."
+                                },
+                                {
+                                    "text": "In the <$Lumetri Color$> panel, click the <$Basic Correction$> section to open it."
+                                },
+                                {
+                                    "checkParallel": false,
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "v2",
+                                                "componentName": "lumetri",
+                                                "componentParameter": "LUMETRI_TONE_CONTRAST_PARAMINDEX",
+                                                "value": -100
+                                            }
+                                        }
+                                    ],
+                                    "text": "Lower the <$Contrast$> level all the way to the left (–100)."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "v2",
+                                                "componentName": "lumetri",
+                                                "componentParameter": "LUMETRI_TONE_HIGHLIGHTS_PARAMINDEX",
+                                                "value": -100
+                                            }
+                                        }
+                                    ],
+                                    "text": "Lower <$Highlights$> all the way to the left."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "v2",
+                                                "componentName": "lumetri",
+                                                "componentParameter": "LUMETRI_TONE_SHADOWS_PARAMINDEX",
+                                                "value": -100
+                                            }
+                                        }
+                                    ],
+                                    "text": "Lower <$Shadows$> all the way to the left."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "v2",
+                                                "componentName": "lumetri",
+                                                "componentParameter": "LUMETRI_TONE_WHITES_PARAMINDEX",
+                                                "value": 100
+                                            }
+                                        }
+                                    ],
+                                    "text": "Raise the <$Whites$> level all the way to the right (100)."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "v2",
+                                                "componentName": "lumetri",
+                                                "componentParameter": "LUMETRI_TONE_BLACKS_PARAMINDEX",
+                                                "value": -100
+                                            }
+                                        }
+                                    ],
+                                    "text": "Lower <$Blacks$> all the way to the left."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "v2",
+                                                "componentName": "lumetri",
+                                                "componentParameter": "LUMETRI_PRESENCE_SATURATION_PARAMINDEX",
+                                                "value": 0
+                                            }
+                                        }
+                                    ],
+                                    "text": "Lower <$Saturation$> to zero."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiStopped"
+                                        },
+                                        {
+                                            "check": "ctiMoved"
+                                        },
+                                        {
+                                            "check": "ctiStopped"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Fantastic!",
+                                        "texts": [
+                                            "Your footage is going to look extreme, and very shiny, but that's what you want. Whatever is shiny will be the part that glows."
+                                        ]
+                                    },
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to play the sequence."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/038-create-a-dreamy-look/d9470c4a-4ed2-40cb-8f9e-18927ee45adf.mp4"
+                        },
+                        {
+                            "text": "Isolate shadows & highlights",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Now you add a color effect that isolates the bright highlights and dark shadows. There are no rules here. Do whatever makes your eyes happy.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isCtiOverClip",
+                                            "payload": {
+                                                "clipName": "v2"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Make sure the upper clip is selected in the <$Timeline$> panel."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Effects"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Open the <$Effects$> panel by choosing <$Window$> > <$Effects$>."
+                                },
+                                {
+                                    "text": "In the <$Effects$> panel, enter \"luma\" in the search bar."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "v2",
+                                                "comment:": "index 0 -> value 100 //threshhold",
+                                                "componentMatchName": "AE.ADBE Legacy Key Luma",
+                                                "componentParameter": 0,
+                                                "value": 100
+                                            }
+                                        }
+                                    ],
+                                    "text": "Double-click the <$Luma Key$> effect to apply it to the \"v2\" clip. This isolates bright highlights or dark shadows. Chances are, you can leave the effect as is. Continue reading if you'd like to make further changes."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Effect Controls"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Open the <$Effect Controls$> panel by choosing <$Window$> > <$Effect Controls$>."
+                                },
+                                {
+                                    "text": "In the <$Luma Key$> section of the <$Effect Controls$> panel, make minor adjustments to <$Threshold$> and <$Cutoff$>."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/038-create-a-dreamy-look/51b9136e-75c8-4e33-999c-6ae9bfdd382f.mp4"
+                        },
+                        {
+                            "text": "Soften the extremes",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Next, you add a blur effect to soften the extreme look of the clip.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Effects$> panel, enter \"gauss\" in the search bar."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "v2",
+                                                "comment:": "index 0 -> value 0 //blurriness",
+                                                "componentMatchName": "AE.ADBE Gaussian Blur 2",
+                                                "componentParameter": 0,
+                                                "value": 0
+                                            }
+                                        }
+                                    ],
+                                    "text": "Double-click the <$Gaussian Blur$> effect to apply it to the \"v2\" clip."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "v2",
+                                                "comment:": "index 0 -> value 0 //blurriness",
+                                                "componentMatchName": "AE.ADBE Gaussian Blur 2",
+                                                "componentParameter": 0,
+                                                "value": [
+                                                    40,
+                                                    150
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "text": "In the <$Gaussian Blur$> section of the <$Effect Controls$> panel, adjust the <$Blurriness$> setting to your liking. (For this exercise, use 90.)"
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/038-create-a-dreamy-look/5014ee6e-eb85-426b-9d42-53f08292b690.mp4"
+                        },
+                        {
+                            "text": "Adjust blend modes & opacity",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "For the last step, play with the opacity and blend modes. This is where the magic happens.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Opacity$> section of the <$Effect Controls$> panel, change <$Blend Mode$> to <$Lighten$>. This is my personal favorite but feel free to experiment with other blend modes."
+                                },
+                                {
+                                    "text": "Lower the <$Opacity$> setting until you like what you see (try 70%)."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Looks great!",
+                                        "texts": [
+                                            "The skin now looks radiant. Click the <$Eye$> icon at the left edge of the <$V2$> track to toggle visibility off and on, so you can compare with the original clip."
+                                        ]
+                                    },
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to play the sequence."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "additionalInfo": "",
+                            "successHeading": "Great job!",
+                            "successText": "You learned how to use the power of layering and blend modes to apply highlighter digitally and unlock new possibilities for your modeling videos.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "0b9e511f-87a9-3ef5-9e84-b1dfc42b45d3",
+            "versions": [
+                0
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "0b9e511f-87a9-3ef5-9e84-b1dfc42b45d3",
+                "versions": [
+                    0
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/038-create-a-dreamy-look",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Create a dreamy look",
+            "short": "Create a dreamy look",
+            "long": "Learn a simple technique I always use to achieve a glowing skin effect — without makeup."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/85f81786-5731-3fb3-a8a0-f482c3b4da9b/038-create-a-dreamy-look_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/85f81786-5731-3fb3-a8a0-f482c3b4da9b/038-create-a-dreamy-look_300x190.jpg"
+        },
+        "title": "Create a dreamy look",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "420",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "color",
+            "social-media",
+            "effects"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Color",
+                    "id": "0b866e9c90384a2a8a4feefa187d13f4",
+                    "internalId": "color",
+                    "name": "Color"
+                },
+                {
+                    "enName": "Social media graphics",
+                    "id": "058148b95a584a6faacb6d8877b2f85f",
+                    "internalId": "social-media",
+                    "name": "Social media graphics"
+                },
+                {
+                    "enName": "Effects",
+                    "id": "fadb0bb977c241c5b1f486e40aef4c15",
+                    "internalId": "effects",
+                    "name": "Effects"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2021-11-08T18:43:11.987Z",
+    "modified_on": "2024-05-03T22:07:27.983Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "85f81786-5731-3fb3-a8a0-f482c3b4da9b",
+    "commitId": "40db770ff51cf4b894c40e6c87fc77c6cc2e8bd7",
+    "type": "project"
+}

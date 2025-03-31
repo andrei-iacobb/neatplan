@@ -1,0 +1,244 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/selective-color/Swiming.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/selective-color/Recolor.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/selective-color/Paddle_Boarding.mp4"
+            ],
+            "minVersion": "20.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/selective-color/Color_Change.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/selective-color/993d205c-c6fe-41cd-8250-a61cd0751576.mp4"
+                        },
+                        {
+                            "text": "Preview the first project",
+                            "type": "heading"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Fantastic!",
+                                        "texts": [
+                                            "Click <$Next$> when you're ready to practice recoloring using the assets we've provided."
+                                        ]
+                                    },
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to watch the first video you'll recolor."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "If you haven't already, check out <a href=\"https://www.youtube.com/watch?v=vIA1puRW9z0&feature=youtu.be\">Premiere Gal's full length tutorial detailing how she recolored these clips on Youtube</a>. While you watch, work along side Premiere Gal using the assets in this course."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        }
+                    ]
+                },
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/selective-color/Color_Change-2.prproj"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "imgUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/selective-color/b7595b41-27c4-4c33-b5b3-e91aabd19549.png",
+                            "type": "imageFullLarge"
+                        },
+                        {
+                            "text": "Color match two scenes",
+                            "type": "heading"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Color"
+                                            }
+                                        },
+                                        {
+                                            "check": "isCtiOverClip",
+                                            "payload": {
+                                                "clipName": "Paddle_Boarding.mp4"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Open the <$Lumetri Color$> panel. Then, move the playhead so that it is over the second clip in the Timeline."
+                                },
+                                {
+                                    "text": "Open the <$Color Wheels and Match$> section. Then, click <$Comparison View$> so you can see both clips side-by-side."
+                                },
+                                {
+                                    "text": "Click <$Apply Match$> to automatically match the colors between the two scenes."
+                                },
+                                {
+                                    "text": "Perfect the color match by using the <$Curves$> section to increase the teal color in the second clip."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "imgUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/selective-color/1b45dc8c-92a6-4e61-a799-e15406d7f6de.png",
+                            "type": "imageFullLarge"
+                        },
+                        {
+                            "text": "Use selective grading to change specific colors",
+                            "type": "heading"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Open the sequence <$Color Changing$>."
+                                },
+                                {
+                                    "text": "Use the color selector in the <$Hue vs Hue$> section to select the maroon color of the mans pants. Then, play around with the points to observe how the color changes."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "Be careful not to adjust the color so much that the skin tones of people in your video begin to look unnatural. If you're interested in learning more about how to adjust color while preserving skin tone, check out Premiere Gal's tutorial on Youtube."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "successHeading": "Fantastic Job!",
+                            "successText": "The creative adjustments you can make using the <$Lumetri Color$> panel are endless. Be sure to explore the other options in your own projects.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "76b8d708-0ec0-3ff4-86f3-5ceadee046aa",
+            "versions": [
+                1
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "76b8d708-0ec0-3ff4-86f3-5ceadee046aa",
+                "versions": [
+                    1
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/selective-color",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Use the Lumetri Color panel to recolor your clips.",
+            "short": "Use the Lumetri Color panel to recolor your clips.",
+            "long": "Use the Lumetri Color panel to recolor your clips."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/4ef953f4-6fad-3832-9edd-59acedcc5638/selective-color_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/4ef953f4-6fad-3832-9edd-59acedcc5638/selective-color_300x190.jpg"
+        },
+        "title": "Selectively change the color of your clips",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "60",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "intermediate",
+        "stage": "practice",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "color-grading",
+            "video-editing"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Color grading",
+                    "id": "c6445504751c470c814839a1401c0d18",
+                    "internalId": "color-grading",
+                    "name": "Color grading"
+                },
+                {
+                    "enName": "Video editing",
+                    "id": "1a4bf81f09114391ae2330bf04b5fd6d",
+                    "internalId": "video-editing",
+                    "name": "Video editing"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2022-07-18T21:09:13.914Z",
+    "modified_on": "2024-05-03T22:41:59.580Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "4ef953f4-6fad-3832-9edd-59acedcc5638",
+    "commitId": "785a798f2a7061501c126ee9fe021dee074c1c41",
+    "type": "project"
+}

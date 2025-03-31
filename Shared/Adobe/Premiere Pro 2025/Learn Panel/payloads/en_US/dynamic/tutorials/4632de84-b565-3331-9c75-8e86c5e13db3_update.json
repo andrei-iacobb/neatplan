@@ -1,0 +1,329 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "0.1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/034-add-captions/Media_Replace_Right.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/034-add-captions/Media_Replace_Left.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/034-add-captions/Speech_to_Text_Clip.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/034-add-captions/Slurping_SFX.m4a"
+            ],
+            "minVersion": "15.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/034-add-captions/Fung-Bros_titles_captions.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/034-add-captions/Fung-Bros_titles_captions.prproj"
+                            }
+                        },
+                        {
+                            "actionName": "openSequenceByName",
+                            "payload": {
+                                "sequenceName": "Speech to Text"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/034-add-captions/9af39684-95f2-435f-8806-d68d6ca9137a.mp4"
+                        },
+                        {
+                            "texts": [
+                                "Please note: This tutorial is compatible with version 25.0 of Premiere Pro, which includes the <$Properties$> panel. If you do not see <$Window$> > <$Properties$> in the application menu, <a href=\"https://creativecloud.adobe.com/campaign/creative-cloud?workflow=route-to-path&altPath=https://creativecloud.adobe.com/apps&path=/apps/updates\">please update before proceeding</a>."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        },
+                        {
+                            "text": "Convert speech to text",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "In this section, you'll learn how to transcribe audio, whether it's dialogue or voiceover.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Open the <$Text$> panel by choosing <$Window$> > <$Text$>."
+                                },
+                                {
+                                    "text": "Under the <$Captions$> tab, click <$Transcribe Sequence$> to start the process."
+                                },
+                                {
+                                    "text": "The default settings in the <$Create Transcript$> dialog box should be fine, so click <$Transcribe$>."
+                                },
+                                {
+                                    "showOnComplete": {
+                                        "heading": "Success!",
+                                        "texts": [
+                                            "Great job isolating a specific color in the clip and adjusting the level to perfect the shot and boost the colors. There are a lot of different curve tools available in the <$Lumetri Color$> panel that you can explore. Check them out before moving on to the next tutorial."
+                                        ]
+                                    },
+                                    "text": "After the transcription process ends, you'll see the text appear in the <$Transcript$> tab. Don't worry if you spot imperfections; you can edit those later."
+                                },
+                                {
+                                    "text": "Click <$Next$> when you're ready to move to the next section, where you'll add the captions you just created to the <$Timeline$> panel."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/034-add-captions/Fung-Bros_titles_captions.prproj"
+                            }
+                        },
+                        {
+                            "actionName": "openSequenceByName",
+                            "payload": {
+                                "sequenceName": "Speech to Text"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/034-add-captions/49b58c43-1242-457c-ad14-547afbc6a516.mp4"
+                        },
+                        {
+                            "text": "Create captions",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "In this section, you'll learn how to place the transcript segments automatically in the sequence at their properly timed locations.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Text$> panel, under the <$Transcript$> tab, click <$Create Captions$>."
+                                },
+                                {
+                                    "text": "The default settings in the <$Create Captions$> dialog box should be fine, so click <$OK$> to add the captions on a new <$Subtitle$> track."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiStopped"
+                                        },
+                                        {
+                                            "check": "ctiMoved"
+                                        },
+                                        {
+                                            "check": "ctiStopped"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Success!",
+                                        "texts": [
+                                            "This step is very important because it ensures that your content is accurate and accessible to the Deaf and Hard of Hearing communities. Having accurate captions also allows your hearing audience to engage with your videos when they are unable to listen to the dialogue."
+                                        ]
+                                    },
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to play the sequence and review the captions for accuracy. Press the <%{KEY.SPACEBAR}%> again to stop. In the <$Captions$> tab of the <$Text$> panel, double-click inside a text segment to edit any text that is incorrect."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/034-add-captions/Fung-Bros_titles_captions.prproj"
+                            }
+                        },
+                        {
+                            "actionName": "openSequenceByName",
+                            "payload": {
+                                "sequenceName": "Speech to Text"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/034-add-captions/e9074e8c-ec93-4cc5-95e6-7dd82d755460.mp4"
+                        },
+                        {
+                            "text": "Edit caption styles",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "In this section, you'll learn how to change the style of the captions in your videos.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "If it's not already visible, open the <$Properties$> panel by choosing <$Window$> > <$Properties$>."
+                                },
+                                {
+                                    "text": "In the <$Subtitle$> track of the <$Timeline$> panel, select the first caption to show the relevant text controls in the <$Properties$> panel."
+                                },
+                                {
+                                    "text": "Use the options in the <$Edit$> tab to make whatever font, position, and style changes you want."
+                                },
+                                {
+                                    "text": "In the <$Track Style$> section, click the plus icon and choose <$Create Style$>."
+                                },
+                                {
+                                    "text": "In the <$New Text Style$> dialog box, give the style a name and click <$OK$>. This will update the other captions automatically. If you later edit a caption's style, you can always push those updates to the other captions in the track by clicking the <$Redefine Style$> button."
+                                },
+                                {
+                                    "text": "In the <$Timeline$> panel, drag the edges of a caption segment in the <$Subtitle$> track to lengthen or shorten its duration."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiStopped"
+                                        },
+                                        {
+                                            "check": "ctiMoved"
+                                        },
+                                        {
+                                            "check": "ctiStopped"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Awesome!",
+                                        "texts": [
+                                            "You learned how to convert speech to text and then automatically create captions that are properly placed in the timeline to match the audio."
+                                        ]
+                                    },
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to watch your video with the captions and styles applied. Press the <%{KEY.SPACEBAR}%> again to stop playback."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "additionalInfo": "",
+                            "successHeading": "Congratulations!",
+                            "successText": "You just learned how to automatically create captions that are properly placed in the timeline to match the audio. <br><br>Check out the tutorial <$Add sizzle to a soundtrack$> to keep exploring Premiere Pro with the Fung Bros.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "55db3f70-cf70-3b87-bee9-ca993e8836a6",
+            "versions": [
+                0
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "55db3f70-cf70-3b87-bee9-ca993e8836a6",
+                "versions": [
+                    0
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/034-add-captions",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Add captions",
+            "short": "Add captions",
+            "long": "Increase accessibility with automatic captions."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/4632de84-b565-3331-9c75-8e86c5e13db3/034-add-captions_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/4632de84-b565-3331-9c75-8e86c5e13db3/034-add-captions_300x190.jpg"
+        },
+        "title": "Add captions",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "300",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "social-media",
+            "accessibility"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Social media graphics",
+                    "id": "058148b95a584a6faacb6d8877b2f85f",
+                    "internalId": "social-media",
+                    "name": "Social media graphics"
+                },
+                {
+                    "enName": "Accessibility",
+                    "id": "aba9ec428038450092830ee2bffa19a6",
+                    "internalId": "accessibility",
+                    "name": "Accessibility"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2021-08-27T16:10:06.310Z",
+    "modified_on": "2024-10-24T23:56:36.457Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "4632de84-b565-3331-9c75-8e86c5e13db3",
+    "commitId": "fea98eafaad2c3f5b923d2e43f4edf8b33e33feb",
+    "type": "project"
+}

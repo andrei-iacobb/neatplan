@@ -1,0 +1,329 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/kinetic-text/Scan_Lines.png",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/kinetic-text/Dancing.mp4"
+            ],
+            "minVersion": "20.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/kinetic-text/Kinetic_Text.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/kinetic-text/eb93c169-90f9-434c-b950-bb9371140a55.mp4"
+                        },
+                        {
+                            "text": "Review the final product",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Before you begin the tutorial, check out the graphic you'll be creating.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Fantastic!",
+                                        "texts": [
+                                            "When you've finished watching the project, click <$Next$> to explore with the assets."
+                                        ]
+                                    },
+                                    "text": "Press <%{KEY.SPACEBAR}%> to watch the final product."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "If you haven't already, check out <a href=\"https://www.youtube.com/watch?v=EWWe7Y4d--M&feature=youtu.be\">Premiere Gal's full length tutorial detailing how she created this graphic, on Youtube</a>. While you watch, work along side Premiere Gal using the assets in this course."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        }
+                    ]
+                },
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/kinetic-text/Kinetic_Text-2.prproj"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "imgUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/kinetic-text/b6d212b3-fea3-4f90-9614-e3f294e1120b.png",
+                            "type": "imageFullLarge"
+                        },
+                        {
+                            "text": "Animate the first word",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>We've added both words to the timeline so that you can explore animating them more easily.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Move the playhead to where you want your intro to end."
+                                },
+                                {
+                                    "checkParallel": true,
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "keyframeAdded",
+                                            "payload": {
+                                                "clipName": "Graphic",
+                                                "comment": "componentParameter=0 -> position",
+                                                "componentMatchName": "AE.ADBE Motion",
+                                                "componentParameter": 0,
+                                                "keyframeAddCount": 1
+                                            }
+                                        },
+                                        {
+                                            "check": "keyframeAdded",
+                                            "payload": {
+                                                "clipName": "Graphic",
+                                                "comment": "componentParameter=1 -> scale",
+                                                "componentMatchName": "AE.ADBE Motion",
+                                                "componentParameter": 1,
+                                                "keyframeAddCount": 1
+                                            }
+                                        },
+                                        {
+                                            "check": "keyframeAdded",
+                                            "payload": {
+                                                "clipName": "Graphic",
+                                                "comment": "componentParameter=4 -> rotation",
+                                                "componentMatchName": "AE.ADBE Motion",
+                                                "componentParameter": 4,
+                                                "keyframeAddCount": 1
+                                            }
+                                        }
+                                    ],
+                                    "text": "in the <$Effect Controls$> panel, open the <$Text$> options for the word <$BE$>. Then, click the stopwatches next to <$Position$>, <$Scale$>, and <$Rotation$> to add your first keyframes."
+                                },
+                                {
+                                    "checkParallel": true,
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "keyframeAdded",
+                                            "payload": {
+                                                "clipName": "Graphic",
+                                                "comment": "componentParameter=1 -> scale",
+                                                "componentMatchName": "AE.ADBE Motion",
+                                                "componentParameter": 1,
+                                                "keyframeAddCount": 1
+                                            }
+                                        },
+                                        {
+                                            "check": "keyframeAdded",
+                                            "payload": {
+                                                "clipName": "Graphic",
+                                                "comment": "componentParameter=4 -> rotation",
+                                                "componentMatchName": "AE.ADBE Motion",
+                                                "componentParameter": 4,
+                                                "keyframeAddCount": 1
+                                            }
+                                        }
+                                    ],
+                                    "text": "Move the playhead backwards a few frames. Then, adjust the <$Rotation$> and <$Scale$> until the word <$BE$> is horizontal and is as large as you would like. Changing these values will automatically add new keyframes."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "keyframeAdded",
+                                            "payload": {
+                                                "clipName": "Graphic",
+                                                "comment": "componentParameter=0 -> position",
+                                                "componentMatchName": "AE.ADBE Motion",
+                                                "componentParameter": 0,
+                                                "keyframeAddCount": 1
+                                            }
+                                        }
+                                    ],
+                                    "text": "Move the playhead backwards to where you'd like the animation to begin. Then change the <$Position$> so that the word <$BE$> is off the top of the screen."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Awesome!",
+                                        "texts": [
+                                            "You've successfully animated the first word. You can keep experimenting with keyframes until you're satisfied with the results. Then, click <$Next$> when you're ready to animate the second word."
+                                        ]
+                                    },
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to watch the animation you've created."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "imgUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/kinetic-text/64541e8f-9aae-4b45-9c0c-d5f85e323c82.png",
+                            "type": "imageFullLarge"
+                        },
+                        {
+                            "text": "Finish your animation",
+                            "type": "heading"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "text": "Move the playhead forward to where you want the out animation to begin."
+                                },
+                                {
+                                    "text": "Add keyframes for <$Position$>, <$Scale$>, and <$Rotation$> for the word <$BE$>."
+                                },
+                                {
+                                    "text": "Copy the first set of keyframes for the word <$BE$>. Then, move the playhead to where you want the out animation to end and paste the keyframes here."
+                                },
+                                {
+                                    "text": "Repeat these steps for the word <$YOU$> to create the out animation."
+                                },
+                                {
+                                    "text": "Add the <$Ease in$> temporal interpolation to all the keyframes."
+                                },
+                                {
+                                    "text": "Drag the responsive time handles so they cover the keyframes for both the in and out animations."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "successHeading": "Great Job!",
+                            "successText": "Awesome job animating the text to create your graphic. You can use the <$Effect Control$> panel to animate a number of text properties. Be sure to explore them in your own project.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "5750ca8e-dd69-3a00-ab8c-72b052adf593",
+            "versions": [
+                1
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "5750ca8e-dd69-3a00-ab8c-72b052adf593",
+                "versions": [
+                    1
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/kinetic-text",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Add animated text to your video without using a template.",
+            "short": "Add animated text to your video without using a template.",
+            "long": "Add animated text to your video without using a template."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/70135f94-442f-33c0-8585-36bc65bb4759/kinetic-text_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/70135f94-442f-33c0-8585-36bc65bb4759/kinetic-text_300x190.jpg"
+        },
+        "title": "Create kinetic text",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "60",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "intermediate",
+        "stage": "practice",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "motion-graphics",
+            "text"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Motion graphics",
+                    "id": "29ce015eba5d4f8d99f0d3333042c07d",
+                    "internalId": "motion-graphics",
+                    "name": "Motion graphics"
+                },
+                {
+                    "enName": "Text",
+                    "id": "74d6b374f69f45b6a227b3ab6199d970",
+                    "internalId": "text",
+                    "name": "Text"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2022-07-18T21:09:14.171Z",
+    "modified_on": "2024-05-03T22:38:45.393Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "70135f94-442f-33c0-8585-36bc65bb4759",
+    "commitId": "785a798f2a7061501c126ee9fe021dee074c1c41",
+    "type": "project"
+}

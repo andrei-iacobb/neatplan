@@ -1,0 +1,85 @@
+{
+    "creative_categories": [
+        "nuj-creative-effects"
+    ],
+    "platforms": [
+        "in-app"
+    ],
+    "total_duration": 300,
+    "status": "live",
+    "tutorial_ids": [
+        "d2813bd9-5513-3d20-8c48-329b85b17804"
+    ],
+    "topics": [
+        "Motion graphics",
+        "Media",
+        "Graphics"
+    ],
+    "taxonomy": {
+        "topics": [
+            {
+                "enName": "Motion graphics",
+                "name": "Motion graphics",
+                "internalId": "motion-graphics",
+                "archived": "false",
+                "id": "29ce015eba5d4f8d99f0d3333042c07d"
+            },
+            {
+                "enName": "Media",
+                "name": "Media",
+                "internalId": "media",
+                "archived": "false",
+                "id": "28f93a38c7604fcfbedc1b1307c3f829"
+            },
+            {
+                "enName": "Graphics",
+                "name": "Graphics",
+                "internalId": "graphics",
+                "archived": "false",
+                "id": "6a39c69be39b405fbbc67bb8977b278e"
+            }
+        ],
+        "creative_fields": [
+            {
+                "enName": "Video & audio",
+                "name": "Video & audio",
+                "internalId": "video",
+                "archived": false,
+                "id": "4f1f7cf84f3349a59e40f91a4b0e3005"
+            }
+        ]
+    },
+    "modified_on": "Fri Feb 23 18:39:41 UTC 2024",
+    "header": "",
+    "playlistUUID": "0e08b816-c467-3a0c-bde3-10584d16cb2b",
+    "formatVersion": "1.0",
+    "id": "faad0247-2016-4f95-a1fb-ac5c6ab3cedc",
+    "created_on": "Thu Feb 22 20:10:31 UTC 2024",
+    "creative_fields": [
+        "Video & audio"
+    ],
+    "stage": "practice",
+    "source": {
+        "third_party": false,
+        "label": "Adobe.com"
+    },
+    "text": "",
+    "published_on": "Fri Feb 23 18:39:41 UTC 2024",
+    "level": "intermediate",
+    "images": {
+        "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/0e08b816-c467-3a0c-bde3-10584d16cb2b/customize-mogrt_952x200.jpg",
+        "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/0e08b816-c467-3a0c-bde3-10584d16cb2b/customize-mogrt_1000x240.jpg"
+    },
+    "applications": {
+        "fi_code": [
+            "premierepro_cc"
+        ],
+        "sap_code": [
+            "PPRO"
+        ]
+    },
+    "description": "Leverage Media Replace and Text Edit to customize a reusable Motion Graphics template for use in your social videos.",
+    "aem_id": "playlist/premiere-pro/video/customize-mogrt",
+    "type": "skills-and-projects",
+    "title": "Customize a Motion Graphics template"
+}

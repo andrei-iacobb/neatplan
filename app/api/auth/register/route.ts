@@ -27,7 +27,14 @@ export async function POST(request: Request) {
       await db.query("INSERT INTO housekeepers (user_id, name) VALUES ($1, $2)", [result.rows[0].id, username])
     }
 
-    return NextResponse.json(result.rows[0])
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: result.rows[0].id,
+        username: result.rows[0].username,
+        role: result.rows[0].role,
+      },
+    })
   } catch (error) {
     console.error("Registration error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

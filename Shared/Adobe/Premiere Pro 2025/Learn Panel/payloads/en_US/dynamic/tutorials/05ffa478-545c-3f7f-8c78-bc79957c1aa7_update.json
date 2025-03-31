@@ -1,0 +1,295 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/adding-background-effect/footage/Background.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/adding-background-effect/footage/Iceland_Graphic.psd"
+            ],
+            "minVersion": "13.1.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/adding-background-effect/Adding_a_Background_Effect.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/adding-background-effect/step1.mp4"
+                        },
+                        {
+                            "text": "Adding a blur effect",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "In the last tutorial, we refined the logo animation by using the Velocity graph. In this tutorial, you'll add a visual effect to the background video. Let's blur the background to make the Iceland graphic stand out more.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Effects"
+                                            }
+                                        }
+                                    ],
+                                    "text": "In the Application menu, choose <$Window > Effects$> to display the Effects panel."
+                                },
+                                {
+                                    "text": "In the Effects panel search box, type \"Blur\". You'll see several different options appear under <$Video Effects > Blur & Sharpen$>."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "Background.mp4",
+                                                "componentMatchName": "AE.ADBE Gaussian Blur 2",
+                                                "componentParameter": 0,
+                                                "value": 0
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "Your video isn't blurry yet, but that's normal. You'll adjust the settings in the next few steps. The effect has been added to the Background.mp4 video and the Effect Controls panel also should now be visible with the Blur settings available."
+                                        ]
+                                    },
+                                    "text": "Find the Gaussian Blur option and drag it onto the Background.mp4 video in track V1 of the Timeline."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/adding-background-effect/step2.mp4"
+                        },
+                        {
+                            "text": "Blur start point",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Let's gradually apply the blur as the logo falls into the sequence.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        },
+                                        {
+                                            "check": "ctiStopped"
+                                        }
+                                    ],
+                                    "text": "Move the playhead to the beginning of the sequence."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "keyframeAdded",
+                                            "payload": {
+                                                "clipName": "Background.mp4",
+                                                "componentMatchName": "AE.ADBE Gaussian Blur 2",
+                                                "componentParameter": 0
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "Look in the Timeline view of the Effect Controls panel. You just enabled the Blurriness property and added a keyframe at the beginning of the sequence."
+                                        ]
+                                    },
+                                    "text": "In the Effect Controls panel, click the stopwatch next to the Blurriness property under the Gaussian Blur setting."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/adding-background-effect/step3.mp4"
+                        },
+                        {
+                            "text": "Blur end point",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "In the last step, you set the start point of the blur effect. In this step you'll set the end point.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        },
+                                        {
+                                            "check": "ctiStopped"
+                                        }
+                                    ],
+                                    "text": "Move the playhead to about 01:20, or where the logo finishes rotating."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "keyframeAdded",
+                                            "payload": {
+                                                "clipName": "Background.mp4",
+                                                "componentMatchName": "AE.ADBE Gaussian Blur 2",
+                                                "componentParameter": 0
+                                            }
+                                        }
+                                    ],
+                                    "text": "Change the Blurriness setting to around 40."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        },
+                                        {
+                                            "check": "ctiStopped"
+                                        },
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "Do you see how the background video gradually blurs over time? You can change how blurry the background gets using the Blurriness setting, or adjust the second keyframe to change how fast the effect is applied."
+                                        ]
+                                    },
+                                    "text": "Play back the sequence from the beginning to see the effect in action."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "successHeading": "Good job!",
+                            "successText": "You just learned how to add a background effect to enhance the animation.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "e634b600-def1-3ced-b248-6904a6103881",
+            "versions": [
+                1
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "e634b600-def1-3ced-b248-6904a6103881",
+                "versions": [
+                    1
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/adding-background-effect",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Adding a background effect",
+            "short": "Adding a background effect",
+            "long": "Adding a background effect."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/05ffa478-545c-3f7f-8c78-bc79957c1aa7/adding-background-effect_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/05ffa478-545c-3f7f-8c78-bc79957c1aa7/adding-background-effect_300x190.jpg"
+        },
+        "title": "Adding a background effect",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "240",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "animation"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Animation",
+                    "id": "4931735f710f4382a1919d8ac5015e71",
+                    "internalId": "animation",
+                    "name": "Animation"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2021-08-27T16:10:06.230Z",
+    "modified_on": "2023-05-03T22:10:34.833Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "05ffa478-545c-3f7f-8c78-bc79957c1aa7",
+    "analytics": {},
+    "commitId": "7bca92992ca19d2e2604afcd1e686bc3cc344697",
+    "type": "project",
+    "version": 31
+}

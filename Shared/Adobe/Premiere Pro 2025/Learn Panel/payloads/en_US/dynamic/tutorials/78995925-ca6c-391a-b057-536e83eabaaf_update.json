@@ -1,0 +1,87 @@
+{
+    "creative_categories": [
+        "nuj-creative-effects"
+    ],
+    "platforms": [
+        "in-app"
+    ],
+    "total_duration": 840,
+    "status": "live",
+    "tutorial_ids": [
+        "1865f92f-3dc5-3b8d-a7f5-e820016e25c2",
+        "89ef72a6-bbe0-3fef-82f1-0fb3233f747d",
+        "b78b0c17-ebf9-3dc4-865d-b0a07c62e54d"
+    ],
+    "topics": [
+        "Effects",
+        "Edit",
+        "Social media videos"
+    ],
+    "taxonomy": {
+        "topics": [
+            {
+                "enName": "Effects",
+                "name": "Effects",
+                "internalId": "effects",
+                "archived": "false",
+                "id": "fadb0bb977c241c5b1f486e40aef4c15"
+            },
+            {
+                "enName": "Edit",
+                "name": "Edit",
+                "internalId": "edit",
+                "archived": "false",
+                "id": "c19731b8cfe34b4a869ef96cc7ac3a52"
+            },
+            {
+                "enName": "Social media videos",
+                "name": "Social media videos",
+                "internalId": "social-media-videos",
+                "archived": "false",
+                "id": "d1994573d7c6491dbcd936bdafe89167"
+            }
+        ],
+        "creative_fields": [
+            {
+                "enName": "Video & audio",
+                "name": "Video & audio",
+                "internalId": "video",
+                "archived": false,
+                "id": "4f1f7cf84f3349a59e40f91a4b0e3005"
+            }
+        ]
+    },
+    "modified_on": "Fri Feb 23 18:48:11 UTC 2024",
+    "header": "",
+    "playlistUUID": "78995925-ca6c-391a-b057-536e83eabaaf",
+    "formatVersion": "1.0",
+    "id": "132cf293-ca27-47ca-a125-bb3da4121351",
+    "created_on": "Thu Feb 22 20:10:31 UTC 2024",
+    "creative_fields": [
+        "Video & audio"
+    ],
+    "stage": "practice",
+    "source": {
+        "third_party": false,
+        "label": "Adobe.com"
+    },
+    "text": "",
+    "published_on": "Fri Feb 23 18:48:11 UTC 2024",
+    "level": "intermediate",
+    "images": {
+        "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/78995925-ca6c-391a-b057-536e83eabaaf/jillian-nicole-smith-tiktok_952x200.jpg",
+        "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/78995925-ca6c-391a-b057-536e83eabaaf/jillian-nicole-smith-tiktok_1000x240.jpg"
+    },
+    "applications": {
+        "fi_code": [
+            "premierepro_cc"
+        ],
+        "sap_code": [
+            "PPRO"
+        ]
+    },
+    "description": "Social creator Jillian Nicole Smith shows you how to make short videos that grab eyeballs, likes, and followers.",
+    "aem_id": "playlist/premiere-pro/video/up-your-tiktok-game",
+    "type": "skills-and-projects",
+    "title": "Up your TikTok game"
+}

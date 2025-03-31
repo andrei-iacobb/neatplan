@@ -1,0 +1,381 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "0.1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/041-assemble-your-video-project-in-the-timeline-panel/90bpm_exotica.m4a",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/041-assemble-your-video-project-in-the-timeline-panel/meeting_01.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/041-assemble-your-video-project-in-the-timeline-panel/ordering.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/041-assemble-your-video-project-in-the-timeline-panel/working_01.mp4"
+            ],
+            "minVersion": "15.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/041-assemble-your-video-project-in-the-timeline-panel/Add_remove_clips.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/041-assemble-your-video-project-in-the-timeline-panel/Add_remove_clips.prproj"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/041-assemble-your-video-project-in-the-timeline-panel/3c12af03-cc7f-414d-8db0-d9857d26c442.mp4"
+                        },
+                        {
+                            "text": "Using the Timeline",
+                            "type": "heading"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Success!",
+                                        "texts": [
+                                            "When you're ready, click <$Next$> to begin the tutorial."
+                                        ]
+                                    },
+                                    "text": "Click in the Timeline panel to activate it, and then press the <%{KEY.SPACEBAR}%> to play the project you'll be working on."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/041-assemble-your-video-project-in-the-timeline-panel/add-clips-w-in-out-points.mp4"
+                        },
+                        {
+                            "text": "Adding clips with In and Out points",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>In the last tutorial, you set In and Out points for a clip. The In and Out points we've added here may be slightly different from yours.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Project$> panel, double-click on Clip 3 to open it in the <$Source Monitor$>."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "clipAdded"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Success!",
+                                        "texts": [
+                                            "You added a clip to the <$Timeline$>. If you compare the length of the clip you added and length of the clip in the Project panel, you can see how much shorter it is."
+                                        ]
+                                    },
+                                    "text": "In the <$Source Monitor$>, click on the video and drag it onto the <$Timeline$> panel."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/041-assemble-your-video-project-in-the-timeline-panel/overwriting-clips.mp4"
+                        },
+                        {
+                            "text": "Overwriting clips",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>Another way to add a clip to the timeline is by just dragging it from the Project panel onto the <$Timeline$>.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "areClipComponentsChanged",
+                                            "payload": {
+                                                "clipName": "Clip2",
+                                                "componentMatchName": "AE.ADBE Motion",
+                                                "componentParameters": [
+                                                    0
+                                                ],
+                                                "layerName": "Video 1"
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Success!",
+                                        "texts": [
+                                            "You successfully added two clips to the Timeline! You may have noticed that the second clip replaced some of the frames in the first clip. This is called “overwriting” and is one way to replace clips in the Timeline with new ones. In the next section, you'll see how to insert a clip without overwriting any frames."
+                                        ]
+                                    },
+                                    "text": "Drag the clip named Clip 2 from the <$Project$> panel and drop it onto track <$V1$> at about the one-second mark and observe what happens."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/041-assemble-your-video-project-in-the-timeline-panel/inserting-clips.mp4"
+                        },
+                        {
+                            "text": "Inserting clips",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>In this project, you'll see that there are two clips in the sequence, displayed in the Timeline panel. You can insert a third clip between these two using a keyboard shortcut.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "clipAdded"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Awesome!",
+                                        "texts": [
+                                            "Did you notice that the new clip pushed CLIP 2 out of the way? That's because instead of replacing the frames with frames from the new clip, you split the original clip in half. Click <$Next$> when you're ready to learn how to remove clips."
+                                        ]
+                                    },
+                                    "text": "While holding the <%{KEY.COMMAND_CONTROL.{{osName}}}%> key, drag the clip named Clip 3 from the <$Project$> panel and drop it onto track <$V1$> at about the one-second mark."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/041-assemble-your-video-project-in-the-timeline-panel/deleting-clips.mp4"
+                        },
+                        {
+                            "text": "Deleting clips",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>If you want to completely remove a clip, you can simply delete it.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "clipRemoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Nice!",
+                                        "texts": [
+                                            "Notice that there's now a gap between the clips in the Timeline. When you simply press <%{KEY.DELETE}%>, the clip is removed without any further changes made. In the next section, you'll learn how to delete a clip without leaving a gap."
+                                        ]
+                                    },
+                                    "text": "Select Clip 1 in the timeline and press <%{KEY.DELETE}%> on your keyboard."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/041-assemble-your-video-project-in-the-timeline-panel/Add_remove_clips-2.prproj"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/041-assemble-your-video-project-in-the-timeline-panel/ripple-delete-clips.mp4"
+                        },
+                        {
+                            "text": "Ripple deleting clips",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>We've set the project up with three clips. If you want to delete a clip in the middle of your video without leaving a gap, you'll need just one more key.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkParallel": true,
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "clipRemoved",
+                                            "payload": {
+                                                "clipName": "Clip 3"
+                                            }
+                                        },
+                                        {
+                                            "check": "clipMoved",
+                                            "payload": {
+                                                "clipName": "Clip 2"
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Great Job!",
+                                        "texts": [
+                                            "Notice that there is now no gap, and the length of the sequence is shortened? You've removed the selected clip using a ripple delete, which automatically moves the remaining clips to close the gap in the sequence."
+                                        ]
+                                    },
+                                    "text": "Select Clip 3 in the sequence, then while holding <%{KEY.OPTION_ALT.{{osName}}}%> press <%{BACKSPACE}%>."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "For some Mac users, the <%{BACKSPACE}%> key is labeled <%{DELETE}%>."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "additionalInfo": "",
+                            "successHeading": "Congratulations!",
+                            "successText": "Fantastic job adding and removing clips from the sequence. In the next tutorial, you'll learn how to rearrange and trim clips",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "50f02d3a-5bf1-37a6-82d1-0d18f6450b0d",
+            "versions": [
+                0
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "50f02d3a-5bf1-37a6-82d1-0d18f6450b0d",
+                "versions": [
+                    0
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/041-assemble-your-video-project-in-the-timeline-panel",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Add and remove clips from a sequence",
+            "short": "Add and remove clips from a sequence",
+            "long": "Assemble your video project in the Timeline panel."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/968d1aa2-21fc-3559-b485-c646aaa0a6dc/041-assemble-your-video-project-in-the-timeline-panel_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/968d1aa2-21fc-3559-b485-c646aaa0a6dc/041-assemble-your-video-project-in-the-timeline-panel_300x190.jpg"
+        },
+        "title": "Add and remove clips from a sequence",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "180",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "get-started"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Get started",
+                    "id": "d02c57c7e5bf44719d9cbafcd45bde37",
+                    "internalId": "get-started",
+                    "name": "Get started"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2022-04-13T19:12:15.694Z",
+    "modified_on": "2024-05-03T22:11:56.539Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "968d1aa2-21fc-3559-b485-c646aaa0a6dc",
+    "commitId": "40db770ff51cf4b894c40e6c87fc77c6cc2e8bd7",
+    "type": "project"
+}

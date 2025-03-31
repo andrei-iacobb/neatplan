@@ -1,0 +1,370 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/You_belong_here.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/Meeting05.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/Meeting04.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/Meeting03.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/Meeting02.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/Meeting01.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/Working03.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/Working02.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/Working01.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/Ordering.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/Counter_Service02.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/Counter_Service01.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/Making_Coffee03.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/Making_Coffee02.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/Making_Coffee01.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/Laughter.aac",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/Steam.aac",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/How_do_you_take_care.aac",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/But_it_helps_to_have_friends.aac",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/Self_care_is.aac",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/With_everyone_I_can.aac",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/Everything_I_do.aac",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/What_is_self_care.aac",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/90bpm_exotica.m4a"
+            ],
+            "minVersion": "15.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/Add_Captions-Project.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepItems": [
+                        {
+                            "text": "Add captions using speech to text",
+                            "type": "heading"
+                        },
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/2b960646-aa5c-4e3f-b846-89d48fa6c8b0.mp4"
+                        },
+                        {
+                            "texts": [
+                                "Please note: This tutorial is compatible with version 25.0 of Premiere Pro, which includes the <$Properties$> panel. If you do not see <$Window$> > <$Properties$> in the application menu, <a href=\"https://creativecloud.adobe.com/campaign/creative-cloud?workflow=route-to-path&altPath=https://creativecloud.adobe.com/apps&path=/apps/updates\">please update before proceeding</a>."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        },
+                        {
+                            "text": "Captions have become an essential part of any social media video, but manually transcribing dialogue can be tedious and time-consuming. The best way to add captions to your project is by using the speech to text feature in Premiere Pro. To add and edit captions, you'll need to open the <$Text$> panel and the <$Properties$> panel.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the application menu, choose <$Window$> > <$Text$>."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Properties2"
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "Great job opening both panels. Our workspace is now set up to add captions. We'll start in the <$Text$> panel, which is used for transcribing and editing the captions that will appear in your videos. Then we'll move over to the <$Essential Graphics$> to change the look of the captions."
+                                        ]
+                                    },
+                                    "text": "In the application menu, choose <$Window$> > <$Properties$>."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "text": "Transcribe your sequence",
+                            "type": "heading"
+                        },
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/22762286-2932-4355-ac4c-502a34333f67.mp4"
+                        },
+                        {
+                            "text": "<br>Before we can add captions to our project, we first have to transcribe the audio.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Text$> panel, click on <$Transcribe sequence$>."
+                                },
+                                {
+                                    "text": "In the <$Transcription settings$> of the <$Create transcript$> window, choose <$VO$> from the <$Audio on track$> dropdown menu."
+                                },
+                                {
+                                    "text": "Click <$Transcribe$> to start the transcription (it might take some time to finish). When the transcription is finished, click <$Next$> to continue."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "text": "Edit the transcript",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Ensuring your captions are correct is a huge part of making sure your social videos are accessible. Watch the clip below to learn about the impact bad captions can have on a viewer's experience.",
+                            "type": "text"
+                        },
+                        {
+                            "autoplay": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/6008e14d-9970-4c92-8450-b048e6317203.mp4"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "text": "Add captions",
+                            "type": "heading"
+                        },
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/96dc3a7a-af2c-4664-91c5-9b7b4af84252.mp4"
+                        },
+                        {
+                            "text": "The transcript looks good, so now we need to create the captions.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "At the top of the <$Text$> panel, click on <$Create captions$>."
+                                },
+                                {
+                                    "showOnComplete": {
+                                        "heading": "Nicely done!",
+                                        "texts": [
+                                            "Do you notice the new orange caption clips at the top of the Timeline panel? Premiere auto-generated the captions and placed them on the Timeline at the correct timecode."
+                                        ]
+                                    },
+                                    "text": "In the <$New subtitles and captions$> dialog box, use the default settings and click <$OK$>."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "Now that you've added captions, the video will be more accessible to viewers. In the next section, you'll stylize the captions you added so that you can ensure they are consistently readable."
+                                        ]
+                                    },
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to see the captions you added to our project."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "text": "Stylize captions",
+                            "type": "heading"
+                        },
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/030-add-captions-speech-to-text/bb86b224-e60e-420e-896c-2580bf5dfba0.mp4"
+                        },
+                        {
+                            "text": "<br>The captions have been transcribed and added to the project, but they're a little small to read on a phone screen. Let's use the <$Properties> panel to make some quick adjustments.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Properties2"
+                                            }
+                                        }
+                                    ],
+                                    "text": "At the top of the tabbed panel group to the right of the <$Program Monitor$>, choose <$Properties$> to switch panels."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        },
+                                        {
+                                            "check": "isCtiOverClip",
+                                            "payload": {
+                                                "clipName": "Making_Coffee01.mp4"
+                                            }
+                                        },
+                                        {
+                                            "check": "ctiStopped"
+                                        }
+                                    ],
+                                    "text": "Move the playhead to about <$1 second$> so you can see the first caption in the <$Program$> monitor."
+                                },
+                                {
+                                    "text": "At the top of the <$Timeline$> panel, select the first caption to show the relevant text controls in the <$Properties$> panel."
+                                },
+                                {
+                                    "text": "Change the font size to <$90$>."
+                                },
+                                {
+                                    "text": "This size looks like it will be much easier to read. Let's apply it to all of the captions. In the <$Properties panel$>, find the <$Track Style$> section and click the <$Redefine style$> icon."
+                                },
+                                {
+                                    "text": "In the <$Redefine Style$> dialog box, choose <$All captions on track$> and click <$OK$>."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Awesome!",
+                                        "texts": [
+                                            "How do the captions look? If you think they need even more changes, you can stylize captions however you want to make sure they show up clearly in your project."
+                                        ]
+                                    },
+                                    "text": "Press <%{KEY.SPACEBAR}%> to preview the changes."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "successHeading": "Nicely done!",
+                            "successText": "You just learned how to create automatically transcribe and add captions to your project! In the next tutorial, you'll learn how to reframe your project to post on multiple social platforms.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "f9d5d164-fa10-325e-9c52-da459dba06ac",
+            "versions": [
+                1
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "f9d5d164-fa10-325e-9c52-da459dba06ac",
+                "versions": [
+                    1
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/030-add-captions-speech-to-text",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Include captions to improve engagement",
+            "short": "Include captions to improve engagement",
+            "long": "Automatically generate captions for your project using speech to text."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/745d2610-5635-388d-a4e7-5eec514f1f02/030-add-captions-speech-to-text_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/745d2610-5635-388d-a4e7-5eec514f1f02/030-add-captions-speech-to-text_300x190.jpg"
+        },
+        "title": "Include captions to improve engagement",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "300",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "text",
+            "social-media"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Text",
+                    "id": "74d6b374f69f45b6a227b3ab6199d970",
+                    "internalId": "text",
+                    "name": "Text"
+                },
+                {
+                    "enName": "Social media graphics",
+                    "id": "058148b95a584a6faacb6d8877b2f85f",
+                    "internalId": "social-media",
+                    "name": "Social media graphics"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2021-08-27T16:10:07.835Z",
+    "modified_on": "2024-10-24T23:56:24.742Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "745d2610-5635-388d-a4e7-5eec514f1f02",
+    "commitId": "fea98eafaad2c3f5b923d2e43f4edf8b33e33feb",
+    "type": "project"
+}

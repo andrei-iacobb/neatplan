@@ -1,0 +1,71 @@
+{
+    "creative_categories": [
+        "nuj-orientation"
+    ],
+    "platforms": [
+        "in-app"
+    ],
+    "total_duration": 540,
+    "status": "live",
+    "tutorial_ids": [
+        "7065fd2a-5ccc-3c48-a919-95872e71034d",
+        "dd134e89-1de6-3be7-8641-f5cc1c0918da",
+        "5bf7f392-66da-3398-a4c0-d15051ca1dc4"
+    ],
+    "topics": [
+        "Video editing"
+    ],
+    "taxonomy": {
+        "topics": [
+            {
+                "enName": "Video editing",
+                "name": "Video editing",
+                "internalId": "video-editing",
+                "archived": "false",
+                "id": "1a4bf81f09114391ae2330bf04b5fd6d"
+            }
+        ],
+        "creative_fields": [
+            {
+                "enName": "Video & audio",
+                "name": "Video & audio",
+                "internalId": "video",
+                "archived": false,
+                "id": "4f1f7cf84f3349a59e40f91a4b0e3005"
+            }
+        ]
+    },
+    "modified_on": "Fri Feb 23 15:29:13 UTC 2024",
+    "header": "",
+    "playlistUUID": "1c2a6b43-f951-361b-9e66-6eb9ed84b9e9",
+    "formatVersion": "1.0",
+    "id": "f6235490-4235-4aa2-9c97-fd153b962b9c",
+    "created_on": "Thu Feb 22 20:10:31 UTC 2024",
+    "creative_fields": [
+        "Video & audio"
+    ],
+    "stage": "201",
+    "source": {
+        "third_party": false,
+        "label": "Adobe.com"
+    },
+    "text": "",
+    "published_on": "Fri Feb 23 15:29:13 UTC 2024",
+    "level": "intermediate",
+    "images": {
+        "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/1c2a6b43-f951-361b-9e66-6eb9ed84b9e9/hone-your-video-style-with-fanny-texier_thumb.jpg",
+        "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/1c2a6b43-f951-361b-9e66-6eb9ed84b9e9/hone-your-video-style-with-fanny-texier_hero.jpg"
+    },
+    "applications": {
+        "fi_code": [
+            "premierepro_cc"
+        ],
+        "sap_code": [
+            "PPRO"
+        ]
+    },
+    "description": "Documentary filmmaker Fanny Texier shows you how she unlocks her creative vision — taking videos from kick off to polished completion.",
+    "aem_id": "playlist/premiere-pro/video/hone-your-video-style",
+    "type": "skills-and-projects",
+    "title": "Hone your video style with Fanny Texier"
+}

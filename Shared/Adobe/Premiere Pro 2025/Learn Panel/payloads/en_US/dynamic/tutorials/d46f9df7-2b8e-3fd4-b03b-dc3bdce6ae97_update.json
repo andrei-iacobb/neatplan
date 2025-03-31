@@ -1,0 +1,320 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/022-dynamic-elements-pack/footage/CLIP1.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/022-dynamic-elements-pack/footage/CLIP2.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/022-dynamic-elements-pack/footage/CLIP3.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/022-dynamic-elements-pack/footage/CLIP4.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/022-dynamic-elements-pack/footage/CLIP5.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/022-dynamic-elements-pack/footage/CLIP6.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/022-dynamic-elements-pack/footage/CLIP7.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/022-dynamic-elements-pack/footage/CLIP8.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/022-dynamic-elements-pack/footage/CLIP9.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/022-dynamic-elements-pack/footage/Opple_Voiceover.wav"
+            ],
+            "minVersion": "14.3.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/022-dynamic-elements-pack/Dynamic_elements_pack.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/022-dynamic-elements-pack/Dynamic_elements_pack.prproj"
+                            }
+                        },
+                        {
+                            "actionName": "openSequenceByName",
+                            "payload": {
+                                "sequenceName": "Opple Juice"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/022-dynamic-elements-pack/open_essential_graphics.mp4"
+                        },
+                        {
+                            "text": "Add impact with graphics",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "If you're like most people, you'll probably use a premade motion graphic in your project that you license from a site like Adobe Stock. Or maybe you work with a design studio that makes one for you. In either case, it's important to know how to import a motion graphics package and edit the template to suit your unique needs.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Graphics"
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "You just opened the <$Essential Graphics$> panel along the right side of the interface (you may need to resize some of the other panels to make room for it). Within the panel, you can search for hundreds of free, premade <$motion graphics templates$> or install your own."
+                                        ]
+                                    },
+                                    "text": "In the main menu, choose <$Window$> > <$Essential Graphics$>."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/022-dynamic-elements-pack/add_template.mp4"
+                        },
+                        {
+                            "text": "Import a motion graphics template",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "The first step in using a motion graphics template (.MOGRT file) is to add it to your sequence.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the Essential Graphics panel, type \"title\" in the search bar and look for a motion graphics template that looks interesting to you."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "clipAdded",
+                                            "payload": {
+                                                "layerName": "Video 2"
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "You just added a motion graphics template to your sequence. These templates are easy ways to add visual impact to your project. In the next step, you'll learn how to edit a template based on your project needs."
+                                        ]
+                                    },
+                                    "text": "Drag the template you've chosen onto the <$V2$> track, and drop it above Clip 8 at 11:22 (a blue marker has been placed there for your reference)."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/022-dynamic-elements-pack/Dynamic_elements_pack_-_template.prproj"
+                            }
+                        },
+                        {
+                            "actionName": "openSequenceByName",
+                            "payload": {
+                                "sequenceName": "Opple Juice"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/022-dynamic-elements-pack/edit_template.mp4"
+                        },
+                        {
+                            "text": "Edit a motion graphic",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "A benefit of motion graphics templates is that you can use the same template multiple times in your project to achieve a consistent look, but edit the graphic each time to suit your needs. We've replaced the motion graphic from the last step with a special one designed specifically for this project. Let's customize this template to display the product name and tag line, as well as change the graphic's colors to something more representative of the brand.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isClipSelected",
+                                            "payload": {
+                                                "clipName": "Graphic"
+                                            }
+                                        }
+                                    ],
+                                    "text": "In the Timeline panel, select the animated graphic in the <$V2$> track, above Clip 8 and Clip 9, to reveal its properties in the <$Edit$> tab of the Essential Graphics panel."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        },
+                                        {
+                                            "check": "ctiStopped"
+                                        }
+                                    ],
+                                    "text": "This motion graphics template begins with an intro animation, where a design and some bottom text come into view. Move the playhead to the end of the intro animation so you can see the whole graphic."
+                                },
+                                {
+                                    "text": "In the layer stack at the top of the <$Essential Graphics$> panel, select the \"TOP WORDS\" layer to reveal its properties."
+                                },
+                                {
+                                    "text": "Back in the <$Program$> monitor, double-click the text \"TOP WORDS\" to select it, and replace it with \"OPPLE JUICE\"."
+                                },
+                                {
+                                    "text": "Select the \"OPPLE JUICE\" text you just wrote in the Program monitor."
+                                },
+                                {
+                                    "text": "To make the text orange, in the <$Appearance$> section of the Essential Graphics panel, click the <$eyedropper$> next to the <$Fill$> property and then click on one of the oranges in the clip."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isCtiOverClip",
+                                            "payload": {
+                                                "clipName": "CLIP7.mp4"
+                                            }
+                                        },
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "You can edit any property of a motion graphics template that's been enabled by the original template creator. When choosing a template, make sure to review the editable properties to make sure you can change the elements that are important to you. Try to finish editing this template by changing \"Bottom line here\" to \"A new fruit frontier\" and make its fill color black. Also try changing the large rectangle stroke from gray to orange."
+                                        ]
+                                    },
+                                    "text": "Click outside the Program monitor to deselect the text. Move the playhead back to 11:10, then play the sequence to see how the graphic looks."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "successHeading": "Nicely done!",
+                            "successText": "You just learned how to add prebuilt motion graphics templates to a sequence and edit them. In the next tutorial, you'll learn how to improve your audio.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "37eba445-d8c4-388c-8e90-7b7e3ef57876",
+            "versions": [
+                1
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "37eba445-d8c4-388c-8e90-7b7e3ef57876",
+                "versions": [
+                    1
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/022-dynamic-elements-pack",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Add animated motion graphics",
+            "short": "Add animated motion graphics",
+            "long": "Excite and engage with dynamic Motion Graphics templates."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/d46f9df7-2b8e-3fd4-b03b-dc3bdce6ae97/022-dynamic-elements-pack_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/d46f9df7-2b8e-3fd4-b03b-dc3bdce6ae97/022-dynamic-elements-pack_300x190.jpg"
+        },
+        "title": "Add animated motion graphics",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "300",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "templates",
+            "graphics"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Templates",
+                    "id": "353572104a3946b2ac57aee55fd974a3",
+                    "internalId": "templates",
+                    "name": "Templates"
+                },
+                {
+                    "enName": "Graphics",
+                    "id": "6a39c69be39b405fbbc67bb8977b278e",
+                    "internalId": "graphics",
+                    "name": "Graphics"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2021-08-27T16:10:07.054Z",
+    "modified_on": "2023-05-03T21:22:34.951Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "d46f9df7-2b8e-3fd4-b03b-dc3bdce6ae97",
+    "commitId": "7bca92992ca19d2e2604afcd1e686bc3cc344697",
+    "type": "project",
+    "version": 31
+}

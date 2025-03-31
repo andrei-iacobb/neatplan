@@ -1,0 +1,352 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "0.1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/033-add-animated-titles/Media_Replace_Right.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/033-add-animated-titles/Media_Replace_Left.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/033-add-animated-titles/Speech_to_Text_Clip.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/033-add-animated-titles/Slurping_SFX.m4a"
+            ],
+            "minVersion": "15.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/033-add-animated-titles/Fung-Bros_titles_captions.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/033-add-animated-titles/Fung-Bros_titles_captions.prproj"
+                            }
+                        },
+                        {
+                            "actionName": "openSequenceByName",
+                            "payload": {
+                                "sequenceName": "Animated Title"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/033-add-animated-titles/6880bf77-78b6-455f-a70a-20bf6d471026.mp4"
+                        },
+                        {
+                            "text": "Find a Motion Graphics template",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "In this section, you'll browse Adobe Stock for animated title templates, also called Motion Graphics templates. The Animated Title sequence in the Timeline panel is intentionally left blank so you can add the Motion Graphics template to it.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Graphics"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Open the <$Essential Graphics$> panel by choosing <$Window$> > <$Essential Graphics$>."
+                                },
+                                {
+                                    "text": "In the <$Browse$> tab of the <$Essential Graphics$> panel, click <$Adobe Stock$>."
+                                },
+                                {
+                                    "text": "Below the search box, check the box next to <$Free$> to limit search results to free templates."
+                                },
+                                {
+                                    "text": "Type \"rip\" in the search box and press Enter or Return to filter on that search term."
+                                },
+                                {
+                                    "text": "Drag the Motion Graphics template called \"Ripped Paper Title\" to the beginning of the empty sequence in the <$Timeline$> panel."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiStopped"
+                                        },
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to watch the Motion Graphics template's placeholder media and default text appear."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiStopped"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Awesome!",
+                                        "texts": [
+                                            "You browsed the free Motion Graphics templates available on Adobe Stock and added one to your sequence. There are hundreds of free Motion Graphics templates available within the <$Essential Graphics$> panel. Take some time to explore them when working on your own projects."
+                                        ]
+                                    },
+                                    "text": "Press the <%{KEY.SPACEBAR}%> again to stop playback."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "Adding a template to a sequence automatically adds it to the <$Project$> panel within a new <$Motion Graphics Template$> folder."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/033-add-animated-titles/1d8c7507-f668-4c2c-b5f2-bf4916fa618f.mp4"
+                        },
+                        {
+                            "text": "Replace text",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "In this section, you'll learn how to update a Motion Graphics template with your own text. Our example uses the free \"Ripped Paper Title\" template from Adobe Stock.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Timeline$> panel, move the playhead to 5 seconds so you can see all the text."
+                                },
+                                {
+                                    "text": "In the <$Edit$> tab of the <$Essential Graphics$> panel, click to expand the <$Main Title Controls$> section."
+                                },
+                                {
+                                    "text": "Under <$Main Title$>, replace the placeholder text with your own title. Blank spaces will appear exactly as typed. Press Enter or Return to insert a new line."
+                                },
+                                {
+                                    "text": "Click away to apply your edits to the template."
+                                },
+                                {
+                                    "text": "Under <$Text Properties$>, click to open the Font dropdown menu and choose a different font."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "There are thousands of fonts available for free from Adobe Fonts. To add one, click the Creative Cloud logo in the top-right corner of the expanded Font dropdown menu. (Try choosing Arboria, for example.) Activating a font will add it to your font library so it's available in all your Creative Cloud apps."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        }
+                    ]
+                },
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/033-add-animated-titles/Fung-Bros_titles_captions.prproj"
+                            }
+                        },
+                        {
+                            "actionName": "openSequenceByName",
+                            "payload": {
+                                "sequenceName": "Animated Title"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/033-add-animated-titles/5441b7d4-67b4-47f0-80dd-25cd0630affa.mp4"
+                        },
+                        {
+                            "text": "Replace media",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "In this section, you'll learn how to add media to a Motion Graphics template that supports media replacement. As before, we assume you're using the \"Ripped Paper Title\" template.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Project$> panel, click the arrow next to \"Footage\" to expand the bin."
+                                },
+                                {
+                                    "text": "In the <$Timeline$> panel, make sure the “Ripped Paper Title” clip is selected."
+                                },
+                                {
+                                    "text": "In the <$Edit$> tab of the <$Essential Graphics$> panel, click to expand the <$Media Replacement Left$> section and then expand <$Media 01$>."
+                                },
+                                {
+                                    "text": "From the <$Footage$> bin in the <$Project$> panel, drag the clip \"Media Replacement Left\" to the Media 01 drop zone."
+                                },
+                                {
+                                    "text": "Expand the <$Media Replacement Right$> and <$Media 02$> sections, and then drag the \"Media Replace Right\" clip into its drop zone."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiStopped"
+                                        },
+                                        {
+                                            "check": "ctiMoved"
+                                        },
+                                        {
+                                            "check": "ctiStopped"
+                                        }
+                                    ],
+                                    "text": "Move the playhead to the beginning and press the <%{KEY.SPACEBAR}%> to play the sequence to see how the new media looks as it plays within the animated title graphic."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        },
+                                        {
+                                            "check": "ctiStopped"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Great Job!",
+                                        "texts": [
+                                            "You customized a Motion Graphics template with your own media. Take a moment to explore the other controls and make any adjustments you want until you're happy with the results."
+                                        ]
+                                    },
+                                    "text": "Press the <%{KEY.SPACEBAR}%> again to stop playback."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "You may need to choose <$Sequence$> > <$Render In to Out$> to play the title animation smoothly."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "additionalInfo": "",
+                            "successHeading": "Congratulations!",
+                            "successText": "You just learned how to search for Motion Graphics templates and customize them with your own text and media.<br><br>Check out the tutorial <$Add captions$> to keep exploring Premiere Pro with the Fung Bros.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "30e0e34b-0c66-3567-b56a-3f0ad2858945",
+            "versions": [
+                0
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "30e0e34b-0c66-3567-b56a-3f0ad2858945",
+                "versions": [
+                    0
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/033-add-animated-titles",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Add animated titles",
+            "short": "Add animated titles",
+            "long": "Browse and customize pro fonts, graphics, and more."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/8efdfa19-06bc-3fa6-8c34-b886765c4b1c/033-add-animated-titles_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/8efdfa19-06bc-3fa6-8c34-b886765c4b1c/033-add-animated-titles_300x190.jpg"
+        },
+        "title": "Add animated titles",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "300",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "graphics",
+            "social-media"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Graphics",
+                    "id": "6a39c69be39b405fbbc67bb8977b278e",
+                    "internalId": "graphics",
+                    "name": "Graphics"
+                },
+                {
+                    "enName": "Social media graphics",
+                    "id": "058148b95a584a6faacb6d8877b2f85f",
+                    "internalId": "social-media",
+                    "name": "Social media graphics"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2021-08-27T16:10:06.416Z",
+    "modified_on": "2024-05-03T21:57:09.345Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "8efdfa19-06bc-3fa6-8c34-b886765c4b1c",
+    "commitId": "40db770ff51cf4b894c40e6c87fc77c6cc2e8bd7",
+    "type": "project"
+}

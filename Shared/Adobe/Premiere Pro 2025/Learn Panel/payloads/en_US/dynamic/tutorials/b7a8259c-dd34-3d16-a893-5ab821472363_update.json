@@ -1,0 +1,358 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "0.1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/040-save-time-with-different-preview-options-in-premiere-pro/working_01.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/040-save-time-with-different-preview-options-in-premiere-pro/ordering.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/040-save-time-with-different-preview-options-in-premiere-pro/meeting_01.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/040-save-time-with-different-preview-options-in-premiere-pro/90bpm_exotica.m4a"
+            ],
+            "minVersion": "15.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/040-save-time-with-different-preview-options-in-premiere-pro/Preview-Your-Clips.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/040-save-time-with-different-preview-options-in-premiere-pro/61560584-dad8-4bd0-a250-35367efe14d0.mp4"
+                        },
+                        {
+                            "text": "Welcome to Premiere Pro",
+                            "type": "heading"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Click <$Next$> when you're ready to begin exploring Premiere Pro."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/040-save-time-with-different-preview-options-in-premiere-pro/change-modes.mp4"
+                        },
+                        {
+                            "text": "Importing your files",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>Importing your own clips takes just a few clicks in the <$Import$> workspace. You can learn all about using the <$Import$> workspace <a href=\"https://helpx.adobe.com/premiere-pro/using/import-media.html\">here</a>. If you haven't already practiced importing video clips, switch to the <$Import$> workspace by clicking <$Import$> at the top of the screen. <br><br><$Note$>: Switching tabs will close this tutorial. You can return to the tutorials by choosing <$Window$> > <$Learn$> from the <$Edit$> tab.",
+                            "type": "text"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/040-save-time-with-different-preview-options-in-premiere-pro/ae7cc161-94df-4c22-989d-b85f034caf7b.mp4"
+                        },
+                        {
+                            "text": "Introducing panels",
+                            "type": "heading"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Before you begin your video project, watch the video above. Then, click <$Next$> to explore panels in Premiere Pro."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/040-save-time-with-different-preview-options-in-premiere-pro/change-workspace.mp4"
+                        },
+                        {
+                            "text": "Customizing your workspace",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Take a moment to explore Premiere Pro's interface by adjusting a few panels.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Make the <$Project$> panel larger."
+                                },
+                                {
+                                    "text": "In the <$Source Monitor$>, use the dropdown menu to close this panel."
+                                },
+                                {
+                                    "text": "Go to <$Window$> > <$Workspaces$> > <$Reset to Saved Layout$> to return the Learning workspace to its default settings."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/040-save-time-with-different-preview-options-in-premiere-pro/navigate-project-panel.mp4"
+                        },
+                        {
+                            "text": "Navigating the Project panel",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>When assembling a video project, you'll start by previewing the clips. Once you are familiar with your media, you'll decide the order you'd like the clips to appear.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Following the animation above, locate the <$Project$> panel."
+                                },
+                                {
+                                    "text": "Click the <$Icon view$> button to show the video thumbnails."
+                                },
+                                {
+                                    "text": "Use the <$Zoom$> slider at the bottom of the panel to make the thumbnails larger."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/040-save-time-with-different-preview-options-in-premiere-pro/hover-scrub-thumbnails.mp4"
+                        },
+                        {
+                            "text": "Hover scrub thumbnails",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>The hover-scrub technique is a quick and easy way to familiarize yourself with the contents of a clip.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Project$> panel, hover your cursor over one of the video clips. A navigator appears at the bottom of the thumbnail."
+                                },
+                                {
+                                    "text": "Move your cursor back and forth across the thumbnail to preview the clip contents."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/040-save-time-with-different-preview-options-in-premiere-pro/using-source-monitor.mp4"
+                        },
+                        {
+                            "text": "Using the Source Monitor",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>If you want to preview both the video and audio of a clip, use the <$Source Monitor$>, which is located above the <$Project $>panel.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Double-click a clip in the <$Project$> panel to open it in the <$Source Monitor$>."
+                                },
+                                {
+                                    "text": "Notice the blue line that surrounds the panel directly above the <$Project$> panel. This panel is the <$Source Monitor$>."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "sourceCtiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Awesome!",
+                                        "texts": [
+                                            "Did you notice that when you pressed the <%{KEY.SPACEBAR}%>, the video began playing in the Source Monitor? When a panel has a blue outline, that panel is active, and keyboard shortcuts apply to it."
+                                        ]
+                                    },
+                                    "text": "Press the <%{KEY.SPACEBAR}%>."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/040-save-time-with-different-preview-options-in-premiere-pro/adding-in-out-points.mp4"
+                        },
+                        {
+                            "text": "Adding In and Out points",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>When filming, you'll likely film much more than you want to include in the final product. In Premiere Pro, you can use the <$Source Monitor$> to add In and Out points, which set the part of the clip you want to add to your video.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Source Monitor$>, move the playhead to about 1 second and press <%I%> to mark the beginning of the part you want to use."
+                                },
+                                {
+                                    "text": "Move the playhead to about 10 seconds and press the <%O%> key to mark where you want the clip to end."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "You've defined the part of this clip that will be added to a sequence. Using In and Out points when adding clips to a sequence allows you to precisely trim unwanted frames without other clips in the Timeline getting in the way. In the next tutorial, you'll learn how to add it to the sequence."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "additionalInfo": "",
+                            "successHeading": "Congratulations!",
+                            "successText": "Great job previewing clips using both hover scrub and the Source Monitor. In the next section, you'll learn how to add your clips to a sequence in the Timeline panel to assemble your video.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "9678e43a-8541-3059-b282-f8eec6230da8",
+            "versions": [
+                0
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "9678e43a-8541-3059-b282-f8eec6230da8",
+                "versions": [
+                    0
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/040-save-time-with-different-preview-options-in-premiere-pro",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Get started by importing and previewing clips",
+            "short": "Get started by importing and previewing clips",
+            "long": "Save time with different preview options in Premiere Pro."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/b7a8259c-dd34-3d16-a893-5ab821472363/040-save-time-with-different-preview-options-in-premiere-pro_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/b7a8259c-dd34-3d16-a893-5ab821472363/040-save-time-with-different-preview-options-in-premiere-pro_300x190.jpg"
+        },
+        "title": "Get started by importing and previewing clips",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "180",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "get-started",
+            "preview"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Get started",
+                    "id": "d02c57c7e5bf44719d9cbafcd45bde37",
+                    "internalId": "get-started",
+                    "name": "Get started"
+                },
+                {
+                    "enName": "Preview",
+                    "id": "c86da4a3f34b49faa21f5d6100d4cd4e",
+                    "internalId": "preview",
+                    "name": "Preview"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2022-04-13T19:12:15.761Z",
+    "modified_on": "2024-06-21T18:55:14.294Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "b7a8259c-dd34-3d16-a893-5ab821472363",
+    "commitId": "5c7145e46dbf1629917630e4bf1d1300da8b508b",
+    "type": "project"
+}

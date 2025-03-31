@@ -1,0 +1,447 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/020-add-speed-ramping/footage/CLIP1.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/020-add-speed-ramping/footage/CLIP2.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/020-add-speed-ramping/footage/CLIP3.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/020-add-speed-ramping/footage/CLIP4.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/020-add-speed-ramping/footage/CLIP5.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/020-add-speed-ramping/footage/CLIP6.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/020-add-speed-ramping/footage/CLIP7.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/020-add-speed-ramping/footage/CLIP8.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/020-add-speed-ramping/footage/CLIP9.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/020-add-speed-ramping/footage/Opple_Voiceover.wav",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/020-add-speed-ramping/footage/Bright_and_fun_jingle_Cute_whis.mp3"
+            ],
+            "minVersion": "14.3.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/020-add-speed-ramping/Add_Speed_Ramping_-_Finished.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/020-add-speed-ramping/Add_Speed_Ramping_-_Finished.prproj"
+                            }
+                        },
+                        {
+                            "actionName": "openSequenceByName",
+                            "payload": {
+                                "sequenceName": "Project_preview"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/020-add-speed-ramping/final_animation.mp4"
+                        },
+                        {
+                            "text": "The final product",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "In this project, you'll learn essential workflows for creating a promotional product video. But before you begin, take a look at the project in its final state so you have a better idea of what you'll create.<br><br>Adobe Stock music contributor: RYOpianoforte",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to play the sequence."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiStopped"
+                                        }
+                                    ],
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to stop playback."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "heading": "What you should know",
+                            "icon": "hint",
+                            "texts": [
+                                "For this project, we've already created the rough cut of the edit so we can focus on other aspects of the project. If you're completely new to Premiere Pro, we recommend that you go back and do the \"Premiere Pro Overview\" and \"Learn the Basics\" in-app tutorials before continuing with this project. Those tutorials cover the basics of importing your video clips and adding them to a sequence."
+                            ],
+                            "type": "toggleable"
+                        }
+                    ]
+                },
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/020-add-speed-ramping/Add_Speed_Ramping.prproj"
+                            }
+                        },
+                        {
+                            "actionName": "openSequenceByName",
+                            "payload": {
+                                "sequenceName": "Opple Juice"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/020-add-speed-ramping/time-remapping_speed.mp4"
+                        },
+                        {
+                            "text": "Time remapping",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Changing the speed of a clip is an extremely common way to highlight interesting movement in a video. For our project, the Opple Juice being poured into the glass in Clip 7 is a perfect shot for using speed in creative ways. Let's have the clip start playing at full speed, slow down mid-pour, and then speed back up at the end. First, we need to bring the clip up to full speed.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isClipSelected",
+                                            "payload": {
+                                                "clipName": "CLIP7.mp4"
+                                            }
+                                        }
+                                    ],
+                                    "text": "In the Timeline panel, select <$Clip 7$>."
+                                },
+                                {
+                                    "text": "Right-click the small fx icon next to the clip name and choose <$Time remapping$> > <$Speed$>."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipProperties",
+                                            "payload": {
+                                                "clipName": "CLIP7.mp4",
+                                                "comment": "duration with 500% is around 3,2 sec",
+                                                "propertyName": "duration",
+                                                "value": [
+                                                    2,
+                                                    5
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "text": "Move your cursor near the thin white band on Clip 7 so that up and down arrows appear next to your cursor. Then drag upward until the clip speed is set to <$500%$>."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "What happened to the speed of the clip? It should be playing at full speed now and take up less space in the Timeline panel. To create the slow-motion effect, the clip was shot at 120 frames per second but is being played back at 24 frames per second (1/5 the speed). To return the clip to full speed, we simply needed to increase the current playback speed five times from 100% to 500%. Time remapping allows you to adjust the overall speed of a clip. In the next step, you'll learn how to adjust the speed of only a portion of the clip."
+                                        ]
+                                    },
+                                    "text": "Press <%{KEY.SPACEBAR}%> to play the sequence."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/020-add-speed-ramping/time_remapping_keyframe.mp4"
+                        },
+                        {
+                            "text": "Time remapping part of a clip",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "We want the Opple Juice pour to slow down mid-clip and then return to full speed, so we first have to tell Premiere Pro where we want that change to happen.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isCtiOverClip",
+                                            "payload": {
+                                                "clipName": "CLIP7.mp4"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Move the playhead to 9:00 over Clip 7 (a blue marker has been placed for your reference). If you want a closer view of the clip, you can zoom in on the Timeline."
+                                },
+                                {
+                                    "text": "At the playhead location, hold the <%{KEY.COMMAND_CONTROL.{{osName}}}%> key and move your cursor to the intersection of the blue playhead indicator and the thin white band on the clip. When your cursor becomes white, click to add a keyframe. This will be the starting point of the speed change."
+                                },
+                                {
+                                    "text": "Move the playhead to 9:10 (a red marker has been placed for your reference)."
+                                },
+                                {
+                                    "text": "At the playhead location, hold the <%{KEY.COMMAND_CONTROL.{{osName}}}%> key and click where the playhead indicator intersects the band again to set another keyframe. This will be the end point of the speed change."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipProperties",
+                                            "payload": {
+                                                "clipName": "CLIP7.mp4",
+                                                "comment": "duration with the 100% part is around 5 sec",
+                                                "propertyName": "duration",
+                                                "value": [
+                                                    4,
+                                                    6
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "text": "Between the two keyframes you just added, click near the white band and drag downward until the speed is set to <$100%$>."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "How does the clip look now? It should start at full speed, slow down, and then return to full speed. The clip also takes up more space in the Timeline since it's now playing slower and taking longer to finish playing. In the next step, you'll learn how to change the speed more gradually."
+                                        ]
+                                    },
+                                    "text": "Press <%{KEY.SPACEBAR}%> to play the clip."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/020-add-speed-ramping/speed_ramps.mp4"
+                        },
+                        {
+                            "text": "Speed ramps",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "The clip looks pretty good, but the change from slow motion to full speed is rather abrupt (represented by the \"step\" in the speed bar at the keyframe we added). We can make this change more gradual by turning that step into a \"ramp.\"",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Select the first keyframe you added at 9:00."
+                                },
+                                {
+                                    "text": "Click near the right side of the keyframe and drag rightward by one or two frames, until the step turns into a ramp (use the animation above as a reference)."
+                                },
+                                {
+                                    "text": "Select the second keyframe (which is now at roughly 10:23), click near its left side, and drag leftward by one or two frames, until the step turns into another ramp."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        },
+                                        {
+                                            "check": "ctiStopped"
+                                        },
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "Does the change look less abrupt now? You just created a speed ramp! Putting some space between the start and end of the speed ramp makes the rate of change more gradual. The farther apart the two points are, the more gradual the change. In the next step, you'll learn how to make the change even smoother by adjusting the ramp's curve."
+                                        ]
+                                    },
+                                    "text": "Move the playhead to the beginning of the clip and press <%{KEY.SPACEBAR}%> to see how the speed ramp looks."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/020-add-speed-ramping/smoothing_speed_ramps.mp4"
+                        },
+                        {
+                            "text": "Adjust a speed ramp",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Our speed ramp looks great, but if you want it to look even smoother, we can fine-tune the change using the keyframe adjustment handles.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Select the first keyframe you added at 9:00 and find the two blue adjustment handles sticking out of the keyframe in the middle of the ramp."
+                                },
+                                {
+                                    "text": "Drag the bottom blue handle to the right until it forms an \"S\" curve (you may need to zoom in to the clip to see the \"S\")."
+                                },
+                                {
+                                    "text": "Select the second keyframe and repeat the above step, but this time drag left on the bottom blue handle."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        },
+                                        {
+                                            "check": "ctiStopped"
+                                        },
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "It's a subtle change, but the transition is even more gradual now. You can use these handles and the two ends of the keyframe to dial in the exact look of the speed ramp you want."
+                                        ]
+                                    },
+                                    "text": "Move the playhead to the beginning of the clip and press <%{KEY.SPACEBAR}%> to see how the speed ramp looks."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "successHeading": "Nicely done!",
+                            "successText": "You just learned some how to add a speed ramp to a project. In the next tutorial, you'll learn how to adjust and match colors in your clips.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "c01bdc4b-6484-3c7f-ae3c-de9a125c2910",
+            "versions": [
+                1
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "c01bdc4b-6484-3c7f-ae3c-de9a125c2910",
+                "versions": [
+                    1
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/020-add-speed-ramping",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Add speed ramps to create dynamic movement",
+            "short": "Add speed ramps to create dynamic movement",
+            "long": "Add impact to footage by changing playback speed over time."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/0c7dee57-5d89-3168-818c-f633e004fd0c/020-add-speed-ramping_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/0c7dee57-5d89-3168-818c-f633e004fd0c/020-add-speed-ramping_300x190.jpg"
+        },
+        "title": "Add speed ramps to create dynamic movement",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "360",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "video-editing"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Video editing",
+                    "id": "1a4bf81f09114391ae2330bf04b5fd6d",
+                    "internalId": "video-editing",
+                    "name": "Video editing"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2021-11-15T19:36:39.068Z",
+    "modified_on": "2023-05-03T20:55:23.080Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "0c7dee57-5d89-3168-818c-f633e004fd0c",
+    "commitId": "7bca92992ca19d2e2604afcd1e686bc3cc344697",
+    "type": "project",
+    "version": 33
+}

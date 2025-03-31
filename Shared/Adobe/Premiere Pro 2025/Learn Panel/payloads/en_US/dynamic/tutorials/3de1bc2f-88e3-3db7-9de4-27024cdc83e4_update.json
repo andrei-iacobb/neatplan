@@ -1,0 +1,89 @@
+{
+    "creative_categories": [
+        "nuj-creative-effects"
+    ],
+    "platforms": [
+        "in-app"
+    ],
+    "total_duration": 300,
+    "status": "live",
+    "tutorial_ids": [
+        "14036521-fc16-3539-9960-5a9d740c57ea",
+        "450b60e1-aba4-377f-a65a-589cb80e95cd",
+        "70135f94-442f-33c0-8585-36bc65bb4759",
+        "4ef953f4-6fad-3832-9edd-59acedcc5638",
+        "8c7c8103-b409-3ad2-8d4b-a444142cfe30"
+    ],
+    "topics": [
+        "Motion graphics",
+        "Effects",
+        "Accessibility"
+    ],
+    "taxonomy": {
+        "topics": [
+            {
+                "enName": "Motion graphics",
+                "name": "Motion graphics",
+                "internalId": "motion-graphics",
+                "archived": "false",
+                "id": "29ce015eba5d4f8d99f0d3333042c07d"
+            },
+            {
+                "enName": "Effects",
+                "name": "Effects",
+                "internalId": "effects",
+                "archived": "false",
+                "id": "fadb0bb977c241c5b1f486e40aef4c15"
+            },
+            {
+                "enName": "Accessibility",
+                "name": "Accessibility",
+                "internalId": "accessibility",
+                "archived": "false",
+                "id": "aba9ec428038450092830ee2bffa19a6"
+            }
+        ],
+        "creative_fields": [
+            {
+                "enName": "Video & audio",
+                "name": "Video & audio",
+                "internalId": "video",
+                "archived": false,
+                "id": "4f1f7cf84f3349a59e40f91a4b0e3005"
+            }
+        ]
+    },
+    "modified_on": "Fri Feb 23 18:34:4 UTC 2024",
+    "header": "",
+    "playlistUUID": "3de1bc2f-88e3-3db7-9de4-27024cdc83e4",
+    "formatVersion": "1.0",
+    "id": "b3b4f86a-c96b-4f8a-97a7-0191671c472c",
+    "created_on": "Thu Feb 22 20:10:31 UTC 2024",
+    "creative_fields": [
+        "Video & audio"
+    ],
+    "stage": "practice",
+    "source": {
+        "third_party": false,
+        "label": "Adobe.com"
+    },
+    "text": "",
+    "published_on": "Fri Feb 23 18:34:4 UTC 2024",
+    "level": "intermediate",
+    "images": {
+        "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/3de1bc2f-88e3-3db7-9de4-27024cdc83e4/create-with-pr-gal_952x200.jpg",
+        "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/3de1bc2f-88e3-3db7-9de4-27024cdc83e4/create-with-pr-gal_1000x240.jpg"
+    },
+    "applications": {
+        "fi_code": [
+            "premierepro_cc"
+        ],
+        "sap_code": [
+            "PPRO"
+        ]
+    },
+    "description": "Learn from the pros with Premiere Gal and these five interactive tutorials.",
+    "aem_id": "playlist/premiere-pro/video/create-with-premiere-gal",
+    "type": "skills-and-projects",
+    "title": "Create with Premiere Gal"
+}

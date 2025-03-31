@@ -1,0 +1,440 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/adding-rotation/footage/Background.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/adding-rotation/footage/Iceland_Graphic.psd"
+            ],
+            "minVersion": "13.1.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/adding-rotation/Adding_Rotation.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/adding-rotation/step1.mp4"
+                        },
+                        {
+                            "text": "Adding rotation",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "In the last tutorial, we made it look like the graphic was falling into the scene. Now let's add some other interesting animations using rotation. We first need to tell Premiere Pro where to start and stop the rotation.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isClipSelected",
+                                            "payload": {
+                                                "clipName": "Iceland_Graphic.psd"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Make sure the Iceland_Graphic clip is selected on the V2 track in the Timeline panel."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Effect Controls"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Choose Window > Effect Controls to display the Effect Controls panel."
+                                },
+                                {
+                                    "text": "Expand the Motion settings (if not expanded already)."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "keyframeAdded",
+                                            "payload": {
+                                                "clipName": "Iceland_Graphic.psd",
+                                                "componentMatchName": "AE.ADBE Motion",
+                                                "componentParameter": 4
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "You just added added a keyframe and told Premiere Pro to remember the clip's rotation angle of 0 at this time and place."
+                                        ]
+                                    },
+                                    "text": "Make sure the playhead is at 1:00 and click the small stopwatch next to the Rotation property."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/adding-rotation/step2.mp4"
+                        },
+                        {
+                            "text": "Adding rotation",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "In the last step, we told Premiere Pro where we want to start the rotation. Now, let's tell Premiere Pro where to stop the rotation.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "keyframeAdded",
+                                            "payload": {
+                                                "clipName": "Iceland_Graphic.psd",
+                                                "componentMatchName": "AE.ADBE Motion",
+                                                "componentParameter": 4
+                                            }
+                                        },
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "Iceland_Graphic.psd",
+                                                "comment": "multiply the targeted frames by 8467200000 to get ticks and provide as string",
+                                                "componentMatchName": "AE.ADBE Motion",
+                                                "componentParameter": 4,
+                                                "time": "423360000000",
+                                                "value": [
+                                                    80,
+                                                    100
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "You just added added a keyframe and told Premiere Pro to remember the clip's rotation angle of 90° at this time and place. Let's add one more rotation to swing the graphic back to where it started."
+                                        ]
+                                    },
+                                    "text": "Move the playhead to 1:20 (a blue marker has been added for your reference) and change the rotation angle from 0 to 90°."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/adding-rotation/step3.mp4"
+                        },
+                        {
+                            "text": "Adding rotation",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Let's add one final rotation back to the graphic's starting position so it looks like it's swinging back and forth.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "keyframeAdded",
+                                            "payload": {
+                                                "clipName": "Iceland_Graphic.psd",
+                                                "componentMatchName": "AE.ADBE Motion",
+                                                "componentParameter": 4
+                                            }
+                                        },
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "Iceland_Graphic.psd",
+                                                "comment": "multiply the targeted frames by 8467200000 to get ticks and provide as string",
+                                                "componentMatchName": "AE.ADBE Motion",
+                                                "componentParameter": 4,
+                                                "time": "643507200000",
+                                                "value": [
+                                                    -10,
+                                                    10
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "You just added added a keyframe and told Premiere Pro to remember the clip's rotation angle of 0 at this time and place. In this next step, you'll learn how to adjust the keyframes you've added."
+                                        ]
+                                    },
+                                    "text": "Move the playhead to 02:16 (a blue marker has been added for your reference) and change the rotation angle from 90° to 0."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/adding-rotation/step4.mp4"
+                        },
+                        {
+                            "text": "Adjusting keyframes",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Play back the animation to see what it looks like. You should notice that it's moving really slowly. You can change the speed of your animation by moving the keyframes within the Effect Controls panel.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        },
+                                        {
+                                            "check": "ctiStopped"
+                                        }
+                                    ],
+                                    "text": "Move the playhead back to 1:00."
+                                },
+                                {
+                                    "text": "In the Effect Control panel's Timeline view, find the secondary playhead and the Position keyframe at the 1:00 mark. (Zoom in for a closer view using the gray scroll bar at the bottom of the graph.)"
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "Iceland_Graphic.psd",
+                                                "comment": "multiply the targeted frames by 8467200000 to get ticks and provide as string",
+                                                "componentMatchName": "AE.ADBE Motion",
+                                                "componentParameter": 0,
+                                                "time": "169344000000",
+                                                "value": [
+                                                    false,
+                                                    [
+                                                        0.2685,
+                                                        0.74
+                                                    ]
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "text": "Drag the Position keyframe to the left toward the first Keyframe. You may need to drag until the second Position keyframe overlaps the first Position keyframe."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "Did you notice the Iceland_Graphic falls much faster now? The distance between two keyframes affects how quickly or slowly an animation occurs. The closer the keyframes, the faster the animation. The farther apart the keyframes, the slower the animation."
+                                        ]
+                                    },
+                                    "text": "Play back the animation to see what happens with the keyframe at the new position."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/adding-rotation/step5.mp4"
+                        },
+                        {
+                            "text": "Adjusting keyframes",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "The Iceland graphic falls much faster, but now there is a pause between the time when the graphic finishes falling and the start of the rotation. Let's fix that.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        },
+                                        {
+                                            "check": "ctiStopped"
+                                        }
+                                    ],
+                                    "text": "Move the playhead back to the 1 second mark."
+                                },
+                                {
+                                    "text": "In the Effect Controls panel, in the Rotation property row, you should see the three keyframes you added to create the rotation. Select all three by <%{KEY.COMMAND_CONTROL.{{osName}}}%> + clicking them one at a time."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "Iceland_Graphic.psd",
+                                                "comment": "multiply the targeted frames by 8467200000 to get ticks and provide as string",
+                                                "componentMatchName": "AE.ADBE Motion",
+                                                "componentParameter": 4,
+                                                "time": "423360000000",
+                                                "value": [
+                                                    -20,
+                                                    40
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "text": "Drag the three Rotation keyframes to the left until the first Rotation keyframe lines up with the second Position keyframe that you moved in the previous step."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "The graphic should now start rotating as soon as it lands in place, just like before. Play around with moving keyframes closer and farther away to see what happens when you change the distance between them."
+                                        ]
+                                    },
+                                    "text": "Play back the animation to see what happens with the three keyframes at their new positions."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "successHeading": "Good job!",
+                            "successText": "You just learned how to add rotation to an animation.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "52d99522-5618-3b86-885b-16a656123b74",
+            "versions": [
+                1
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "52d99522-5618-3b86-885b-16a656123b74",
+                "versions": [
+                    1
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/adding-rotation",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Adding rotation",
+            "short": "Adding rotation",
+            "long": "Adding rotation."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/80f787b5-333b-3b97-948f-99ea245e09b7/adding-rotation_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/80f787b5-333b-3b97-948f-99ea245e09b7/adding-rotation_300x190.jpg"
+        },
+        "title": "Adding rotation",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "240",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "animation"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Animation",
+                    "id": "4931735f710f4382a1919d8ac5015e71",
+                    "internalId": "animation",
+                    "name": "Animation"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2021-08-27T16:10:06.601Z",
+    "modified_on": "2023-05-03T22:18:40.881Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "80f787b5-333b-3b97-948f-99ea245e09b7",
+    "analytics": {},
+    "commitId": "7bca92992ca19d2e2604afcd1e686bc3cc344697",
+    "type": "project",
+    "version": 31
+}

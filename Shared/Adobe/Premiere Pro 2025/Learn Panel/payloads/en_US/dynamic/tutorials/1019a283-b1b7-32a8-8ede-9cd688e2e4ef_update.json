@@ -1,0 +1,297 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "1",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/enhance-speech-with-ai/Clip_1.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/enhance-speech-with-ai/Clip_2.mp4"
+            ],
+            "minVersion": "24.1",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/enhance-speech-with-ai/EnhanceSpeech-Tutorial.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepItems": [
+                        {
+                            "imgUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/enhance-speech-with-ai/53acaa1f-4d8e-4970-a03b-ce58539cff71.jpg",
+                            "type": "imageFullLarge"
+                        },
+                        {
+                            "text": "Tag your dialogue",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "In this tutorial, you'll use <$Enhance Speech$> to automatically improve the audio recorded using two different microphones: a boom microphone and an in-camera microphone.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "text": "Play the sequence currently in the timeline and listen to the differences."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Essential Sound"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Open the <$Essential Sound$> panel by choosing <$Window$> > <$Essential Sound$>."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isClipSelected",
+                                            "payload": {
+                                                "clipName": "Clip_1.mp4"
+                                            }
+                                        },
+                                        {
+                                            "check": "isClipSelected",
+                                            "payload": {
+                                                "clipName": "Clip_2.mp4"
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "Now that you've tagged the clips, dialogue-related options will show in the <$Essential Sound$> panel. In the next step, you'll learn how to use AI to repair the audio."
+                                        ]
+                                    },
+                                    "text": "In the timeline, select both clips. Then, tag both clips by choosing the <$Dialogue$> option in the <$Essential Sound$> panel."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "imgUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/enhance-speech-with-ai/4dc34c67-f432-4e7c-bdef-36ddbfa2220d.jpg",
+                            "type": "imageFullLarge"
+                        },
+                        {
+                            "text": "Apply Enhance Speech",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Let's apply <$Enhance Speech$> to both clips to clean up and improve both clips.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isClipSelected",
+                                            "payload": {
+                                                "clipName": "Clip_1.mp4"
+                                            }
+                                        },
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "Audio_Clip_1.mp4",
+                                                "comment": "7f446972-835b-422e-a8a3-d64028839ba2 = Enhance Speech. Is this matchName final or temporary?",
+                                                "componentMatchName": "7f446972-835b-422e-a8a3-d64028839ba2",
+                                                "componentParameter": 1,
+                                                "value": [
+                                                    0,
+                                                    1
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "text": "With only Clip_1 selected, choose <$Enhance$> under the <$Enhance Speech$> options in the <$Essential Sound$> panel. This may take a few moments to complete."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isClipSelected",
+                                            "payload": {
+                                                "clipName": "Clip_1.mp4"
+                                            }
+                                        },
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "Audio_Clip_1.mp4",
+                                                "comment": "7f446972-835b-422e-a8a3-d64028839ba2 = Enhance Speech. Is this matchName final or temporary?",
+                                                "componentMatchName": "7f446972-835b-422e-a8a3-d64028839ba2",
+                                                "componentParameter": 1,
+                                                "value": [
+                                                    0.7,
+                                                    1
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "Audio_Clip_1.mp4",
+                                                "comment": "7f446972-835b-422e-a8a3-d64028839ba2 = Enhance Speech. Is this matchName final or temporary?",
+                                                "componentMatchName": "7f446972-835b-422e-a8a3-d64028839ba2",
+                                                "componentParameter": 1,
+                                                "value": [
+                                                    0,
+                                                    0.6
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "text": "Move the playhead to the beginning of Clip_1 and listen to the enhanced clip. Then, use the slider to adjust the <$Mix Amount$>."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isClipSelected",
+                                            "payload": {
+                                                "clipName": "Clip_2.mp4"
+                                            }
+                                        },
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "Audio_Clip_2.mp4",
+                                                "comment": "7f446972-835b-422e-a8a3-d64028839ba2 = Enhance Speech. Is this matchName final or temporary?",
+                                                "componentMatchName": "7f446972-835b-422e-a8a3-d64028839ba2",
+                                                "componentParameter": 1,
+                                                "value": [
+                                                    0,
+                                                    1
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Great job!",
+                                        "texts": [
+                                            "By using <$Enhance Speech$> and then adjusting the <$Mix Amount$>, you quickly adjusted the amount of road noise heard in both clips. Listen to both clips to hear the full effect."
+                                        ]
+                                    },
+                                    "text": "Repeat the steps above using Clip_2 to hear how well <$Enhance Speech$> is able to remove the street noise and clarify the dialogue."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "successHeading": "Great job!",
+                            "successText": "Now that you've practiced using <$Enhance Speech$>, be sure to try it out in your own projects.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "43d90438-c421-3628-b414-7e61a070ef39",
+            "versions": [
+                1
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "43d90438-c421-3628-b414-7e61a070ef39",
+                "versions": [
+                    1
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/enhance-speech-with-ai",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Instantly reduce noise and improve voice recordings with AI.",
+            "short": "Instantly reduce noise and improve voice recordings with AI.",
+            "long": "Instantly reduce noise and improve voice recordings with AI."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/1019a283-b1b7-32a8-8ede-9cd688e2e4ef/enhance-speech-with-ai_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/1019a283-b1b7-32a8-8ede-9cd688e2e4ef/enhance-speech-with-ai_1920x1080.jpg"
+        },
+        "title": "Clean up dialogue fast with Enhance Speech",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "180",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "audio-editing",
+            "audio"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Audio editing",
+                    "id": "adce2a8ba0724a64a6d69e1288654852",
+                    "internalId": "audio-editing",
+                    "name": "Audio editing"
+                },
+                {
+                    "enName": "Audio",
+                    "id": "da0d60b4b806415f931d9ba3a1ee6d02",
+                    "internalId": "audio",
+                    "name": "Audio"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2024-02-08T16:10:42.803Z",
+    "modified_on": "2024-05-03T22:37:36.502Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "1019a283-b1b7-32a8-8ede-9cd688e2e4ef",
+    "commitId": "785a798f2a7061501c126ee9fe021dee074c1c41",
+    "type": "project"
+}

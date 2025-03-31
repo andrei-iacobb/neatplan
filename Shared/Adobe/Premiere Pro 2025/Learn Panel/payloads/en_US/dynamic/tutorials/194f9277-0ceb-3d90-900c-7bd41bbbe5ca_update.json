@@ -1,0 +1,85 @@
+{
+    "creative_categories": [
+        "nuj-creative-effects"
+    ],
+    "platforms": [
+        "in-app"
+    ],
+    "total_duration": 240,
+    "status": "live",
+    "tutorial_ids": [
+        "5a0331c5-9856-3201-8538-96b6138dbe48"
+    ],
+    "topics": [
+        "Text",
+        "Video",
+        "Graphics"
+    ],
+    "taxonomy": {
+        "topics": [
+            {
+                "enName": "Text",
+                "name": "Text",
+                "internalId": "text",
+                "archived": "false",
+                "id": "74d6b374f69f45b6a227b3ab6199d970"
+            },
+            {
+                "enName": "Video",
+                "name": "Video",
+                "internalId": "video",
+                "archived": "false",
+                "id": "24fd8e87f017494b85a64d022d2c81e1"
+            },
+            {
+                "enName": "Graphics",
+                "name": "Graphics",
+                "internalId": "graphics",
+                "archived": "false",
+                "id": "6a39c69be39b405fbbc67bb8977b278e"
+            }
+        ],
+        "creative_fields": [
+            {
+                "enName": "Video & audio",
+                "name": "Video & audio",
+                "internalId": "video",
+                "archived": false,
+                "id": "4f1f7cf84f3349a59e40f91a4b0e3005"
+            }
+        ]
+    },
+    "modified_on": "Fri Feb 23 18:52:38 UTC 2024",
+    "header": "",
+    "playlistUUID": "194f9277-0ceb-3d90-900c-7bd41bbbe5ca",
+    "formatVersion": "1.0",
+    "id": "0b7bb98b-864b-433a-b44e-1986b9b99bf4",
+    "created_on": "Thu Feb 22 20:10:31 UTC 2024",
+    "creative_fields": [
+        "Video & audio"
+    ],
+    "stage": "practice",
+    "source": {
+        "third_party": false,
+        "label": "Adobe.com"
+    },
+    "text": "",
+    "published_on": "Fri Feb 23 18:52:38 UTC 2024",
+    "level": "intermediate",
+    "images": {
+        "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/194f9277-0ceb-3d90-900c-7bd41bbbe5ca/advanced-editing-techniques_1920x1080.jpg",
+        "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/194f9277-0ceb-3d90-900c-7bd41bbbe5ca/advanced-editing-techniques2_1920x1080.jpg"
+    },
+    "applications": {
+        "fi_code": [
+            "premierepro_cc"
+        ],
+        "sap_code": [
+            "PPRO"
+        ]
+    },
+    "description": "Learn how to enhance your workflow with Text-Based Editing with Master Trainer Valentina Vee.",
+    "aem_id": "playlist/premiere-pro/video/advanced-editing-techniques",
+    "type": "the-basics",
+    "title": "Dive into Text-Based Editing"
+}

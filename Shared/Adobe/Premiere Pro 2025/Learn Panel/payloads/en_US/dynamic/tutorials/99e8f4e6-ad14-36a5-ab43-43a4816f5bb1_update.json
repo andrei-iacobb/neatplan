@@ -1,0 +1,80 @@
+{
+    "creative_categories": [
+        "nuj-orientation"
+    ],
+    "platforms": [
+        "in-app"
+    ],
+    "total_duration": 660,
+    "status": "live",
+    "tutorial_ids": [
+        "b7a8259c-dd34-3d16-a893-5ab821472363",
+        "968d1aa2-21fc-3559-b485-c646aaa0a6dc",
+        "ab87f84f-1c3b-3216-a819-9b4116f6d5bd",
+        "45f94c81-e9f3-375d-a4de-8654a875a658"
+    ],
+    "topics": [
+        "Export",
+        "Get started"
+    ],
+    "taxonomy": {
+        "topics": [
+            {
+                "enName": "Export",
+                "name": "Export",
+                "internalId": "export",
+                "archived": "false",
+                "id": "1b96859c7bc4404295fceb4e67706dbd"
+            },
+            {
+                "enName": "Get started",
+                "name": "Get started",
+                "internalId": "get-started",
+                "archived": "false",
+                "id": "d02c57c7e5bf44719d9cbafcd45bde37"
+            }
+        ],
+        "creative_fields": [
+            {
+                "enName": "Video & audio",
+                "name": "Video & audio",
+                "internalId": "video",
+                "archived": false,
+                "id": "4f1f7cf84f3349a59e40f91a4b0e3005"
+            }
+        ]
+    },
+    "modified_on": "Fri Feb 23 18:35:41 UTC 2024",
+    "header": "",
+    "playlistUUID": "99e8f4e6-ad14-36a5-ab43-43a4816f5bb1",
+    "formatVersion": "1.0",
+    "id": "2954db35-27bd-459e-92b2-5a5105460c54",
+    "created_on": "Thu Feb 22 20:10:31 UTC 2024",
+    "creative_fields": [
+        "Video & audio"
+    ],
+    "stage": "begin",
+    "source": {
+        "third_party": false,
+        "label": "Adobe.com"
+    },
+    "text": "",
+    "published_on": "Fri Feb 23 18:35:41 UTC 2024",
+    "level": "beginner",
+    "images": {
+        "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/99e8f4e6-ad14-36a5-ab43-43a4816f5bb1/create-your-first-video_952x200.jpg",
+        "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/99e8f4e6-ad14-36a5-ab43-43a4816f5bb1/create-your-first-video_1000x240.jpg"
+    },
+    "applications": {
+        "fi_code": [
+            "premierepro_cc"
+        ],
+        "sap_code": [
+            "PPRO"
+        ]
+    },
+    "description": "Get to know Premiere Pro as you complete these 4 tutorials.",
+    "aem_id": "playlist/premiere-pro/video/create-your-first-video",
+    "type": "start-here",
+    "title": "Create your first video"
+}

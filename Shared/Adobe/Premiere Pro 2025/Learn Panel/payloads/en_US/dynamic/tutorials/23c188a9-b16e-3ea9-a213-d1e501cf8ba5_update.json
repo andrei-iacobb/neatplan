@@ -1,0 +1,260 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "0.1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/045-make-color-adjustments/90bpm_exotica.m4a",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/045-make-color-adjustments/meeting_01.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/045-make-color-adjustments/ordering.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/045-make-color-adjustments/working_01.mp4"
+            ],
+            "minVersion": "20.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/045-make-color-adjustments/Color_Adjustments.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/045-make-color-adjustments/cf895af9-b925-46d2-8b95-408e70772728.mp4"
+                        },
+                        {
+                            "text": "Making color adjustments",
+                            "type": "heading"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Click <$Next$> to begin the tutorial."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/045-make-color-adjustments/open-lumetri-panel.mp4"
+                        },
+                        {
+                            "text": "The Lumetri Color Panel",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>The easiest way to improve the look of your clips in Premiere Pro is to use the <$Lumetri Color panel$>.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Color"
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Awesome!",
+                                        "texts": [
+                                            "There are a lot of options in the <$Lumetri Color$> panel. You can do tons with color in Premiere Pro, but for this tutorial we'll focus on the automated color correction options."
+                                        ]
+                                    },
+                                    "text": "In the application menu, click on <$Window > Lumetri Color$>."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/045-make-color-adjustments/automatic-color-correction.mp4"
+                        },
+                        {
+                            "text": "Automatic color correction",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>The first color correction we recommend starting with is <$Auto$> tone.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isClipSelected",
+                                            "payload": {
+                                                "clipName": "Clip 2"
+                                            }
+                                        },
+                                        {
+                                            "check": "isCtiOverClip",
+                                            "payload": {
+                                                "clipName": "Clip 2"
+                                            }
+                                        }
+                                    ],
+                                    "text": "In the Timeline, move the playhead to about 8 Seconds so that it is over Clip 2 and visible in the <$Program$> panel. Then, click on Clip 2 to select it."
+                                },
+                                {
+                                    "text": "In the <$Lumetri Color panel$>, click <$Basic Correction$> to display the controls."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "Clip 2",
+                                                "componentName": "lumetri",
+                                                "componentParameter": "LUMETRI_TONE_WHITES_PARAMINDEX",
+                                                "value": [
+                                                    -10,
+                                                    5
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Success!",
+                                        "texts": [
+                                            "Can you tell what's different? In the <$Program$> panel, the clip is now brighter. Additionally, under Tone in the <$Lumetri Color$> panel, you can see that the values for Exposure, Shadows, and Blacks have changed. Take a moment to repeat these steps on the other clips in this project before moving on. Auto is a great place to start when color correcting, but you may notice that additional tweaks are needed. Take some time to explore the other options in the <$Lumetri Color$> panel to refine the changes."
+                                        ]
+                                    },
+                                    "text": "Near the top of the <$Basic Correction$> controls, click <$Auto$>."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "additionalInfo": "",
+                            "successHeading": "Congratulations!",
+                            "successText": "Great job! The colors in your clip look more dynamic. In the next section you'll explore speed changes to your clips.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "5ededb47-4e9e-3c35-9e41-e6ae02626cef",
+            "versions": [
+                0
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "5ededb47-4e9e-3c35-9e41-e6ae02626cef",
+                "versions": [
+                    0
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/045-make-color-adjustments",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Make color adjustments",
+            "short": "Make color adjustments",
+            "long": "Use the Lumetri Color panel to adjust your clips."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/23c188a9-b16e-3ea9-a213-d1e501cf8ba5/045-make-color-adjustments_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/23c188a9-b16e-3ea9-a213-d1e501cf8ba5/045-make-color-adjustments_300x190.jpg"
+        },
+        "title": "Make color adjustments",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "180",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "get-started",
+            "effects",
+            "color"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Get started",
+                    "id": "d02c57c7e5bf44719d9cbafcd45bde37",
+                    "internalId": "get-started",
+                    "name": "Get started"
+                },
+                {
+                    "enName": "Effects",
+                    "id": "fadb0bb977c241c5b1f486e40aef4c15",
+                    "internalId": "effects",
+                    "name": "Effects"
+                },
+                {
+                    "enName": "Color",
+                    "id": "0b866e9c90384a2a8a4feefa187d13f4",
+                    "internalId": "color",
+                    "name": "Color"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2022-04-13T19:12:15.211Z",
+    "modified_on": "2024-05-03T22:23:21.036Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "23c188a9-b16e-3ea9-a213-d1e501cf8ba5",
+    "commitId": "40db770ff51cf4b894c40e6c87fc77c6cc2e8bd7",
+    "type": "project"
+}

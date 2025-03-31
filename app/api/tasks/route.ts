@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { verifyAuth } from "@/lib/auth"
+import { apiAuthMiddleware, unauthorizedResponse, forbiddenResponse } from "@/lib/api-middleware"
 
 export async function GET(request: Request) {
   try {
     // Verify authentication
-    const authResult = await verifyAuth(request)
+    const authResult = await apiAuthMiddleware(request)
     if (!authResult.isAuthenticated) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return unauthorizedResponse()
     }
 
     // Get query parameters
@@ -60,9 +60,9 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   try {
     // Verify authentication
-    const authResult = await verifyAuth(request)
+    const authResult = await apiAuthMiddleware(request)
     if (!authResult.isAuthenticated) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return unauthorizedResponse()
     }
 
     const { taskId, status } = await request.json()
@@ -92,7 +92,7 @@ export async function PUT(request: Request) {
     }
 
     if (!canUpdate) {
-      return NextResponse.json({ error: "You are not authorized to update this task" }, { status: 403 })
+      return forbiddenResponse()
     }
 
     // Update task status

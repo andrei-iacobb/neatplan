@@ -1,0 +1,402 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "0.1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/044-add-transitions-to-your-clips/90bpm_exotica.m4a",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/044-add-transitions-to-your-clips/meeting_01.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/044-add-transitions-to-your-clips/ordering.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/044-add-transitions-to-your-clips/working_01.mp4"
+            ],
+            "minVersion": "20.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/044-add-transitions-to-your-clips/Transitions.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/044-add-transitions-to-your-clips/Transitions.prproj"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/044-add-transitions-to-your-clips/3d645882-db00-475d-b1a4-2e3ed0518ce3.mp4"
+                        },
+                        {
+                            "text": "The final product",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Before you begin, take a look at the project in its final state so you have a better idea of what you'll create.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Great!",
+                                        "texts": [
+                                            "When you're ready to explore transitions, click <$Next$>"
+                                        ]
+                                    },
+                                    "text": "Press Play in the {{definition:{TOOLTIP.PROGRAM_PANEL}|Program Monitor panel}} to preview the video."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/044-add-transitions-to-your-clips/effects-panel.mp4"
+                        },
+                        {
+                            "text": "The Effects panel",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>All video effects are housed in the <$Effects$> panel, including transitions.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Effects"
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Great Job!",
+                                        "texts": [
+                                            "The <$Effects$> panel is now open to the left of the <$Timeline$> panel. Within the <$Effects$> panel, you'll find all of the prebuilt effects Premiere Pro has to offer. In the next step, you'll explore some of the video transitions by adding them to the clips in a sequence."
+                                        ]
+                                    },
+                                    "text": "Go to <$Window$> > <$Effects$> to open the <$Effects$> panel."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/044-add-transitions-to-your-clips/Transitions-2.prproj"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/044-add-transitions-to-your-clips/add-transition.mp4"
+                        },
+                        {
+                            "text": "Add a transition",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>If you're not sure what kind of transition to use, sometimes it helps just to pick one that sounds interesting. Let's see what a Push transition does for these clips.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Effects$> panel, click the arrow to open <$Video Transitions$>. Then, open <$Slide$>."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "hasClipTransition",
+                                            "payload": {
+                                                "clipName": "Clip2",
+                                                "transitionName": "ADBE Push"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Drag Push into the <$Timeline$> panel, and then drop it between Clip 1 and Clip 2."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Success!",
+                                        "texts": [
+                                            "Nice job adding the Push transition."
+                                        ]
+                                    },
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to see how the transition looks."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/044-add-transitions-to-your-clips/replace-transition.mp4"
+                        },
+                        {
+                            "text": "Replace a transition",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>Unsure that the Push transition is the right feel for this video? Replacing a transition is as easy as adding a transition! Let's see what the Cross Dissolve transition looks like.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "hasClipTransition",
+                                            "payload": {
+                                                "clipName": "Clip2",
+                                                "transitionName": "AE.ADBE Cross Dissolve New"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Drag Cross Dissolve into the Timeline, and then drop it between Clip 1 and Clip 2."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Great Job!",
+                                        "texts": [
+                                            "Cross Dissolve looks like a pretty good transition here, but if you're not satisfied, keep trying different transitions until you find one you like. When you're ready, click <$Next$> to learn how to adjust the timing of the transition you choose."
+                                        ]
+                                    },
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to play your video with the new transition."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/044-add-transitions-to-your-clips/adjust-transition-timing.mp4"
+                        },
+                        {
+                            "text": "Adjust the timing of a transition",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>Now that you've settled on a transition, you can make it longer or shorter to better suit the video you're creating.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Hover your cursor over the right edge of the transition on Clip 2. Your cursor should change to a red bracket with a gray box pointing toward the rest of the transition."
+                                },
+                                {
+                                    "text": "Click and drag to the right until the transition ends at about 7 Seconds."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Great Job!",
+                                        "texts": [
+                                            "You can also adjust transitions to make them shorter using the same process but dragging in the opposite direction."
+                                        ]
+                                    },
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to play your video with the longer transition."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "<$Note$>: You can zoom the Timeline view by resizing the slider at the bottom of the panel. This view may help you see the transitions better."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/044-add-transitions-to-your-clips/remove-transition.mp4"
+                        },
+                        {
+                            "text": "Remove a transition",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>If you decide that you do not like any of the transitions, you can delete them from the timeline.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Select the transition in the timeline. Then, press <%{KEY.DELETE}%>."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "<$Note$>: Make sure you've selected only the transition and not the entire clip. If you select the clip and press <%{KEY.DELETE}%>, the clip is removed. You can always undo using <%{KEY.COMMAND_CONTROL.{{osName}}}%> + <%Z%> if you need to try again."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "successHeading": "Congratulations!",
+                            "successText": "Now that you're a master of adding transition effects, check out the next tutorial and learn how to adjust the color of your clips.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "b3aaaf4c-bd78-3ea2-a717-fd57b8532a5c",
+            "versions": [
+                0
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "b3aaaf4c-bd78-3ea2-a717-fd57b8532a5c",
+                "versions": [
+                    0
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/044-add-transitions-to-your-clips",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Add polish using transitions",
+            "short": "Add polish using transitions",
+            "long": "Apply transition effects to your clips."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/69a94878-fed5-3d7d-8e35-2a9f987325d6/044-add-transitions-to-your-clips_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/69a94878-fed5-3d7d-8e35-2a9f987325d6/044-add-transitions-to-your-clips_300x190.jpg"
+        },
+        "title": "Add polish using transitions",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "180",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "get-started",
+            "effects"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Get started",
+                    "id": "d02c57c7e5bf44719d9cbafcd45bde37",
+                    "internalId": "get-started",
+                    "name": "Get started"
+                },
+                {
+                    "enName": "Effects",
+                    "id": "fadb0bb977c241c5b1f486e40aef4c15",
+                    "internalId": "effects",
+                    "name": "Effects"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2022-04-13T19:12:15.277Z",
+    "modified_on": "2024-05-03T22:21:27.644Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "69a94878-fed5-3d7d-8e35-2a9f987325d6",
+    "commitId": "40db770ff51cf4b894c40e6c87fc77c6cc2e8bd7",
+    "type": "project"
+}

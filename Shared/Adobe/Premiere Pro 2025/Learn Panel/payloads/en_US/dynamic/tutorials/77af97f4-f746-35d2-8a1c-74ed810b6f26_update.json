@@ -1,0 +1,168 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "1",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/ai-audio-category-tags/ExtSound_Main_Boom.aac",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/ai-audio-category-tags/Interview_Lauren_YS_.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/ai-audio-category-tags/Loud_Afterparty-Boom_Bap_Chill_LoFi_Adobestock_676139825.wav",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/ai-audio-category-tags/Spray-Paint.aac",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/ai-audio-category-tags/SprayPaintTitle.mp4"
+            ],
+            "minVersion": "24.4",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/ai-audio-category-tags/Edit_Different_Kinds_of_Audio.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/ai-audio-category-tags/260f34f3-df91-4c06-8feb-a3ebbb1e7731.mp4"
+                        },
+                        {
+                            "text": "AI-powered audio category tags",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "When you add an audio clip to your sequence, Premiere Pro will automatically analyze the clip and choose the best audio category. You can access the category based tools in the <$Essential Sound$> panel by clicking on the category badge.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "clipAdded",
+                                            "payload": {
+                                                "clipName": "Loud_Afterparty-boom_Bap_Chill_LoFi",
+                                                "layerName": "Audio 3"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Drag the music clip Loud_Afterparty-boom_Bap_Chill_LoFi from the 03 Music folder onto track Audio 3."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Essential Sound"
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Great job!",
+                                        "texts": [
+                                            "The new AI-powered audio category tags will provide easy access to the most relevant tools for each clip."
+                                        ]
+                                    },
+                                    "text": "The clip has automatically been identified as a music track. Click on the music badge to open the <$Essential Sound$> panel."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "successHeading": "Awesome!",
+                            "successText": "You've successfully used the automatic audio category tags to streamline your workflow.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "4230d7c4-9659-3dd8-b0c0-d66b06bf3c9c",
+            "versions": [
+                1
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "4230d7c4-9659-3dd8-b0c0-d66b06bf3c9c",
+                "versions": [
+                    1
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/ai-audio-category-tags",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Audio Category Tagging keeps your go-to tools handy.",
+            "short": "Audio Category Tagging keeps your go-to tools handy.",
+            "long": "Audio Category Tagging keeps your go-to tools handy."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/77af97f4-f746-35d2-8a1c-74ed810b6f26/ai-audio-category-tags_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/77af97f4-f746-35d2-8a1c-74ed810b6f26/ai-audio-category-tags_1920x1080.jpg"
+        },
+        "title": "Let AI tag it for you",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "60",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "audio"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Audio",
+                    "id": "da0d60b4b806415f931d9ba3a1ee6d02",
+                    "internalId": "audio"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2024-05-02T15:46:12.189Z",
+    "modified_on": "2024-05-23T17:46:28.480Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "77af97f4-f746-35d2-8a1c-74ed810b6f26",
+    "commitId": "cb992c8ef7a4dfe70c4ae121f98be1e889757324",
+    "type": "project"
+}

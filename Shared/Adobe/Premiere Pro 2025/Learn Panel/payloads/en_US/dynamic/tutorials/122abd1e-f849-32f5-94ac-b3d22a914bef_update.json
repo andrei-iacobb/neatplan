@@ -1,0 +1,167 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "1",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/audio-fx-badges/ExtSound_Main_Boom.aac",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/audio-fx-badges/Interview_Lauren_YS_.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/audio-fx-badges/Spray-Paint.aac",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/audio-fx-badges/Loud_Afterparty-Boom_Bap_Chill_LoFi_Adobestock_676139825.wav",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/audio-fx-badges/SprayPaintTitle.mp4"
+            ],
+            "minVersion": "24.4",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/audio-fx-badges/Add_Edit_Effects.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/audio-fx-badges/241f2bb1-8133-4cc0-bb3e-fad47c3c3a44.mp4"
+                        },
+                        {
+                            "text": "Efficiently add and edit audio effects",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "The updated <$FX$> clip badges allow you to add effects and open the <$Effect Controls$> panel directly from the timeline. You can also identify which clips have effects applied at a glance.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Effects"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Using one of the clips in the sequence, right-click on the <$FX$> button and choose <$Add Effects$> to open the <$Effects$> panel."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Effect Controls"
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Great job!",
+                                        "texts": [
+                                            "Accessing the <$Effects$> and <$Effect Controls$> panels from the timeline will give you more control of your audio mix without having to switch workspaces or search for the right panel."
+                                        ]
+                                    },
+                                    "text": "Using a different clip in the sequence, click on the <$FX$> to open the <$Effect Controls$> panel."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "successHeading": "Awesome!",
+                            "successText": "Now that you've seen how the updated <$fx$> label will streamline your workflow, continue to the next tutorial to learn how to leverage AI audio category tagging.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "6e609f5b-da65-3051-843e-b1bc1d794f19",
+            "versions": [
+                1
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "6e609f5b-da65-3051-843e-b1bc1d794f19",
+                "versions": [
+                    1
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/audio-fx-badges",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Intuitive FX badges let you manage effects from the timeline.",
+            "short": "Intuitive FX badges let you manage effects from the timeline.",
+            "long": "Intuitive FX badges let you manage effects from the timeline."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/122abd1e-f849-32f5-94ac-b3d22a914bef/audio-fx-badges_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/122abd1e-f849-32f5-94ac-b3d22a914bef/audio-fx-badges_1920x1080.jpg"
+        },
+        "title": "Easily add and edit audio effects",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "60",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "audio"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Audio",
+                    "id": "da0d60b4b806415f931d9ba3a1ee6d02",
+                    "internalId": "audio"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2024-05-02T15:46:21.802Z",
+    "modified_on": "2024-05-23T17:45:56.154Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "122abd1e-f849-32f5-94ac-b3d22a914bef",
+    "commitId": "cb992c8ef7a4dfe70c4ae121f98be1e889757324",
+    "type": "project"
+}

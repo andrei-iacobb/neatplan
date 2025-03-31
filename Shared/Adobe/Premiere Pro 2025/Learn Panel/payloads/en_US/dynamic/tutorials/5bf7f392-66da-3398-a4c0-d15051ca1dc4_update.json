@@ -1,0 +1,323 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "0.1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/color-correction-and-grading/ColorClip_4.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/color-correction-and-grading/ColorClip_3.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/color-correction-and-grading/ColorClip_2.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/color-correction-and-grading/ColorClip_1.mp4"
+            ],
+            "minVersion": "20.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/color-correction-and-grading/Captivate_Through_Color.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/color-correction-and-grading/61686367-7069-496c-9bc8-a70a1a5296fd.mp4"
+                        },
+                        {
+                            "text": "Go from basic to beautiful",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Instantly enhance your footage with AI-backed color corrections — then finesse and play to create something dramatic.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Color"
+                                            }
+                                        }
+                                    ],
+                                    "text": "In the application menu, click on <$Window$> > <$Lumetri Color$>."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isCtiOverClip",
+                                            "payload": {
+                                                "clipName": "ColorClip_3.mp4"
+                                            }
+                                        }
+                                    ],
+                                    "text": "In the <$Timeline$> panel, move the playhead over <$ColorClip_3.mp4$>."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "areClipComponentsChanged",
+                                            "payload": {
+                                                "clipName": "ColorClip_3.mp4",
+                                                "componentName": "lumetri",
+                                                "componentParameters": [
+                                                    "LUMETRI_TONE_EXPOSURE_PARAMINDEX",
+                                                    "LUMETRI_TONE_SHADOWS_PARAMINDEX"
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "text": "In the <$Basic Correction$> section of the <$Lumetri Color$> panel, select <$Auto$> to apply an automatic correction to the clip."
+                                },
+                                {
+                                    "text": "Select the <$Curves$> section of the <$Lumetri Color$> panel to open the curves."
+                                },
+                                {
+                                    "text": "Using the video above as a guide, add several points to the line and drag them up and down to see how they affect the lighting of your clip."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/color-correction-and-grading/fbdc20e6-25a6-489f-bc12-0ce11d4eff4a.mp4"
+                        },
+                        {
+                            "text": "Copy color edits to other clips",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Once you've got your desired look, you can copy and paste color effects so you don't have to recreate them from scratch.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isClipSelected",
+                                            "payload": {
+                                                "clipName": "ColorClip_3.mp4"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Make sure <$ColorClip_3.mp4$> is still selected."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Effect Controls"
+                                            }
+                                        }
+                                    ],
+                                    "text": "In the application menu, click on <$Window$> > <$Effect Controls$>."
+                                },
+                                {
+                                    "text": "In the <$Effect Controls$> panel, select the <$Lumetri Color$> effect and press <%{KEY.COMMAND_CONTROL.{{osName}}}%> + <%C%> to copy the effect."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "ColorClip_4.mp4",
+                                                "componentMatchName": "AE.ADBE Lumetri",
+                                                "componentParameter": "LUMETRI_TONE_CONTRAST_PARAMINDEX",
+                                                "value": [
+                                                    -100,
+                                                    100
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "text": "In the timeline, select <$ColorClip_4.mp4$> and press <%{KEY.COMMAND_CONTROL.{{osName}}}%> + <%V%> to paste the color effects onto the new clip."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/color-correction-and-grading/2cfef776-bc72-4306-88c1-62511c3ae104.mp4"
+                        },
+                        {
+                            "text": "Create color cohesion",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Create cohesion across scenes with Adjustment Layers — they're non-destructive so you can get experimental with color.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Project$> panel, select the <$New item$> icon and then select <$Adjustment layer$>. You may have to resize the <$Project$> panel to see the icon."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "projectItemAdded",
+                                            "payload": {
+                                                "itemType": "sequence"
+                                            }
+                                        }
+                                    ],
+                                    "text": "In the <$Adjustment layer$> dialogue box, click <$OK$> to use the default settings."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "clipAdded",
+                                            "payload": {
+                                                "clipName": "Adjustment Layer",
+                                                "layerName": "Video 2"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Drag the new adjustment layer from the <$Project$> panel into the <$Timeline$> panel and drop it on the V2 video track."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "clipLengthChanged",
+                                            "payload": {
+                                                "clipName": "Adjustment Layer"
+                                            }
+                                        },
+                                        {
+                                            "check": "checkClipProperties",
+                                            "payload": {
+                                                "clipName": "Adjustment Layer",
+                                                "propertyName": "end",
+                                                "value": [
+                                                    11,
+                                                    14
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "text": "Extend the end of the adjustment to the end of the last clip in the timeline."
+                                },
+                                {
+                                    "text": "With the adjustment layer selected, make adjustments to the settings in the <$Lumetri Color$> panel and see how the changes are applied to all your clips at once."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "successHeading": "Great job!",
+                            "successText": "For more tips and tricks on video editing, check out the rest of the in-app tutorial library.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "ee25c257-64f2-3318-bfd1-71245c6aed60",
+            "versions": [
+                0
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "ee25c257-64f2-3318-bfd1-71245c6aed60",
+                "versions": [
+                    0
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/color-correction-and-grading",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Make color adjustments",
+            "short": "Make color adjustments",
+            "long": "Use the Lumetri Color panel to adjust your clips."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/5bf7f392-66da-3398-a4c0-d15051ca1dc4/color-correction-and-grading_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/5bf7f392-66da-3398-a4c0-d15051ca1dc4/color-correction-and-grading_1920x1080.jpg"
+        },
+        "title": "Captivate through color",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "180",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "color"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Color",
+                    "id": "0b866e9c90384a2a8a4feefa187d13f4",
+                    "internalId": "color",
+                    "name": "Color"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2023-06-26T17:08:47.056Z",
+    "modified_on": "2024-05-03T22:32:14.205Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "5bf7f392-66da-3398-a4c0-d15051ca1dc4",
+    "commitId": "785a798f2a7061501c126ee9fe021dee074c1c41",
+    "type": "project"
+}

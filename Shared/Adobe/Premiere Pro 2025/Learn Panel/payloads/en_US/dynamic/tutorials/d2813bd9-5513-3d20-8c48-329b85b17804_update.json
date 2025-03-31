@@ -1,0 +1,485 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/025-edit-your-motion-graphics/footage/Let's_Talk_Tea-Leaves.jpg",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/025-edit-your-motion-graphics/footage/Ajay.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/025-edit-your-motion-graphics/footage/Yonnie.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/025-edit-your-motion-graphics/footage/Hilltop_Welcome_Insta.aegraphic",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/025-edit-your-motion-graphics/footage/Welcome_Lower_Third.aegraphic"
+            ],
+            "minVersion": "15.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/025-edit-your-motion-graphics/MotionGraphicsPPro-Final.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/025-edit-your-motion-graphics/MotionGraphicsPPro-Final.prproj"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "imgUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/025-edit-your-motion-graphics/e9c3b4f1-7f39-40d5-a78c-6fa561380639.png",
+                            "type": "imageFullLarge"
+                        },
+                        {
+                            "text": "Before we begin",
+                            "type": "heading"
+                        },
+                        {
+                            "texts": [
+                                "<$NOTE$>: To complete this tutorial, you must first complete the After Effects tutorial “Create a reusable Motion Graphics template” and save the MOGRT file you create to your desktop."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        },
+                        {
+                            "text": "<br>In this project, you'll learn essential workflows for opening and editing your Motion Graphics template in Premiere Pro. <br><br> Click <$Next$> when you're ready to begin the tutorial.",
+                            "type": "text"
+                        },
+                        {
+                            "heading": "What you should know",
+                            "icon": "hint",
+                            "texts": [
+                                "This tutorial is designed for Premiere Pro users who are learning more about using graphics in their videos. If you're completely new to Premiere Pro, we recommend that you complete the “Premiere Pro Overview” and “Learn the Basics” in-app tutorials before continuing with this project. Those tutorials cover the basics of importing video clips and adding them to a sequence."
+                            ],
+                            "type": "toggleable"
+                        }
+                    ]
+                },
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/025-edit-your-motion-graphics/MotionGraphicsPPro-Final.prproj"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "text": "The final product",
+                            "type": "heading"
+                        },
+                        {
+                            "autoplay": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/025-edit-your-motion-graphics/b15cf43c-be21-40c8-8f7b-cc26117a9b54.mp4"
+                        },
+                        {
+                            "text": "Preview the end product in the <$Program$> panel.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to play the sequence."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiStopped"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Success!",
+                                        "texts": [
+                                            "Now that you know what the final product will look like, click <$Next$> to begin the tutorial."
+                                        ]
+                                    },
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to stop playback."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/025-edit-your-motion-graphics/MotionGraphicsPPro-Project.prproj"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "text": "Import your MOGRT file",
+                            "type": "heading"
+                        },
+                        {
+                            "autoplay": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/025-edit-your-motion-graphics/d96f97e2-0b1b-4cbb-a2f8-8ba1da3573b2.mp4"
+                        },
+                        {
+                            "text": "Import your Motion Graphics template and add it to the Timeline panel.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Graphics"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Open the <$Essential Graphics$> panel by going to <$Window$> > <$Essential Graphics$>."
+                                },
+                                {
+                                    "text": "Click the <$+$> icon in the bottom right corner of the panel and choose the <$welcome_insta.mogrt$> file. Then click <$Open$>."
+                                },
+                                {
+                                    "text": "In the search bar at the top of the <$Essential Graphics$> panel, search “welcome_insta” to locate your Motion Graphics template."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "clipAdded",
+                                            "payload": {
+                                                "trackType": "video"
+                                            }
+                                        },
+                                        {
+                                            "check": "clipMoved",
+                                            "payload": {
+                                                "clipName": "Ajay.mp4"
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Success!",
+                                        "texts": [
+                                            "You imported your MOGRT file into Premiere Pro and added it to the timeline. You can also mark your favorite Motion Graphics templates as favorites by clicking the star icon. To view your favorites, click the star icon next to the search bar in the <$Essential Graphics$> panel."
+                                        ]
+                                    },
+                                    "text": "Drag the <$welcome_insta$> template to the beginning of the <$V1 track$> of the Timeline panel but press the <%{KEY.COMMAND_CONTROL.{{osName}}}%> key before you drop the clip into the panel."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "Holding down the <%{KEY.COMMAND_CONTROL.{{osName}}}%> key ensures that the Motion Graphics template is inserted before all of the footage, rather than overwriting any frames it covers."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "text": "Update the template text",
+                            "type": "heading"
+                        },
+                        {
+                            "autoplay": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/025-edit-your-motion-graphics/6d4b9bc7-3193-464e-a7f5-d07861d2063f.mp4"
+                        },
+                        {
+                            "text": "Update the text to match Hilltop's new Tea campaign.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the Timeline panel, click on the Motion Graphics template and move the playhead to about 4 seconds."
+                                },
+                                {
+                                    "text": "In the <$Edit$> tab of the <$Essential Graphics$> panel, click in the <$Source Text$> field and change the text to LET'S TALK on the first line and TEA on the second."
+                                },
+                                {
+                                    "text": "Click anywhere outside the <$Source Text$> field to see the change in the <$Project$> panel."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "If you successfully updated the text to match the new campaign, you can see it in the <$Program$> panel right away. The graphic now reads \"Let's Talk Tea\" instead of \"Let's Talk Coffee.\""
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "text": "Update the text color",
+                            "type": "heading"
+                        },
+                        {
+                            "autoplay": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/025-edit-your-motion-graphics/f2ea17db-c9ef-4c18-81d8-9e4ff1711e43.mp4"
+                        },
+                        {
+                            "text": "Update the text color to match the turquoise used in the transition.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkParallel": false,
+                                    "text": "In the<$ Essential Graphics$> panel, click on the white color swatch."
+                                },
+                                {
+                                    "text": "In the <$Color Picker$> dialog box, enter 85DAC2 in the <$#$> field to change the text color to match the turquoise used in the transition. Click <$OK$>."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "As with the updated text, you can see the text color change as soon as you update it in the <$Essential Graphics$> panel. The best part of this workflow is that Hilltop can quickly make different versions of this graphic to match each Instagram campaign."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "text": "Update the picture",
+                            "type": "heading"
+                        },
+                        {
+                            "autoplay": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/025-edit-your-motion-graphics/c6dd78fa-f292-4c65-a693-a5737c6d0726.mp4"
+                        },
+                        {
+                            "text": "Replace the coffee bean image with an image of tea.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Project$> panel, locate the image <$Let's_Talk_Tea-Leaves.jpg$>. Drag the image to the <$Essential Graphics$> panel and drop it on top of the coffee bean image."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Success!",
+                                        "texts": [
+                                            "Look at the <$Program$> panel to see how the graphic has changed. You have replaced the coffee bean image with an image of tea! This social media opener is ready for Hilltop's newest campaign."
+                                        ]
+                                    },
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to preview your updated Motion Graphics template. You can see the new Let's Talk Tea campaign come together."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/025-edit-your-motion-graphics/MotionGraphicsPPro-Practice.prproj"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "text": "Let's practice",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "The video clip in this sequence shows Hilltop co-owner Yonnie Hagos instead of Ajay Relan, whom the lower third currently indicates. Let's say Hilltop asked you to update the lower third MOGRT you created in After Effects to reflect the correct name of the interviewee. To save time, we've added it to the timeline already.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Success!",
+                                        "texts": [
+                                            "Now that you've successfully updated your Motion Graphics template in Premiere Pro, you're ready to use this workflow in your own social media videos."
+                                        ]
+                                    },
+                                    "text": "Try to update the first line of text to say <$YONNIE HAGOS$>. Then, press the <%{KEY.SPACEBAR}%> to check the changes."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "heading": "Hint 1",
+                            "icon": "hint",
+                            "texts": [
+                                "Which panel is used to edit graphics templates?"
+                            ],
+                            "type": "toggleable"
+                        },
+                        {
+                            "heading": "Hint 2",
+                            "icon": "hint",
+                            "texts": [
+                                "Where in the <$Essential Graphics$> panel did you change the text in the opener?"
+                            ],
+                            "type": "toggleable"
+                        },
+                        {
+                            "heading": "Hint 3",
+                            "icon": "hint",
+                            "texts": [
+                                "In the <$Essential Graphics$> panel, on the <$Edit$> tab, update the text in the <$Source Text$> field."
+                            ],
+                            "type": "toggleable"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "additionalInfo": "",
+                            "successHeading": "Congratulations!",
+                            "successText": "You just learned how to edit your Motion Graphics template in Premiere Pro! This concludes the “Use your motion graphics in Premiere Pro” tutorial series.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "feb8235c-2f80-3aef-978d-cd6bf7116a5f",
+            "versions": [
+                1
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "feb8235c-2f80-3aef-978d-cd6bf7116a5f",
+                "versions": [
+                    1
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/025-edit-your-motion-graphics",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Edit your motion graphics",
+            "short": "Edit your motion graphics",
+            "long": "Use the Essential Graphics panel to update your template."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/d2813bd9-5513-3d20-8c48-329b85b17804/025-edit-your-motion-graphics_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/d2813bd9-5513-3d20-8c48-329b85b17804/025-edit-your-motion-graphics_300x190.jpg"
+        },
+        "title": "Edit your motion graphics",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "300",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "motion-graphics",
+            "media",
+            "graphics",
+            "text"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Motion graphics",
+                    "id": "29ce015eba5d4f8d99f0d3333042c07d",
+                    "internalId": "motion-graphics",
+                    "name": "Motion graphics"
+                },
+                {
+                    "enName": "Media",
+                    "id": "28f93a38c7604fcfbedc1b1307c3f829",
+                    "internalId": "media",
+                    "name": "Media"
+                },
+                {
+                    "enName": "Graphics",
+                    "id": "6a39c69be39b405fbbc67bb8977b278e",
+                    "internalId": "graphics",
+                    "name": "Graphics"
+                },
+                {
+                    "enName": "Text",
+                    "id": "74d6b374f69f45b6a227b3ab6199d970",
+                    "internalId": "text",
+                    "name": "Text"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2021-11-09T17:01:02.903Z",
+    "modified_on": "2024-05-03T21:39:51.210Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "d2813bd9-5513-3d20-8c48-329b85b17804",
+    "commitId": "785a798f2a7061501c126ee9fe021dee074c1c41",
+    "type": "project"
+}

@@ -1,0 +1,349 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "1",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/speed-up-slow-down/ReverseTimeKelli.mp4"
+            ],
+            "minVersion": "22.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/speed-up-slow-down/HappyKelli_reverse-time.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/speed-up-slow-down/2558c463-6216-4979-8dec-44ff0eed2064.mp4"
+                        },
+                        {
+                            "text": "Reverse time",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "When you want to blow people's minds with your own cool moves, try playing with time. I'll show you an easy way to speed things up or slow things down.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiStopped"
+                                        },
+                                        {
+                                            "check": "ctiMoved"
+                                        },
+                                        {
+                                            "check": "ctiStopped"
+                                        }
+                                    ],
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to see how the action in the <$Reverse Time$> clip plays out in real time."
+                                },
+                                {
+                                    "text": "Right-click the clip and choose <$Speed/Duration$> from the pop-up menu."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipProperties",
+                                            "payload": {
+                                                "clipName": "ReverseTimeKelli.mp4",
+                                                "propertyName": "isSpeedReversed",
+                                                "value": 1
+                                            }
+                                        }
+                                    ],
+                                    "text": "In the <$Clip Speed/Duration$> dialog box, choose <$Reverse Speed$> and click <$OK$>."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        },
+                                        {
+                                            "check": "ctiStopped"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Great!",
+                                        "texts": [
+                                            "You reversed the direction of a clip to show the action going backwards. In the next section you'll change the speed of that reversed clip."
+                                        ]
+                                    },
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to see the action play out again, this time in reverse."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/speed-up-slow-down/f1b43328-0ac2-46fe-9af7-e5d424cc6155.mp4"
+                        },
+                        {
+                            "text": "Play with time remapping",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "For optimum results, first place everything in a new sequence and then work on that. This \"nesting\" separates the time-remapping from the clip-reversing part of the equation.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Right-click the clip and choose <$Nest$> from the pop-up menu."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "clipAdded",
+                                            "payload": {
+                                                "clipName": "Nested Sequence 01"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Accept the default name of the new nested sequence by clicking <$OK$>."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "Don't worry about where the clip went. You can always double-click the green clip to return to your original media, which was placed in the new <$Nested Sequence 01$>."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Staying in the <$Reverse Time Kelli$> sequence, right-click the small <$fx$> button in the upper-left corner of the green clip."
+                                },
+                                {
+                                    "text": "Choose <$Time Remapping$> > <$Speed$> from the pop-up menu. Note the change to the horizontal line, also called the \"rubber band.\" Instead of representing the clip's opacity, as before, it now represents its speed."
+                                },
+                                {
+                                    "text": "Position the playhead at <$4:00$> in the <$Timeline$> panel."
+                                },
+                                {
+                                    "text": "<%{KEY.COMMAND_CONTROL.{{osName}}}%>-click the rubber band at the playhead's position to add a pair of keyframes there. This indicates where the speed ramp begins and ends. By default, it's at the same location."
+                                },
+                                {
+                                    "text": "Drag the rubber band up to speed up the clip (try 150%) or down to slow it down (try 50%). You can do this on either side of the keyframe pair."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "A speed-change percentage indicator appears as you drag the rubber band up and down. See also that the clip shortens as you speed it up and lengthens as you slow it down."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "From the main menu, choose <$Sequence$> > <$Render In to Out$> to play the retimed sequence in smooth fashion."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "For smoother-looking slow-motion, right-click the nested clip, choose <$Speed/Duration$> from the pop-up menu, and set <$Time Interpolation$> to <$Optical Flow$>. This setting generates missing frames in between the original frames of video."
+                            ],
+                            "type": "well",
+                            "wellType": "hint"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/speed-up-slow-down/400df279-1435-4ba5-bda6-8899e9c5be1a.mp4"
+                        },
+                        {
+                            "text": "Ramp the time changes",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "An easy way to make your speed change appear less abruptly in the footage is to use a ramp.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Click the keyframe pair to select it in the nested clip."
+                                },
+                                {
+                                    "text": "Drag one keyframe away from the other to expand the interval between them. Notice how the step-change between the two values becomes a more gradual ramp or slope."
+                                },
+                                {
+                                    "text": "Rotate the Bezier handle to smooth out the speed change even more."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "Increase the height of the video track to see the Bezier handle more easily."
+                            ],
+                            "type": "well",
+                            "wellType": "hint"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "showOnComplete": {
+                                        "heading": "Looking good!",
+                                        "texts": [
+                                            "You made gradual, smooth time adjustments to your footage."
+                                        ]
+                                    },
+                                    "text": "From the main menu, choose <$Sequence$> > <$Render In to Out$> to play the retimed sequence."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "successHeading": "Congratulations!",
+                            "successText": "The next time you want to blow people's minds with your own cool moves — or any action footage — try playing with time.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "f28cee8a-6fb2-3a7f-90fa-73ee95210aa6",
+            "versions": [
+                1
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "f28cee8a-6fb2-3a7f-90fa-73ee95210aa6",
+                "versions": [
+                    1
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/speed-up-slow-down",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "When you want to blow people's minds with your own cool moves, try playing with time. Learn an easy way to speed things up or slow things down.",
+            "short": "When you want to blow people's minds with your own cool moves, try playing with time. Learn an easy way to speed things up or slow things down.",
+            "long": "When you want to blow people's minds with your own cool moves, try playing with time. Learn an easy way to speed things up or slow things down."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/05762bd8-0674-30a0-8e08-23882ac4ec48/speed-up-slow-down_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/05762bd8-0674-30a0-8e08-23882ac4ec48/speed-up-slow-down_300x190.jpg"
+        },
+        "title": "Set any pace",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "360",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "intermediate",
+        "stage": "practice",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "social-media-videos",
+            "effects",
+            "color",
+            "layers",
+            "masking"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Social media videos",
+                    "id": "d1994573d7c6491dbcd936bdafe89167",
+                    "internalId": "social-media-videos",
+                    "name": "Social media videos"
+                },
+                {
+                    "enName": "Effects",
+                    "id": "fadb0bb977c241c5b1f486e40aef4c15",
+                    "internalId": "effects",
+                    "name": "Effects"
+                },
+                {
+                    "enName": "Color",
+                    "id": "0b866e9c90384a2a8a4feefa187d13f4",
+                    "internalId": "color",
+                    "name": "Color"
+                },
+                {
+                    "enName": "Layers",
+                    "id": "0605b453f31c407fb6cb3132755c41ac",
+                    "internalId": "layers",
+                    "name": "Layers"
+                },
+                {
+                    "enName": "Masking",
+                    "id": "c49f6efbfd6c4cea91496bc9aca45e05",
+                    "internalId": "masking",
+                    "name": "Masking"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2022-10-27T20:10:20.322Z",
+    "modified_on": "2022-10-27T20:10:20.322Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "05762bd8-0674-30a0-8e08-23882ac4ec48",
+    "commitId": "a4682239a105e70fe1d2985f1a3c523f46ff2204",
+    "type": "project",
+    "version": 2
+}

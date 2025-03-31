@@ -1,0 +1,379 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "0.1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/047-add-a-title-to-your-project/90bpm_exotica.m4a",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/047-add-a-title-to-your-project/meeting_01.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/047-add-a-title-to-your-project/ordering.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/047-add-a-title-to-your-project/working_01.mp4"
+            ],
+            "minVersion": "20.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/047-add-a-title-to-your-project/Add_Titles.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/047-add-a-title-to-your-project/Add_Titles.prproj"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/047-add-a-title-to-your-project/4cb91df6-b084-4d14-adda-e69f564972d6.mp4"
+                        },
+                        {
+                            "texts": [
+                                "Please note: This tutorial is compatible with version 25.0 of Premiere Pro, which includes the <$Properties$> panel. If you do not see <$Window$> > <$Properties$> in the application menu, <a href=\"https://creativecloud.adobe.com/campaign/creative-cloud?workflow=route-to-path&altPath=https://creativecloud.adobe.com/apps&path=/apps/updates\">please update before proceeding</a>."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        },
+                        {
+                            "text": "Adding titles",
+                            "type": "heading"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Watch the video above. Then click <$Next$> to begin the tutorial."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/047-add-a-title-to-your-project/Add_Titles.prproj"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/047-add-a-title-to-your-project/open-essential-graphics-panel.mp4"
+                        },
+                        {
+                            "text": "The Graphics Templates panel",
+                            "type": "heading"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Graphics"
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Success!",
+                                        "texts": [
+                                            "The <$Graphics Templates$> panel houses all the customizable graphics that are available in Premiere Pro. Now that the panel is open, you're ready to add a title to your project. Click <$Next$> to begin."
+                                        ]
+                                    },
+                                    "text": "In the application menu, click on <$Window > <$Graphics Templates$>."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/047-add-a-title-to-your-project/choose-a-graphic.mp4"
+                        },
+                        {
+                            "text": "Choosing a graphic",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>You can use the keyword search at the top of the <$Graphics Templates$> panel to find graphics that work with your project.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Graphics Templates$> panel, type <$Title$> into the search bar. Then, press enter. The search will show a list of graphics with titles."
+                                },
+                                {
+                                    "text": "Browse through the titles until you find one you like."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "clipAdded",
+                                            "payload": {
+                                                "trackType": "video"
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Success!",
+                                        "texts": [
+                                            "You were able to add the title on top of the videos in your sequence. Remember, stacking clips on the video tracks is like stacking pancakes – the topmost clip appears in front of the clip that is under it. This works well for titles because it lets the video peek through underneath."
+                                        ]
+                                    },
+                                    "text": "Drag the title you like into the timeline and drop it onto track V2."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/047-add-a-title-to-your-project/Add_Titles-2.prproj"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/047-add-a-title-to-your-project/edit-a-title.mp4"
+                        },
+                        {
+                            "text": "Editing a Title",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>We've updated the graphic in your project for consistency. You can edit almost any property of a title, from its color and font size to its position on the screen.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "At the top of the tabbed panel group to the right of the <$Program Monitor$>, choose <$Properties$> to switch panels."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isClipSelected",
+                                            "payload": {
+                                                "clipName": "Graphic"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Move the playhead to 3 seconds so that you can see the entire graphic. Then, click the graphic clip in the <$Timeline$> panel."
+                                },
+                                {
+                                    "text": "At the top of the <$Properties$> panel, click on <$Shape$>."
+                                },
+                                {
+                                    "text": "In the <$Appearance$> section, click the white box next to <$Stroke$> and select your favorite color in the <$Color Picker$> dialogue box."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Awesome!",
+                                        "texts": [
+                                            "Changing the color personalized this graphic to your taste. In the next section, you'll change the text and give your video a title."
+                                        ]
+                                    },
+                                    "text": "Press <%{KEY.SPACEBAR}%> to watch your sequence with the updated graphic."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/047-add-a-title-to-your-project/update-text.mp4"
+                        },
+                        {
+                            "text": "Update the text",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>Let's change the title to \"Coffee Shop Visit\" so that viewers will know what the video is about.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isClipSelected",
+                                            "payload": {
+                                                "clipName": "Graphic"
+                                            }
+                                        }
+                                    ],
+                                    "text": "Move the playhead to about 3 seconds so that the graphic is visible in the <$Program Monitor$>. Then, click on the graphic on track <$V2$> to select it."
+                                },
+                                {
+                                    "text": "In the <$Program Monitor$>, double-click on the text box that says \"Your Title Here.\" Then, type Coffee Shop Visit in the text field."
+                                },
+                                {
+                                    "text": "Press <%ESCAPE%> to exit the text editor."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Success!",
+                                        "texts": [
+                                            "Customized graphics are a great way to finalize the visuals in your video projects. Be sure to browse through all of the different titles you can use in your own project."
+                                        ]
+                                    },
+                                    "text": "Press <%{KEY.SPACEBAR}%> to watch your video."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "additionalInfo": "",
+                            "successHeading": "Congratulations!",
+                            "successText": "In the next tutorial, you'll learn how to work with audio in Premiere Pro.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "880b95b3-ce4a-3daa-9cf3-d585f58f3d95",
+            "versions": [
+                0
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "880b95b3-ce4a-3daa-9cf3-d585f58f3d95",
+                "versions": [
+                    0
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/047-add-a-title-to-your-project",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Add a title to your project",
+            "short": "Add a title to your project",
+            "long": "Use text tools to add a title to your project."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/3e16d09d-4cf1-360e-bd89-ce29bd759a4d/047-add-a-title-to-your-project_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/3e16d09d-4cf1-360e-bd89-ce29bd759a4d/047-add-a-title-to-your-project_300x190.jpg"
+        },
+        "title": "Add a title to your project",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "120",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "get-started",
+            "effects",
+            "graphics"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Get started",
+                    "id": "d02c57c7e5bf44719d9cbafcd45bde37",
+                    "internalId": "get-started",
+                    "name": "Get started"
+                },
+                {
+                    "enName": "Effects",
+                    "id": "fadb0bb977c241c5b1f486e40aef4c15",
+                    "internalId": "effects",
+                    "name": "Effects"
+                },
+                {
+                    "enName": "Graphics",
+                    "id": "6a39c69be39b405fbbc67bb8977b278e",
+                    "internalId": "graphics",
+                    "name": "Graphics"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2022-04-13T19:12:15.700Z",
+    "modified_on": "2024-10-24T23:57:01.574Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "3e16d09d-4cf1-360e-bd89-ce29bd759a4d",
+    "commitId": "fea98eafaad2c3f5b923d2e43f4edf8b33e33feb",
+    "type": "project"
+}

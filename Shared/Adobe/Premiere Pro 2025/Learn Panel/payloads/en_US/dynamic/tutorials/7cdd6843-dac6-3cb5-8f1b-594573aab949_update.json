@@ -1,0 +1,474 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/footage/CLIP1.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/footage/CLIP2.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/footage/CLIP3.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/footage/CLIP4.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/footage/CLIP5.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/footage/CLIP6.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/footage/CLIP7.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/footage/CLIP8.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/footage/CLIP9.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/footage/Opple_Voiceover.wav",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/footage/Bright_and_fun_jingle_Cute_whis.mp3",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/Full_Spot-Graded.mp4"
+            ],
+            "minVersion": "14.3.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/Review_With_Frameio.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/Review_With_Frameio.prproj"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/b0a7177f-2a37-4c0e-b6af-23736780361d.mp4"
+                        },
+                        {
+                            "text": "Frame.io + Premiere Pro",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Now that your video is complete, it's time to share it with your team, client, or collaborators for review and comment.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Choose <$Window$> > <$Review with Frame.io$> to open the panel."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "If <$Review with Frame.io$> is not in the menu, you may need to update to the most recent version of Premiere Pro before completing this tutorial."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/2e10c2a5-a03f-4127-b3a2-c0b64484a149.mp4"
+                        },
+                        {
+                            "text": "Log in to Frame.io",
+                            "type": "heading"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Frame.io$> panel, click <$Continue with Adobe ID$>. Then, log in."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "With your Creative Cloud membership, you'll receive special Frame.io benefits like real-time review and approval, cloud media sharing, and Camera to Cloud. To get started, you also receive a 30 day trial of Frame.io Team at no extra cost. <a href=\"https://www.frame.io/pricing/\">Learn more about Frame.io membership plans.</a>"
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/8282ec01-ac6f-4607-a8fd-012c5e2e08fc.mp4"
+                        },
+                        {
+                            "text": "Add a project location",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Frame.io allows you to organize your work into different project spaces. Let's create one now.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Frame.io$> panel, click the <$Select a Project$> icon in the top left corner. Then, click <$Add Project$>."
+                                },
+                                {
+                                    "text": "Enter <$Opple Juice$> in the <$Project Name$> field."
+                                },
+                                {
+                                    "text": "Click the toggle if you want to change any permission or notification settings. When you're satisfied with the settings, click <$Create$>."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/b3884e16-3e75-4d45-997d-d1f31a752075.mp4"
+                        },
+                        {
+                            "text": "Upload your sequence",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Using Frame.io, you can upload individual sequences from the same project to share.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Frame.io$> panel, click <$Upload$>. Then, choose <$Active Sequence$>."
+                                },
+                                {
+                                    "text": "Set a render location. If you choose <$Scratch Disk$>, Frame.io will use a default location."
+                                },
+                                {
+                                    "text": "Because the default settings will work well for this project, click <$Upload$>. This process may take a moment to complete."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "Media Encoder renders the sequence; opening Media Encoder before you upload helps it to process faster. You can quickly install Media Encoder through Creative Cloud for Desktop."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/907347a1-d9fe-45ef-8509-cb09613f7de4.mp4"
+                        },
+                        {
+                            "text": "Share for review",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Now that your sequence is saved to your project file in Frame.io, you can share it directly from Premiere Pro.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Frame.io$> panel, click the <$Opple Juice$> thumbnail. Then, click <$Share$> in the top right corner."
+                                },
+                                {
+                                    "text": "Select <$Share for Review$>."
+                                },
+                                {
+                                    "text": "Click <$Copy Link$>. This is the link you send to your reviewers."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "texts": [
+                                "Once you've created your link, you can send it to your team or collaborators for them to comment. In the next step, you'll see how you and your team can leave comments using the Frame.io web app or iOS app."
+                            ],
+                            "type": "well",
+                            "wellType": "info"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/3aa23c70-3a3f-4993-8d49-ea67063589ad.mp4"
+                        },
+                        {
+                            "text": "Commenting on projects",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "It's helpful to understand the process your reviewers complete to leave feedback on the sequence you uploaded. The feedback process all happens in the Frame.io web or iOS application.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Watch the video above to see how commenting works."
+                                },
+                                {
+                                    "text": "In your web browser, bookmark <a href=\"https://support.frame.io/en/articles/3331455-commenting-on-your-media#:~:text=Play%20the%20video%20by%20pressing,the%20checkmark%20on%20the%20left.\">this tutorial</a> from Frame.io. This tutorial helps your reviewers understand the commenting process."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/Review_With_Frameio-2.prproj"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/3b9791e8-5c97-4c50-8b11-b1a21f4a56e2.mp4"
+                        },
+                        {
+                            "text": "View feedback in Premiere Pro",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Historically, incorporating reviewer feedback on videos has required a lot of back-and-forth between your video project and written comments that have little to no context. Frame.io + Premiere Pro solves this issue by syncing reviewer comments with your video project, all within the editing workspace, in just a few clicks. We've opened a new project that is also uploaded to Frame.io so that you can practice syncing and viewing comments.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Frame.io$> panel, click the <$Select a Project$> dropdown menu, and then choose <$Demo Project$>."
+                                },
+                                {
+                                    "text": "Click the sequence <$Full Spot - Graded.mp4$>. Then, click the <$Link Playheads$> button. This action syncs the video players in both the <$Frame.io$> panel and the <$Timeline$> panel."
+                                },
+                                {
+                                    "text": "Click the comment bubble in the top left corner of the Frame.io video player. The comment view opens."
+                                },
+                                {
+                                    "text": "Click on any of the comments. Notice how the playhead moves to the location where the comment was made."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro/83b6b066-68dd-468c-9c06-7ec8d5fc06bb.mp4"
+                        },
+                        {
+                            "text": "Leave comments using markers in the Timeline panel",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "You can also leave comments by adding markers in the Timeline, which will sync with Frame.io.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the <$Program Monitor$>, move the playhead to about 20 seconds."
+                                },
+                                {
+                                    "text": "Right-click in the <$Timeline$> to show the marker options. Then, choose <$Add Marker$>. A green marker appears."
+                                },
+                                {
+                                    "text": "Right-click in the <$Program Monitor$> again, and choose <$Edit Marker$>. The <$Marker$> dialog box appears."
+                                },
+                                {
+                                    "text": "Change the <$Duration$> to 05:00 seconds to increase the length of the marker in the <$Timeline$>."
+                                },
+                                {
+                                    "text": "Type any details you want to include into the <$Comments$> text box. Then, click <$OK$>."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "text": "Practice uploading to Frame.io",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Let's say you want to share the comment that you added with your team. To do this, you follow the same steps you completed to upload the sequence the first time. The only difference is to make sure you check the <$Export markers as comments$> box.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Use the <$Review with Frame.io$> panel to upload the sequence with the markers."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        },
+                        {
+                            "heading": "<$Hint 1$>",
+                            "icon": "hint",
+                            "texts": [
+                                "Where in the <$Review with Frame.io$> panel is your <$Opple Juice$> project? Where is the <$Upload$> button?"
+                            ],
+                            "type": "toggleable"
+                        },
+                        {
+                            "heading": "<$Hint 2$>",
+                            "icon": "hint",
+                            "texts": [
+                                "Switch to your <$Opple Juice$> project, and then upload the sequence including comments as markers."
+                            ],
+                            "type": "toggleable"
+                        },
+                        {
+                            "heading": "<$Hint 3$>",
+                            "icon": "hint",
+                            "texts": [
+                                "First, switch the <$Project$> space to the <$Opple Juice$> project you created earlier in this tutorial. Then, click the <$Upload$> button. Check the <$Export markers as comments$> box. Finally, click <$Upload$>."
+                            ],
+                            "type": "toggleable"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "successHeading": "Nicely done!",
+                            "successText": "You just practiced uploading your sequence for sharing and reviewing using the <$Review with Frame.io$> panel. For more information on Frame.io, visit the <a href=\"https://helpx.adobe.com/x-productkb/multi/collaborate-frameio-premiere-pro.html\">Use Frame.io with Premiere Pro and After Effects</a> page.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "c48e8378-9e08-3026-a65f-c25cbce51b54",
+            "versions": [
+                1
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "c48e8378-9e08-3026-a65f-c25cbce51b54",
+                "versions": [
+                    1
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/streamline-collaboration-premiere-pro",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Streamline collaboration using Frame.io",
+            "short": "Streamline collaboration using Frame.io",
+            "long": "Learn how Frame.io unlocks collaboration with your team."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/7cdd6843-dac6-3cb5-8f1b-594573aab949/streamline-collaboration-premiere-pro_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/7cdd6843-dac6-3cb5-8f1b-594573aab949/streamline-collaboration-premiere-pro_300x190.jpg"
+        },
+        "title": "Streamline collaboration using Frame.io",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "180",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "intermediate",
+        "stage": "practice",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "collaboration",
+            "video-editing",
+            "promotional-video"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Collaboration",
+                    "id": "d6199dd6f65849419cf32984589cebb4",
+                    "internalId": "collaboration",
+                    "name": "Collaboration"
+                },
+                {
+                    "enName": "Video editing",
+                    "id": "1a4bf81f09114391ae2330bf04b5fd6d",
+                    "internalId": "video-editing",
+                    "name": "Video editing"
+                },
+                {
+                    "enName": "Promotional video",
+                    "id": "42900637c10042feb62fdc7df08dfc1b",
+                    "internalId": "promotional-video",
+                    "name": "Promotional video"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2022-04-12T03:48:58.412Z",
+    "modified_on": "2024-05-03T22:45:03.990Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "7cdd6843-dac6-3cb5-8f1b-594573aab949",
+    "commitId": "40db770ff51cf4b894c40e6c87fc77c6cc2e8bd7",
+    "type": "project"
+}

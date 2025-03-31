@@ -1,74 +1,71 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { verifyAuth } from "@/lib/auth"
+import { getServerSession } from "next-auth/next"
+import { authOptions, isAdmin } from "@/lib/auth"
 
 export async function GET(request: Request) {
   try {
-    // Verify authentication
-    const authResult = await verifyAuth(request)
-    if (!authResult.isAuthenticated) {
+    // Verify authentication using NextAuth
+    const session = await getServerSession(authOptions)
+
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get staff count
-    const staffResult = await db.query("SELECT COUNT(*) as count FROM housekeepers WHERE is_active = true")
-    const staffCount = Number.parseInt(staffResult.rows[0].count)
+    // Check if user is admin
+    if (!isAdmin(session)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
 
-    // Get active tasks count
-    const activeTasksResult = await db.query("SELECT COUNT(*) as count FROM tasks WHERE status = 'in-progress'")
-    const activeTasksCount = Number.parseInt(activeTasksResult.rows[0].count)
+    // Get total housekeepers
+    const housekeepersResult = await db.query("SELECT COUNT(*) as count FROM housekeepers WHERE is_active = true")
+    const activeHousekeepers = Number.parseInt(housekeepersResult.rows[0].count)
 
-    // Get completed tasks count
-    const completedTasksResult = await db.query("SELECT COUNT(*) as count FROM tasks WHERE status = 'completed'")
-    const completedTasksCount = Number.parseInt(completedTasksResult.rows[0].count)
+    // Get task statistics
+    const taskStatsResult = await db.query(`
+      SELECT 
+        COUNT(*) FILTER (WHERE status = 'pending') as pending_tasks,
+        COUNT(*) FILTER (WHERE status = 'in-progress') as in_progress_tasks,
+        COUNT(*) FILTER (WHERE status = 'completed') as completed_tasks,
+        COUNT(*) FILTER (WHERE assigned_to IS NULL) as unassigned_tasks
+      FROM tasks
+    `)
 
-    // Get issues count
-    const issuesResult = await db.query("SELECT COUNT(*) as count FROM issues WHERE is_resolved = false")
-    const issuesCount = Number.parseInt(issuesResult.rows[0].count)
+    // Get recent documents
+    const recentDocumentsResult = await db.query(`
+      SELECT d.*, u.username as uploaded_by_name, 
+      (SELECT COUNT(*) FROM tasks WHERE document_id = d.id) as task_count
+      FROM scanned_documents d
+      JOIN users u ON d.uploaded_by = u.id
+      ORDER BY d.created_at DESC
+      LIMIT 5
+    `)
 
-    // Get recent tasks
-    const recentTasksResult = await db.query(
-      `SELECT t.*, h.name as assigned_to_name 
-       FROM tasks t 
-       LEFT JOIN housekeepers h ON t.assigned_to = h.id 
-       ORDER BY t.updated_at DESC 
-       LIMIT 5`,
-    )
-    const recentTasks = recentTasksResult.rows
-
-    // Get upcoming tasks
-    const upcomingTasksResult = await db.query(
-      `SELECT t.*, h.name as assigned_to_name 
-       FROM tasks t 
-       LEFT JOIN housekeepers h ON t.assigned_to = h.id 
-       WHERE t.status = 'scheduled' AND t.scheduled_for > CURRENT_TIMESTAMP
-       ORDER BY t.scheduled_for ASC 
-       LIMIT 5`,
-    )
-    const upcomingTasks = upcomingTasksResult.rows
-
-    // Get issues
-    const issuesListResult = await db.query(
-      `SELECT i.*, t.title as task_title 
-       FROM issues i 
-       LEFT JOIN tasks t ON i.task_id = t.id 
-       WHERE i.is_resolved = false 
-       ORDER BY i.created_at DESC 
-       LIMIT 5`,
-    )
-    const issuesList = issuesListResult.rows
+    // Get housekeeper performance
+    const performanceResult = await db.query(`
+      SELECT h.id, h.name, 
+        COUNT(*) FILTER (WHERE t.status = 'completed') as completed_tasks,
+        COUNT(*) FILTER (WHERE t.status = 'pending' OR t.status = 'in-progress') as pending_tasks,
+        ROUND(
+          COUNT(*) FILTER (WHERE t.status = 'completed')::numeric / 
+          NULLIF(COUNT(*), 0)::numeric * 100
+        ) as completion_rate
+      FROM housekeepers h
+      LEFT JOIN tasks t ON h.id = t.assigned_to
+      WHERE h.is_active = true
+      GROUP BY h.id, h.name
+      ORDER BY completion_rate DESC NULLS LAST
+      LIMIT 5
+    `)
 
     return NextResponse.json({
-      staffCount,
-      activeTasksCount,
-      completedTasksCount,
-      issuesCount,
-      recentTasks,
-      upcomingTasks,
-      issuesList,
+      activeHousekeepers,
+      taskStats: taskStatsResult.rows[0],
+      recentDocuments: recentDocumentsResult.rows,
+      housekeeperPerformance: performanceResult.rows,
     })
   } catch (error) {
-    console.error("Error fetching dashboard stats:", error)
+    console.error("Error fetching admin dashboard data:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

@@ -1,0 +1,90 @@
+{
+    "creative_categories": [
+        "nuj-creative-effects"
+    ],
+    "platforms": [
+        "in-app"
+    ],
+    "total_duration": 1800,
+    "status": "live",
+    "tutorial_ids": [
+        "ade052cb-94c3-3d44-b9e6-043ba3c480bb",
+        "42e25877-4b7b-3c07-af80-cc7b50aa5ca1",
+        "86711926-0000-3030-82f2-c2f0cf9f1864",
+        "f7c3167a-7530-38f2-923d-fec3df062bb7",
+        "745d2610-5635-388d-a4e7-5eec514f1f02",
+        "44dea08d-b039-3189-a181-364dc029abf0"
+    ],
+    "topics": [
+        "Color",
+        "Graphics",
+        "Audio"
+    ],
+    "taxonomy": {
+        "topics": [
+            {
+                "enName": "Color",
+                "name": "Color",
+                "internalId": "color",
+                "archived": "false",
+                "id": "0b866e9c90384a2a8a4feefa187d13f4"
+            },
+            {
+                "enName": "Graphics",
+                "name": "Graphics",
+                "internalId": "graphics",
+                "archived": "false",
+                "id": "6a39c69be39b405fbbc67bb8977b278e"
+            },
+            {
+                "enName": "Audio",
+                "name": "Audio",
+                "internalId": "audio",
+                "archived": "false",
+                "id": "da0d60b4b806415f931d9ba3a1ee6d02"
+            }
+        ],
+        "creative_fields": [
+            {
+                "enName": "Video & audio",
+                "name": "Video & audio",
+                "internalId": "video",
+                "archived": false,
+                "id": "4f1f7cf84f3349a59e40f91a4b0e3005"
+            }
+        ]
+    },
+    "modified_on": "Fri Feb 23 18:50:12 UTC 2024",
+    "header": "",
+    "playlistUUID": "bbc1d8bf-e0f2-3e00-b537-57bb7eb32e34",
+    "formatVersion": "1.0",
+    "id": "e41464df-751c-471e-8126-ffcfdd5de6d5",
+    "created_on": "Thu Feb 22 20:10:31 UTC 2024",
+    "creative_fields": [
+        "Video & audio"
+    ],
+    "stage": "begin",
+    "source": {
+        "third_party": false,
+        "label": "Adobe.com"
+    },
+    "text": "",
+    "published_on": "Fri Feb 23 18:50:12 UTC 2024",
+    "level": "beginner",
+    "images": {
+        "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/bbc1d8bf-e0f2-3e00-b537-57bb7eb32e34/video-share-social-media_952x200.jpg",
+        "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/bbc1d8bf-e0f2-3e00-b537-57bb7eb32e34/video-share-social-media_1000x240.jpg"
+    },
+    "applications": {
+        "fi_code": [
+            "premierepro_cc"
+        ],
+        "sap_code": [
+            "PPRO"
+        ]
+    },
+    "description": "Practice using graphics, color, music, and more to create a video to share on social media with these five interactive tutorials.",
+    "aem_id": "playlist/premiere-pro/video/video-share-social-media",
+    "type": "the-basics",
+    "title": "Create a video to share on social media"
+}

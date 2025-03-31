@@ -1,0 +1,87 @@
+{
+    "creative_categories": [
+        "nuj-creative-effects"
+    ],
+    "platforms": [
+        "in-app"
+    ],
+    "total_duration": 1260,
+    "status": "live",
+    "tutorial_ids": [
+        "8b6ea8f9-7cae-3e39-bb50-3aba4560de0e",
+        "322eb1a4-c91e-3408-9b4e-08f7b176b045",
+        "85f81786-5731-3fb3-a8a0-f482c3b4da9b"
+    ],
+    "topics": [
+        "Effects",
+        "Color",
+        "Social media videos"
+    ],
+    "taxonomy": {
+        "topics": [
+            {
+                "enName": "Effects",
+                "name": "Effects",
+                "internalId": "effects",
+                "archived": "false",
+                "id": "fadb0bb977c241c5b1f486e40aef4c15"
+            },
+            {
+                "enName": "Color",
+                "name": "Color",
+                "internalId": "color",
+                "archived": "false",
+                "id": "0b866e9c90384a2a8a4feefa187d13f4"
+            },
+            {
+                "enName": "Social media videos",
+                "name": "Social media videos",
+                "internalId": "social-media-videos",
+                "archived": "false",
+                "id": "d1994573d7c6491dbcd936bdafe89167"
+            }
+        ],
+        "creative_fields": [
+            {
+                "enName": "Video & audio",
+                "name": "Video & audio",
+                "internalId": "video",
+                "archived": false,
+                "id": "4f1f7cf84f3349a59e40f91a4b0e3005"
+            }
+        ]
+    },
+    "modified_on": "Fri Feb 23 18:20:21 UTC 2024",
+    "header": "",
+    "playlistUUID": "03dd7670-9f36-3722-ab05-2ed202a4e592",
+    "formatVersion": "1.0",
+    "id": "3dd0e2e3-2a4f-4872-9851-4a90c4ac464d",
+    "created_on": "Thu Feb 22 20:10:31 UTC 2024",
+    "creative_fields": [
+        "Video & audio"
+    ],
+    "stage": "practice",
+    "source": {
+        "third_party": false,
+        "label": "Adobe.com"
+    },
+    "text": "",
+    "published_on": "Fri Feb 23 18:20:21 UTC 2024",
+    "level": "intermediate",
+    "images": {
+        "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/03dd7670-9f36-3722-ab05-2ed202a4e592/beautiful-makeup-videos_952x200.jpg",
+        "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/03dd7670-9f36-3722-ab05-2ed202a4e592/beautiful-makeup-videos_1000x240.jpg"
+    },
+    "applications": {
+        "fi_code": [
+            "premierepro_cc"
+        ],
+        "sap_code": [
+            "PPRO"
+        ]
+    },
+    "description": "Make beauty videos that stand out with Michelle Phan as she shows you how to add sparkle to your model shots, improve your voiceovers, and create a dreamy look.",
+    "aem_id": "playlist/premiere-pro/video/beautiful-makeup-videos",
+    "type": "skills-and-projects",
+    "title": "Create beautiful makeup videos"
+}

@@ -1,0 +1,333 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "0.1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/042-rearrange-and-adjust-the-timing-of-your-clips/90bpm_exotica.m4a",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/042-rearrange-and-adjust-the-timing-of-your-clips/meeting_01.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/042-rearrange-and-adjust-the-timing-of-your-clips/ordering.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/042-rearrange-and-adjust-the-timing-of-your-clips/working_01.mp4"
+            ],
+            "minVersion": "15.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/042-rearrange-and-adjust-the-timing-of-your-clips/Move_Trim_Project.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/042-rearrange-and-adjust-the-timing-of-your-clips/Move_Trim_Project.prproj"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/042-rearrange-and-adjust-the-timing-of-your-clips/6dc8889b-c70c-4f88-9cf0-b12197e6720f.mp4"
+                        },
+                        {
+                            "text": "Moving and trimming clips",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>Before you begin, preview the completed video.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Awesome!",
+                                        "texts": [
+                                            "Click <$Next$> when you're ready to begin the tutorial."
+                                        ]
+                                    },
+                                    "text": "Press the <%{KEY.SPACEBAR}%> to start playing the sequence."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/042-rearrange-and-adjust-the-timing-of-your-clips/rearrange-clips.mp4"
+                        },
+                        {
+                            "text": "Rearrange two clips",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>Let's say you've realized that the story you're telling flows better if Clip 2 comes before Clip 3.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isClipSelected",
+                                            "payload": {
+                                                "clipName": "Clip 2"
+                                            }
+                                        }
+                                    ],
+                                    "text": "In the timline, select Clip 2."
+                                },
+                                {
+                                    "checkParallel": true,
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "clipMoved",
+                                            "payload": {
+                                                "clipName": "Clip 2"
+                                            }
+                                        },
+                                        {
+                                            "check": "checkClipProperties",
+                                            "payload": {
+                                                "clipName": "Clip 3",
+                                                "comment": "duration in seconds",
+                                                "propertyName": "duration",
+                                                "value": [
+                                                    2,
+                                                    3
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Success!",
+                                        "texts": [
+                                            "Using this modifier key is an efficient way to rearrange clips when you’re assembling your video projects."
+                                        ]
+                                    },
+                                    "text": "Hold <%{KEY.OPTION_ALT.{{osName}}}%> + <%{KEY.COMMAND_CONTROL.{{osName}}}%> and drag Clip 2 to about 2 seconds, where Clip 3 begins."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/042-rearrange-and-adjust-the-timing-of-your-clips/trimming-clips.mp4"
+                        },
+                        {
+                            "text": "Trimming clips",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>If you'd like to adjust the timing of your clips, you can trim them to different lengths.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Hover over the right end of Clip 2 until your cursor becomes a red arrow pointing to the left. (If you see a red arrow pointing to the right, move your cursor slightly to the left.)"
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "clipLengthChanged",
+                                            "payload": {
+                                                "clipName": "Clip 2"
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Fantastic!",
+                                        "texts": [
+                                            "You were able to shorten Clip 1 by performing a regular trim, but now there is a gap between it and Clip 2. In some cases, this may be the effect you want, but in the next section you'll learn how to shorten a clip without leaving a gap."
+                                        ]
+                                    },
+                                    "text": "Click and drag to the left to shorten Clip 2 so that it ends at about 4 seconds."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepActionsOnShow": [
+                        {
+                            "actionName": "openProjectAndCloseAndSaveOthers",
+                            "payload": {
+                                "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/042-rearrange-and-adjust-the-timing-of-your-clips/Move_Trim_Project-2.prproj"
+                            }
+                        }
+                    ],
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/042-rearrange-and-adjust-the-timing-of-your-clips/ripple-trimming.mp4"
+                        },
+                        {
+                            "text": "Ripple trimming clips",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "<br>A ripple trim allows you to shorten the length of one clip while also moving up any subsequent clips in your project.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Hover over the end of Clip 2 until your cursor becomes a red arrow pointing to the left."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "clipLengthChanged",
+                                            "payload": {
+                                                "clipName": "Clip 2"
+                                            }
+                                        },
+                                        {
+                                            "check": "checkClipProperties",
+                                            "payload": {
+                                                "clipName": "Clip 3",
+                                                "propertyName": "start",
+                                                "value": [
+                                                    2,
+                                                    4.2
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Fantastic!",
+                                        "texts": [
+                                            "You were able to trim Clip 2 without leaving a gap between Clip 2 and Clip 3. Ripple trims are especially useful when you have multiple clips that need to be adjusted."
+                                        ]
+                                    },
+                                    "text": "While holding <%{KEY.COMMAND_CONTROL.{{osName}}}%>, click and drag to shorten Clip 2 so that it ends at about 4 seconds."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "additionalInfo": "",
+                            "successHeading": "Congratulations!",
+                            "successText": "Awesome job moving and trimming clips in the Timeline. You've almost completed your very first video project in Premiere Pro! In the next tutorial, you'll learn how to quickly export your project.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "2d1f27e8-539c-3d5e-bf6e-9d226d60e63d",
+            "versions": [
+                0
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "2d1f27e8-539c-3d5e-bf6e-9d226d60e63d",
+                "versions": [
+                    0
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/042-rearrange-and-adjust-the-timing-of-your-clips",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Move and trim clips to complete your project",
+            "short": "Move and trim clips to complete your project",
+            "long": "Rearrange and adjust the timing of your clips."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/ab87f84f-1c3b-3216-a819-9b4116f6d5bd/042-rearrange-and-adjust-the-timing-of-your-clips_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/ab87f84f-1c3b-3216-a819-9b4116f6d5bd/042-rearrange-and-adjust-the-timing-of-your-clips_300x190.jpg"
+        },
+        "title": "Move and trim clips to complete your project",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "180",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "get-started"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Get started",
+                    "id": "d02c57c7e5bf44719d9cbafcd45bde37",
+                    "internalId": "get-started",
+                    "name": "Get started"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2022-04-13T19:12:15.479Z",
+    "modified_on": "2024-05-03T22:15:23.940Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "ab87f84f-1c3b-3216-a819-9b4116f6d5bd",
+    "commitId": "40db770ff51cf4b894c40e6c87fc77c6cc2e8bd7",
+    "type": "project"
+}

@@ -1,0 +1,79 @@
+{
+    "creative_categories": [
+        "nuj-orientation"
+    ],
+    "platforms": [
+        "in-app"
+    ],
+    "total_duration": 1440,
+    "status": "live",
+    "tutorial_ids": [
+        "53577fa6-401e-3885-a482-ceb62e0ecc2d",
+        "05762bd8-0674-30a0-8e08-23882ac4ec48",
+        "bc920e3b-ef1f-3b0f-bac8-ae10c6bd1009"
+    ],
+    "topics": [
+        "Social media videos",
+        "Video editing"
+    ],
+    "taxonomy": {
+        "topics": [
+            {
+                "enName": "Social media videos",
+                "name": "Social media videos",
+                "internalId": "social-media-videos",
+                "archived": "false",
+                "id": "d1994573d7c6491dbcd936bdafe89167"
+            },
+            {
+                "enName": "Video editing",
+                "name": "Video editing",
+                "internalId": "video-editing",
+                "archived": "false",
+                "id": "1a4bf81f09114391ae2330bf04b5fd6d"
+            }
+        ],
+        "creative_fields": [
+            {
+                "enName": "Video & audio",
+                "name": "Video & audio",
+                "internalId": "video",
+                "archived": false,
+                "id": "4f1f7cf84f3349a59e40f91a4b0e3005"
+            }
+        ]
+    },
+    "modified_on": "Fri Feb 23 18:55:26 UTC 2024",
+    "header": "",
+    "playlistUUID": "38f4e169-0d2b-34e3-a981-b15d714e0aa7",
+    "formatVersion": "1.0",
+    "id": "f1ab465f-5e71-40d1-9128-83f0fcaab2ca",
+    "created_on": "Thu Feb 22 20:10:31 UTC 2024",
+    "creative_fields": [
+        "Video & audio"
+    ],
+    "stage": "practice",
+    "source": {
+        "third_party": false,
+        "label": "Adobe.com"
+    },
+    "text": "",
+    "published_on": "Fri Feb 23 18:55:26 UTC 2024",
+    "level": "intermediate",
+    "images": {
+        "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/38f4e169-0d2b-34e3-a981-b15d714e0aa7/edit-videos-uniquely-you_952x200.jpg",
+        "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/38f4e169-0d2b-34e3-a981-b15d714e0aa7/edit-videos-uniquely-you_1000x240.jpg"
+    },
+    "applications": {
+        "fi_code": [
+            "premierepro_cc"
+        ],
+        "sap_code": [
+            "PPRO"
+        ]
+    },
+    "description": "Dancer and social creator HappyKelli shows you how she creates fun, colorful videos that have earned her millions of followers.",
+    "aem_id": "playlist/premiere-pro/video/edit-videos-uniquely-you",
+    "type": "skills-and-projects",
+    "title": "Edit videos that are uniquely you"
+}

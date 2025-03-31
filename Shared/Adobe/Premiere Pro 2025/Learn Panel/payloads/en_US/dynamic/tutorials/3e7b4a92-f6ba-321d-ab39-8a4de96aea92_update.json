@@ -1,0 +1,205 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "1",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/audio-fade-handles/ExtSound_Main_Boom.aac",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/audio-fade-handles/Interview_Lauren_YS_.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/audio-fade-handles/SprayPaintTitle.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/audio-fade-handles/Spray-Paint.aac"
+            ],
+            "minVersion": "24.4",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/audio-fade-handles/Interactive_Fade_Handles.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": false,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/audio-fade-handles/a425ab86-3329-4f20-9652-17ba0f745c06.mp4"
+                        },
+                        {
+                            "text": "Using interactive fade handles",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Try using the interactive fade handles to create tailored fade effects.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "hasClipTransition",
+                                            "payload": {
+                                                "clipName": "ExtSound_Main_Boom.aac",
+                                                "layerName": "Audio 1",
+                                                "transitionName": "Constant Power"
+                                            }
+                                        }
+                                    ],
+                                    "text": "At the end of the purple audio clip, drag the fade handle to the left to add a subtle fade out."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved",
+                                            "comment": "Todo: detect Playhead to 0:13"
+                                        }
+                                    ],
+                                    "text": "The purple and green clips were recorded with different microphones. Move the playhead to about 13 seconds and press play to listen for the difference."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "hasClipTransition",
+                                            "payload": {
+                                                "clipName": "Interview_Lauren_YS_.mp4",
+                                                "layerName": "Audio 1",
+                                                "transitionName": "Constant Power"
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Great job!",
+                                        "texts": [
+                                            "You just added custom fades using the new interactive fade handles, giving you more control over the audio transitions in this project."
+                                        ]
+                                    },
+                                    "text": "To make the difference between the two clips less noticeable, drag the handle at the end of the green clip to the right to create a cross-fade between the two clips."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "successHeading": "Awesome!",
+                            "successText": "You just saw how to use interactive fade handles to create custom audio fades. Keep going to see the new dynamic waveforms in action.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "c6a0ac63-ddce-31a4-be89-47300ed6fc98",
+            "versions": [
+                1
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "c6a0ac63-ddce-31a4-be89-47300ed6fc98",
+                "versions": [
+                    1
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/audio-fade-handles",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Learn how to use fade handles to create seamless transitions.",
+            "short": "Learn how to use fade handles to create seamless transitions.",
+            "long": "Learn how to use fade handles to create seamless transitions."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/3e7b4a92-f6ba-321d-ab39-8a4de96aea92/audio-fade-handles_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/3e7b4a92-f6ba-321d-ab39-8a4de96aea92/audio-fade-handles_1920x1080.jpg"
+        },
+        "title": "Fine-tune with interactive fade handles",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "60",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "audio-editing",
+            "audio"
+        ],
+        "urls": {},
+        "tasks": [
+            "apply-audio-settings"
+        ],
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video"
+                }
+            ],
+            "tasks": [
+                {
+                    "enName": "Apply audio settings",
+                    "id": "db4e34415bdf46d994da8d2940cf325b",
+                    "internalId": "apply-audio-settings"
+                }
+            ],
+            "tools": [
+                {
+                    "enName": "Premiere Pro - Selection Tool - Tool",
+                    "id": "77b33169e5a744acb3c738f7bd932620",
+                    "internalId": "selection-tool"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Audio editing",
+                    "id": "adce2a8ba0724a64a6d69e1288654852",
+                    "internalId": "audio-editing"
+                },
+                {
+                    "enName": "Audio",
+                    "id": "da0d60b4b806415f931d9ba3a1ee6d02",
+                    "internalId": "audio"
+                }
+            ]
+        },
+        "tools": [
+            "selection-tool"
+        ]
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2024-05-02T15:46:17.045Z",
+    "modified_on": "2024-05-23T17:44:51.528Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "3e7b4a92-f6ba-321d-ab39-8a4de96aea92",
+    "commitId": "cb992c8ef7a4dfe70c4ae121f98be1e889757324",
+    "type": "project"
+}

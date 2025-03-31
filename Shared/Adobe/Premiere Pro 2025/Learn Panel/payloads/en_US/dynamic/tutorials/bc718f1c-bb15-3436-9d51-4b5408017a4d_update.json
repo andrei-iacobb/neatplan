@@ -1,0 +1,322 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/animation-basics/footage/Background.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/animation-basics/footage/Iceland_Graphic.psd"
+            ],
+            "minVersion": "13.1.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/animation-basics/Animation_Basics.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/animation-basics/step1.mp4"
+                        },
+                        {
+                            "text": "Animation basics",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "In this tutorial, we'll create a simple animation using a clip's Motion settings. Let's make this Iceland logo drop into the scene at the start of the sequence. To create this animation, we first have to tell Premiere Pro when and from where we want the graphic to start moving.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "Move the playhead to the beginning of the Timeline (if it's not already there)."
+                                },
+                                {
+                                    "text": "In the {{definition:{TOOLTIP.PROGRAM_PANEL}|Program Monitor panel}}, double-click on the Iceland graphic to make it the active track."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "Iceland_Graphic.psd",
+                                                "componentMatchName": "AE.ADBE Motion",
+                                                "componentParameter": 0,
+                                                "value": [
+                                                    false,
+                                                    [
+                                                        -0.7,
+                                                        -0.38
+                                                    ]
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "You just moved the logo to the top of the screen. This position will be the starting point of the animation. Notice how the Y position in the Effect Controls panel is now a negative number? That's because you changed the position of the graphic within the sequence."
+                                        ]
+                                    },
+                                    "text": "Click and slowly drag the graphic to the top of the screen, just until it disappears from view (hold <%SHIFT%> while dragging to move it in a straight line)."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/animation-basics/step2.mp4"
+                        },
+                        {
+                            "text": "Set a starting point",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Now we have to tell Premiere Pro that we want the logo to start moving at a specific time and position.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Effect Controls"
+                                            }
+                                        }
+                                    ],
+                                    "text": "In the application menu, click <$Window$> > <$Effect Controls$>."
+                                },
+                                {
+                                    "text": "In the Effect Controls panel, under the Motion settings, find the Position property."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "keyframeAdded",
+                                            "payload": {
+                                                "clipName": "Iceland_Graphic.psd",
+                                                "componentMatchName": "AE.ADBE Motion",
+                                                "componentParameter": 0
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "Look at the right-hand side of the Effect Controls panel where you should see another playhead and timeline. You should see a little diamond. This diamond is called a keyframe. By adding a keyframe, you just told Premiere Pro that you want it to remember the position of the graphic (off the top of the screen) at that current time (the beginning of the sequence). Premiere Pro stores all that information in the keyframe."
+                                        ]
+                                    },
+                                    "text": "Click on the small stopwatch to the left of the Position property."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/animation-basics/step3.mp4"
+                        },
+                        {
+                            "text": "Keyframes",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Keyframes play an essential role in creating animation in Premiere Pro. Let's see what happens when you move the logo back to the center of the screen and set another keyframe at a different time.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved",
+                                            "comment": "Todo: detect Playhead to 1:00"
+                                        }
+                                    ],
+                                    "text": "Move the playhead to about 1:00 in the sequence (a blue marker has been placed at the one-second mark for your reference)."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "Iceland_Graphic.psd",
+                                                "comment": "multiply the targeted frames by 8467200000 to get ticks and provide as string",
+                                                "componentMatchName": "AE.ADBE Motion",
+                                                "componentParameter": 0,
+                                                "time": "245548800000",
+                                                "value": [
+                                                    false,
+                                                    [
+                                                        0.1,
+                                                        0.43
+                                                    ]
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "Look again at the right-hand side of the Effect Controls panel where the playhead is. You should see a new keyframe has been created."
+                                        ]
+                                    },
+                                    "text": "In the Effect Controls panel, find the Position property of the Iceland graphic, change the second blue number (the vertical position) to 293, and press <%{KEY.ENTER}%> to move the graphic back to the center of the sequence."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/animation-basics/step4.mp4"
+                        },
+                        {
+                            "text": "Playback",
+                            "type": "heading"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiMoved"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "The logo should now drop in from the top of the screen and stop in the middle after one second. Congratulations! You just animated your first logo in Premiere Pro."
+                                        ]
+                                    },
+                                    "text": "Move the playhead back to the beginning of the sequence and press the <%{KEY.SPACEBAR}%> to see how Premiere Pro has created an animation using the keyframes you set."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "successHeading": "Good job!",
+                            "successText": "You just learned how to create basic animations.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "5e76b6d2-2407-3128-a25d-cdb52c1822a3",
+            "versions": [
+                1
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "5e76b6d2-2407-3128-a25d-cdb52c1822a3",
+                "versions": [
+                    1
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/animation-basics",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Animation basics",
+            "short": "Animation basics",
+            "long": "Learn the basics of animation using keyframes."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/bc718f1c-bb15-3436-9d51-4b5408017a4d/animation-basics_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/bc718f1c-bb15-3436-9d51-4b5408017a4d/animation-basics_300x190.jpg"
+        },
+        "title": "Animation basics",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "240",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "animation"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Animation",
+                    "id": "4931735f710f4382a1919d8ac5015e71",
+                    "internalId": "animation",
+                    "name": "Animation"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2021-08-27T16:10:06.238Z",
+    "modified_on": "2023-05-03T22:36:23.977Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "bc718f1c-bb15-3436-9d51-4b5408017a4d",
+    "analytics": {},
+    "commitId": "7bca92992ca19d2e2604afcd1e686bc3cc344697",
+    "type": "project",
+    "version": 37
+}

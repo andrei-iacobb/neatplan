@@ -1,0 +1,286 @@
+{
+    "surfaces": {
+        "in_app_panel": {
+            "format": "dva",
+            "version": "1",
+            "type": "project",
+            "additionalAssets": [
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/021-multi-camera-color-correction/footage/CLIP1.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/021-multi-camera-color-correction/footage/CLIP2.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/021-multi-camera-color-correction/footage/CLIP3.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/021-multi-camera-color-correction/footage/CLIP4.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/021-multi-camera-color-correction/footage/CLIP5.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/021-multi-camera-color-correction/footage/CLIP6.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/021-multi-camera-color-correction/footage/CLIP7.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/021-multi-camera-color-correction/footage/CLIP8.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/021-multi-camera-color-correction/footage/CLIP9.mp4",
+                "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/021-multi-camera-color-correction/footage/Opple_Voiceover.wav"
+            ],
+            "minVersion": "14.3.0",
+            "projectUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/021-multi-camera-color-correction/Color_correction.prproj",
+            "sizeBytes": "123456789",
+            "steps": [
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/021-multi-camera-color-correction/open_lumetri_and_match.mp4"
+                        },
+                        {
+                            "text": "Color matching",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "During a promo shoot, you'll often use multiple cameras. Unfortunately, if you're shooting with different camera brands, your clips may not match one another in look or color when you bring them into Premiere Pro. Color matching can be a tedious process to do by hand, but luckily, the color match feature in Premiere Pro can do a lot of the work for you.<br><br>For our project, Clip 8 and Clip 9 were filmed with different cameras. Clip 8 has a better orange color, so let's use it as our baseline and match its colors with Clip 9.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isPanelOpen",
+                                            "payload": {
+                                                "panelName": "Color"
+                                            }
+                                        }
+                                    ],
+                                    "text": "In the main menu, choose <$Window$> > <$Lumetri Color$>."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isCtiOverClip",
+                                            "payload": {
+                                                "clipName": "CLIP9.mp4"
+                                            }
+                                        }
+                                    ],
+                                    "text": "In the Timeline panel, move the playhead over <$Clip 9$> so you can see it in the <$Program$> monitor."
+                                },
+                                {
+                                    "text": "In the Lumetri Color panel, click the <$Color wheels & match$> section to expand it."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "clipName": "CLIP9.mp4",
+                                                "componentMatchName": "AE.ADBE Lumetri",
+                                                "componentParameter": 67,
+                                                "value": true
+                                            }
+                                        }
+                                    ],
+                                    "text": "At the top of the section, click <$Comparison view$>."
+                                },
+                                {
+                                    "text": "In the left <$Reference$> monitor, click the right arrow (<$Go to next edit$> button) until you reach Clip 8 at around 11:23."
+                                },
+                                {
+                                    "text": "With Clip 9 still selected, click <$Apply match$> below <$Comparison view$> in the Lumetri Color panel."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "ctiStopped"
+                                        },
+                                        {
+                                            "check": "ctiMoved"
+                                        },
+                                        {
+                                            "check": "ctiStopped"
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "How does it look? Working with color is often a subjective process, so if you don't like the results, you can use the color wheels to adjust the midtones, shadows, and highlights until you're happy with the look. You'll typically have to do some manual adjustments, but color matching will save you a lot of time in the initial stages of the the process."
+                                        ]
+                                    },
+                                    "text": "When you're ready, play back the sequence and look at how the colors change between Clip 8 and Clip 9. Stop playback when you're done looking at the sequence."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "autoplay": true,
+                            "loop": true,
+                            "type": "video",
+                            "videoUrl": "https://helpx.adobe.com/content/dam/help/en/premiere-pro/how-to/in-app/021-multi-camera-color-correction/basic_correction.mp4"
+                        },
+                        {
+                            "text": "Basic color correction",
+                            "type": "heading"
+                        },
+                        {
+                            "text": "Now that the colors look the same, you'll want to color-correct your clips. Color correction is the process of adjusting your clips until the colors look as close as possible to how the human eye sees them. If you're new to color correction, start with the adjustments in the <$Basic correction$> section of the <$Lumetri Color$> panel. You can achieve great results by adjusting a few of the right sliders. Let's make some simple adjustments to Clip 8 to make it look better.",
+                            "type": "text"
+                        },
+                        {
+                            "listItems": [
+                                {
+                                    "text": "In the Lumetri Color panel, under <$Color wheels & match$>, click <$Comparison view$> to turn off the side-by-side view."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "isCtiOverClip",
+                                            "payload": {
+                                                "clipName": "CLIP8.mp4"
+                                            }
+                                        }
+                                    ],
+                                    "text": "In the Timeline panel, move the playhead over <$Clip 8$> so you can see it in the Program monitor."
+                                },
+                                {
+                                    "text": "Near the top of the Lumetri Color panel, expand the <$Basic correction$> section."
+                                },
+                                {
+                                    "checkUserInteractions": [
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "componentMatchName": "AE.ADBE Lumetri",
+                                                "componentParameter": "LUMETRI_TONE_EXPOSURE_PARAMINDEX",
+                                                "value": [
+                                                    0.5,
+                                                    2
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "check": "checkClipComponent",
+                                            "payload": {
+                                                "componentMatchName": "AE.ADBE Lumetri",
+                                                "componentParameter": "LUMETRI_TONE_CONTRAST_PARAMINDEX",
+                                                "value": [
+                                                    20,
+                                                    50
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "showOnComplete": {
+                                        "heading": "Perfect!",
+                                        "texts": [
+                                            "How does the clip look now — better or worse? You can adjust the sliders further if you don't like the results or play around with the highlights, shadows, and white and black points to see how that changes the look. There are no wrong answers; explore the different sliders and find a look that you like."
+                                        ]
+                                    },
+                                    "text": "Increase <$Exposure$> to 1 and <$Contrast$> to 30."
+                                }
+                            ],
+                            "type": "listSubsteps"
+                        }
+                    ]
+                },
+                {
+                    "stepItems": [
+                        {
+                            "successHeading": "Nicely done!",
+                            "successText": "You just learned some quick ways to make your videos look more professional with matching colors. In the next tutorial, you'll learn how to use titles and graphics to add impact to your video.",
+                            "type": "endScreen"
+                        }
+                    ]
+                }
+            ]
+        },
+        "in_app_panels": {
+            "live": "5ce03d61-bc61-3573-b971-6f6467e11b35",
+            "versions": [
+                1
+            ]
+        },
+        "ids": {
+            "in_app_panels": {
+                "live": "5ce03d61-bc61-3573-b971-6f6467e11b35",
+                "versions": [
+                    1
+                ]
+            }
+        }
+    },
+    "aem_id": "premiere-pro/how-to/in-app/021-multi-camera-color-correction",
+    "metadata": {
+        "formatVersion": "1.0",
+        "descriptions": {
+            "medium": "Color match footage for a consistent look",
+            "short": "Color match footage for a consistent look",
+            "long": "Match shots from multiple cameras for a single unified look."
+        },
+        "media_types": [
+            "project"
+        ],
+        "creative_fields": [
+            "video"
+        ],
+        "application": {
+            "fi_code": "premierepro_cc",
+            "sap_code": "PPRO"
+        },
+        "locale": "en_US",
+        "images": {
+            "hero": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/3f42a3f4-8e97-3f80-b587-c2cd84fba075/021-multi-camera-color-correction_1000x560.jpg",
+            "thumbnail": "/Users/Shared/Adobe/Premiere Pro 2025/Learn Panel/payloads/en_US/dynamic/content/3f42a3f4-8e97-3f80-b587-c2cd84fba075/021-multi-camera-color-correction_300x190.jpg"
+        },
+        "title": "Color match footage for a consistent look",
+        "platforms": [
+            "in-app"
+        ],
+        "duration_in_seconds": "180",
+        "learning_approach": "interactive-in-app",
+        "related_applications": {
+            "fi_code": [],
+            "sap_code": []
+        },
+        "level": "beginner",
+        "stage": "begin",
+        "source": {
+            "third_party": false,
+            "label": "Adobe.com"
+        },
+        "topics": [
+            "color"
+        ],
+        "urls": {},
+        "taxonomy": {
+            "creative_fields": [
+                {
+                    "enName": "Video & audio",
+                    "id": "4f1f7cf84f3349a59e40f91a4b0e3005",
+                    "internalId": "video",
+                    "name": "Video & audio"
+                }
+            ],
+            "topics": [
+                {
+                    "enName": "Color",
+                    "id": "0b866e9c90384a2a8a4feefa187d13f4",
+                    "internalId": "color",
+                    "name": "Color"
+                }
+            ]
+        }
+    },
+    "urls": {
+        "helpx": null,
+        "helpx_iframe": null,
+        "low_url": null,
+        "low_url_temp": null
+    },
+    "created_on": "2021-08-27T16:10:06.437Z",
+    "modified_on": "2023-05-03T21:10:30.873Z",
+    "locale": "en_US",
+    "published_status": "live",
+    "tutorialUUID": "3f42a3f4-8e97-3f80-b587-c2cd84fba075",
+    "commitId": "7bca92992ca19d2e2604afcd1e686bc3cc344697",
+    "type": "project",
+    "version": 31
+}
