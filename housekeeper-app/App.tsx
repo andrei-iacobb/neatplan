@@ -76,4 +76,3 @@ const App = () => (
 AppRegistry.registerComponent(appConfig.expo.name, () => App)
 
 export default App
-

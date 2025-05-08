@@ -34,4 +34,3 @@ export const uploadDocument = async (file: FormData) => {
     throw error
   }
 }
-

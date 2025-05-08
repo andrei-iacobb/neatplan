@@ -1,1 +1,0 @@
-/Applications/Epic Games Launcher.app

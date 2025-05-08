@@ -14,4 +14,3 @@ export class UserService {
     return this.userRepository.find()
   }
 }
-

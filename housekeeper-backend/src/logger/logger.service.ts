@@ -16,4 +16,3 @@ export class AppLogger {
     this.logger.error({ message, trace, context })
   }
 }
-

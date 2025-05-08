@@ -11,4 +11,3 @@ import { UserService } from "./user.service"
   exports: [UserService, TypeOrmModule],
 })
 export class UsersModule {}
-

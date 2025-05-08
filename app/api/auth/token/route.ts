@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
 import { sign } from "jsonwebtoken"
-import { authOptions } from "@/lib/auth"
+import { db } from "@/lib/db"
+import bcrypt from "bcrypt"
 
 // This endpoint is for mobile app authentication
 // It returns a JWT token that can be used with the API
@@ -9,30 +9,28 @@ export async function POST(request: Request) {
   try {
     const { username, password } = await request.json()
 
-    // Use the same credentials provider logic
-    const res = await fetch(`${process.env.NEXTAUTH_URL}/api/auth/callback/credentials`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password, redirect: false, callbackUrl: "/" }),
-    })
+    // Find user in database
+    const result = await db.query("SELECT * FROM users WHERE username = $1", [username])
 
-    if (!res.ok) {
+    if (result.rows.length === 0) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
-    // Get the session to extract user data
-    const session = await getServerSession(authOptions)
+    const user = result.rows[0]
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Authentication failed" }, { status: 401 })
+    // Compare passwords
+    const isPasswordValid = await bcrypt.compare(password, user.password)
+
+    if (!isPasswordValid) {
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
     // Generate JWT token for mobile app
     const token = sign(
       {
-        userId: session.user.id,
-        username: session.user.name,
-        role: session.user.role,
+        userId: user.id,
+        username: user.username,
+        role: user.role,
       },
       process.env.NEXTAUTH_SECRET || process.env.JWT_SECRET || "default_secret",
       { expiresIn: "7d" },
@@ -41,9 +39,9 @@ export async function POST(request: Request) {
     return NextResponse.json({
       access_token: token,
       user: {
-        id: session.user.id,
-        username: session.user.name,
-        role: session.user.role,
+        id: user.id,
+        username: user.username,
+        role: user.role,
       },
     })
   } catch (error) {
@@ -51,4 +49,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
-

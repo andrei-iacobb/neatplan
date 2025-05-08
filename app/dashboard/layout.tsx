@@ -3,10 +3,10 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, Home, Users, Calendar, Settings, LogOut, Menu, X, Upload } from "lucide-react"
+import { CheckCircle, Home, Users, ClipboardList, Settings, LogOut, Menu, X, Upload, Bell, QrCode } from "lucide-react"
 import Link from "next/link"
 
 export default function DashboardLayout({
@@ -16,7 +16,9 @@ export default function DashboardLayout({
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
   const router = useRouter()
+  const pathname = usePathname()
   const { data: session, status } = useSession()
 
   useEffect(() => {
@@ -38,8 +40,26 @@ export default function DashboardLayout({
 
     handleResize()
     window.addEventListener("resize", handleResize)
+
+    // Fetch unread notifications count
+    if (status === "authenticated") {
+      fetchUnreadNotifications()
+    }
+
     return () => window.removeEventListener("resize", handleResize)
   }, [router, status])
+
+  const fetchUnreadNotifications = async () => {
+    try {
+      const response = await fetch("/api/notifications?is_read=false")
+      if (response.ok) {
+        const data = await response.json()
+        setUnreadNotifications(data.length)
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error)
+    }
+  }
 
   // Show loading state while checking authentication
   if (status === "loading") {
@@ -85,41 +105,80 @@ export default function DashboardLayout({
           <nav className="flex-1 space-y-1 px-3 py-4">
             <Link
               href="/dashboard"
-              className="flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+              className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                pathname === "/dashboard" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+              }`}
             >
               <Home className="mr-3 h-5 w-5" />
               Dashboard
             </Link>
 
+            <Link
+              href="/dashboard/rooms"
+              className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                pathname?.startsWith("/dashboard/rooms") ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+              }`}
+            >
+              <ClipboardList className="mr-3 h-5 w-5" />
+              Rooms & Tasks
+            </Link>
+
+            <Link
+              href="/dashboard/scan"
+              className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                pathname === "/dashboard/scan" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+              }`}
+            >
+              <QrCode className="mr-3 h-5 w-5" />
+              Scan Room
+            </Link>
+
+            <Link
+              href="/dashboard/notifications"
+              className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                pathname === "/dashboard/notifications" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+              }`}
+            >
+              <div className="relative mr-3">
+                <Bell className="h-5 w-5" />
+                {unreadNotifications > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+                    {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                  </span>
+                )}
+              </div>
+              Notifications
+            </Link>
+
             {isAdmin && (
-              <Link
-                href="/dashboard/staff"
-                className="flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
-              >
-                <Users className="mr-3 h-5 w-5" />
-                Staff
-              </Link>
+              <>
+                <Link
+                  href="/dashboard/staff"
+                  className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                    pathname === "/dashboard/staff" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                  }`}
+                >
+                  <Users className="mr-3 h-5 w-5" />
+                  Staff
+                </Link>
+
+                <Link
+                  href="/dashboard/documents"
+                  className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                    pathname === "/dashboard/documents" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                  }`}
+                >
+                  <Upload className="mr-3 h-5 w-5" />
+                  Documents
+                </Link>
+              </>
             )}
 
             <Link
-              href="/dashboard/documents"
-              className="flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
-            >
-              <Upload className="mr-3 h-5 w-5" />
-              Documents
-            </Link>
-
-            <Link
-              href="/dashboard/schedule"
-              className="flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
-            >
-              <Calendar className="mr-3 h-5 w-5" />
-              Schedule
-            </Link>
-
-            <Link
               href="/dashboard/settings"
-              className="flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+              className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                pathname === "/dashboard/settings" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+              }`}
             >
               <Settings className="mr-3 h-5 w-5" />
               Settings
@@ -145,4 +204,3 @@ export default function DashboardLayout({
     </div>
   )
 }
-

@@ -1,43 +1,53 @@
 import { NextResponse } from "next/server"
+import { pool } from "@/lib/db"
 import bcrypt from "bcrypt"
-import { db } from "@/lib/db"
+import { z } from "zod"
 
-export async function POST(request: Request) {
+const registerSchema = z.object({
+  username: z.string().min(3).max(100),
+  password: z.string().min(6),
+  role: z.enum(["admin", "cleaner"]).default("cleaner"),
+})
+
+export async function POST(req: Request) {
   try {
-    const { username, password, role = "housekeeper" } = await request.json()
+    const body = await req.json()
+    const { username, password, role } = registerSchema.parse(body)
 
-    // Check if username already exists
-    const existingUser = await db.query("SELECT * FROM users WHERE username = $1", [username])
+    // Check if user already exists
+    const existingUser = await pool.query(
+      "SELECT id FROM users WHERE username = $1",
+      [username]
+    )
 
     if (existingUser.rows.length > 0) {
-      return NextResponse.json({ error: "Username already exists" }, { status: 400 })
+      return NextResponse.json(
+        { error: "Username already exists" },
+        { status: 400 }
+      )
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Create new user
-    const result = await db.query(
+    // Create user
+    const result = await pool.query(
       "INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING id, username, role",
-      [username, hashedPassword, role],
+      [username, hashedPassword, role]
     )
 
-    // If user is a housekeeper, create a housekeeper record
-    if (role === "housekeeper") {
-      await db.query("INSERT INTO housekeepers (user_id, name) VALUES ($1, $2)", [result.rows[0].id, username])
-    }
-
-    return NextResponse.json({
-      success: true,
-      user: {
-        id: result.rows[0].id,
-        username: result.rows[0].username,
-        role: result.rows[0].role,
-      },
-    })
+    return NextResponse.json(result.rows[0])
   } catch (error) {
     console.error("Registration error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Invalid input data", details: error.errors },
+        { status: 400 }
+      )
+    }
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    )
   }
 }
-

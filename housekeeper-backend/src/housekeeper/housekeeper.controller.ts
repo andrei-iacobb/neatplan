@@ -15,4 +15,3 @@ export class HousekeeperController {
         return this.housekeeperService.create(name);
     }
 }
-

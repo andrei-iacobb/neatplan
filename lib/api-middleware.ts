@@ -68,4 +68,3 @@ export function unauthorizedResponse() {
 export function forbiddenResponse() {
   return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 }
-

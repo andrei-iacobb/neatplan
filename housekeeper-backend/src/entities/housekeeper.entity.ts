@@ -11,4 +11,3 @@ export class HouseKeeper {
   @Column({ default: false })
   isActive: boolean
 }
-

@@ -105,4 +105,3 @@ rl.question("Do you want to move existing files to /app-example instead of delet
     rl.close()
   }
 })
-

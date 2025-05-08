@@ -123,4 +123,3 @@ export async function verifyAuth(request: NextRequest) {
     return { isAuthenticated: false }
   }
 }
-

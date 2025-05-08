@@ -14,4 +14,3 @@ export class AuthController {
     return this.authService.login(username, password)
   }
 }
-

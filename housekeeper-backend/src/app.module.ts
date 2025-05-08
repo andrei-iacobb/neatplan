@@ -37,4 +37,3 @@ import { UsersModule } from "./users/users.module"
   exports: [AppLogger],
 })
 export class AppModule {}
-

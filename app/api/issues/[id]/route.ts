@@ -80,4 +80,3 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
-

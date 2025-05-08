@@ -79,4 +79,3 @@ export const getCurrentUser = async () => {
 }
 
 export default api
-
