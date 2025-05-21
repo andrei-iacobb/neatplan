@@ -1,54 +1,32 @@
-version: '3.8'
-
 services:
-  backend:
-    build: ./housekeeper-backend
-    container_name: housekeeper-backend
+  web:
+    build: .
+    container_name: cleantrack_web
     restart: always
     ports:
-      - "3002:3002"
+      - "3000:3000"
     environment:
-      - PORT=3002
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=admin
-      - DB_PASSWORD=secret
-      - DB_NAME=housekeeper
-      - JWT_SECRET=mysecretkey
+      - DATABASE_URL=postgresql://admin:secret@db:5432/cleantrack
+      - NEXTAUTH_SECRET=your-secret-key-here
+      - NEXTAUTH_URL=http://localhost:3000
     volumes:
-      - ./housekeeper-backend:/app
+      - .:/app
+      - /app/node_modules
     depends_on:
       - db
 
-  mobile:
-    build: ./housekeeper-app
-    container_name: housekeeper-mobile
-    restart: always
-    ports:
-     - "8081:8081"
-     - "19000:19000"
-     - "19001:19001"
-     - "19002:19002"
-
-    volumes:
-      - ./housekeeper-app:/app
-    stdin_open: true
-    tty: true
-    depends_on:
-      - backend
-
   db:
-    image: postgres:latest
-    container_name: housekeeper-db
+    image: postgres:15
+    container_name: cleantrack_db
     restart: always
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: housekeeper
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: secret
+      POSTGRES_DB: cleantrack
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - cleantrack_data:/var/lib/postgresql/data
 
 volumes:
-  pg_data:
+  cleantrack_data:

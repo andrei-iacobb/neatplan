@@ -1,8 +1,12 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -11,121 +15,79 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(uuid())
-  name          String
-  email         String    @unique
-  password      String
-  role          String    @default("user")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  tasks         Task[]    @relation("UserToTask")
-  notifications Notification[]
-}
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tasks     Task[]   @relation("UserTasks")
 
-model Building {
-  id            String    @id @default(uuid())
-  name          String
-  address       String?
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
-  rooms         Room[]
-}
-
-model Room {
-  id            String    @id @default(uuid())
-  name          String
-  building_id   String
-  building      Building  @relation(fields: [building_id], references: [id])
-  floor         String
-  status        String    @default("pending")
-  last_cleaned  DateTime?
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
-  tasks         Task[]
-  cleaning_sheets CleaningSheet[]
-  documents     Document[]
-}
-
-model TaskTemplate {
-  id          String    @id @default(uuid())
-  name        String
-  description String?
-  tasks       Task[]
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
+  @@map("users")
 }
 
 model Task {
-  id            String    @id @default(uuid())
-  name          String
-  description   String?
-  status        String    @default("pending")
-  priority      String    @default("normal")
-  due_date      DateTime?
-  completed_at  DateTime?
-  room_id       String
-  room          Room      @relation(fields: [room_id], references: [id])
-  template_id   String?
-  template      TaskTemplate? @relation(fields: [template_id], references: [id])
-  staff         Staff?    @relation("StaffToTask", fields: [staff_id], references: [id])
-  staff_id      Int?
-  cleaning_sheet CleaningSheet? @relation(fields: [cleaning_sheet_id], references: [id])
-  cleaning_sheet_id String?
-  user          User?     @relation("UserToTask", fields: [user_id], references: [id])
-  user_id       String?
-  document      Document? @relation(fields: [document_id], references: [id])
-  document_id   String?
-}
-
-model Document {
-  id          String    @id @default(uuid())
-  name        String
-  type        String    // "cleaning_sheet", "report", "other"
-  url         String
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
-  room_id     String
-  room        Room      @relation(fields: [room_id], references: [id])
-  tasks       Task[]
-}
-
-model Notification {
-  id          String   @id @default(uuid())
+  id          String      @id @default(cuid())
   title       String
-  message     String
-  read        Boolean  @default(false)
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-  user_id     String
-  user        User     @relation(fields: [user_id], references: [id])
+  description String?
+  status      TaskStatus  @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  dueDate     DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  userId      String
+  user        User        @relation("UserTasks", fields: [userId], references: [id])
+
+  @@map("tasks")
 }
 
-model Staff {
-  id            Int       @id @default(autoincrement())
-  name          String
-  email         String    @unique
-  role          String
-  status        String    @default("active")
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
-
-  // Relationships
-  tasks         Task[]    @relation("StaffToTask")
-  cleaning_sheets CleaningSheet[] @relation("StaffToCleaningSheet")
-
-  @@map("staff")
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
 }
 
-model CleaningSheet {
-  id            String    @id @default(uuid())
-  name          String
-  type          String    // "cleaning_sheet", "report", "other"
-  url           String
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
-  room_id       String
-  room          Room      @relation(fields: [room_id], references: [id])
-  tasks         Task[]
-  staff         Staff?    @relation("StaffToCleaningSheet", fields: [staff_id], references: [id])
-  staff_id      Int?
-} 
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Room {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  floor       String?
+  type        RoomType @default(OTHER)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tasks       CleaningTask[]
+
+  @@map("rooms")
+}
+
+enum RoomType {
+  OFFICE
+  MEETING_ROOM
+  BATHROOM
+  KITCHEN
+  LOBBY
+  STORAGE
+  BEDROOM
+  OTHER
+}
+
+model CleaningTask {
+  id                String   @id @default(cuid())
+  taskDescription   String
+  frequency         String
+  estimatedDuration String
+  status           String   @default("pending")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  roomId           String?
+  room             Room?    @relation(fields: [roomId], references: [id])
+
+  @@map("cleaning_tasks")
+}
