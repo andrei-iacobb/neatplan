@@ -162,6 +162,23 @@ exports.Prisma.CleaningTaskScalarFieldEnum = {
   roomId: 'roomId'
 };
 
+exports.Prisma.ScheduleScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ScheduleTaskScalarFieldEnum = {
+  id: 'id',
+  description: 'description',
+  frequency: 'frequency',
+  additionalNotes: 'additionalNotes',
+  scheduleId: 'scheduleId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -197,6 +214,7 @@ exports.RoomType = exports.$Enums.RoomType = {
   LOBBY: 'LOBBY',
   STORAGE: 'STORAGE',
   BEDROOM: 'BEDROOM',
+  LOUNGE: 'LOUNGE',
   OTHER: 'OTHER'
 };
 
@@ -204,7 +222,9 @@ exports.Prisma.ModelName = {
   User: 'User',
   Task: 'Task',
   Room: 'Room',
-  CleaningTask: 'CleaningTask'
+  CleaningTask: 'CleaningTask',
+  Schedule: 'Schedule',
+  ScheduleTask: 'ScheduleTask'
 };
 
 /**

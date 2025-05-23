@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { hash } from 'bcryptjs'
-import { db } from '@/lib/db'
+import { prisma } from '@/lib/db'
 import * as z from 'zod'
 
 const registerSchema = z.object({
@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     const { email, password, name } = registerSchema.parse(body)
 
     // Check if user exists
-    const existingUser = await db.user.findUnique({
+    const existingUser = await prisma.user.findUnique({
       where: { email },
     })
 
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
 
     const hashedPassword = await hash(password, 10)
 
-    const user = await db.user.create({
+    const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,

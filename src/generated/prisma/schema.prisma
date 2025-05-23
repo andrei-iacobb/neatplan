@@ -75,6 +75,7 @@ enum RoomType {
   LOBBY
   STORAGE
   BEDROOM
+  LOUNGE
   OTHER
 }
 
@@ -90,4 +91,27 @@ model CleaningTask {
   room              Room?    @relation(fields: [roomId], references: [id])
 
   @@map("cleaning_tasks")
+}
+
+model Schedule {
+  id        String         @id @default(cuid())
+  title     String
+  tasks     ScheduleTask[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@map("schedules")
+}
+
+model ScheduleTask {
+  id              String   @id @default(cuid())
+  description     String
+  frequency       String?
+  additionalNotes String?
+  scheduleId      String
+  schedule        Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("schedule_tasks")
 }

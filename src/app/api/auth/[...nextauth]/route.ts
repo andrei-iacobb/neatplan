@@ -1,11 +1,9 @@
 import NextAuth, { AuthOptions } from "next-auth"
-import { PrismaAdapter } from "@auth/prisma-adapter"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { compare } from "bcryptjs"
 import { prisma } from "@/lib/db"
 
 export const authOptions: AuthOptions = {
-  adapter: PrismaAdapter(prisma),
   session: {
     strategy: "jwt"
   },

@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -63,6 +62,7 @@ model Room {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   tasks       CleaningTask[]
+  schedules   RoomSchedule[]
 
   @@map("rooms")
 }
@@ -75,6 +75,7 @@ enum RoomType {
   LOBBY
   STORAGE
   BEDROOM
+  LOUNGE
   OTHER
 }
 
@@ -90,4 +91,76 @@ model CleaningTask {
   room             Room?    @relation(fields: [roomId], references: [id])
 
   @@map("cleaning_tasks")
+}
+
+model Schedule {
+  id          String   @id @default(cuid())
+  title       String
+  tasks       ScheduleTask[]
+  rooms       RoomSchedule[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("schedules")
+}
+
+model ScheduleTask {
+  id              String   @id @default(cuid())
+  description     String
+  frequency       String?
+  additionalNotes String?
+  scheduleId      String
+  schedule        Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("schedule_tasks")
+}
+
+model RoomSchedule {
+  id              String            @id @default(cuid())
+  roomId          String
+  room            Room              @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  scheduleId      String
+  schedule        Schedule          @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  frequency       ScheduleFrequency
+  startDate       DateTime          @default(now())
+  lastCompleted   DateTime?
+  nextDue         DateTime
+  status          ScheduleStatus    @default(PENDING)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  completionLogs  RoomScheduleCompletionLog[]
+
+  @@unique([roomId, scheduleId])
+  @@map("room_schedules")
+}
+
+model RoomScheduleCompletionLog {
+  id              String       @id @default(cuid())
+  roomScheduleId  String
+  roomSchedule    RoomSchedule @relation(fields: [roomScheduleId], references: [id], onDelete: Cascade)
+  completedAt     DateTime     @default(now())
+  notes           String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("room_schedule_completion_logs")
+}
+
+enum ScheduleFrequency {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  CUSTOM
+}
+
+enum ScheduleStatus {
+  PENDING
+  OVERDUE
+  COMPLETED
+  PAUSED
 }
