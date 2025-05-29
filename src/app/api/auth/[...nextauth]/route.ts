@@ -5,10 +5,13 @@ import { prisma } from "@/lib/db"
 
 export const authOptions: AuthOptions = {
   session: {
-    strategy: "jwt"
+    strategy: "jwt",
+    maxAge: 24 * 60 * 60, // 24 hours
   },
   pages: {
-    signIn: "/",
+    signIn: "/auth",
+    signOut: "/auth",
+    error: "/auth", // Error code passed in query string as ?error=
   },
   providers: [
     CredentialsProvider({
@@ -40,6 +43,7 @@ export const authOptions: AuthOptions = {
           id: user.id,
           email: user.email,
           name: user.name,
+          isAdmin: user.isAdmin,
         }
       }
     })
@@ -50,6 +54,7 @@ export const authOptions: AuthOptions = {
         session.user.id = token.id as string
         session.user.name = token.name as string | null
         session.user.email = token.email as string
+        session.user.isAdmin = token.isAdmin as boolean
       }
       return session
     },
@@ -58,10 +63,13 @@ export const authOptions: AuthOptions = {
         token.id = user.id
         token.email = user.email
         token.name = user.name
+        token.isAdmin = user.isAdmin
       }
       return token
     }
-  }
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === "development",
 }
 
 const handler = NextAuth(authOptions)

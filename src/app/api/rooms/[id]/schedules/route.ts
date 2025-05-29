@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { calculateNextDueDate } from '@/lib/schedule-utils'
-import { ScheduleFrequency } from '@/types/schedule'
+import { Prisma } from '@prisma/client'
 
 // POST /api/rooms/[id]/schedules - Assign a schedule to a room
 export async function POST(
-  req: Request,
-  { params }: { params: { id: string } }
+  request: Request,
+  context: { params: { id: string } }
 ) {
   try {
-    const { scheduleId, frequency } = await req.json()
+    const { scheduleId, frequency } = await request.json()
+    const params = await context.params
+    const roomId = params.id
 
     if (!scheduleId || !frequency) {
       return NextResponse.json(
@@ -18,21 +20,38 @@ export async function POST(
       )
     }
 
-    // Calculate the next due date based on frequency
-    const nextDue = calculateNextDueDate(frequency as ScheduleFrequency)
+    // Check if the schedule is already assigned to the room
+    const existingSchedule = await prisma.roomSchedule.findUnique({
+      where: {
+        roomId_scheduleId: {
+          roomId,
+          scheduleId
+        }
+      }
+    })
 
-    // Create the room schedule assignment
+    if (existingSchedule) {
+      return NextResponse.json(
+        { error: 'This schedule is already assigned to this room' },
+        { status: 400 }
+      )
+    }
+
+    const nextDueDate = calculateNextDueDate(frequency)
+
     const roomSchedule = await prisma.roomSchedule.create({
       data: {
-        roomId: params.id,
+        roomId,
         scheduleId,
-        frequency: frequency as ScheduleFrequency,
-        nextDue,
+        frequency,
+        nextDue: nextDueDate,
+        status: 'PENDING'
       },
       include: {
-        room: true,
         schedule: {
-          include: {
+          select: {
+            id: true,
+            title: true,
             tasks: true
           }
         }
@@ -40,42 +59,44 @@ export async function POST(
     })
 
     return NextResponse.json(roomSchedule)
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error assigning schedule to room:', error)
     return NextResponse.json(
-      { error: error?.message || 'Failed to assign schedule' },
+      { error: 'Failed to assign schedule to room' },
       { status: 500 }
     )
   }
 }
 
-// GET /api/rooms/[id]/schedules - Get all schedules assigned to a room
+// GET /api/rooms/[id]/schedules - Get all schedules for a room
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  request: Request,
+  context: { params: { id: string } }
 ) {
   try {
+    const params = await context.params
+    const roomId = params.id
+
     const roomSchedules = await prisma.roomSchedule.findMany({
       where: {
-        roomId: params.id
+        roomId
       },
       include: {
         schedule: {
-          include: {
+          select: {
+            id: true,
+            title: true,
             tasks: true
           }
         }
-      },
-      orderBy: {
-        nextDue: 'asc'
       }
     })
 
     return NextResponse.json(roomSchedules)
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching room schedules:', error)
     return NextResponse.json(
-      { error: error?.message || 'Failed to fetch schedules' },
+      { error: 'Failed to fetch room schedules' },
       { status: 500 }
     )
   }
@@ -83,19 +104,21 @@ export async function GET(
 
 // PATCH /api/rooms/[id]/schedules/[scheduleId] - Mark a room schedule as completed
 export async function PATCH(
-  req: Request,
-  { params }: { params: { id: string; scheduleId: string } }
+  request: Request,
+  context: { params: { id: string; scheduleId: string } }
 ) {
   try {
-    const { notes } = await req.json()
+    const { notes } = await request.json()
+    const params = await context.params
+    const { id: roomId, scheduleId } = params
     const now = new Date()
 
     // Find the room schedule
     const roomSchedule = await prisma.roomSchedule.findUnique({
       where: {
         roomId_scheduleId: {
-          roomId: params.id,
-          scheduleId: params.scheduleId
+          roomId,
+          scheduleId
         }
       }
     })
@@ -115,8 +138,8 @@ export async function PATCH(
       prisma.roomSchedule.update({
         where: {
           roomId_scheduleId: {
-            roomId: params.id,
-            scheduleId: params.scheduleId
+            roomId,
+            scheduleId
           }
         },
         data: {
@@ -142,10 +165,10 @@ export async function PATCH(
     ])
 
     return NextResponse.json(updated)
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error completing room schedule:', error)
     return NextResponse.json(
-      { error: error?.message || 'Failed to complete schedule' },
+      { error: 'Failed to complete schedule' },
       { status: 500 }
     )
   }

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/db'
 import { RoomType } from '@/generated/prisma/index.js'
 import * as z from 'zod'
+import { NextRequest } from 'next/server'
 
 const roomSchema = z.object({
   name: z.string().min(1, 'Room name is required'),
@@ -87,7 +88,7 @@ export async function DELETE(
 }
 
 export async function GET(
-  req: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -105,10 +106,10 @@ export async function GET(
     }
 
     return NextResponse.json(room)
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching room:', error)
     return NextResponse.json(
-      { error: error?.message || 'Failed to fetch room' },
+      { error: 'Failed to fetch room' },
       { status: 500 }
     )
   }

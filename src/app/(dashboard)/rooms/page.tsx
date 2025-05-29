@@ -15,12 +15,25 @@ interface Room {
   type: string
   createdAt: string
   updatedAt: string
+  schedules?: RoomSchedule[]
 }
 
 interface Schedule {
   id: string
   title: string
   tasks: { id: string; description: string }[]
+}
+
+interface RoomSchedule {
+  id: string
+  frequency: ScheduleFrequency
+  nextDue: string
+  status: ScheduleStatus
+  schedule: {
+    id: string
+    title: string
+    tasks: any[]
+  }
 }
 
 type ViewMode = 'BEDROOMS' | 'OTHER_ROOMS' | 'SCHEDULES'
@@ -54,9 +67,21 @@ export default function RoomsPage() {
       fetch('/api/rooms').then(res => res.json()),
       fetch('/api/schedules').then(res => res.json())
     ]).then(([roomsData, schedulesData]) => {
-      setRooms(roomsData)
-      setSchedules(schedulesData)
-      setIsLoading(false)
+      // Fetch schedules for each room
+      Promise.all(
+        roomsData.map((room: Room) =>
+          fetch(`/api/rooms/${room.id}/schedules`)
+            .then(res => res.json())
+            .then(schedules => ({
+              ...room,
+              schedules
+            }))
+        )
+      ).then(roomsWithSchedules => {
+        setRooms(roomsWithSchedules)
+        setSchedules(schedulesData)
+        setIsLoading(false)
+      })
     }).catch(error => {
       console.error('Error fetching data:', error)
       showToast('Failed to load data', 'error')
@@ -190,7 +215,7 @@ export default function RoomsPage() {
 
       showToast('Schedule assigned successfully', 'success')
       setSelectedSchedule('')
-      setSelectedRoom('')
+      setSelectedRoom(null)
     } catch (error) {
       console.error('Error assigning schedule:', error)
       showToast('Failed to assign schedule', 'error')
@@ -406,7 +431,7 @@ export default function RoomsPage() {
           </>
         ) : viewMode === 'BEDROOMS' ? (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
               {filteredBedrooms
                 .sort((a, b) => {
                   const aNum = parseInt(a.name.split(' ')[1])
@@ -416,33 +441,56 @@ export default function RoomsPage() {
                 .map(room => (
                   <div
                     key={room.id}
-                    className="relative aspect-square rounded-lg p-4 cursor-pointer bg-gray-900/50 border border-gray-700 hover:border-teal-500/50 hover:bg-teal-500/10 transition-colors"
-                    onClick={() => {
-                      setSelectedRoom(room)
-                      setFormData({
-                        name: room.name,
-                        description: room.description || '',
-                        floor: room.floor || 'Ground Floor',
-                        type: room.type
-                      })
-                      setShowEditModal(true)
-                    }}
+                    className="relative rounded-lg p-4 cursor-pointer bg-gray-900/50 border border-gray-700 hover:border-teal-500/50 hover:bg-teal-500/10 transition-colors"
                   >
-                    <div className="flex flex-col h-full justify-between">
-                      <div>
-                        <div className="text-2xl font-light text-teal-300">
-                          Room {parseInt(room.name.split(' ')[1])}
+                    <Link href={`/rooms/${room.id}`} className="block">
+                      <div className="flex flex-col h-full">
+                        <div>
+                          <div className="text-2xl font-light text-teal-300">
+                            Room {parseInt(room.name.split(' ')[1])}
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            {room.floor}
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-400">
-                          {room.floor}
-                        </div>
+                        {room.description && (
+                          <div className="text-xs text-gray-400 truncate mt-1">
+                            {room.description}
+                          </div>
+                        )}
+                        {room.schedules && room.schedules.length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            <div className="text-xs font-medium text-gray-300">Schedules:</div>
+                            {room.schedules.map(schedule => (
+                              <div
+                                key={schedule.id}
+                                className="text-xs bg-gray-800/50 rounded p-2 border border-gray-700"
+                              >
+                                <div className="font-medium text-teal-300">
+                                  {schedule.schedule.title}
+                                </div>
+                                <div className="flex items-center justify-between mt-1">
+                                  <div className="text-gray-400">
+                                    {getFrequencyLabel(schedule.frequency)}
+                                  </div>
+                                  <span
+                                    className={`px-1.5 py-0.5 rounded-full text-[10px] ${
+                                      schedule.status === 'COMPLETED'
+                                        ? 'bg-green-500/10 text-green-300'
+                                        : schedule.status === 'OVERDUE'
+                                        ? 'bg-red-500/10 text-red-300'
+                                        : 'bg-yellow-500/10 text-yellow-300'
+                                    }`}
+                                  >
+                                    {schedule.status}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      {room.description && (
-                        <div className="text-xs text-gray-400 truncate">
-                          {room.description}
-                        </div>
-                      )}
-                    </div>
+                    </Link>
                   </div>
                 ))}
             </div>
@@ -454,46 +502,69 @@ export default function RoomsPage() {
           </>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6">
               {otherRooms
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .map(room => (
                   <div
                     key={room.id}
                     className="relative rounded-lg p-4 cursor-pointer bg-gray-900/50 border border-gray-700 hover:border-teal-500/50 hover:bg-teal-500/10 transition-colors"
-                    onClick={() => {
-                      setSelectedRoom(room)
-                      setFormData({
-                        name: room.name,
-                        description: room.description || '',
-                        floor: room.floor || 'Ground Floor',
-                        type: room.type
-                      })
-                      setShowEditModal(true)
-                    }}
                   >
-                    <div className="flex flex-col gap-2">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="text-lg font-medium text-teal-300">
-                            {room.name}
+                    <Link href={`/rooms/${room.id}`} className="block">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="text-lg font-medium text-teal-300">
+                              {room.name}
+                            </div>
+                            <div className="text-sm text-gray-400">
+                              {room.type.replace('_', ' ')}
+                            </div>
                           </div>
-                          <div className="text-sm text-gray-400">
-                            {room.type.replace('_', ' ')}
-                          </div>
+                          {room.floor && (
+                            <div className="text-xs text-gray-400 bg-gray-900/50 px-2 py-1 rounded">
+                              {room.floor}
+                            </div>
+                          )}
                         </div>
-                        {room.floor && (
-                          <div className="text-xs text-gray-400 bg-gray-900/50 px-2 py-1 rounded">
-                            {room.floor}
+                        {room.description && (
+                          <div className="text-sm text-gray-400">
+                            {room.description}
+                          </div>
+                        )}
+                        {room.schedules && room.schedules.length > 0 && (
+                          <div className="mt-2 space-y-2">
+                            <div className="text-xs font-medium text-gray-300">Schedules:</div>
+                            {room.schedules.map(schedule => (
+                              <div
+                                key={schedule.id}
+                                className="text-xs bg-gray-800/50 rounded p-2 border border-gray-700"
+                              >
+                                <div className="font-medium text-teal-300">
+                                  {schedule.schedule.title}
+                                </div>
+                                <div className="flex items-center justify-between mt-1">
+                                  <div className="text-gray-400">
+                                    {getFrequencyLabel(schedule.frequency)}
+                                  </div>
+                                  <span
+                                    className={`px-1.5 py-0.5 rounded-full text-[10px] ${
+                                      schedule.status === 'COMPLETED'
+                                        ? 'bg-green-500/10 text-green-300'
+                                        : schedule.status === 'OVERDUE'
+                                        ? 'bg-red-500/10 text-red-300'
+                                        : 'bg-yellow-500/10 text-yellow-300'
+                                    }`}
+                                  >
+                                    {schedule.status}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
-                      {room.description && (
-                        <div className="text-sm text-gray-400">
-                          {room.description}
-                        </div>
-                      )}
-                    </div>
+                    </Link>
                   </div>
                 ))}
             </div>

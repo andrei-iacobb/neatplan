@@ -34,10 +34,9 @@ export default function HomePage() {
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.replace('/auth')
+      return
     }
-  }, [status, router])
-
-  useEffect(() => {
+    
     if (status === 'authenticated') {
       Promise.all([
         fetch('/api/rooms').then(res => {
@@ -58,7 +57,7 @@ export default function HomePage() {
         setIsLoading(false)
       })
     }
-  }, [status, showToast])
+  }, [status, router, showToast])
 
   if (status === 'loading' || isLoading) {
     return (

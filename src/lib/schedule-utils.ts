@@ -1,4 +1,4 @@
-import { ScheduleFrequency } from '@/types/schedule'
+import { ScheduleFrequency } from '@prisma/client'
 
 export function calculateNextDueDate(
   frequency: ScheduleFrequency,
@@ -7,25 +7,25 @@ export function calculateNextDueDate(
   const date = new Date(baseDate)
 
   switch (frequency) {
-    case ScheduleFrequency.DAILY:
+    case 'DAILY':
       date.setDate(date.getDate() + 1)
       break
-    case ScheduleFrequency.WEEKLY:
+    case 'WEEKLY':
       date.setDate(date.getDate() + 7)
       break
-    case ScheduleFrequency.BIWEEKLY:
+    case 'BIWEEKLY':
       date.setDate(date.getDate() + 14)
       break
-    case ScheduleFrequency.MONTHLY:
+    case 'MONTHLY':
       date.setMonth(date.getMonth() + 1)
       break
-    case ScheduleFrequency.QUARTERLY:
+    case 'QUARTERLY':
       date.setMonth(date.getMonth() + 3)
       break
-    case ScheduleFrequency.YEARLY:
+    case 'YEARLY':
       date.setFullYear(date.getFullYear() + 1)
       break
-    case ScheduleFrequency.CUSTOM:
+    case 'CUSTOM':
       // For custom frequency, default to weekly
       date.setDate(date.getDate() + 7)
       break
@@ -42,19 +42,19 @@ export function isScheduleOverdue(nextDueDate: Date): boolean {
 
 export function getFrequencyLabel(frequency: ScheduleFrequency): string {
   switch (frequency) {
-    case ScheduleFrequency.DAILY:
+    case 'DAILY':
       return 'Daily'
-    case ScheduleFrequency.WEEKLY:
+    case 'WEEKLY':
       return 'Weekly'
-    case ScheduleFrequency.BIWEEKLY:
+    case 'BIWEEKLY':
       return 'Bi-weekly'
-    case ScheduleFrequency.MONTHLY:
+    case 'MONTHLY':
       return 'Monthly'
-    case ScheduleFrequency.QUARTERLY:
+    case 'QUARTERLY':
       return 'Quarterly'
-    case ScheduleFrequency.YEARLY:
+    case 'YEARLY':
       return 'Yearly'
-    case ScheduleFrequency.CUSTOM:
+    case 'CUSTOM':
       return 'Custom'
     default:
       return 'Unknown'
