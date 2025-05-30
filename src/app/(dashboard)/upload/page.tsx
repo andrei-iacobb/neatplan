@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
+import { Upload } from 'lucide-react'
 
 export default function UploadPage() {
   const [isDragging, setIsDragging] = useState(false)
@@ -10,6 +11,8 @@ export default function UploadPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const dropAreaRef = React.useRef<HTMLDivElement>(null)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -26,21 +29,23 @@ export default function UploadPage() {
     setIsDragging(false)
     
     const droppedFile = e.dataTransfer.files[0]
-    if (droppedFile?.type === 'application/pdf') {
+    if (droppedFile?.type === 'application/pdf' || 
+        droppedFile?.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
       setFile(droppedFile)
       setError(null)
     } else {
-      setError('Please upload a PDF file')
+      setError('Please upload a PDF or DOCX file')
     }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
-    if (selectedFile?.type === 'application/pdf') {
+    if (selectedFile?.type === 'application/pdf' || 
+        selectedFile?.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
       setFile(selectedFile)
       setError(null)
     } else {
-      setError('Please upload a PDF file')
+      setError('Please upload a PDF or DOCX file')
     }
   }
 
@@ -74,50 +79,72 @@ export default function UploadPage() {
     }
   }
 
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0]
+    if (selectedFile?.type === 'application/pdf' || 
+        selectedFile?.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      setFile(selectedFile)
+      setError(null)
+    } else {
+      setError('Please upload a PDF or DOCX file')
+    }
+  }
+
   return (
-    <div className="p-6">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-100">Upload Cleaning Document</h1>
-          <p className="mt-2 text-gray-400">
-            Upload a PDF document containing cleaning tasks. Our AI will analyze it and create a cleaning schedule.
-          </p>
+          <h1 className="text-3xl font-bold text-gray-100 mb-2">Document Upload</h1>
+          <p className="text-gray-400">Upload cleaning documents for AI processing and task generation</p>
         </div>
 
         {/* Upload Area */}
-        <motion.div
-          className={`relative border-2 border-dashed rounded-lg p-8 text-center ${
-            isDragging ? 'border-teal-500 bg-teal-500/5' : 'border-white/10 hover:border-white/20'
-          } transition-colors`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          animate={{ scale: isDragging ? 1.02 : 1 }}
-          transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        >
-          <input
-            type="file"
-            accept=".pdf"
-            onChange={handleFileChange}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-          />
-          
-          <div className="space-y-4">
-            <div className="w-16 h-16 mx-auto rounded-full bg-white/5 flex items-center justify-center">
-              <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-lg text-gray-300">
-                {file ? file.name : 'Drag and drop your PDF here'}
-              </p>
-              <p className="text-sm text-gray-400 mt-1">
-                {file ? 'Click to change file' : 'or click to browse'}
-              </p>
+        <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-8 mb-8">
+          <div
+            ref={dropAreaRef}
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${
+              isDragging
+                ? 'border-teal-400 bg-teal-500/5'
+                : 'border-gray-600 hover:border-teal-500/50 hover:bg-gray-700/30'
+            }`}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+          >
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-16 h-16 rounded-lg bg-teal-500/20 flex items-center justify-center">
+                <Upload className="w-8 h-8 text-teal-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-gray-100 mb-2">
+                  Drop your files here or click to browse
+                </h3>
+                <p className="text-gray-400 text-sm">
+                  Supports PDF and DOCX files up to 10MB
+                </p>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                accept=".pdf,.docx"
+                onChange={handleFileSelect}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="px-6 py-3 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 rounded-lg border border-teal-500/30 transition-colors"
+              >
+                Choose Files
+              </button>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Error Message */}
         <AnimatePresence>
@@ -171,31 +198,72 @@ export default function UploadPage() {
               className="mt-8 space-y-4"
             >
               <div className="p-4 rounded-lg bg-black/20 backdrop-blur-sm border border-white/5">
-                <h3 className="text-sm font-medium text-gray-300 mb-2">Processing Steps:</h3>
+                <h3 className="text-sm font-medium text-gray-300 mb-2">
+                  Processing Steps ({file?.type === 'application/pdf' ? 'OCR Method' : 'Text Extraction + NLP Method'}):
+                </h3>
                 <ul className="space-y-2 text-sm text-gray-400">
-                  <li className="flex items-center space-x-2">
-                    <motion.span
-                      className="w-3 h-3 border-2 border-current border-t-transparent rounded-full"
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    />
-                    <span>Analyzing document structure</span>
-                  </li>
-                  <li className="flex items-center space-x-2">
-                    <motion.span
-                      className="w-3 h-3 border-2 border-current border-t-transparent rounded-full"
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear", delay: 0.2 }}
-                    />
-                    <span>Extracting cleaning tasks</span>
-                  </li>
+                  {file?.type === 'application/pdf' ? (
+                    <>
+                      <li className="flex items-center space-x-2">
+                        <motion.span
+                          className="w-3 h-3 border-2 border-current border-t-transparent rounded-full"
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        />
+                        <span>Performing OCR on PDF document</span>
+                      </li>
+                      <li className="flex items-center space-x-2">
+                        <motion.span
+                          className="w-3 h-3 border-2 border-current border-t-transparent rounded-full"
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear", delay: 0.2 }}
+                        />
+                        <span>Extracting text content</span>
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li className="flex items-center space-x-2">
+                        <motion.span
+                          className="w-3 h-3 border-2 border-current border-t-transparent rounded-full"
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        />
+                        <span>Extracting text from DOCX</span>
+                      </li>
+                      <li className="flex items-center space-x-2">
+                        <motion.span
+                          className="w-3 h-3 border-2 border-current border-t-transparent rounded-full"
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear", delay: 0.1 }}
+                        />
+                        <span>Running NLP analysis</span>
+                      </li>
+                      <li className="flex items-center space-x-2">
+                        <motion.span
+                          className="w-3 h-3 border-2 border-current border-t-transparent rounded-full"
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear", delay: 0.2 }}
+                        />
+                        <span>Filtering relevant content</span>
+                      </li>
+                    </>
+                  )}
                   <li className="flex items-center space-x-2">
                     <motion.span
                       className="w-3 h-3 border-2 border-current border-t-transparent rounded-full"
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Infinity, ease: "linear", delay: 0.4 }}
                     />
-                    <span>Creating cleaning schedule</span>
+                    <span>AI processing and task extraction</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <motion.span
+                      className="w-3 h-3 border-2 border-current border-t-transparent rounded-full"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear", delay: 0.6 }}
+                    />
+                    <span>Creating structured cleaning tasks</span>
                   </li>
                 </ul>
               </div>

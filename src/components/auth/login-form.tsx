@@ -16,7 +16,7 @@ const loginSchema = z.object({
 
 type LoginValues = z.infer<typeof loginSchema>
 
-export function LoginForm({ onToggle }: { onToggle: () => void }) {
+export function LoginForm({ onToggle, isAddAccountMode = false }: { onToggle: () => void; isAddAccountMode?: boolean }) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -44,8 +44,16 @@ export function LoginForm({ onToggle }: { onToggle: () => void }) {
         throw new Error(result.error)
       }
 
-      // Login successful - redirect to dashboard
-      router.push("/dashboard")
+      // Login successful - redirect based on mode
+      if (isAddAccountMode) {
+        // For add account mode, redirect to the stored return URL
+        const returnUrl = sessionStorage.getItem('add_account_return_url') || '/'
+        sessionStorage.removeItem('add_account_return_url')
+        router.push(returnUrl)
+      } else {
+        // Normal login - redirect to dashboard
+        router.push("/")
+      }
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong")

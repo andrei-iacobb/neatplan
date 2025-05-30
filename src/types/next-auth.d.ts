@@ -1,10 +1,16 @@
 import 'next-auth'
 
+export enum UserRole {
+  ADMIN = 'ADMIN',
+  CLEANER = 'CLEANER'
+}
+
 declare module 'next-auth' {
   interface User {
     id: string
     email: string
     name?: string | null
+    role: UserRole
     isAdmin: boolean
   }
 
@@ -13,6 +19,7 @@ declare module 'next-auth' {
       id: string
       email: string
       name?: string | null
+      role: UserRole
       isAdmin: boolean
     }
   }
@@ -23,6 +30,7 @@ declare module 'next-auth/jwt' {
     id: string
     email: string
     name?: string | null
+    role: UserRole
     isAdmin: boolean
   }
 } 

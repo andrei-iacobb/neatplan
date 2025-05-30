@@ -3,6 +3,60 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: rgb(17 24 39); /* gray-900 */
+    color: rgb(243 244 246); /* gray-100 */
+  }
+
+  /* Custom scrollbar for webkit browsers */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgb(31 41 55); /* gray-800 */
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgb(75 85 99); /* gray-600 */
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(107 114 128); /* gray-500 */
+  }
+}
+
+@layer components {
+  /* Custom card component */
+  .card {
+    @apply bg-gray-800/50 border border-gray-700 rounded-lg;
+  }
+
+  .card-hover {
+    @apply hover:border-teal-500/50 hover:bg-gray-700/30 transition-all duration-200;
+  }
+
+  /* Custom button variants */
+  .btn-primary {
+    @apply bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/30 transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-700/50 hover:bg-gray-700 text-gray-300 border border-gray-600 transition-colors;
+  }
+
+  /* Custom input styling */
+  .input-primary {
+    @apply bg-gray-900/50 border border-gray-700 text-gray-100 focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/20 transition-colors;
+  }
+}
+
 :root {
   --background: #000000;
   --foreground: #ffffff;

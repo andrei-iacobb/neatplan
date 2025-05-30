@@ -55,28 +55,56 @@ async function main() {
   ])
   console.log('Rooms:', rooms)
 
-  // Create cleaning tasks if they don't exist
-  const cleaningTasks = await Promise.all(
-    rooms.map(room =>
-      prisma.cleaningTask.upsert({
-        where: {
-          roomId_taskDescription: {
-            roomId: room.id,
-            taskDescription: `Default cleaning for ${room.name}`,
-          },
-        },
-        update: {},
-        create: {
-          taskDescription: `Default cleaning for ${room.name}`,
-          frequency: 'Daily',
-          estimatedDuration: '30 minutes',
-          status: 'pending',
-          roomId: room.id,
-        },
-      })
-    )
-  )
-  console.log('Cleaning tasks:', cleaningTasks)
+  // Create 51 bedroom rooms
+  const bedroomRooms = []
+  for (let i = 1; i <= 51; i++) {
+    const roomName = `Room ${i}`
+    let floor: string
+    
+    // Determine floor based on room number
+    if ((i >= 1 && i <= 9) || (i >= 20 && i <= 32)) {
+      floor = 'Ground Floor'
+    } else {
+      floor = 'Upstairs'
+    }
+    
+    const room = await prisma.room.upsert({
+      where: { name: roomName },
+      update: {},
+      create: {
+        name: roomName,
+        description: `Bedroom ${i}`,
+        floor: floor,
+        type: RoomType.BEDROOM,
+      },
+    })
+    bedroomRooms.push(room)
+  }
+  console.log(`Created ${bedroomRooms.length} bedroom rooms`)
+
+  // Create cleaning tasks if they don't exist - COMMENTED OUT FOR NOW
+  // const allRooms = [...rooms, ...bedroomRooms]
+  // const cleaningTasks = await Promise.all(
+  //   allRooms.map(room =>
+  //     prisma.cleaningTask.upsert({
+  //       where: {
+  //         roomId_taskDescription: {
+  //           roomId: room.id,
+  //           taskDescription: `Default cleaning for ${room.name}`,
+  //         },
+  //       },
+  //       update: {},
+  //       create: {
+  //         taskDescription: `Default cleaning for ${room.name}`,
+  //         frequency: 'Daily',
+  //         estimatedDuration: '30 minutes',
+  //         status: 'pending',
+  //         roomId: room.id,
+  //       },
+  //     })
+  //   )
+  // )
+  // console.log('Cleaning tasks:', cleaningTasks)
 
   // Create schedule if it doesn't exist
   const schedule = await prisma.schedule.upsert({

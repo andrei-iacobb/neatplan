@@ -18,6 +18,7 @@ model User {
   email     String   @unique
   password  String
   name      String?
+  role      UserRole @default(CLEANER)
   isAdmin   Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -166,4 +167,9 @@ enum ScheduleStatus {
   OVERDUE
   COMPLETED
   PAUSED
+}
+
+enum UserRole {
+  ADMIN
+  CLEANER
 }

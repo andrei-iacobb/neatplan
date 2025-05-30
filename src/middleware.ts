@@ -16,7 +16,7 @@ const adminRoutes = [
 // Routes that cleaners can access
 const cleanerRoutes = [
   '/clean',
-  '/api/clean'
+  '/api/cleaner'
 ]
 
 export async function middleware(request: NextRequest) {

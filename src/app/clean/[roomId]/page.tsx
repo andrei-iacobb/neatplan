@@ -1,0 +1,526 @@
+"use client"
+
+import { useState, useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { 
+  Loader2, 
+  CheckCircle2, 
+  Circle, 
+  ArrowLeft, 
+  Clock, 
+  MapPin, 
+  Calendar,
+  User,
+  Save,
+  CheckSquare,
+  AlertTriangle,
+  RotateCcw
+} from 'lucide-react'
+import Link from 'next/link'
+
+interface ScheduleTask {
+  id: string
+  description: string
+  frequency?: string
+  additionalNotes?: string
+}
+
+interface RoomSchedule {
+  id: string
+  title: string
+  frequency: string
+  nextDue: string
+  status: 'PENDING' | 'OVERDUE' | 'COMPLETED' | 'PAUSED'
+  tasks: ScheduleTask[]
+  estimatedDuration: string
+}
+
+interface Room {
+  id: string
+  name: string
+  type: string
+  floor: string
+  description?: string
+  schedules: RoomSchedule[]
+}
+
+interface CompletedTask {
+  taskId: string
+  notes?: string
+}
+
+export default function CleanRoomPage() {
+  const params = useParams()
+  const router = useRouter()
+  const { data: session, status } = useSession()
+  const [room, setRoom] = useState<Room | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [completedTasks, setCompletedTasks] = useState<Map<string, CompletedTask>>(new Map())
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [notes, setNotes] = useState('')
+  const [startTime, setStartTime] = useState<Date | null>(null)
+
+  // Redirect admins away from cleaner interface
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.isAdmin) {
+      router.replace('/')
+      return
+    }
+  }, [status, session, router])
+
+  useEffect(() => {
+    if (params.roomId && status === 'authenticated' && !session?.user?.isAdmin) {
+      fetchRoomData()
+      setStartTime(new Date())
+    }
+  }, [params.roomId, status, session])
+
+  const fetchRoomData = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      
+      const response = await fetch(`/api/cleaner/rooms/${params.roomId}`)
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Room not found')
+        }
+        throw new Error('Failed to fetch room data')
+      }
+
+      const data = await response.json()
+      setRoom(data)
+    } catch (err) {
+      console.error('Error fetching room:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load room data')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleTaskToggle = (scheduleId: string, taskId: string, task: ScheduleTask) => {
+    const key = `${scheduleId}-${taskId}`
+    setCompletedTasks(prev => {
+      const newMap = new Map(prev)
+      if (newMap.has(key)) {
+        newMap.delete(key)
+      } else {
+        newMap.set(key, { taskId, notes: '' })
+      }
+      return newMap
+    })
+  }
+
+  const handleTaskNotes = (scheduleId: string, taskId: string, notes: string) => {
+    const key = `${scheduleId}-${taskId}`
+    setCompletedTasks(prev => {
+      const newMap = new Map(prev)
+      if (newMap.has(key)) {
+        newMap.set(key, { taskId, notes })
+      }
+      return newMap
+    })
+  }
+
+  const getCompletionProgress = (schedule: RoomSchedule) => {
+    const totalTasks = schedule.tasks.length
+    const completedCount = schedule.tasks.filter(task => 
+      completedTasks.has(`${schedule.id}-${task.id}`)
+    ).length
+    return { completed: completedCount, total: totalTasks }
+  }
+
+  const handleCompleteSchedule = async (scheduleId: string) => {
+    if (!room || !startTime) return
+
+    const schedule = room.schedules.find(s => s.id === scheduleId)
+    if (!schedule) return
+
+    // Get completed tasks for this schedule
+    const scheduleCompletedTasks = Array.from(completedTasks.entries())
+      .filter(([key]) => key.startsWith(`${scheduleId}-`))
+      .map(([key, value]) => ({
+        taskId: value.taskId,
+        notes: value.notes
+      }))
+
+    if (scheduleCompletedTasks.length === 0) {
+      setError('Please complete at least one task before finishing')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const endTime = new Date()
+      const duration = Math.round((endTime.getTime() - startTime.getTime()) / 1000 / 60) // minutes
+
+      const response = await fetch(`/api/cleaner/rooms/${params.roomId}/complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          scheduleId,
+          completedTasks: scheduleCompletedTasks,
+          notes,
+          duration
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to complete schedule')
+      }
+
+      // Show success and redirect
+      router.push('/clean?completed=true')
+    } catch (err) {
+      console.error('Error completing schedule:', err)
+      setError(err instanceof Error ? err.message : 'Failed to complete schedule')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const resetTasks = () => {
+    setCompletedTasks(new Map())
+    setNotes('')
+  }
+
+  if (status === 'loading' || isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-teal-500 mx-auto mb-4" />
+          <p className="text-gray-400">Loading room details...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="text-center max-w-md">
+          <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-100 mb-2">
+            {error === 'Room not found' ? 'Room Not Found' : 'Something went wrong'}
+          </h2>
+          <p className="text-gray-400 mb-4">{error}</p>
+          <div className="space-x-4">
+            <Link
+              href="/clean"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Dashboard
+            </Link>
+            {error !== 'Room not found' && (
+              <button
+                onClick={fetchRoomData}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Try Again
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!room) {
+    return null
+  }
+
+  const getRoomTypeIcon = (type: string) => {
+    switch (type) {
+      case 'BEDROOM': return '🛏️'
+      case 'BATHROOM': return '🚿'
+      case 'KITCHEN': return '🍳'
+      case 'OFFICE': return '💼'
+      case 'MEETING_ROOM': return '🪑'
+      default: return '🏠'
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'OVERDUE': return 'bg-red-500/10 text-red-400 border-red-500/20'
+      case 'PENDING': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+      case 'COMPLETED': return 'bg-green-500/10 text-green-400 border-green-500/20'
+      case 'PAUSED': return 'bg-gray-500/10 text-gray-400 border-gray-500/20'
+      default: return 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-900">
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-8">
+          <Link
+            href="/clean"
+            className="text-gray-400 hover:text-teal-300 transition-colors p-2 rounded-lg hover:bg-gray-800"
+          >
+            <ArrowLeft className="w-6 h-6" />
+          </Link>
+          <div className="flex items-center gap-4">
+            <span className="text-3xl">{getRoomTypeIcon(room.type)}</span>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-100">{room.name}</h1>
+              <div className="flex items-center gap-4 text-gray-400 text-sm">
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-4 h-4" />
+                  <span>{room.floor}</span>
+                </div>
+                <span>•</span>
+                <span>{room.type.replace('_', ' ')}</span>
+                <span>•</span>
+                <div className="flex items-center gap-1">
+                  <User className="w-4 h-4" />
+                  <span>{session?.user?.name}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="flex justify-between items-center mb-6">
+          <div className="text-sm text-gray-400">
+            {startTime && (
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                <span>Started at {startTime.toLocaleTimeString()}</span>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={resetTasks}
+            className="flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-gray-300 hover:bg-gray-800 rounded-lg transition-colors"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Reset All
+          </button>
+        </div>
+
+        {/* Schedules */}
+        <div className="space-y-6">
+          {room.schedules.map((schedule, scheduleIndex) => {
+            const progress = getCompletionProgress(schedule)
+            const progressPercentage = progress.total > 0 ? (progress.completed / progress.total) * 100 : 0
+            
+            return (
+              <motion.div
+                key={schedule.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: scheduleIndex * 0.1 }}
+                className="bg-gray-800/50 rounded-lg border border-gray-700 overflow-hidden"
+              >
+                {/* Schedule Header */}
+                <div className="p-6 border-b border-gray-700">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h2 className="text-xl font-semibold text-teal-300 mb-2">
+                        {schedule.title}
+                      </h2>
+                      <div className="flex gap-4 text-sm text-gray-400">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
+                          <span>{schedule.frequency}</span>
+                        </div>
+                        <span>•</span>
+                        <span>Due: {new Date(schedule.nextDue).toLocaleDateString()}</span>
+                        <span>•</span>
+                        <span>Est. {schedule.estimatedDuration}</span>
+                      </div>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-xs border ${getStatusColor(schedule.status)}`}>
+                      {schedule.status}
+                    </span>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium text-gray-300">
+                        Progress: {progress.completed} of {progress.total} tasks
+                      </span>
+                      <span className="text-sm text-gray-400">{Math.round(progressPercentage)}%</span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <motion.div
+                        className="bg-teal-500 h-2 rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progressPercentage}%` }}
+                        transition={{ duration: 0.5 }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tasks List */}
+                <div className="p-6">
+                  <div className="space-y-3">
+                    {schedule.tasks.map((task, taskIndex) => {
+                      const taskKey = `${schedule.id}-${task.id}`
+                      const isCompleted = completedTasks.has(taskKey)
+                      
+                      return (
+                        <motion.div
+                          key={task.id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: (scheduleIndex * 0.1) + (taskIndex * 0.05) }}
+                          className={`p-4 rounded-lg border transition-all ${
+                            isCompleted 
+                              ? 'bg-teal-500/10 border-teal-500/30' 
+                              : 'bg-gray-700/30 border-gray-600 hover:border-gray-500'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <button
+                              onClick={() => handleTaskToggle(schedule.id, task.id, task)}
+                              className={`mt-1 transition-colors ${
+                                isCompleted ? 'text-teal-400' : 'text-gray-400 hover:text-gray-300'
+                              }`}
+                            >
+                              {isCompleted ? (
+                                <CheckCircle2 className="w-5 h-5" />
+                              ) : (
+                                <Circle className="w-5 h-5" />
+                              )}
+                            </button>
+                            
+                            <div className="flex-1">
+                              <p className={`font-medium ${
+                                isCompleted ? 'text-teal-300 line-through' : 'text-gray-100'
+                              }`}>
+                                {task.description}
+                              </p>
+                              
+                              {task.additionalNotes && (
+                                <p className="text-sm text-gray-400 mt-1">
+                                  {task.additionalNotes}
+                                </p>
+                              )}
+                              
+                              {task.frequency && task.frequency !== schedule.frequency && (
+                                <span className="text-xs text-teal-400 bg-teal-400/10 px-2 py-1 rounded mt-2 inline-block">
+                                  {task.frequency}
+                                </span>
+                              )}
+
+                              {/* Task Notes */}
+                              <AnimatePresence>
+                                {isCompleted && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    className="mt-3"
+                                  >
+                                    <input
+                                      type="text"
+                                      placeholder="Add notes (optional)..."
+                                      value={completedTasks.get(taskKey)?.notes || ''}
+                                      onChange={(e) => handleTaskNotes(schedule.id, task.id, e.target.value)}
+                                      className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-sm text-gray-100 placeholder-gray-400 focus:border-teal-500 focus:outline-none"
+                                    />
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Schedule Footer */}
+                <div className="px-6 pb-6">
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      General Notes (optional)
+                    </label>
+                    <textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Add any additional notes about this cleaning session..."
+                      rows={3}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-gray-100 placeholder-gray-400 focus:border-teal-500 focus:outline-none resize-none"
+                    />
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleCompleteSchedule(schedule.id)}
+                      disabled={isSubmitting || progress.completed === 0}
+                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors ${
+                        progress.completed > 0 && !isSubmitting
+                          ? 'bg-teal-600 hover:bg-teal-700 text-white'
+                          : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                      }`}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4" />
+                          Complete Schedule ({progress.completed} tasks)
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )
+          })}
+        </div>
+
+        {/* Error Display */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="mt-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg"
+            >
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-400" />
+                <p className="text-red-300">{error}</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* No Schedules */}
+        {room.schedules.length === 0 && (
+          <div className="text-center py-12">
+            <CheckSquare className="w-16 h-16 text-green-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-100 mb-2">No active schedules</h3>
+            <p className="text-gray-400 mb-4">This room doesn't have any pending cleaning schedules.</p>
+            <Link
+              href="/clean"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Dashboard
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+} 

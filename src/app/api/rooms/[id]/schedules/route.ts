@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { prisma } from '@/lib/db'
 import { calculateNextDueDate } from '@/lib/schedule-utils'
 import { Prisma } from '@prisma/client'
 
@@ -9,6 +11,15 @@ export async function POST(
   context: { params: { id: string } }
 ) {
   try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const { scheduleId, frequency } = await request.json()
     const params = await context.params
     const roomId = params.id
@@ -74,6 +85,15 @@ export async function GET(
   context: { params: { id: string } }
 ) {
   try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const params = await context.params
     const roomId = params.id
 
@@ -108,6 +128,15 @@ export async function PATCH(
   context: { params: { id: string; scheduleId: string } }
 ) {
   try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const { notes } = await request.json()
     const params = await context.params
     const { id: roomId, scheduleId } = params

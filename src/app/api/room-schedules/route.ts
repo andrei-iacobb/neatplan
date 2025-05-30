@@ -13,6 +13,35 @@ export async function GET() {
       )
     }
 
+    const now = new Date()
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000) // 24 hours ago
+    
+    // Update any completed schedules that are now due again
+    await prisma.roomSchedule.updateMany({
+      where: {
+        status: 'COMPLETED',
+        nextDue: {
+          lte: now
+        }
+      },
+      data: {
+        status: 'PENDING'
+      }
+    })
+
+    // Update pending schedules to overdue only if they're 24+ hours past due
+    await prisma.roomSchedule.updateMany({
+      where: {
+        status: 'PENDING',
+        nextDue: {
+          lt: twentyFourHoursAgo // Only overdue if 24+ hours past due
+        }
+      },
+      data: {
+        status: 'OVERDUE'
+      }
+    })
+
     const roomSchedules = await prisma.roomSchedule.findMany({
       include: {
         schedule: true

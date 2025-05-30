@@ -5,7 +5,7 @@ import { Providers } from "./providers";
 import { WaveBackground } from "@/components/ui/wave-background";
 import { Toaster } from "@/components/ui/toaster";
 import { ToastProvider } from '@/components/ui/toast-context'
-import { Sidebar } from "@/components/ui/sidebar";
+import { ConditionalLayout } from '@/components/layout/conditional-layout'
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,12 +25,9 @@ export default function RootLayout({
         <ToastProvider>
           <WaveBackground />
           <Providers>
-            <div className="min-h-screen">
-              <Sidebar />
-              <main className="pl-[60px] transition-[padding] duration-200">
-                {children}
-              </main>
-            </div>
+            <ConditionalLayout>
+              {children}
+            </ConditionalLayout>
           </Providers>
           <Toaster />
         </ToastProvider>

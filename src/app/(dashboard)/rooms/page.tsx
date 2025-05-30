@@ -226,8 +226,11 @@ export default function RoomsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-teal-500 mx-auto mb-4" />
+          <p className="text-gray-400">Loading rooms...</p>
+        </div>
       </div>
     )
   }
@@ -239,555 +242,622 @@ export default function RoomsPage() {
   const roomTypes = Array.from(new Set(rooms.map(room => room.type)))
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-semibold text-gray-100">Rooms</h1>
-          <div className="flex gap-2 ml-6">
-            <button
-              onClick={() => setViewMode('BEDROOMS')}
-              className={`flex items-center px-3 py-1.5 rounded ${
-                viewMode === 'BEDROOMS'
-                  ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
-                  : 'bg-gray-800/50 text-gray-400 hover:bg-teal-500/10 hover:text-teal-300'
-              } border transition-colors`}
-            >
-              <Bed className="w-4 h-4 mr-2" />
-              Bedrooms
-            </button>
-            <button
-              onClick={() => setViewMode('OTHER_ROOMS')}
-              className={`flex items-center px-3 py-1.5 rounded ${
-                viewMode === 'OTHER_ROOMS'
-                  ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
-                  : 'bg-gray-800/50 text-gray-400 hover:bg-teal-500/10 hover:text-teal-300'
-              } border transition-colors`}
-            >
-              <Building2 className="w-4 h-4 mr-2" />
-              Other Rooms
-            </button>
-            <button
-              onClick={() => setViewMode('SCHEDULES')}
-              className={`flex items-center px-3 py-1.5 rounded ${
-                viewMode === 'SCHEDULES'
-                  ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
-                  : 'bg-gray-800/50 text-gray-400 hover:bg-teal-500/10 hover:text-teal-300'
-              } border transition-colors`}
-            >
-              <Calendar className="w-4 h-4 mr-2" />
-              Schedules
-            </button>
-          </div>
-          {viewMode === 'BEDROOMS' && (
-            <div className="flex gap-2 ml-6 border-l border-gray-700 pl-6">
-              {floors.map(floor => (
-                <button
-                  key={floor}
-                  onClick={() => setSelectedFloor(floor!)}
-                  className={`flex items-center px-3 py-1.5 rounded ${
-                    selectedFloor === floor
-                      ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
-                      : 'bg-gray-800/50 text-gray-400 hover:bg-teal-500/10 hover:text-teal-300'
-                  } border transition-colors`}
-                >
-                  <Building2 className="w-4 h-4 mr-2" />
-                  {floor}
-                </button>
-              ))}
+    <div className="min-h-screen bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-100 mb-2">Room Management</h1>
+          <p className="text-gray-400">Manage your facility's rooms and their cleaning configurations</p>
+        </div>
+
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-2">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setViewMode('BEDROOMS')}
+                className={`flex items-center px-3 py-1.5 rounded ${
+                  viewMode === 'BEDROOMS'
+                    ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
+                    : 'bg-gray-800/50 text-gray-400 hover:bg-teal-500/10 hover:text-teal-300'
+                } border transition-colors`}
+              >
+                <Bed className="w-4 h-4 mr-2" />
+                Bedrooms
+              </button>
+              <button
+                onClick={() => setViewMode('OTHER_ROOMS')}
+                className={`flex items-center px-3 py-1.5 rounded ${
+                  viewMode === 'OTHER_ROOMS'
+                    ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
+                    : 'bg-gray-800/50 text-gray-400 hover:bg-teal-500/10 hover:text-teal-300'
+                } border transition-colors`}
+              >
+                <Building2 className="w-4 h-4 mr-2" />
+                Other Rooms
+              </button>
+              <button
+                onClick={() => setViewMode('SCHEDULES')}
+                className={`flex items-center px-3 py-1.5 rounded ${
+                  viewMode === 'SCHEDULES'
+                    ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
+                    : 'bg-gray-800/50 text-gray-400 hover:bg-teal-500/10 hover:text-teal-300'
+                } border transition-colors`}
+              >
+                <Calendar className="w-4 h-4 mr-2" />
+                Schedules
+              </button>
             </div>
+            {viewMode === 'BEDROOMS' && (
+              <div className="flex gap-2 ml-6 border-l border-gray-700 pl-6">
+                {floors.map(floor => (
+                  <button
+                    key={floor}
+                    onClick={() => setSelectedFloor(floor!)}
+                    className={`flex items-center px-3 py-1.5 rounded ${
+                      selectedFloor === floor
+                        ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
+                        : 'bg-gray-800/50 text-gray-400 hover:bg-teal-500/10 hover:text-teal-300'
+                    } border transition-colors`}
+                  >
+                    <Building2 className="w-4 h-4 mr-2" />
+                    {floor}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {viewMode !== 'SCHEDULES' && (
+            <button
+              onClick={() => setShowForm(true)}
+              className="flex items-center px-4 py-2 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 rounded border border-teal-500/30 transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Room
+            </button>
           )}
         </div>
-        {viewMode !== 'SCHEDULES' && (
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center px-4 py-2 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 rounded border border-teal-500/30 transition-colors"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Room
-          </button>
-        )}
-      </div>
 
-      <div className="bg-gray-800/50 rounded-lg p-6">
-        {viewMode === 'SCHEDULES' ? (
-          <>
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex gap-2">
+        <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-6">
+          {viewMode === 'BEDROOMS' && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-100 mb-4">
+                Bedrooms - {selectedFloor} ({filteredBedrooms.length} rooms)
+              </h2>
+              {filteredBedrooms.length === 0 ? (
+                <div className="text-center py-8">
+                  <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-400">No bedrooms found on this floor</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {filteredBedrooms.map((room) => (
+                    <RoomCard key={room.id} room={room} onEdit={(room) => {
+                      setSelectedRoom(room)
+                      setFormData({
+                        name: room.name,
+                        description: room.description || '',
+                        floor: room.floor || 'Ground Floor',
+                        type: room.type
+                      })
+                      setShowEditModal(true)
+                    }} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {viewMode === 'OTHER_ROOMS' && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-100 mb-4">
+                Other Rooms ({otherRooms.length} rooms)
+              </h2>
+              {otherRooms.length === 0 ? (
+                <div className="text-center py-8">
+                  <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-400">No other rooms found</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {otherRooms.map((room) => (
+                    <RoomCard key={room.id} room={room} onEdit={(room) => {
+                      setSelectedRoom(room)
+                      setFormData({
+                        name: room.name,
+                        description: room.description || '',
+                        floor: room.floor || 'Ground Floor',
+                        type: room.type
+                      })
+                      setShowEditModal(true)
+                    }} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {viewMode === 'SCHEDULES' && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-100 mb-6">Schedule Assignment</h2>
+              
+              {/* Assignment Mode Toggle */}
+              <div className="flex gap-2 mb-6">
                 <button
                   onClick={() => setAssignMode('QUICK')}
-                  className={`flex items-center px-3 py-1.5 rounded ${
+                  className={`px-4 py-2 rounded ${
                     assignMode === 'QUICK'
                       ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
                       : 'bg-gray-800/50 text-gray-400 hover:bg-teal-500/10 hover:text-teal-300'
                   } border transition-colors`}
                 >
-                  <Layers className="w-4 h-4 mr-2" />
                   Quick Assign
                 </button>
                 <button
                   onClick={() => setAssignMode('MANUAL')}
-                  className={`flex items-center px-3 py-1.5 rounded ${
+                  className={`px-4 py-2 rounded ${
                     assignMode === 'MANUAL'
                       ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
                       : 'bg-gray-800/50 text-gray-400 hover:bg-teal-500/10 hover:text-teal-300'
                   } border transition-colors`}
                 >
-                  <Building2 className="w-4 h-4 mr-2" />
                   Manual Assign
                 </button>
               </div>
+
+              {assignMode === 'QUICK' && (
+                <div className="bg-gray-900/50 rounded-lg border border-gray-600 p-6 mb-6">
+                  <h3 className="text-lg font-semibold text-gray-100 mb-4">Quick Assignment</h3>
+                  <p className="text-gray-400 mb-4">Assign a schedule to all rooms of a specific type</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Schedule</label>
+                      <select
+                        value={selectedSchedule}
+                        onChange={(e) => setSelectedSchedule(e.target.value)}
+                        className="w-full rounded-md bg-gray-800 border border-gray-600 text-gray-100 px-3 py-2"
+                      >
+                        <option value="">Select schedule...</option>
+                        {schedules.map((schedule) => (
+                          <option key={schedule.id} value={schedule.id}>
+                            {schedule.title} ({schedule.tasks.length} tasks)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Room Type</label>
+                      <select
+                        value={selectedRoomType}
+                        onChange={(e) => setSelectedRoomType(e.target.value)}
+                        className="w-full rounded-md bg-gray-800 border border-gray-600 text-gray-100 px-3 py-2"
+                      >
+                        {roomTypes.map((type) => (
+                          <option key={type} value={type}>
+                            {type.replace('_', ' ')} ({rooms.filter(r => r.type === type).length} rooms)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Frequency</label>
+                      <select
+                        value={selectedFrequency}
+                        onChange={(e) => setSelectedFrequency(e.target.value as ScheduleFrequency)}
+                        className="w-full rounded-md bg-gray-800 border border-gray-600 text-gray-100 px-3 py-2"
+                      >
+                        {Object.values(ScheduleFrequency).map((freq) => (
+                          <option key={freq} value={freq}>
+                            {getFrequencyLabel(freq)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={handleQuickAssign}
+                    disabled={!selectedSchedule || !selectedRoomType || isAssigning}
+                    className="flex items-center px-4 py-2 bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 rounded border border-teal-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isAssigning ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Plus className="w-4 h-4 mr-2" />
+                    )}
+                    Assign to All {selectedRoomType.replace('_', ' ')}s
+                  </button>
+                </div>
+              )}
+
+              {assignMode === 'MANUAL' && (
+                <div className="bg-gray-900/50 rounded-lg border border-gray-600 p-6 mb-6">
+                  <h3 className="text-lg font-semibold text-gray-100 mb-4">Manual Assignment</h3>
+                  <p className="text-gray-400 mb-4">Assign a schedule to a specific room</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Schedule</label>
+                      <select
+                        value={selectedSchedule}
+                        onChange={(e) => setSelectedSchedule(e.target.value)}
+                        className="w-full rounded-md bg-gray-800 border border-gray-600 text-gray-100 px-3 py-2"
+                      >
+                        <option value="">Select schedule...</option>
+                        {schedules.map((schedule) => (
+                          <option key={schedule.id} value={schedule.id}>
+                            {schedule.title} ({schedule.tasks.length} tasks)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Room</label>
+                      <select
+                        value={selectedRoom?.id || ''}
+                        onChange={(e) => {
+                          const room = rooms.find(r => r.id === e.target.value)
+                          setSelectedRoom(room || null)
+                        }}
+                        className="w-full rounded-md bg-gray-800 border border-gray-600 text-gray-100 px-3 py-2"
+                      >
+                        <option value="">Select room...</option>
+                        {rooms.map((room) => (
+                          <option key={room.id} value={room.id}>
+                            {room.name} ({room.type.replace('_', ' ')})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Frequency</label>
+                      <select
+                        value={selectedFrequency}
+                        onChange={(e) => setSelectedFrequency(e.target.value as ScheduleFrequency)}
+                        className="w-full rounded-md bg-gray-800 border border-gray-600 text-gray-100 px-3 py-2"
+                      >
+                        {Object.values(ScheduleFrequency).map((freq) => (
+                          <option key={freq} value={freq}>
+                            {getFrequencyLabel(freq)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={handleManualAssign}
+                    disabled={!selectedSchedule || !selectedRoom || isAssigning}
+                    className="flex items-center px-4 py-2 bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 rounded border border-teal-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isAssigning ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Plus className="w-4 h-4 mr-2" />
+                    )}
+                    Assign Schedule
+                  </button>
+                </div>
+              )}
             </div>
+          )}
+        </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Schedule
-                </label>
-                <select
-                  value={selectedSchedule}
-                  onChange={(e) => setSelectedSchedule(e.target.value)}
-                  className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
+        {/* Add Room Form Modal */}
+        {showForm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-gray-800 rounded-lg border border-gray-700 p-6 w-full max-w-md">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-100">Add New Room</h2>
+                <button
+                  onClick={() => setShowForm(false)}
+                  className="text-gray-400 hover:text-gray-300"
                 >
-                  <option value="">Select a schedule</option>
-                  {schedules.map((schedule) => (
-                    <option key={schedule.id} value={schedule.id}>
-                      {schedule.title}
-                    </option>
-                  ))}
-                </select>
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Frequency
-                </label>
-                <select
-                  value={selectedFrequency}
-                  onChange={(e) => setSelectedFrequency(e.target.value as ScheduleFrequency)}
-                  className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
-                >
-                  {Object.values(ScheduleFrequency).map((freq) => (
-                    <option key={freq} value={freq}>
-                      {getFrequencyLabel(freq as ScheduleFrequency)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {assignMode === 'QUICK' ? (
+              
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Room Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
+                    placeholder="e.g., Room 52"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Floor
+                  </label>
+                  <select
+                    value={formData.floor}
+                    onChange={(e) => setFormData(prev => ({ ...prev, floor: e.target.value }))}
+                    className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
+                  >
+                    <option value="Ground Floor">Ground Floor</option>
+                    <option value="Upstairs">Upstairs</option>
+                  </select>
+                </div>
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
                     Room Type
                   </label>
                   <select
-                    value={selectedRoomType}
-                    onChange={(e) => setSelectedRoomType(e.target.value)}
+                    value={formData.type}
+                    onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
                     className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
                   >
-                    {roomTypes.map(type => (
-                      <option key={type} value={type}>
-                        {type.replace('_', ' ')}
-                      </option>
-                    ))}
+                    <option value="BEDROOM">Bedroom</option>
+                    <option value="OFFICE">Office</option>
+                    <option value="MEETING_ROOM">Meeting Room</option>
+                    <option value="BATHROOM">Bathroom</option>
+                    <option value="KITCHEN">Kitchen</option>
+                    <option value="LOBBY">Lobby</option>
+                    <option value="STORAGE">Storage</option>
+                    <option value="LOUNGE">Lounge</option>
+                    <option value="OTHER">Other</option>
                   </select>
                 </div>
-              ) : (
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Room
+                    Description (Optional)
                   </label>
-                  <select
-                    value={selectedRoom?.id || ''}
-                    onChange={(e) => {
-                      const roomId = e.target.value
-                      setSelectedRoom(roomId ? rooms.find(r => r.id === roomId) || null : null)
-                    }}
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                     className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
-                  >
-                    <option value="">Select a room</option>
-                    {rooms.map((room) => (
-                      <option key={room.id} value={room.id}>
-                        {room.name} ({room.type.replace('_', ' ')})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={assignMode === 'QUICK' ? handleQuickAssign : handleManualAssign}
-              disabled={isAssigning || !selectedSchedule || (assignMode === 'QUICK' ? !selectedRoomType : !selectedRoom)}
-              className="mt-6 px-4 py-2 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 rounded border border-teal-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isAssigning ? 'Assigning...' : `Assign Schedule${assignMode === 'QUICK' ? ' to All' : ''}`}
-            </button>
-
-            {assignMode === 'QUICK' && selectedRoomType && (
-              <div className="mt-4 text-sm text-gray-400">
-                This will assign the selected schedule to all {rooms.filter(r => r.type === selectedRoomType).length} {selectedRoomType.toLowerCase()}s
-              </div>
-            )}
-          </>
-        ) : viewMode === 'BEDROOMS' ? (
-          <>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
-              {filteredBedrooms
-                .sort((a, b) => {
-                  const aNum = parseInt(a.name.split(' ')[1])
-                  const bNum = parseInt(b.name.split(' ')[1])
-                  return aNum - bNum
-                })
-                .map(room => (
-                  <div
-                    key={room.id}
-                    className="relative rounded-lg p-4 cursor-pointer bg-gray-900/50 border border-gray-700 hover:border-teal-500/50 hover:bg-teal-500/10 transition-colors"
-                  >
-                    <Link href={`/rooms/${room.id}`} className="block">
-                      <div className="flex flex-col h-full">
-                        <div>
-                          <div className="text-2xl font-light text-teal-300">
-                            Room {parseInt(room.name.split(' ')[1])}
-                          </div>
-                          <div className="text-xs text-gray-400">
-                            {room.floor}
-                          </div>
-                        </div>
-                        {room.description && (
-                          <div className="text-xs text-gray-400 truncate mt-1">
-                            {room.description}
-                          </div>
-                        )}
-                        {room.schedules && room.schedules.length > 0 && (
-                          <div className="mt-3 space-y-2">
-                            <div className="text-xs font-medium text-gray-300">Schedules:</div>
-                            {room.schedules.map(schedule => (
-                              <div
-                                key={schedule.id}
-                                className="text-xs bg-gray-800/50 rounded p-2 border border-gray-700"
-                              >
-                                <div className="font-medium text-teal-300">
-                                  {schedule.schedule.title}
-                                </div>
-                                <div className="flex items-center justify-between mt-1">
-                                  <div className="text-gray-400">
-                                    {getFrequencyLabel(schedule.frequency)}
-                                  </div>
-                                  <span
-                                    className={`px-1.5 py-0.5 rounded-full text-[10px] ${
-                                      schedule.status === 'COMPLETED'
-                                        ? 'bg-green-500/10 text-green-300'
-                                        : schedule.status === 'OVERDUE'
-                                        ? 'bg-red-500/10 text-red-300'
-                                        : 'bg-yellow-500/10 text-yellow-300'
-                                    }`}
-                                  >
-                                    {schedule.status}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </Link>
-                  </div>
-                ))}
-            </div>
-            {filteredBedrooms.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-gray-400">No bedrooms on this floor.</p>
-              </div>
-            )}
-          </>
-        ) : (
-          <>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6">
-              {otherRooms
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map(room => (
-                  <div
-                    key={room.id}
-                    className="relative rounded-lg p-4 cursor-pointer bg-gray-900/50 border border-gray-700 hover:border-teal-500/50 hover:bg-teal-500/10 transition-colors"
-                  >
-                    <Link href={`/rooms/${room.id}`} className="block">
-                      <div className="flex flex-col gap-2">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="text-lg font-medium text-teal-300">
-                              {room.name}
-                            </div>
-                            <div className="text-sm text-gray-400">
-                              {room.type.replace('_', ' ')}
-                            </div>
-                          </div>
-                          {room.floor && (
-                            <div className="text-xs text-gray-400 bg-gray-900/50 px-2 py-1 rounded">
-                              {room.floor}
-                            </div>
-                          )}
-                        </div>
-                        {room.description && (
-                          <div className="text-sm text-gray-400">
-                            {room.description}
-                          </div>
-                        )}
-                        {room.schedules && room.schedules.length > 0 && (
-                          <div className="mt-2 space-y-2">
-                            <div className="text-xs font-medium text-gray-300">Schedules:</div>
-                            {room.schedules.map(schedule => (
-                              <div
-                                key={schedule.id}
-                                className="text-xs bg-gray-800/50 rounded p-2 border border-gray-700"
-                              >
-                                <div className="font-medium text-teal-300">
-                                  {schedule.schedule.title}
-                                </div>
-                                <div className="flex items-center justify-between mt-1">
-                                  <div className="text-gray-400">
-                                    {getFrequencyLabel(schedule.frequency)}
-                                  </div>
-                                  <span
-                                    className={`px-1.5 py-0.5 rounded-full text-[10px] ${
-                                      schedule.status === 'COMPLETED'
-                                        ? 'bg-green-500/10 text-green-300'
-                                        : schedule.status === 'OVERDUE'
-                                        ? 'bg-red-500/10 text-red-300'
-                                        : 'bg-yellow-500/10 text-yellow-300'
-                                    }`}
-                                  >
-                                    {schedule.status}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </Link>
-                  </div>
-                ))}
-            </div>
-            {otherRooms.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-gray-400">No other rooms added yet.</p>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* Add Room Modal */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="bg-gray-800/50 backdrop-blur border border-gray-700 rounded-lg p-6 w-full max-w-lg mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-medium text-teal-300">Add New Room</h2>
-              <button
-                onClick={() => setShowForm(false)}
-                className="text-gray-400 hover:text-teal-300"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Room Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
-                    placeholder="e.g., Room 101"
-                    required
+                    rows={3}
+                    placeholder="Room description..."
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Floor
-                  </label>
-                  <select
-                    value={formData.floor}
-                    onChange={e => setFormData(prev => ({ ...prev, floor: e.target.value }))}
-                    className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
+                
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 flex items-center justify-center px-4 py-2 bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 rounded border border-teal-500/50 disabled:opacity-50"
                   >
-                    <option value="Ground Floor">Ground Floor</option>
-                    <option value="First Floor">First Floor</option>
-                  </select>
+                    {isSubmitting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      'Create Room'
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    className="px-4 py-2 text-gray-400 hover:text-gray-300 border border-gray-600 rounded"
+                  >
+                    Cancel
+                  </button>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Room Type
-                </label>
-                <select
-                  value={formData.type}
-                  onChange={e => setFormData(prev => ({ ...prev, type: e.target.value }))}
-                  className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
-                >
-                  <option value="BEDROOM">Bedroom</option>
-                  <option value="OFFICE">Office</option>
-                  <option value="MEETING_ROOM">Meeting Room</option>
-                  <option value="BATHROOM">Bathroom</option>
-                  <option value="KITCHEN">Kitchen</option>
-                  <option value="LOBBY">Lobby</option>
-                  <option value="STORAGE">Storage</option>
-                  <option value="LOUNGE">Lounge</option>
-                  <option value="OTHER">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
-                  rows={3}
-                  placeholder="Add any additional details about the room..."
-                />
-              </div>
-
-              <div className="flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="px-4 py-2 text-gray-400 hover:text-teal-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-4 py-2 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 rounded border border-teal-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? 'Adding...' : 'Add Room'}
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Edit Room Modal */}
-      {showEditModal && selectedRoom && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="bg-gray-800/50 backdrop-blur border border-gray-700 rounded-lg p-6 w-full max-w-lg mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-medium text-teal-300">Edit Room</h2>
-              <button
-                onClick={() => {
-                  setShowEditModal(false)
-                  setSelectedRoom(null)
-                }}
-                className="text-gray-400 hover:text-teal-300"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleEdit} className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
+        {/* Edit Room Modal */}
+        {showEditModal && selectedRoom && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-gray-800 rounded-lg border border-gray-700 p-6 w-full max-w-md">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-100">Edit Room</h2>
+                <button
+                  onClick={() => {
+                    setShowEditModal(false)
+                    setSelectedRoom(null)
+                  }}
+                  className="text-gray-400 hover:text-gray-300"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleEdit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
                     Room Name
                   </label>
                   <input
                     type="text"
-                    value={formData.name}
-                    onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
                     required
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
                   />
                 </div>
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
                     Floor
                   </label>
                   <select
                     value={formData.floor}
-                    onChange={e => setFormData(prev => ({ ...prev, floor: e.target.value }))}
+                    onChange={(e) => setFormData(prev => ({ ...prev, floor: e.target.value }))}
                     className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
                   >
                     <option value="Ground Floor">Ground Floor</option>
-                    <option value="First Floor">First Floor</option>
+                    <option value="Upstairs">Upstairs</option>
                   </select>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Room Type
-                </label>
-                <select
-                  value={formData.type}
-                  onChange={e => setFormData(prev => ({ ...prev, type: e.target.value }))}
-                  className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
-                >
-                  <option value="BEDROOM">Bedroom</option>
-                  <option value="OFFICE">Office</option>
-                  <option value="MEETING_ROOM">Meeting Room</option>
-                  <option value="BATHROOM">Bathroom</option>
-                  <option value="KITCHEN">Kitchen</option>
-                  <option value="LOBBY">Lobby</option>
-                  <option value="STORAGE">Storage</option>
-                  <option value="LOUNGE">Lounge</option>
-                  <option value="OTHER">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex justify-between">
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  className="flex items-center px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-300 rounded border border-red-500/30"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Room
-                </button>
-                <div className="flex gap-3">
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Room Type
+                  </label>
+                  <select
+                    value={formData.type}
+                    onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
+                    className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
+                  >
+                    <option value="BEDROOM">Bedroom</option>
+                    <option value="OFFICE">Office</option>
+                    <option value="MEETING_ROOM">Meeting Room</option>
+                    <option value="BATHROOM">Bathroom</option>
+                    <option value="KITCHEN">Kitchen</option>
+                    <option value="LOBBY">Lobby</option>
+                    <option value="STORAGE">Storage</option>
+                    <option value="LOUNGE">Lounge</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 flex items-center justify-center px-4 py-2 bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 rounded border border-teal-500/50 disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      'Update Room'
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={isSubmitting}
+                    className="px-4 py-2 text-red-400 hover:text-red-300 border border-red-500/50 rounded disabled:opacity-50"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
                       setShowEditModal(false)
                       setSelectedRoom(null)
                     }}
-                    className="px-4 py-2 text-gray-400 hover:text-teal-300"
+                    className="px-4 py-2 text-gray-400 hover:text-gray-300 border border-gray-600 rounded"
                   >
                     Cancel
                   </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="px-4 py-2 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 rounded border border-teal-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSubmitting ? 'Saving...' : 'Save Changes'}
-                  </button>
                 </div>
-              </div>
-            </form>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Room Card Component
+interface RoomCardProps {
+  room: Room
+  onEdit: (room: Room) => void
+}
+
+function RoomCard({ room, onEdit }: RoomCardProps) {
+  const getRoomTypeIcon = (type: string) => {
+    switch (type) {
+      case 'BEDROOM': return '🛏️'
+      case 'BATHROOM': return '🚿'
+      case 'KITCHEN': return '🍳'
+      case 'OFFICE': return '💼'
+      case 'MEETING_ROOM': return '🪑'
+      case 'LOBBY': return '🏢'
+      case 'STORAGE': return '📦'
+      case 'LOUNGE': return '🛋️'
+      default: return '🏠'
+    }
+  }
+
+  const getStatusColor = (status?: string) => {
+    switch (status) {
+      case 'OVERDUE': return 'text-red-400 bg-red-400/10 border-red-400/20'
+      case 'PENDING': return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20'
+      case 'COMPLETED': return 'text-green-400 bg-green-400/10 border-green-400/20'
+      default: return 'text-gray-400 bg-gray-400/10 border-gray-400/20'
+    }
+  }
+
+  const activeSchedules = room.schedules?.filter(s => s.status !== 'COMPLETED') || []
+  const completedSchedules = room.schedules?.filter(s => s.status === 'COMPLETED') || []
+
+  return (
+    <div className="bg-gray-900/50 border border-gray-600 rounded-lg p-4 hover:border-gray-500 transition-colors">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">{getRoomTypeIcon(room.type)}</span>
+          <div>
+            <h3 className="font-semibold text-gray-100">{room.name}</h3>
+            <p className="text-sm text-gray-400">{room.floor}</p>
           </div>
         </div>
+        <button
+          onClick={() => onEdit(room)}
+          className="text-gray-400 hover:text-teal-300 transition-colors"
+        >
+          <Layers className="w-4 h-4" />
+        </button>
+      </div>
+
+      {room.description && (
+        <p className="text-sm text-gray-400 mb-3">{room.description}</p>
       )}
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-gray-300">Active Schedules:</span>
+          <span className="text-gray-100">{activeSchedules.length}</span>
+        </div>
+        
+        {activeSchedules.length > 0 && (
+          <div className="space-y-1">
+            {activeSchedules.slice(0, 2).map((schedule) => (
+              <div key={schedule.id} className="flex items-center justify-between text-xs">
+                <span className="text-gray-400 truncate">{schedule.schedule.title}</span>
+                <span className={`px-2 py-0.5 rounded border ${getStatusColor(schedule.status)}`}>
+                  {schedule.status}
+                </span>
+              </div>
+            ))}
+            {activeSchedules.length > 2 && (
+              <p className="text-xs text-gray-500">+{activeSchedules.length - 2} more</p>
+            )}
+          </div>
+        )}
+
+        {completedSchedules.length > 0 && (
+          <div className="text-xs text-gray-500">
+            {completedSchedules.length} completed schedule{completedSchedules.length !== 1 ? 's' : ''}
+          </div>
+        )}
+      </div>
+
+      <div className="mt-3 pt-3 border-t border-gray-700">
+        <Link
+          href={`/rooms/${room.id}`}
+          className="text-sm text-teal-400 hover:text-teal-300 transition-colors"
+        >
+          View Details →
+        </Link>
+      </div>
     </div>
   )
 } 
