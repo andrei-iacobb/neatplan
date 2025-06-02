@@ -1,19 +1,21 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/db'
 
 // Update a schedule
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const { title } = await req.json()
     
     const schedule = await prisma.schedule.update({
-      where: { id: params.id },
+      where: { id },
       data: { title },
       include: { tasks: true }
     })
@@ -27,17 +29,66 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-// Delete a schedule
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+// Partial update a schedule (PATCH method)
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await getServerSession()
+    console.log('PATCH request started')
+    
+    const session = await getServerSession(authOptions)
+    console.log('Session:', session ? 'exists' : 'null')
+    
+    if (!session) {
+      console.log('No session, returning 401')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { id } = await params
+    console.log('Schedule ID:', id)
+    
+    const body = await req.json()
+    console.log('Request body:', body)
+    
+    const updateData: any = {}
+    
+    // Only update fields that exist in the schema
+    if (body.title !== undefined) updateData.title = body.title
+    // Allow editing suggestedFrequency to correct AI mistakes
+    if (body.suggestedFrequency !== undefined) updateData.suggestedFrequency = body.suggestedFrequency
+    // Note: detectedFrequency stays read-only as a record of what AI originally detected
+    
+    console.log('Update data:', updateData)
+    
+    const schedule = await prisma.schedule.update({
+      where: { id },
+      data: updateData,
+      include: { tasks: true }
+    })
+
+    console.log('Schedule updated successfully')
+    return NextResponse.json(schedule)
+  } catch (error: any) {
+    console.error('PATCH error:', error)
+    console.error('Error stack:', error.stack)
+    return NextResponse.json(
+      { error: error?.message || 'Failed to update schedule' },
+      { status: 500 }
+    )
+  }
+}
+
+// Delete a schedule
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
+
     // First check if the schedule exists
     const schedule = await prisma.schedule.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!schedule) {
@@ -46,7 +97,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 
     // Delete the schedule and its tasks
     await prisma.schedule.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({ success: true })

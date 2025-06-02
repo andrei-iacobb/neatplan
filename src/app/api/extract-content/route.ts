@@ -1,23 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
-import { prisma } from '@/lib/db'
-import sharp from 'sharp'
 import natural from 'natural'
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-})
-
 // Initialize NLP tools
-const tokenizer = new natural.WordTokenizer()
 const sentenceTokenizer = new natural.SentenceTokenizer(['en'])
 
 // Force dynamic behavior for the API route
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300 // 5 minutes timeout
-
-// Define allowed methods
 export const runtime = 'nodejs'
 
 const CLEANING_KEYWORDS = [
@@ -137,23 +126,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided or invalid file' }, { status: 400 })
     }
 
-    console.log('Processing file:', file.name, 'type:', file.type)
+    console.log('Extracting content from:', file.name, 'type:', file.type)
 
     // Convert file to buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
     let content: string = ''
-    let processingMethod: string = ''
 
     // Process based on file type
     if (file.type === 'application/pdf') {
-      console.log('Processing PDF with OCR method...')
-      processingMethod = 'OCR'
+      console.log('Extracting from PDF...')
       content = await processPdfFile(buffer)
     } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-      console.log('Processing DOCX with text extraction + NLP method...')
-      processingMethod = 'Text Extraction + NLP'
+      console.log('Extracting from DOCX...')
       
       // Extract text directly from DOCX
       const rawText = await processDocxFile(buffer)
@@ -163,44 +149,9 @@ export async function POST(request: NextRequest) {
       
       console.log('Raw text length:', rawText.length)
       console.log('Processed content length:', content.length)
-    } else if (file.type.startsWith('image/')) {
-      console.log('Processing image with Vision API...')
-      processingMethod = 'Vision API'
-      
-      // Process image
-      const imageBuffer = await sharp(buffer)
-        .resize(1024, 1024, { fit: 'inside' })
-        .toBuffer()
-      
-      const base64Image = imageBuffer.toString('base64')
-      
-      // Use Vision API for image
-      const visionResponse = await openai.chat.completions.create({
-        model: "gpt-4-vision-preview",
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Extract cleaning tasks from this image. Format each task with its description, frequency, and estimated duration."
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:${file.type};base64,${base64Image}`
-                }
-              }
-            ]
-          }
-        ],
-        max_tokens: 1500
-      })
-      
-      content = visionResponse.choices[0]?.message?.content || ''
     } else {
       return NextResponse.json({ 
-        error: 'Unsupported file type. Please upload PDF, DOCX, or image files.' 
+        error: 'Unsupported file type. Please upload PDF or DOCX files.' 
       }, { status: 400 })
     }
 
@@ -210,47 +161,23 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    console.log('Extracted content preview:', content.substring(0, 200) + '...')
+    console.log('Content extracted successfully from:', file.name)
 
-    // Use our enhanced AI schedule processing system
-    console.log('Sending extracted content to enhanced AI processor...')
-    
-    // Create a mock request to our AI schedule endpoint
-    const aiScheduleResponse = await fetch(`${request.nextUrl.origin}/api/ai/schedule`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': request.headers.get('Cookie') || '' // Pass along authentication
-      },
-      body: JSON.stringify({ content })
-    })
-
-    const aiScheduleData = await aiScheduleResponse.json()
-
-    if (!aiScheduleResponse.ok) {
-      throw new Error(aiScheduleData.error || 'Failed to process content with AI')
-    }
-
-    // Return the enhanced AI results
     return NextResponse.json({
       success: true,
-      processingMethod,
-      tasksExtracted: aiScheduleData.schedule.tasks.length,
-      schedule: aiScheduleData.schedule,
-      processingInfo: aiScheduleData.processingInfo,
+      content,
       metadata: {
         filename: file.name,
         fileType: file.type,
         fileSize: file.size,
-        processingMethod,
-        enhancedProcessing: true
+        contentLength: content.length
       }
     })
 
   } catch (error) {
-    console.error('Error processing document:', error)
+    console.error('Error extracting content:', error)
     return NextResponse.json({
-      error: 'Failed to process document',
+      error: 'Failed to extract content',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
@@ -266,16 +193,4 @@ export async function OPTIONS(request: NextRequest) {
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
   })
-}
-
-// Handle GET requests
-export async function GET() {
-  return new NextResponse("Method not allowed", { 
-    status: 405,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    }
-  })
-}
+} 

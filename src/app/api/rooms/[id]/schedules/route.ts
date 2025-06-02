@@ -24,9 +24,33 @@ export async function POST(
     const params = await context.params
     const roomId = params.id
 
-    if (!scheduleId || !frequency) {
+    if (!scheduleId) {
       return NextResponse.json(
-        { error: 'Schedule ID and frequency are required' },
+        { error: 'Schedule ID is required' },
+        { status: 400 }
+      )
+    }
+
+    // Get the schedule to check for suggested frequency
+    const schedule = await prisma.schedule.findUnique({
+      where: { id: scheduleId }
+    })
+
+    if (!schedule) {
+      return NextResponse.json(
+        { error: 'Schedule not found' },
+        { status: 404 }
+      )
+    }
+
+    // Use provided frequency, or fall back to suggested frequency from AI detection
+    // For now, we'll access the new fields using bracket notation to avoid TypeScript errors
+    const suggestedFrequency = (schedule as any).suggestedFrequency
+    const assignedFrequency = frequency || suggestedFrequency
+
+    if (!assignedFrequency) {
+      return NextResponse.json(
+        { error: 'Frequency is required. No frequency provided and schedule has no suggested frequency.' },
         { status: 400 }
       )
     }
@@ -48,13 +72,13 @@ export async function POST(
       )
     }
 
-    const nextDueDate = calculateNextDueDate(frequency)
+    const nextDueDate = calculateNextDueDate(assignedFrequency)
 
     const roomSchedule = await prisma.roomSchedule.create({
       data: {
         roomId,
         scheduleId,
-        frequency,
+        frequency: assignedFrequency,
         nextDue: nextDueDate,
         status: 'PENDING'
       },

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useToast } from '@/components/ui/toast-context'
 import { Loader2, Plus, X, Trash2, Building2, Bed, Calendar, Layers } from 'lucide-react'
 import { ScheduleFrequency, ScheduleStatus } from '@/types/schedule'
-import { getFrequencyLabel } from '@/lib/schedule-utils'
+import { getFrequencyLabel, getScheduleDisplayName } from '@/lib/schedule-utils'
 
 interface Room {
   id: string
@@ -22,6 +22,8 @@ interface Schedule {
   id: string
   title: string
   tasks: { id: string; description: string }[]
+  detectedFrequency?: string | null
+  suggestedFrequency?: ScheduleFrequency | null
 }
 
 interface RoomSchedule {
@@ -189,11 +191,24 @@ export default function RoomsPage() {
 
       showToast(`Schedule assigned to all ${selectedRoomType.toLowerCase()}s`, 'success')
       setSelectedSchedule('')
+      setSelectedFrequency(ScheduleFrequency.WEEKLY) // Reset to default
     } catch (error) {
       console.error('Error assigning schedules:', error)
       showToast('Failed to assign schedules', 'error')
     } finally {
       setIsAssigning(false)
+    }
+  }
+
+  // Handler for schedule selection that sets suggested frequency automatically
+  const handleScheduleSelection = (scheduleId: string) => {
+    setSelectedSchedule(scheduleId)
+    
+    if (scheduleId) {
+      const schedule = schedules.find(s => s.id === scheduleId)
+      if (schedule?.suggestedFrequency) {
+        setSelectedFrequency(schedule.suggestedFrequency)
+      }
     }
   }
 
@@ -413,16 +428,21 @@ export default function RoomsPage() {
                       <label className="block text-sm font-medium text-gray-300 mb-2">Schedule</label>
                       <select
                         value={selectedSchedule}
-                        onChange={(e) => setSelectedSchedule(e.target.value)}
+                        onChange={(e) => handleScheduleSelection(e.target.value)}
                         className="w-full rounded-md bg-gray-800 border border-gray-600 text-gray-100 px-3 py-2"
                       >
                         <option value="">Select schedule...</option>
                         {schedules.map((schedule) => (
                           <option key={schedule.id} value={schedule.id}>
-                            {schedule.title} ({schedule.tasks.length} tasks)
+                            {getScheduleDisplayName(schedule.title)}
                           </option>
                         ))}
                       </select>
+                      {selectedSchedule && schedules.find(s => s.id === selectedSchedule)?.suggestedFrequency && (
+                        <p className="mt-1 text-xs text-teal-400">
+                          ✨ AI detected: "{schedules.find(s => s.id === selectedSchedule)?.suggestedFrequency}"
+                        </p>
+                      )}
                     </div>
                     
                     <div>
@@ -441,7 +461,12 @@ export default function RoomsPage() {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Frequency</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Frequency
+                        {selectedSchedule && schedules.find(s => s.id === selectedSchedule)?.suggestedFrequency && (
+                          <span className="ml-2 text-xs text-teal-400">(Auto-selected from AI detection)</span>
+                        )}
+                      </label>
                       <select
                         value={selectedFrequency}
                         onChange={(e) => setSelectedFrequency(e.target.value as ScheduleFrequency)}
@@ -481,16 +506,21 @@ export default function RoomsPage() {
                       <label className="block text-sm font-medium text-gray-300 mb-2">Schedule</label>
                       <select
                         value={selectedSchedule}
-                        onChange={(e) => setSelectedSchedule(e.target.value)}
+                        onChange={(e) => handleScheduleSelection(e.target.value)}
                         className="w-full rounded-md bg-gray-800 border border-gray-600 text-gray-100 px-3 py-2"
                       >
                         <option value="">Select schedule...</option>
                         {schedules.map((schedule) => (
                           <option key={schedule.id} value={schedule.id}>
-                            {schedule.title} ({schedule.tasks.length} tasks)
+                            {getScheduleDisplayName(schedule.title)}
                           </option>
                         ))}
                       </select>
+                      {selectedSchedule && schedules.find(s => s.id === selectedSchedule)?.suggestedFrequency && (
+                        <p className="mt-1 text-xs text-teal-400">
+                          ✨ AI detected: "{schedules.find(s => s.id === selectedSchedule)?.suggestedFrequency}"
+                        </p>
+                      )}
                     </div>
                     
                     <div>
@@ -513,7 +543,12 @@ export default function RoomsPage() {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Frequency</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Frequency
+                        {selectedSchedule && schedules.find(s => s.id === selectedSchedule)?.suggestedFrequency && (
+                          <span className="ml-2 text-xs text-teal-400">(Auto-selected from AI detection)</span>
+                        )}
+                      </label>
                       <select
                         value={selectedFrequency}
                         onChange={(e) => setSelectedFrequency(e.target.value as ScheduleFrequency)}
@@ -630,7 +665,7 @@ export default function RoomsPage() {
                     className="flex-1 flex items-center justify-center px-4 py-2 bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 rounded border border-teal-500/50 disabled:opacity-50"
                   >
                     {isSubmitting ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="w-4 animate-spin" />
                     ) : (
                       'Create Room'
                     )}
@@ -831,7 +866,9 @@ function RoomCard({ room, onEdit }: RoomCardProps) {
           <div className="space-y-1">
             {activeSchedules.slice(0, 2).map((schedule) => (
               <div key={schedule.id} className="flex items-center justify-between text-xs">
-                <span className="text-gray-400 truncate">{schedule.schedule.title}</span>
+                <span className="text-gray-400 truncate">
+                  {getScheduleDisplayName(schedule.schedule.title, schedule.frequency)}
+                </span>
                 <span className={`px-2 py-0.5 rounded border ${getStatusColor(schedule.status)}`}>
                   {schedule.status}
                 </span>

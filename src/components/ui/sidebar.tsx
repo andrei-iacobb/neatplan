@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useSession, signOut, signIn } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { usePathname } from "next/navigation"
-import { Home, Calendar, Settings, DoorOpen, Upload, LogOut, User, BarChart3, Plus, ChevronDown, Check } from "lucide-react"
+import { Home, Calendar, Settings, DoorOpen, Upload, LogOut, User, ChevronDown, Crown, UserCheck, Brush } from "lucide-react"
 import { useMultiUser } from '@/hooks/useMultiUser'
 
 const navigation = [
@@ -16,65 +16,46 @@ const navigation = [
   { name: "Settings", href: "/settings", icon: Settings },
 ]
 
+// Helper function to get user icon based on role/admin status
+function getUserIcon(isAdmin: boolean) {
+  if (isAdmin) return Crown
+  return UserCheck // Default for non-admin users
+}
+
+// Helper function to get user color scheme
+function getUserColors(isAdmin: boolean) {
+  if (isAdmin) {
+    return {
+      color: 'text-red-300',
+      bgColor: 'bg-red-500/20',
+      hoverColor: 'hover:bg-red-500/30'
+    }
+  }
+  return {
+    color: 'text-blue-300',
+    bgColor: 'bg-blue-500/20',
+    hoverColor: 'hover:bg-blue-500/30'
+  }
+}
+
 export function Sidebar() {
   const [isExpanded, setIsExpanded] = useState(false)
-  const { data: session } = useSession()
-  const pathname = usePathname()
   const [showAccountSwitcher, setShowAccountSwitcher] = useState(false)
-  const [isAddingAccount, setIsAddingAccount] = useState(false)
-
-  const { storedUsers, currentUser, removeStoredUser, switchAccount } = useMultiUser()
+  const { data: session } = useSession()
+  const { availableSessions, isLoading, switchToAccount } = useMultiUser()
+  const pathname = usePathname()
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: '/auth' })
   }
 
-  const handleAddAccount = async () => {
-    setIsAddingAccount(true)
+  const handleAccountSwitch = async (email: string) => {
     setShowAccountSwitcher(false)
-    
-    // Store the current page to return to after adding account
-    sessionStorage.setItem('add_account_return_url', pathname)
-    
-    // Sign out current user first to show login form
-    await signOut({ 
-      redirect: true, 
-      callbackUrl: '/auth?mode=add-account'
-    })
-    
-    setIsAddingAccount(false)
+    await switchToAccount(email)
   }
 
-  const handleSwitchAccount = async (email: string) => {
-    setShowAccountSwitcher(false)
-    
-    // If it's the same user, do nothing
-    if (session?.user?.email === email) return
-
-    try {
-      const success = await switchAccount(email)
-      if (success) {
-        // Refresh the page to load the new session
-        window.location.reload()
-      } else {
-        // Fallback to traditional sign out/in
-        console.log('Switch account failed, falling back to sign out/in')
-        sessionStorage.setItem('return_to_page', pathname)
-        await signOut({ redirect: false })
-        await signIn(undefined, { 
-          callbackUrl: sessionStorage.getItem('return_to_page') || '/',
-        })
-      }
-    } catch (error) {
-      console.error('Error switching accounts:', error)
-      // Fallback to traditional sign out/in
-      sessionStorage.setItem('return_to_page', pathname)
-      await signOut({ redirect: false })
-      await signIn(undefined, { 
-        callbackUrl: sessionStorage.getItem('return_to_page') || '/',
-      })
-    }
-  }
+  const currentUserColors = getUserColors(session?.user?.isAdmin || false)
+  const CurrentUserIcon = getUserIcon(session?.user?.isAdmin || false)
 
   return (
     <>
@@ -145,14 +126,11 @@ export function Sidebar() {
                 ))}
 
                 {/* User avatar in collapsed state */}
-                {currentUser && (
+                {session && (
                   <div className="mt-4 pt-4 border-t border-gray-700">
                     <div className="w-8 h-8 rounded-full bg-teal-500/20 flex items-center justify-center">
                       <User className="w-4 h-4 text-teal-400" />
                     </div>
-                    {storedUsers.length > 1 && (
-                      <div className="w-2 h-2 rounded-full bg-blue-400 mt-1 mx-auto"></div>
-                    )}
                   </div>
                 )}
               </div>
@@ -179,7 +157,7 @@ export function Sidebar() {
                   <div>
                     <h2 className="text-xl font-bold text-gray-100">CleanTrack</h2>
                     <p className="text-xs text-gray-400">
-                      {session?.user?.isAdmin ? 'Admin Panel' : 'Cleaner Portal'}
+                      {session?.user?.isAdmin ? 'Admin Panel' : 'Team Portal'}
                     </p>
                   </div>
                 </div>
@@ -199,108 +177,77 @@ export function Sidebar() {
                 ))}
               </nav>
 
-              {/* Account Switcher Section */}
-              {currentUser && (
+              {/* Account Section */}
+              {session && (
                 <div className="p-4 border-t border-gray-700">
-                  {/* Account Switcher */}
+                  {/* Current User Display with Switch Functionality */}
                   <div className="relative mb-3">
                     <button
                       onClick={() => setShowAccountSwitcher(!showAccountSwitcher)}
-                      className="w-full flex items-center gap-3 p-3 rounded-lg bg-gray-700/30 hover:bg-gray-700/50 transition-colors"
+                      disabled={isLoading}
+                      className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all ${
+                        currentUserColors.bgColor
+                      } ${currentUserColors.hoverColor} ${
+                        isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                      }`}
                     >
-                      <div className="w-8 h-8 rounded-full bg-teal-500/20 flex items-center justify-center">
-                        <User className="w-4 h-4 text-teal-400" />
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentUserColors.bgColor}`}>
+                        <CurrentUserIcon className={`w-4 h-4 ${currentUserColors.color}`} />
                       </div>
                       <div className="flex-1 min-w-0 text-left">
                         <p className="text-sm font-medium text-gray-100 truncate">
-                          {currentUser.name || 'User'}
+                          {session.user.name || session.user.email}
                         </p>
                         <p className="text-xs text-gray-400 truncate">
-                          {currentUser.email}
+                          {session.user.isAdmin ? 'Administrator' : 'Team Member'}
                         </p>
                       </div>
-                      <div className="flex items-center gap-1">
-                        {storedUsers.length > 1 && (
-                          <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-                        )}
-                        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showAccountSwitcher ? 'rotate-180' : ''}`} />
-                      </div>
+                      {availableSessions.length > 0 && (
+                        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
+                          showAccountSwitcher ? 'rotate-180' : ''
+                        }`} />
+                      )}
                     </button>
 
                     {/* Account Switcher Dropdown */}
                     <AnimatePresence>
-                      {showAccountSwitcher && (
+                      {showAccountSwitcher && availableSessions.length > 0 && (
                         <motion.div
                           initial={{ opacity: 0, y: -10, scale: 0.95 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: -10, scale: 0.95 }}
                           transition={{ duration: 0.2 }}
-                          className="absolute bottom-full left-0 right-0 mb-2 bg-gray-800 border border-gray-600 rounded-lg shadow-xl overflow-hidden z-[100]"
+                          className="absolute bottom-full left-0 right-0 mb-2 bg-gray-800/95 backdrop-blur-md border border-gray-600 rounded-lg shadow-xl overflow-hidden"
                         >
                           <div className="p-2">
-                            <div className="text-xs text-gray-400 px-2 py-1 mb-1">Switch Account</div>
-                            
-                            {/* Current account */}
-                            <div className="flex items-center gap-3 p-2 rounded bg-teal-500/10 border border-teal-500/20">
-                              <div className="w-6 h-6 rounded-full bg-teal-500/20 flex items-center justify-center">
-                                <User className="w-3 h-3 text-teal-400" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-gray-100 truncate">
-                                  {currentUser.name}
-                                </p>
-                                <p className="text-[10px] text-gray-400 truncate">
-                                  {currentUser.email}
-                                </p>
-                              </div>
-                              <Check className="w-3 h-3 text-teal-400" />
-                            </div>
-
-                            {/* Other stored accounts */}
-                            {storedUsers
-                              .filter(user => user.email !== currentUser.email)
-                              .map((user) => (
-                              <button
-                                key={user.email}
-                                onClick={() => handleSwitchAccount(user.email)}
-                                className="w-full flex items-center gap-3 p-2 rounded hover:bg-gray-700/50 transition-colors group"
-                              >
-                                <div className="w-6 h-6 rounded-full bg-gray-600/50 flex items-center justify-center">
-                                  <User className="w-3 h-3 text-gray-400" />
-                                </div>
-                                <div className="flex-1 min-w-0 text-left">
-                                  <p className="text-xs font-medium text-gray-200 truncate">
-                                    {user.name}
-                                  </p>
-                                  <p className="text-[10px] text-gray-400 truncate">
-                                    {user.email}
-                                  </p>
-                                </div>
+                            <div className="text-xs text-gray-400 px-3 py-2 font-medium">Switch Account</div>
+                            {availableSessions.map((sessionData) => {
+                              const sessionColors = getUserColors(sessionData.isAdmin)
+                              const SessionIcon = getUserIcon(sessionData.isAdmin)
+                              
+                              return (
                                 <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    removeStoredUser(user.email)
-                                  }}
-                                  className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-all p-1"
+                                  key={sessionData.email}
+                                  onClick={() => handleAccountSwitch(sessionData.email)}
+                                  disabled={isLoading}
+                                  className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
+                                    sessionColors.hoverColor
+                                  } disabled:opacity-50`}
                                 >
-                                  <LogOut className="w-3 h-3" />
+                                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${sessionColors.bgColor}`}>
+                                    <SessionIcon className={`w-3 h-3 ${sessionColors.color}`} />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-gray-100 truncate">
+                                      {sessionData.name}
+                                    </p>
+                                    <p className="text-xs text-gray-400 truncate">
+                                      {sessionData.isAdmin ? 'Administrator' : 'Team Member'}
+                                    </p>
+                                  </div>
                                 </button>
-                              </button>
-                            ))}
-
-                            {/* Add Account */}
-                            <button
-                              onClick={handleAddAccount}
-                              disabled={isAddingAccount}
-                              className="w-full flex items-center gap-3 p-2 rounded hover:bg-gray-700/50 transition-colors border-t border-gray-700 mt-2 pt-2"
-                            >
-                              <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center">
-                                <Plus className="w-3 h-3 text-blue-400" />
-                              </div>
-                              <span className="text-xs text-blue-300">
-                                {isAddingAccount ? 'Adding...' : 'Add Account'}
-                              </span>
-                            </button>
+                              )
+                            })}
                           </div>
                         </motion.div>
                       )}
@@ -313,7 +260,7 @@ export function Sidebar() {
                     className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
-                    Sign Out All
+                    Sign Out
                   </button>
                 </div>
               )}

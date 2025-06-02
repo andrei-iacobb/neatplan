@@ -27,7 +27,8 @@ export interface ScheduleTask {
 export interface Schedule {
   id: string
   title: string
-  frequency: string | null
+  detectedFrequency?: string | null
+  suggestedFrequency?: ScheduleFrequency | null
   createdAt: Date
   updatedAt: Date
   tasks: ScheduleTask[]

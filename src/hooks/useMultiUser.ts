@@ -1,125 +1,172 @@
-import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useState, useEffect } from 'react'
 
-export enum UserRole {
-  ADMIN = 'ADMIN',
-  CLEANER = 'CLEANER'
-}
-
-export interface StoredUser {
-  id: string
+interface StoredSession {
   email: string
   name: string
-  role: UserRole
   isAdmin: boolean
-  lastActive: number
+  token: string
+  lastUsed: number
 }
 
-export function useMultiUser() {
-  const { data: session } = useSession()
-  const [storedUsers, setStoredUsers] = useState<StoredUser[]>([])
+interface SessionUser {
+  email: string
+  name?: string | null
+  isAdmin: boolean
+}
 
-  // Load stored users from localStorage
+const STORAGE_KEY = 'cleantrack_multi_sessions'
+const MAX_SESSIONS = 5
+
+export function useMultiUser() {
+  const { data: currentSession, update: updateSession } = useSession()
+  const [availableSessions, setAvailableSessions] = useState<StoredSession[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Load stored sessions on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('cleantrack_users')
-      if (stored) {
-        try {
-          const users = JSON.parse(stored) as StoredUser[]
-          setStoredUsers(users)
-        } catch (error) {
-          console.error('Error loading stored users:', error)
-          localStorage.removeItem('cleantrack_users')
-        }
-      }
-    }
+    loadStoredSessions()
   }, [])
 
-  // Update stored users when session changes
+  // Store current session when it changes
   useEffect(() => {
-    if (session?.user && typeof window !== 'undefined') {
-      const currentUser: StoredUser = {
-        id: session.user.id || session.user.email || '',
-        email: session.user.email || '',
-        name: session.user.name || '',
-        role: (session.user.role as UserRole) || UserRole.CLEANER,
-        isAdmin: session.user.isAdmin || false,
-        lastActive: Date.now()
-      }
-
-      setStoredUsers(prev => {
-        // Remove any existing entry for this user
-        const filtered = prev.filter(u => u.email !== currentUser.email)
-        // Add current user to the front and limit to 5 accounts
-        const updated = [currentUser, ...filtered].slice(0, 5)
-        
-        try {
-          localStorage.setItem('cleantrack_users', JSON.stringify(updated))
-        } catch (error) {
-          console.error('Error saving users to localStorage:', error)
-        }
-        
-        return updated
-      })
+    if (currentSession?.user) {
+      storeCurrentSession(currentSession.user)
     }
-  }, [session])
+  }, [currentSession])
 
-  const removeStoredUser = (email: string) => {
-    if (typeof window !== 'undefined') {
-      setStoredUsers(prev => {
-        const updated = prev.filter(u => u.email !== email)
-        try {
-          localStorage.setItem('cleantrack_users', JSON.stringify(updated))
-        } catch (error) {
-          console.error('Error updating localStorage:', error)
+  const loadStoredSessions = () => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (stored) {
+        const sessions: StoredSession[] = JSON.parse(stored)
+        // Filter out expired sessions (older than 30 days)
+        const validSessions = sessions.filter(
+          session => Date.now() - session.lastUsed < 30 * 24 * 60 * 60 * 1000
+        )
+        setAvailableSessions(validSessions)
+        
+        // Clean up storage if we removed expired sessions
+        if (validSessions.length !== sessions.length) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(validSessions))
         }
-        return updated
-      })
+      }
+    } catch (error) {
+      console.error('Failed to load stored sessions:', error)
     }
   }
 
-  const switchAccount = async (email: string): Promise<boolean> => {
+  const storeCurrentSession = (user: SessionUser) => {
     try {
+      const sessions = [...availableSessions]
+      const existingIndex = sessions.findIndex(s => s.email === user.email)
+      
+      const sessionData: StoredSession = {
+        email: user.email,
+        name: user.name || user.email,
+        isAdmin: user.isAdmin || false,
+        token: `session_${user.email}_${Date.now()}`, // Simplified token
+        lastUsed: Date.now()
+      }
+
+      if (existingIndex >= 0) {
+        // Update existing session
+        sessions[existingIndex] = sessionData
+      } else {
+        // Add new session
+        sessions.push(sessionData)
+        
+        // Keep only the most recent sessions
+        if (sessions.length > MAX_SESSIONS) {
+          sessions.sort((a, b) => b.lastUsed - a.lastUsed)
+          sessions.splice(MAX_SESSIONS)
+        }
+      }
+
+      setAvailableSessions(sessions)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions))
+    } catch (error) {
+      console.error('Failed to store session:', error)
+    }
+  }
+
+  const switchToAccount = async (email: string) => {
+    setIsLoading(true)
+    
+    try {
+      // Find the stored session
+      const targetSession = availableSessions.find(s => s.email === email)
+      if (!targetSession) {
+        throw new Error('Session not found')
+      }
+
+      // Call the switch account API
       const response = await fetch('/api/auth/switch-account', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({
+          email: targetSession.email,
+          sessionToken: targetSession.token
+        }),
       })
 
       if (!response.ok) {
         throw new Error('Failed to switch account')
       }
 
-      // Update last active for the switched user
-      setStoredUsers(prev => 
-        prev.map(user => 
-          user.email === email 
-            ? { ...user, lastActive: Date.now() }
-            : user
-        )
+      const result = await response.json()
+      
+      // Update the current session
+      await updateSession({
+        user: {
+          email: result.user.email,
+          name: result.user.name,
+          isAdmin: result.user.isAdmin
+        }
+      })
+
+      // Update the lastUsed timestamp for this session
+      const updatedSessions = availableSessions.map(session =>
+        session.email === email
+          ? { ...session, lastUsed: Date.now() }
+          : session
       )
+      setAvailableSessions(updatedSessions)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSessions))
 
       return true
     } catch (error) {
-      console.error('Error switching accounts:', error)
+      console.error('Account switch failed:', error)
       return false
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const clearAllStoredUsers = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('cleantrack_users')
-      setStoredUsers([])
-    }
+  const removeSession = (email: string) => {
+    const updatedSessions = availableSessions.filter(s => s.email !== email)
+    setAvailableSessions(updatedSessions)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSessions))
   }
+
+  const clearAllSessions = () => {
+    setAvailableSessions([])
+    localStorage.removeItem(STORAGE_KEY)
+  }
+
+  // Get sessions excluding the current user
+  const otherSessions = availableSessions.filter(
+    session => session.email !== currentSession?.user?.email
+  )
 
   return {
-    storedUsers,
-    currentUser: session?.user,
-    removeStoredUser,
-    switchAccount,
-    clearAllStoredUsers
+    currentSession,
+    availableSessions: otherSessions,
+    isLoading,
+    switchToAccount,
+    removeSession,
+    clearAllSessions
   }
 } 

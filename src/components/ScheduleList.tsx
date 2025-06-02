@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import type { Schedule, ScheduleTask } from '@/types/schedule'
+import { ScheduleFrequency } from '@/types/schedule'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Pencil, Plus, Save, Trash, X } from 'lucide-react'
@@ -16,7 +17,7 @@ export function ScheduleList({ schedules, onUpdate, isEditMode }: ScheduleListPr
   const [editingSchedule, setEditingSchedule] = useState<string | null>(null)
   const [editingTask, setEditingTask] = useState<string | null>(null)
   const [newTitle, setNewTitle] = useState('')
-  const [newFrequency, setNewFrequency] = useState('')
+  const [newSuggestedFrequency, setNewSuggestedFrequency] = useState<ScheduleFrequency | ''>('')
   const [newTask, setNewTask] = useState({
     description: '',
     additionalNotes: ''
@@ -31,7 +32,7 @@ export function ScheduleList({ schedules, onUpdate, isEditMode }: ScheduleListPr
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           title: newTitle,
-          frequency: newFrequency 
+          suggestedFrequency: newSuggestedFrequency || null
         })
       })
 
@@ -148,12 +149,21 @@ export function ScheduleList({ schedules, onUpdate, isEditMode }: ScheduleListPr
                     placeholder="Schedule title"
                     className="bg-gray-800/50 border-gray-700 text-gray-100"
                   />
-                  <Input
-                    value={newFrequency}
-                    onChange={e => setNewFrequency(e.target.value)}
-                    placeholder="Frequency (e.g., Daily, Weekly, Monthly)"
-                    className="bg-gray-800/50 border-gray-700 text-gray-100"
-                  />
+                  <select
+                    value={newSuggestedFrequency}
+                    onChange={e => setNewSuggestedFrequency(e.target.value as ScheduleFrequency)}
+                    className="w-full rounded-md bg-gray-800/50 border border-gray-700 text-gray-100 px-3 py-2"
+                  >
+                    <option value="">No frequency suggested</option>
+                    {Object.values(ScheduleFrequency).map((freq) => (
+                      <option key={freq} value={freq}>
+                        {freq}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-400">
+                    💡 This overrides the AI suggestion and becomes the default for room assignments
+                  </p>
                 </div>
                 <Button
                   size="icon"
@@ -176,8 +186,20 @@ export function ScheduleList({ schedules, onUpdate, isEditMode }: ScheduleListPr
               <div className="flex items-center gap-4">
                 <div>
                   <h3 className="text-xl font-medium text-gray-100">{schedule.title}</h3>
-                  {schedule.frequency && (
-                    <p className="text-sm text-gray-400 mt-1">Repeats: {schedule.frequency}</p>
+                  {schedule.detectedFrequency && (
+                    <div className="mt-2 space-y-1">
+                      <p className="text-sm text-teal-400 flex items-center">
+                        <span className="mr-1">✨</span>
+                        AI Detected: "{schedule.detectedFrequency}" (original)
+                      </p>
+                      {schedule.suggestedFrequency && (
+                        <p className="text-sm text-teal-300 flex items-center">
+                          <span className="mr-1">🎯</span>
+                          Current Suggestion: {schedule.suggestedFrequency}
+                          <span className="ml-2 text-xs text-gray-400">(editable)</span>
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
                 {isEditMode && (
@@ -188,7 +210,7 @@ export function ScheduleList({ schedules, onUpdate, isEditMode }: ScheduleListPr
                       onClick={() => {
                         setEditingSchedule(schedule.id)
                         setNewTitle(schedule.title)
-                        setNewFrequency(schedule.frequency || '')
+                        setNewSuggestedFrequency(schedule.suggestedFrequency || '')
                       }}
                       className="text-gray-400 hover:text-gray-300"
                     >

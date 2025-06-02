@@ -17,11 +17,13 @@ import {
   Filter,
   SortAsc,
   Building,
-  Hash
+  Hash,
+  Layers
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
+import { getScheduleDisplayName } from '@/lib/schedule-utils'
 
 interface Schedule {
   id: string

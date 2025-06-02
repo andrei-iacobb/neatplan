@@ -59,4 +59,31 @@ export function getFrequencyLabel(frequency: ScheduleFrequency): string {
     default:
       return 'Unknown'
   }
+}
+
+export function getScheduleDisplayName(title: string, frequency?: ScheduleFrequency): string {
+  // Clean up the title and extract meaningful parts
+  let cleanTitle = title
+    .replace(/^(Daily|Weekly|Monthly|Quarterly|Yearly):\s*/i, '') // Remove frequency prefix
+    .replace(/\s*-\s*(bedrooms?|communal|office|bathroom).*$/i, '') // Remove room type suffixes
+    .replace(/\s*-\s*infection control.*$/i, '') // Remove infection control suffix
+    .replace(/checklist$/i, '') // Remove checklist suffix
+    .trim()
+
+  // Extract the first few meaningful words (max 3)
+  const words = cleanTitle.split(/\s+/).filter(word => 
+    word.length > 2 && // Skip short words
+    !['the', 'and', 'for', 'with', 'tool', 'audit'].includes(word.toLowerCase())
+  )
+  
+  const shortTitle = words.slice(0, 3).join(' ')
+  
+  // If we have a frequency, combine it with the short title
+  if (frequency) {
+    const freqLabel = getFrequencyLabel(frequency)
+    return `${freqLabel} ${shortTitle}`.trim()
+  }
+  
+  // Otherwise, just return the short title
+  return shortTitle || title.slice(0, 20) + (title.length > 20 ? '...' : '')
 } 

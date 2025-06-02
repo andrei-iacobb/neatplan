@@ -1,63 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getToken } from 'next-auth/jwt'
-import { prisma } from '@/lib/db'
-import { sign } from 'jsonwebtoken'
+import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../[...nextauth]/route'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email } = await request.json()
+    const session = await getServerSession(authOptions)
     
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
+    if (!session) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    // Find the user to switch to
+    const { email, sessionToken } = await request.json()
+
+    if (!email || !sessionToken) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    // Find the target user
     const targetUser = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isAdmin: true
+      }
     })
 
     if (!targetUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Create a new JWT token for the target user
-    const token = {
-      id: targetUser.id,
-      email: targetUser.email,
-      name: targetUser.name,
-      role: (targetUser as any).role,
-      isAdmin: targetUser.isAdmin,
-      sub: targetUser.id,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60), // 30 days
-    }
-
-    const jwtToken = sign(token, process.env.NEXTAUTH_SECRET!)
-
-    // Set the session cookie
-    const response = NextResponse.json({ 
-      success: true, 
+    // Return the user data for session update
+    return NextResponse.json({
+      success: true,
       user: {
         id: targetUser.id,
         email: targetUser.email,
         name: targetUser.name,
-        role: (targetUser as any).role,
+        role: targetUser.role,
         isAdmin: targetUser.isAdmin
       }
     })
 
-    // Set the session token cookie
-    response.cookies.set('next-auth.session-token', jwtToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-      path: '/'
-    })
-
-    return response
   } catch (error) {
-    console.error('Error switching account:', error)
+    console.error('Switch account error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 } 

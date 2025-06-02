@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useToast } from '@/components/ui/toast-context'
 import { Loader2, Calendar, CheckCircle2, X, Trash2, Building2, Pencil } from 'lucide-react'
 import { ScheduleFrequency, ScheduleStatus, type RoomSchedule } from '@/types/schedule'
-import { getFrequencyLabel } from '@/lib/schedule-utils'
+import { getFrequencyLabel, getScheduleDisplayName } from '@/lib/schedule-utils'
 
 interface Room {
   id: string
@@ -18,6 +18,8 @@ interface Room {
 interface Schedule {
   id: string
   title: string
+  detectedFrequency?: string
+  suggestedFrequency?: ScheduleFrequency
   tasks: { id: string; description: string }[]
 }
 
@@ -65,8 +67,20 @@ export default function RoomDetailsPage() {
     })
   }, [params.id, showToast])
 
+  // Add handler for schedule selection that sets suggested frequency
+  const handleScheduleSelection = (scheduleId: string) => {
+    setSelectedSchedule(scheduleId)
+    
+    if (scheduleId) {
+      const schedule = schedules.find(s => s.id === scheduleId)
+      if (schedule?.suggestedFrequency) {
+        setSelectedFrequency(schedule.suggestedFrequency)
+      }
+    }
+  }
+
   async function assignSchedule() {
-    if (!selectedSchedule || !selectedFrequency) return
+    if (!selectedSchedule) return
 
     setIsAssigning(true)
     try {
@@ -75,7 +89,7 @@ export default function RoomDetailsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           scheduleId: selectedSchedule,
-          frequency: selectedFrequency
+          frequency: selectedFrequency // This can be undefined now, API will use suggested frequency
         })
       })
 
@@ -85,6 +99,7 @@ export default function RoomDetailsPage() {
       setRoomSchedules(prev => [...prev, newRoomSchedule])
       showToast('Schedule assigned successfully', 'success')
       setSelectedSchedule('')
+      setSelectedFrequency(ScheduleFrequency.WEEKLY) // Reset to default
     } catch (error) {
       console.error('Error assigning schedule:', error)
       showToast('Failed to assign schedule', 'error')
@@ -217,20 +232,29 @@ export default function RoomDetailsPage() {
               </label>
               <select
                 value={selectedSchedule}
-                onChange={(e) => setSelectedSchedule(e.target.value)}
+                onChange={(e) => handleScheduleSelection(e.target.value)}
                 className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
               >
                 <option value="">Select a schedule</option>
                 {schedules.map((schedule) => (
                   <option key={schedule.id} value={schedule.id}>
                     {schedule.title}
+                    {schedule.detectedFrequency && ' ✨ (AI-detected)'}
                   </option>
                 ))}
               </select>
+              {selectedSchedule && schedules.find(s => s.id === selectedSchedule)?.detectedFrequency && (
+                <p className="mt-1 text-xs text-teal-400">
+                  ✨ AI detected frequency: "{schedules.find(s => s.id === selectedSchedule)?.detectedFrequency}"
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
                 Frequency
+                {selectedSchedule && schedules.find(s => s.id === selectedSchedule)?.suggestedFrequency && (
+                  <span className="ml-2 text-xs text-teal-400">(Auto-selected from AI detection)</span>
+                )}
               </label>
               <select
                 value={selectedFrequency}
@@ -268,7 +292,7 @@ export default function RoomDetailsPage() {
                 >
                   <div>
                     <h3 className="text-gray-100 font-medium">
-                      {roomSchedule.schedule.title}
+                      {getScheduleDisplayName(roomSchedule.schedule.title, roomSchedule.frequency)}
                     </h3>
                     <div className="mt-1 text-sm text-gray-400">
                       <div className="flex items-center gap-2">

@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -18,28 +12,115 @@ model User {
   email     String   @unique
   password  String
   name      String?
-  role      UserRole @default(CLEANER)
-  isAdmin   Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isAdmin   Boolean  @default(false)
+  role      UserRole @default(CLEANER)
   tasks     Task[]   @relation("UserTasks")
 
   @@map("users")
 }
 
 model Task {
-  id          String      @id @default(cuid())
+  id          String       @id @default(cuid())
   title       String
   description String?
-  status      TaskStatus  @default(TODO)
+  status      TaskStatus   @default(TODO)
   priority    TaskPriority @default(MEDIUM)
   dueDate     DateTime?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   userId      String
-  user        User        @relation("UserTasks", fields: [userId], references: [id])
+  user        User         @relation("UserTasks", fields: [userId], references: [id])
 
   @@map("tasks")
+}
+
+model Room {
+  id          String         @id @default(cuid())
+  name        String         @unique
+  description String?
+  floor       String?
+  type        RoomType       @default(OTHER)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  tasks       CleaningTask[]
+  schedules   RoomSchedule[]
+
+  @@map("rooms")
+}
+
+model CleaningTask {
+  id                String   @id @default(cuid())
+  taskDescription   String
+  frequency         String
+  estimatedDuration String
+  status            String   @default("pending")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  roomId            String?
+  room              Room?    @relation(fields: [roomId], references: [id])
+
+  @@unique([roomId, taskDescription])
+  @@map("cleaning_tasks")
+}
+
+model Schedule {
+  id                 String             @id @default(cuid())
+  title              String             @unique
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  detectedFrequency  String?
+  suggestedFrequency ScheduleFrequency?
+  rooms              RoomSchedule[]
+  tasks              ScheduleTask[]
+
+  @@map("schedules")
+}
+
+model ScheduleTask {
+  id              String   @id @default(cuid())
+  description     String
+  frequency       String?
+  scheduleId      String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  additionalNotes String?
+  schedule        Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@map("schedule_tasks")
+}
+
+model RoomSchedule {
+  id             String                      @id @default(cuid())
+  roomId         String
+  scheduleId     String
+  frequency      ScheduleFrequency
+  startDate      DateTime                    @default(now())
+  lastCompleted  DateTime?
+  nextDue        DateTime
+  status         ScheduleStatus              @default(PENDING)
+  createdAt      DateTime                    @default(now())
+  updatedAt      DateTime                    @updatedAt
+  completionLogs RoomScheduleCompletionLog[]
+  room           Room                        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  schedule       Schedule                    @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, scheduleId])
+  @@map("room_schedules")
+}
+
+model RoomScheduleCompletionLog {
+  id             String       @id @default(cuid())
+  roomScheduleId String
+  completedAt    DateTime     @default(now())
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  completedTasks Json         @default("[]")
+  roomSchedule   RoomSchedule @relation(fields: [roomScheduleId], references: [id], onDelete: Cascade)
+
+  @@map("room_schedule_completion_logs")
 }
 
 enum TaskStatus {
@@ -55,20 +136,6 @@ enum TaskPriority {
   URGENT
 }
 
-model Room {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  description String?
-  floor       String?
-  type        RoomType @default(OTHER)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  tasks       CleaningTask[]
-  schedules   RoomSchedule[]
-
-  @@map("rooms")
-}
-
 enum RoomType {
   OFFICE
   MEETING_ROOM
@@ -76,80 +143,9 @@ enum RoomType {
   KITCHEN
   LOBBY
   STORAGE
+  OTHER
   BEDROOM
   LOUNGE
-  OTHER
-}
-
-model CleaningTask {
-  id                String   @id @default(cuid())
-  taskDescription   String
-  frequency         String
-  estimatedDuration String
-  status           String   @default("pending")
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  roomId           String?
-  room             Room?    @relation(fields: [roomId], references: [id])
-
-  @@unique([roomId, taskDescription])
-  @@map("cleaning_tasks")
-}
-
-model Schedule {
-  id          String   @id @default(cuid())
-  title       String   @unique
-  tasks       ScheduleTask[]
-  rooms       RoomSchedule[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("schedules")
-}
-
-model ScheduleTask {
-  id              String   @id @default(cuid())
-  description     String
-  frequency       String?
-  additionalNotes String?
-  scheduleId      String
-  schedule        Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@map("schedule_tasks")
-}
-
-model RoomSchedule {
-  id              String            @id @default(cuid())
-  roomId          String
-  room            Room              @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  scheduleId      String
-  schedule        Schedule          @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
-  frequency       ScheduleFrequency
-  startDate       DateTime          @default(now())
-  lastCompleted   DateTime?
-  nextDue         DateTime
-  status          ScheduleStatus    @default(PENDING)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  completionLogs  RoomScheduleCompletionLog[]
-
-  @@unique([roomId, scheduleId])
-  @@map("room_schedules")
-}
-
-model RoomScheduleCompletionLog {
-  id              String       @id @default(cuid())
-  roomScheduleId  String
-  roomSchedule    RoomSchedule @relation(fields: [roomScheduleId], references: [id], onDelete: Cascade)
-  completedTasks  Json        @default("[]")
-  completedAt     DateTime     @default(now())
-  notes           String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-
-  @@map("room_schedule_completion_logs")
 }
 
 enum ScheduleFrequency {

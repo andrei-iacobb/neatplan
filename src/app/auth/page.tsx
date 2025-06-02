@@ -1,15 +1,11 @@
 'use client'
 
-import { useState, useEffect, Suspense } from "react"
-import { useSearchParams } from "next/navigation"
+import { useState, Suspense } from "react"
 import { LoginForm } from "@/components/auth/login-form"
 import { RegisterForm } from "@/components/auth/register-form"
 
 function AuthContent() {
   const [showLogin, setShowLogin] = useState(true)
-  const searchParams = useSearchParams()
-  const mode = searchParams.get('mode')
-  const isAddAccountMode = mode === 'add-account'
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4">
@@ -17,14 +13,12 @@ function AuthContent() {
         <h1 className="text-3xl font-extralight mb-6 text-center tracking-wide text-teal-300 animate-glow">
           CleanTrack
         </h1>
-        {isAddAccountMode && (
-          <p className="text-sm text-center text-gray-400 mb-6 animate-fade-in">
-            Sign in with a different account to add it to your account switcher
-          </p>
-        )}
+        <p className="text-sm text-center text-gray-400 mb-6 animate-fade-in">
+          Professional cleaning management system
+        </p>
         <div className="animate-fade-in">
           {showLogin ? (
-            <LoginForm onToggle={() => setShowLogin(false)} isAddAccountMode={isAddAccountMode} />
+            <LoginForm onToggle={() => setShowLogin(false)} />
           ) : (
             <RegisterForm onToggle={() => setShowLogin(true)} />
           )}

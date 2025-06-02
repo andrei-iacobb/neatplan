@@ -14,11 +14,43 @@ async function main() {
     create: {
       email: 'admin@cleantrack.com',
       password: adminPassword,
-      name: 'Admin User',
+      name: 'System Administrator',
       isAdmin: true,
     },
   })
   console.log('Admin user:', admin)
+
+  // Create or update cleaner user
+  const cleanerPassword = await hash('cleaner123', 12)
+  const cleaner = await prisma.user.upsert({
+    where: { email: 'cleaner@cleantrack.com' },
+    update: {
+      isAdmin: false,
+    },
+    create: {
+      email: 'cleaner@cleantrack.com',
+      password: cleanerPassword,
+      name: 'Sarah Johnson',
+      isAdmin: false,
+    },
+  })
+  console.log('Cleaner user:', cleaner)
+
+  // Create or update regular user
+  const userPassword = await hash('user123', 12)
+  const user = await prisma.user.upsert({
+    where: { email: 'user@cleantrack.com' },
+    update: {
+      isAdmin: false,
+    },
+    create: {
+      email: 'user@cleantrack.com',
+      password: userPassword,
+      name: 'Michael Chen',
+      isAdmin: false,
+    },
+  })
+  console.log('Regular user:', user)
 
   // Create rooms if they don't exist
   const rooms = await Promise.all([
