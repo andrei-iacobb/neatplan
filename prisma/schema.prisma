@@ -50,6 +50,23 @@ model Room {
   @@map("rooms")
 }
 
+model Equipment {
+  id             String              @id @default(cuid())
+  name           String              @unique
+  description    String?
+  location       String?
+  type           EquipmentType       @default(OTHER)
+  model          String?
+  serialNumber   String?
+  purchaseDate   DateTime?
+  warrantyExpiry DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  schedules      EquipmentSchedule[]
+
+  @@map("equipment")
+}
+
 model CleaningTask {
   id                String   @id @default(cuid())
   taskDescription   String
@@ -66,12 +83,13 @@ model CleaningTask {
 }
 
 model Schedule {
-  id                 String             @id @default(cuid())
-  title              String             @unique
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  id                 String              @id @default(cuid())
+  title              String              @unique
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
   detectedFrequency  String?
   suggestedFrequency ScheduleFrequency?
+  equipment          EquipmentSchedule[]
   rooms              RoomSchedule[]
   tasks              ScheduleTask[]
 
@@ -110,6 +128,25 @@ model RoomSchedule {
   @@map("room_schedules")
 }
 
+model EquipmentSchedule {
+  id             String                           @id @default(cuid())
+  equipmentId    String
+  scheduleId     String
+  frequency      ScheduleFrequency
+  startDate      DateTime                         @default(now())
+  lastCompleted  DateTime?
+  nextDue        DateTime
+  status         ScheduleStatus                   @default(PENDING)
+  createdAt      DateTime                         @default(now())
+  updatedAt      DateTime                         @updatedAt
+  completionLogs EquipmentScheduleCompletionLog[]
+  equipment      Equipment                        @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  schedule       Schedule                         @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([equipmentId, scheduleId])
+  @@map("equipment_schedules")
+}
+
 model RoomScheduleCompletionLog {
   id             String       @id @default(cuid())
   roomScheduleId String
@@ -121,6 +158,19 @@ model RoomScheduleCompletionLog {
   roomSchedule   RoomSchedule @relation(fields: [roomScheduleId], references: [id], onDelete: Cascade)
 
   @@map("room_schedule_completion_logs")
+}
+
+model EquipmentScheduleCompletionLog {
+  id                  String            @id @default(cuid())
+  equipmentScheduleId String
+  completedAt         DateTime          @default(now())
+  notes               String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  completedTasks      Json              @default("[]")
+  equipmentSchedule   EquipmentSchedule @relation(fields: [equipmentScheduleId], references: [id], onDelete: Cascade)
+
+  @@map("equipment_schedule_completion_logs")
 }
 
 enum TaskStatus {
@@ -146,6 +196,61 @@ enum RoomType {
   OTHER
   BEDROOM
   LOUNGE
+}
+
+enum EquipmentType {
+  // Cleaning Equipment
+  VACUUM_CLEANER
+  FLOOR_SCRUBBER
+  CARPET_CLEANER
+  PRESSURE_WASHER
+  WINDOW_CLEANING
+  CLEANING_CART
+  
+  // Building Systems
+  HVAC_SYSTEM
+  AIR_PURIFIER
+  
+  // Kitchen Equipment
+  DISHWASHER
+  WASHING_MACHINE
+  DRYER
+  MICROWAVE
+  REFRIGERATOR
+  COFFEE_MACHINE
+  KITCHEN_EQUIPMENT
+  
+  // Office Equipment
+  PRINTER
+  COMPUTER
+  PROJECTOR
+  
+  // Residential/Healthcare Equipment
+  WHEELCHAIR
+  SARA_STEADY
+  HOIST
+  SHOWER_CHAIR
+  TOILET_FRAME
+  WALKING_FRAME
+  WALKING_STICK
+  ZIMMER_FRAME
+  HOSPITAL_BED
+  COMMODE
+  MOBILITY_SCOOTER
+  PATIENT_LIFT
+  TRANSFER_BOARD
+  STANDING_AID
+  ROLLATOR
+  GRAB_RAILS
+  BATH_LIFT
+  RISE_RECLINE_CHAIR
+  PROFILING_BED
+  MATTRESS
+  CUSHION
+  
+  // General
+  INDUSTRIAL_EQUIPMENT
+  OTHER
 }
 
 enum ScheduleFrequency {

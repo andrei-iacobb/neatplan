@@ -14,10 +14,11 @@ const roomSchema = z.object({
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession()
+    const { id } = await params
     
     if (!session) {
       return NextResponse.json(
@@ -31,7 +32,7 @@ export async function PUT(
 
     const updatedRoom = await prisma.room.update({
       where: {
-        id: params.id,
+        id,
       },
       data: {
         name,
@@ -59,10 +60,11 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession()
+    const { id } = await params
     
     if (!session) {
       return NextResponse.json(
@@ -73,7 +75,7 @@ export async function DELETE(
 
     await prisma.room.delete({
       where: {
-        id: params.id,
+        id,
       },
     })
 
@@ -89,12 +91,14 @@ export async function DELETE(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
+    
     const room = await prisma.room.findUnique({
       where: {
-        id: params.id
+        id
       }
     })
 

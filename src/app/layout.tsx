@@ -3,9 +3,9 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { WaveBackground } from "@/components/ui/wave-background";
-import { Toaster } from "@/components/ui/toaster";
 import { ToastProvider } from '@/components/ui/toast-context'
 import { ConditionalLayout } from '@/components/layout/conditional-layout'
+import { Footer } from '@/components/ui/footer'
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,15 +21,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full">
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${inter.className} antialiased h-full`}>
         <ToastProvider>
           <WaveBackground />
-          <Providers>
-            <ConditionalLayout>
-              {children}
-            </ConditionalLayout>
-          </Providers>
-          <Toaster />
+          <div className="min-h-full pb-16">
+            <Providers>
+              <ConditionalLayout>
+                {children}
+              </ConditionalLayout>
+            </Providers>
+          </div>
+          <Footer />
         </ToastProvider>
       </body>
     </html>

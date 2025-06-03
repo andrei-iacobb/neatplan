@@ -4,6 +4,8 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { signIn } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -15,7 +17,13 @@ const registerSchema = z.object({
 
 type RegisterValues = z.infer<typeof registerSchema>
 
-export function RegisterForm({ onToggle }: { onToggle: () => void }) {
+interface RegisterFormProps {
+  onToggle: () => void
+  returnTo?: string
+}
+
+export function RegisterForm({ onToggle, returnTo }: RegisterFormProps) {
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
@@ -45,8 +53,23 @@ export function RegisterForm({ onToggle }: { onToggle: () => void }) {
         throw new Error(result.error || "Failed to register")
       }
 
-      // Registration successful
-      onToggle() // Switch back to login form
+      // Registration successful - automatically sign in
+      const signInResult = await signIn("credentials", {
+        redirect: false,
+        email: data.email,
+        password: data.password,
+      })
+
+      if (signInResult?.error) {
+        // If auto sign-in fails, just switch to login form
+        onToggle()
+        return
+      }
+
+      // Sign-in successful - redirect to returnTo or dashboard
+      const redirectPath = returnTo || "/"
+      router.push(redirectPath)
+      router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong")
     } finally {

@@ -1,11 +1,27 @@
 'use client'
 
-import { useState, Suspense } from "react"
+import { useState, Suspense, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { LoginForm } from "@/components/auth/login-form"
 import { RegisterForm } from "@/components/auth/register-form"
 
 function AuthContent() {
   const [showLogin, setShowLogin] = useState(true)
+  const searchParams = useSearchParams()
+  const [switchingMessage, setSwitchingMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    const email = searchParams.get('email')
+    const isNew = searchParams.get('new')
+    const returnTo = searchParams.get('returnTo')
+
+    if (email) {
+      setSwitchingMessage(`Switching to account: ${email}`)
+    } else if (isNew) {
+      setSwitchingMessage('Add a new account to CleanTrack')
+      setShowLogin(false) // Show registration form for new accounts
+    }
+  }, [searchParams])
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4">
@@ -14,13 +30,29 @@ function AuthContent() {
           CleanTrack
         </h1>
         <p className="text-sm text-center text-gray-400 mb-6 animate-fade-in">
-          Professional cleaning management system
+          {switchingMessage || 'Professional cleaning management system'}
         </p>
+        
+        {switchingMessage && (
+          <div className="mb-4 p-3 bg-teal-500/10 border border-teal-500/20 rounded-lg animate-fade-in">
+            <p className="text-xs text-teal-300 text-center">
+              {searchParams.get('email') ? 'Sign in with the account you want to switch to' : 'Create your new CleanTrack account'}
+            </p>
+          </div>
+        )}
+
         <div className="animate-fade-in">
           {showLogin ? (
-            <LoginForm onToggle={() => setShowLogin(false)} />
+            <LoginForm 
+              onToggle={() => setShowLogin(false)} 
+              prefillEmail={searchParams.get('email') || undefined}
+              returnTo={searchParams.get('returnTo') || undefined}
+            />
           ) : (
-            <RegisterForm onToggle={() => setShowLogin(true)} />
+            <RegisterForm 
+              onToggle={() => setShowLogin(true)}
+              returnTo={searchParams.get('returnTo') || undefined}
+            />
           )}
         </div>
       </div>

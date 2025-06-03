@@ -16,7 +16,13 @@ const loginSchema = z.object({
 
 type LoginValues = z.infer<typeof loginSchema>
 
-export function LoginForm({ onToggle }: { onToggle: () => void }) {
+interface LoginFormProps {
+  onToggle: () => void
+  prefillEmail?: string
+  returnTo?: string
+}
+
+export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -24,7 +30,7 @@ export function LoginForm({ onToggle }: { onToggle: () => void }) {
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
+      email: prefillEmail || "",
       password: "",
     },
   })
@@ -44,8 +50,9 @@ export function LoginForm({ onToggle }: { onToggle: () => void }) {
         throw new Error(result.error)
       }
 
-      // Login successful - redirect to dashboard
-      router.push("/")
+      // Login successful - redirect to returnTo or dashboard
+      const redirectPath = returnTo || "/"
+      router.push(redirectPath)
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong")

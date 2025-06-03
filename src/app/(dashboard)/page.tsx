@@ -19,6 +19,11 @@ export default async function DashboardPage() {
           <a href="/rooms" className="text-blue-600 hover:text-blue-800">View Rooms →</a>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold mb-4">Equipment</h2>
+          <p className="text-gray-600 mb-4">Manage equipment and maintenance schedules</p>
+          <a href="/equipment" className="text-blue-600 hover:text-blue-800">View Equipment →</a>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4">Schedules</h2>
           <p className="text-gray-600 mb-4">Create and manage cleaning schedules</p>
           <a href="/schedule" className="text-blue-600 hover:text-blue-800">View Schedules →</a>
