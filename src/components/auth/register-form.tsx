@@ -8,6 +8,8 @@ import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { motion } from "framer-motion"
+import { Eye, EyeOff, Mail, Lock, User } from "lucide-react"
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -26,6 +28,7 @@ export function RegisterForm({ onToggle, returnTo }: RegisterFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
   
   const form = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
@@ -79,76 +82,162 @@ export function RegisterForm({ onToggle, returnTo }: RegisterFormProps) {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-2">
-          <Input
-            {...form.register("email")}
-            placeholder="Email"
-            type="email"
-            autoCapitalize="none"
-            autoComplete="email"
-            autoCorrect="off"
-            disabled={isLoading}
-            className="h-12 px-4 bg-white/5 border-0 text-gray-100 placeholder:text-gray-400 focus:ring-1 focus:ring-teal-300/50 rounded-md backdrop-blur-sm transition-all"
-          />
-          {form.formState.errors.email && (
-            <p className="text-sm text-red-400 animate-fade-in">
-              {form.formState.errors.email.message}
-            </p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Input
-            {...form.register("password")}
-            placeholder="Password"
-            type="password"
-            autoCapitalize="none"
-            autoComplete="new-password"
-            disabled={isLoading}
-            className="h-12 px-4 bg-white/5 border-0 text-gray-100 placeholder:text-gray-400 focus:ring-1 focus:ring-teal-300/50 rounded-md backdrop-blur-sm transition-all"
-          />
-          {form.formState.errors.password && (
-            <p className="text-sm text-red-400 animate-fade-in">
-              {form.formState.errors.password.message}
-            </p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Input
-            {...form.register("name")}
-            placeholder="Name (optional)"
-            type="text"
-            autoCapitalize="words"
-            autoComplete="name"
-            disabled={isLoading}
-            className="h-12 px-4 bg-white/5 border-0 text-gray-100 placeholder:text-gray-400 focus:ring-1 focus:ring-teal-300/50 rounded-md backdrop-blur-sm transition-all"
-          />
-          {form.formState.errors.name && (
-            <p className="text-sm text-red-400 animate-fade-in">
-              {form.formState.errors.name.message}
-            </p>
-          )}
-        </div>
-        {error && (
-          <p className="text-sm text-red-400 text-center animate-fade-in">{error}</p>
-        )}
-        <Button 
-          type="submit" 
-          disabled={isLoading}
-          className="w-full h-12 font-light bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 disabled:bg-teal-900/20 disabled:text-teal-300/50 rounded-md transition-all border border-teal-500/20 hover:border-teal-500/30 backdrop-blur-sm"
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+        {/* Email Field */}
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1, duration: 0.3 }}
+          className="space-y-2"
         >
-          {isLoading ? "Creating account..." : "Create account"}
-        </Button>
+          <div className="relative">
+            <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 z-10" />
+            <Input
+              {...form.register("email")}
+              placeholder="Email address"
+              type="email"
+              autoCapitalize="none"
+              autoComplete="email"
+              autoCorrect="off"
+              disabled={isLoading}
+              className="h-14 pl-12 pr-4 bg-gray-800/50 border border-gray-700/50 text-gray-100 placeholder:text-gray-400 focus:border-teal-500/70 focus:ring-2 focus:ring-teal-500/20 rounded-xl backdrop-blur-sm transition-all duration-200 hover:border-gray-600/70"
+            />
+          </div>
+          {form.formState.errors.email && (
+            <motion.p 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-sm text-red-400 font-medium"
+            >
+              {form.formState.errors.email.message}
+            </motion.p>
+          )}
+        </motion.div>
+
+        {/* Password Field */}
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2, duration: 0.3 }}
+          className="space-y-2"
+        >
+          <div className="relative">
+            <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 z-10" />
+            <Input
+              {...form.register("password")}
+              placeholder="Password (min 6 characters)"
+              type={showPassword ? "text" : "password"}
+              autoCapitalize="none"
+              autoComplete="new-password"
+              disabled={isLoading}
+              className="h-14 pl-12 pr-12 bg-gray-800/50 border border-gray-700/50 text-gray-100 placeholder:text-gray-400 focus:border-teal-500/70 focus:ring-2 focus:ring-teal-500/20 rounded-xl backdrop-blur-sm transition-all duration-200 hover:border-gray-600/70"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
+              disabled={isLoading}
+            >
+              {showPassword ? (
+                <EyeOff className="w-5 h-5" />
+              ) : (
+                <Eye className="w-5 h-5" />
+              )}
+            </button>
+          </div>
+          {form.formState.errors.password && (
+            <motion.p 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-sm text-red-400 font-medium"
+            >
+              {form.formState.errors.password.message}
+            </motion.p>
+          )}
+        </motion.div>
+
+        {/* Name Field */}
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3, duration: 0.3 }}
+          className="space-y-2"
+        >
+          <div className="relative">
+            <User className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 z-10" />
+            <Input
+              {...form.register("name")}
+              placeholder="Full name (optional)"
+              type="text"
+              autoCapitalize="words"
+              autoComplete="name"
+              disabled={isLoading}
+              className="h-14 pl-12 pr-4 bg-gray-800/50 border border-gray-700/50 text-gray-100 placeholder:text-gray-400 focus:border-teal-500/70 focus:ring-2 focus:ring-teal-500/20 rounded-xl backdrop-blur-sm transition-all duration-200 hover:border-gray-600/70"
+            />
+          </div>
+          {form.formState.errors.name && (
+            <motion.p 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-sm text-red-400 font-medium"
+            >
+              {form.formState.errors.name.message}
+            </motion.p>
+          )}
+        </motion.div>
+
+        {/* Error Message */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl backdrop-blur-sm"
+          >
+            <p className="text-sm text-red-400 text-center font-medium">{error}</p>
+          </motion.div>
+        )}
+
+        {/* Submit Button */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.3 }}
+        >
+          <Button 
+            type="submit" 
+            disabled={isLoading}
+            className="w-full h-14 font-semibold bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white disabled:from-gray-600 disabled:to-gray-700 disabled:text-gray-400 rounded-xl transition-all duration-200 border-0 shadow-lg hover:shadow-teal-500/25 hover:scale-[1.02] active:scale-[0.98]"
+          >
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                Creating account...
+              </div>
+            ) : (
+              "Create account"
+            )}
+          </Button>
+        </motion.div>
       </form>
-      <div className="text-center">
+
+      {/* Toggle to Login */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5, duration: 0.3 }}
+        className="text-center pt-4 border-t border-gray-700/50"
+      >
+        <p className="text-sm text-gray-400 mb-2">
+          Already have an account?
+        </p>
         <button 
           type="button" 
-          className="text-sm text-gray-400 hover:text-teal-300 transition-all hover:tracking-wide"
+          className="text-sm font-medium text-teal-400 hover:text-teal-300 transition-all duration-200 hover:underline underline-offset-4"
           onClick={onToggle}
         >
-          Already have an account? Sign in
+          Sign in
         </button>
-      </div>
+      </motion.div>
     </div>
   )
 } 

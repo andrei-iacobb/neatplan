@@ -51,18 +51,12 @@ model Room {
 }
 
 model Equipment {
-  id             String              @id @default(cuid())
-  name           String              @unique
-  description    String?
-  location       String?
-  type           EquipmentType       @default(OTHER)
-  model          String?
-  serialNumber   String?
-  purchaseDate   DateTime?
-  warrantyExpiry DateTime?
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  schedules      EquipmentSchedule[]
+  id          String              @id @default(cuid())
+  name        String              @unique
+  description String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  schedules   EquipmentSchedule[]
 
   @@map("equipment")
 }
@@ -198,76 +192,20 @@ enum RoomType {
   LOUNGE
 }
 
-enum EquipmentType {
-  // Cleaning Equipment
-  VACUUM_CLEANER
-  FLOOR_SCRUBBER
-  CARPET_CLEANER
-  PRESSURE_WASHER
-  WINDOW_CLEANING
-  CLEANING_CART
-  
-  // Building Systems
-  HVAC_SYSTEM
-  AIR_PURIFIER
-  
-  // Kitchen Equipment
-  DISHWASHER
-  WASHING_MACHINE
-  DRYER
-  MICROWAVE
-  REFRIGERATOR
-  COFFEE_MACHINE
-  KITCHEN_EQUIPMENT
-  
-  // Office Equipment
-  PRINTER
-  COMPUTER
-  PROJECTOR
-  
-  // Residential/Healthcare Equipment
-  WHEELCHAIR
-  SARA_STEADY
-  HOIST
-  SHOWER_CHAIR
-  TOILET_FRAME
-  WALKING_FRAME
-  WALKING_STICK
-  ZIMMER_FRAME
-  HOSPITAL_BED
-  COMMODE
-  MOBILITY_SCOOTER
-  PATIENT_LIFT
-  TRANSFER_BOARD
-  STANDING_AID
-  ROLLATOR
-  GRAB_RAILS
-  BATH_LIFT
-  RISE_RECLINE_CHAIR
-  PROFILING_BED
-  MATTRESS
-  CUSHION
-  
-  // General
-  INDUSTRIAL_EQUIPMENT
-  OTHER
-}
-
 enum ScheduleFrequency {
   DAILY
-  WEEKLY
+  WEEKLY  
   BIWEEKLY
   MONTHLY
   QUARTERLY
   YEARLY
-  CUSTOM
 }
 
 enum ScheduleStatus {
   PENDING
-  OVERDUE
+  IN_PROGRESS
   COMPLETED
-  PAUSED
+  OVERDUE
 }
 
 enum UserRole {
