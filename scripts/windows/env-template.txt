@@ -1,0 +1,30 @@
+# CleanTrack Environment Configuration Template
+# Copy this file to .env in the project root and update the values
+
+# Database Configuration
+# Replace with your actual database credentials
+DATABASE_URL="postgresql://cleantrack_user:your_secure_password@localhost:5432/cleantrack"
+
+# NextAuth Configuration
+# Generate a secure secret with: openssl rand -base64 32
+NEXTAUTH_SECRET="your-super-secret-key-here-make-it-long-and-random"
+
+# Application URL
+# For local development
+NEXTAUTH_URL="http://localhost:3000"
+
+# For production with domain
+# NEXTAUTH_URL="https://yourdomain.com"
+
+# Optional: Email Configuration (for password resets and notifications)
+# EMAIL_SERVER_HOST="smtp.gmail.com"
+# EMAIL_SERVER_PORT=587
+# EMAIL_SERVER_USER="your-email@gmail.com"
+# EMAIL_SERVER_PASSWORD="your-app-password"
+# EMAIL_FROM="noreply@yourdomain.com"
+
+# Optional: Application Port (default is 3000)
+# PORT=3000
+
+# Optional: Node Environment
+# NODE_ENV=production 

@@ -70,12 +70,7 @@ export async function PUT(
     const { 
       name, 
       description, 
-      location, 
-      type, 
-      model, 
-      serialNumber, 
-      purchaseDate, 
-      warrantyExpiry 
+      type,
     } = body
 
     if (!name) {
@@ -90,12 +85,7 @@ export async function PUT(
       data: {
         name,
         description,
-        location,
         type: type || 'OTHER',
-        model,
-        serialNumber,
-        purchaseDate: purchaseDate ? new Date(purchaseDate) : null,
-        warrantyExpiry: warrantyExpiry ? new Date(warrantyExpiry) : null
       }
     })
 

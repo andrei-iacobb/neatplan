@@ -14,14 +14,14 @@ interface Particle {
 }
 
 function generateParticles(): Particle[] {
-  return Array.from({ length: 45 }, (_, i) => ({
+  return Array.from({ length: 30 }, (_, i) => ({
     startPosition: {
       x: Math.random() * 100,
       y: -20
     },
-    size: Math.random() * 3 + (i % 3 === 0 ? 3 : 1),
-    opacity: Math.random() * 0.4 + 0.3,
-    duration: Math.random() * 4 + 12
+    size: Math.random() * 2 + 1,
+    opacity: Math.random() * 0.3 + 0.1,
+    duration: Math.random() * 8 + 15
   }))
 }
 
@@ -33,70 +33,65 @@ export function WaveBackground() {
   }, [])
 
   return (
-    <div className="fixed inset-0 -z-10 bg-gray-900">
-      {/* Shoreline gradient effect */}
+    <div className="fixed inset-0 -z-10">
+      {/* Base - seamless dark gradient */}
+      <div 
+        className="absolute inset-0"
+        style={{
+          background: `linear-gradient(135deg, 
+            #0f172a 0%,
+            #1e293b 30%,
+            #334155 60%,
+            #1e293b 90%,
+            #0f172a 100%)`
+        }}
+      />
+
+      {/* Very subtle animated overlay - barely visible */}
       <motion.div
         className="absolute inset-0"
         style={{
-          background: `linear-gradient(to bottom, 
-            rgba(17, 24, 39, 1) 0%,
-            rgba(17, 24, 39, 0.8) 40%,
-            rgba(45, 212, 191, 0.2) 60%,
-            rgba(45, 212, 191, 0.1) 80%,
-            transparent 100%)`
+          background: `radial-gradient(ellipse at 30% 20%, 
+            rgba(59, 130, 246, 0.03) 0%,
+            transparent 50%),
+            radial-gradient(ellipse at 70% 80%, 
+            rgba(99, 102, 241, 0.02) 0%,
+            transparent 50%)`
         }}
         animate={{
-          y: ["20%", "-20%", "20%"]
+          opacity: [0.5, 0.8, 0.5]
         }}
         transition={{
-          duration: 15,
+          duration: 25,
           repeat: Infinity,
           ease: "easeInOut"
         }}
       />
 
-      {/* Main wave effect */}
+      {/* Extremely subtle moving gradient */}
       <motion.div
         className="absolute inset-0"
         style={{
-          background: `linear-gradient(180deg, 
-            transparent 0%,
-            rgba(45, 212, 191, 0.1) 40%,
-            rgba(45, 212, 191, 0.2) 60%,
-            transparent 100%)`
+          background: `linear-gradient(45deg, 
+            rgba(59, 130, 246, 0.02) 0%,
+            transparent 25%,
+            rgba(99, 102, 241, 0.01) 50%,
+            transparent 75%,
+            rgba(59, 130, 246, 0.02) 100%)`,
+          backgroundSize: '200% 200%'
         }}
         animate={{
-          y: ["0%", "100%", "0%"]
+          backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']
         }}
         transition={{
-          duration: 12,
+          duration: 30,
           repeat: Infinity,
-          ease: "easeInOut"
+          ease: "linear"
         }}
       />
 
-      {/* Secondary wave for depth */}
-      <motion.div
-        className="absolute inset-0"
-        style={{
-          background: `linear-gradient(180deg, 
-            transparent 0%,
-            rgba(45, 212, 191, 0.05) 30%,
-            rgba(45, 212, 191, 0.15) 70%,
-            transparent 100%)`
-        }}
-        animate={{
-          y: ["-50%", "50%", "-50%"]
-        }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      />
-
-      {/* Particles in the water - moved to top layer */}
-      <div className="absolute inset-0" style={{ zIndex: 10 }}>
+      {/* Minimal floating particles */}
+      <div className="absolute inset-0">
         {particles.map((particle, i) => (
           <motion.div
             key={`particle-${i}`}
@@ -104,11 +99,8 @@ export function WaveBackground() {
             style={{
               width: `${particle.size}px`,
               height: `${particle.size}px`,
-              background: `rgba(45, 212, 191, ${particle.opacity})`,
-              boxShadow: `
-                0 0 ${particle.size * 4}px rgba(45, 212, 191, ${particle.opacity}),
-                0 0 ${particle.size * 8}px rgba(45, 212, 191, ${particle.opacity * 0.5})
-              `,
+              background: `rgba(148, 163, 184, ${particle.opacity})`,
+              boxShadow: `0 0 ${particle.size * 2}px rgba(148, 163, 184, ${particle.opacity * 0.3})`,
               left: `${particle.startPosition.x}vw`,
               top: `${particle.startPosition.y}vh`,
             }}
@@ -116,22 +108,30 @@ export function WaveBackground() {
               y: ["0vh", "120vh"],
               x: [
                 `${particle.startPosition.x}vw`,
-                `${particle.startPosition.x + Math.sin(i) * 20}vw`,
-                `${particle.startPosition.x - Math.sin(i) * 20}vw`,
+                `${particle.startPosition.x + Math.sin(i) * 15}vw`,
+                `${particle.startPosition.x - Math.sin(i) * 15}vw`,
                 `${particle.startPosition.x}vw`
               ],
-              opacity: [0, particle.opacity, particle.opacity, 0],
-              scale: [1, 1.2, 1, 0.8]
+              opacity: [0, particle.opacity, particle.opacity, 0]
             }}
             transition={{
               duration: particle.duration,
               repeat: Infinity,
-              delay: i * 0.4,
-              ease: "easeInOut"
+              delay: i * 0.5,
+              ease: "linear"
             }}
           />
         ))}
       </div>
+
+      {/* Subtle noise texture overlay */}
+      <div 
+        className="absolute inset-0 opacity-20"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+          backgroundSize: '200px 200px'
+        }}
+      />
     </div>
   )
 } 

@@ -10,7 +10,8 @@ const adminRoutes = [
   '/rooms',
   '/settings',
   '/schedule',
-  '/upload'
+  '/upload',
+  '/users'
 ]
 
 // Routes that cleaners can access
@@ -31,7 +32,7 @@ export async function middleware(request: NextRequest) {
   if (isPublicRoute) {
     if (token) {
       // If user is authenticated and tries to access auth page, redirect to appropriate dashboard
-      if (request.nextUrl.pathname === '/auth') {
+      if (request.nextUrl.pathname.startsWith('/auth')) {
         const redirectPath = token.isAdmin ? '/' : '/clean'
         return NextResponse.redirect(new URL(redirectPath, request.url))
       }

@@ -45,7 +45,7 @@ export function Logo({
   const FallbackLogo = () => (
     <div 
       className={cn(
-        "bg-gradient-to-br from-teal-400 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg",
+        "bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg",
         className
       )}
       style={{

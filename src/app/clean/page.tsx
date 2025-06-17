@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
+import { useSessionTracking } from '@/hooks/useSessionTracking'
 import Link from 'next/link'
 import { 
   Target, 
@@ -24,6 +25,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { getScheduleDisplayName } from '@/lib/schedule-utils'
+import { AnimatePresence } from 'framer-motion'
 
 interface Schedule {
   id: string
@@ -95,6 +97,23 @@ interface Stats {
   totalActiveEquipment: number
 }
 
+function CleanerHeader() {
+  const { data: session } = useSession()
+  
+  if (!session?.user) return null
+
+  return (
+    <header className="mb-8">
+      <div>
+        <h1 className="text-3xl font-bold text-white">
+          Welcome back, {session.user.name?.split(' ')[0]}!
+        </h1>
+        <p className="text-gray-400">Here's your cleaning schedule for today.</p>
+      </div>
+    </header>
+  )
+}
+
 export default function CleanerDashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -127,6 +146,12 @@ export default function CleanerDashboard() {
   const [sortBy, setSortBy] = useState('priority') // priority, name, floor, type
   const [view, setView] = useState<'priority' | 'organized'>('priority')
   const [displayMode, setDisplayMode] = useState<'rooms' | 'equipment' | 'both'>('both') // NEW: Display mode
+
+  // Enable session tracking for cleaner users
+  useSessionTracking({
+    updateInterval: 5 * 60 * 1000, // 5 minutes
+    trackActivity: true
+  })
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -197,7 +222,7 @@ export default function CleanerDashboard() {
 
   if (status === 'loading' || isLoading) {
     return (
-      <div className="min-h-screen bg-gray-900">
+      <div className="min-h-screen">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header Skeleton */}
           <div className="mb-8">
@@ -286,7 +311,7 @@ export default function CleanerDashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
           <p className="text-red-400">{error}</p>
@@ -447,39 +472,23 @@ export default function CleanerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen text-gray-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <motion.h1 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.48 }}
-            className="text-3xl font-bold text-gray-100 mb-2"
-          >
-            Welcome back, {session.user.name}! 👋
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.06, duration: 0.36 }}
-            className="text-gray-400"
-          >
-            Ready to make some rooms sparkle? ✨
-          </motion.p>
-        </div>
+        <CleanerHeader />
 
         {/* Success Message */}
-        {successMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.36 }}
-            className="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg"
-          >
-            <p className="text-green-400 text-center">{successMessage}</p>
-          </motion.div>
-        )}
+        <AnimatePresence>
+          {successMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.36 }}
+              className="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg"
+            >
+              <p className="text-green-400 text-center">{successMessage}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -498,7 +507,7 @@ export default function CleanerDashboard() {
                   Equipment: {equipment.reduce((acc, equip) => acc + equip.summary.totalTasks, 0)}
                 </p>
               </div>
-              <Target className="w-8 h-8 text-teal-400" />
+                              <Target className="w-8 h-8 text-blue-400" />
             </div>
           </motion.div>
 

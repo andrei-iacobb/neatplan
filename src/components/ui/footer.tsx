@@ -4,16 +4,16 @@ export function Footer() {
   const currentYear = new Date().getFullYear()
   
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-700/30 bg-gray-900/20 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 py-3">
+    <footer className="w-full border-t border-gray-700/50 bg-gray-900/80 backdrop-blur-sm flex-shrink-0">
+      <div className="max-w-7xl mx-auto px-4 py-2">
         <div className="text-center">
-          <p className="text-xs text-gray-300">
+          <p className="text-xs text-gray-400">
             © {currentYear} CleanTrack. All rights reserved. Developed by{' '}
             <a 
               href="https://andrei.iacob.uk/" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-teal-300 font-medium hover:text-teal-200 transition-colors duration-200 cursor-pointer"
+              className="text-blue-300 font-medium hover:text-blue-200 transition-colors duration-200 cursor-pointer"
             >
               Andrei Iacob
             </a>

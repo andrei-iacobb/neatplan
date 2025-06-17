@@ -8,15 +8,16 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id        String        @id @default(cuid())
+  email     String        @unique
   password  String
   name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isAdmin   Boolean  @default(false)
-  role      UserRole @default(CLEANER)
-  tasks     Task[]   @relation("UserTasks")
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  isAdmin   Boolean       @default(false)
+  role      UserRole      @default(CLEANER)
+  tasks     Task[]        @relation("UserTasks")
+  sessions  UserSession[]
 
   @@map("users")
 }
@@ -51,12 +52,13 @@ model Room {
 }
 
 model Equipment {
-  id          String              @id @default(cuid())
-  name        String              @unique
-  description String?
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  schedules   EquipmentSchedule[]
+  id            String              @id @default(cuid())
+  name          String              @unique
+  description   String?
+  type          String              @default("OTHER")
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  schedules     EquipmentSchedule[]
 
   @@map("equipment")
 }
@@ -206,6 +208,23 @@ enum ScheduleStatus {
   IN_PROGRESS
   COMPLETED
   OVERDUE
+}
+
+model UserSession {
+  id            String   @id @default(cuid())
+  userId        String
+  sessionToken  String   @unique
+  ipAddress     String?
+  userAgent     String?
+  loginAt       DateTime @default(now())
+  lastActivity  DateTime @default(now())
+  logoutAt      DateTime?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_sessions")
 }
 
 enum UserRole {

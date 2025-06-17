@@ -1,31 +1,13 @@
 'use client'
 
-import { useState, Suspense, useEffect } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { LoginForm } from "@/components/auth/login-form"
-import { RegisterForm } from "@/components/auth/register-form"
 import { WaveBackground } from "@/components/ui/wave-background"
 import { Logo } from "@/components/ui/logo"
 import { motion } from "framer-motion"
 
 function AuthContent() {
-  const [showLogin, setShowLogin] = useState(true)
-  const searchParams = useSearchParams()
-  const [switchingMessage, setSwitchingMessage] = useState<string | null>(null)
-
-  useEffect(() => {
-    const email = searchParams.get('email')
-    const isNew = searchParams.get('new')
-    const returnTo = searchParams.get('returnTo')
-
-    if (email) {
-      setSwitchingMessage(`Switching to account: ${email}`)
-    } else if (isNew) {
-      setSwitchingMessage('Add a new account to CleanTrack')
-      setShowLogin(false) // Show registration form for new accounts
-    }
-  }, [searchParams])
-
   return (
     <>
       <WaveBackground />
@@ -41,7 +23,7 @@ function AuthContent() {
             {/* Header Section */}
             <div className="p-8 pb-6 text-center relative">
               {/* Background glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-b from-teal-500/5 to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent"></div>
               
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
@@ -62,27 +44,11 @@ function AuthContent() {
                   CleanTrack
                 </h1>
                 <p className="text-gray-400 text-sm leading-relaxed">
-                  {switchingMessage || 'Professional cleaning management system'}
+                  Professional cleaning management system
                 </p>
               </motion.div>
             </div>
             
-            {/* Switching Message */}
-            {switchingMessage && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                transition={{ duration: 0.3 }}
-                className="mx-6 mb-4"
-              >
-                <div className="p-4 bg-teal-500/10 border border-teal-500/20 rounded-xl backdrop-blur-sm">
-                  <p className="text-sm text-teal-300 text-center font-medium">
-                    {searchParams.get('email') ? 'Sign in with the account you want to switch to' : 'Create your new CleanTrack account'}
-                  </p>
-                </div>
-              </motion.div>
-            )}
-
             {/* Form Section */}
             <div className="px-8 pb-8">
               <motion.div
@@ -90,18 +56,7 @@ function AuthContent() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3, duration: 0.5 }}
               >
-                {showLogin ? (
-                  <LoginForm 
-                    onToggle={() => setShowLogin(false)} 
-                    prefillEmail={searchParams.get('email') || undefined}
-                    returnTo={searchParams.get('returnTo') || undefined}
-                  />
-                ) : (
-                  <RegisterForm 
-                    onToggle={() => setShowLogin(true)}
-                    returnTo={searchParams.get('returnTo') || undefined}
-                  />
-                )}
+                <LoginForm />
               </motion.div>
             </div>
           </div>

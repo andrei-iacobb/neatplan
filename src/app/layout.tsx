@@ -4,14 +4,14 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { WaveBackground } from "@/components/ui/wave-background";
 import { ToastProvider } from '@/components/ui/toast-context'
-import { ConditionalLayout } from '@/components/layout/conditional-layout'
-import { Footer } from '@/components/ui/footer'
+import { PageWrapper } from "@/components/layout/page-wrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "CleanTrack",
   description: "Track your cleaning tasks and schedule",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes",
 };
 
 export default function RootLayout({
@@ -24,14 +24,11 @@ export default function RootLayout({
       <body className={`${inter.className} antialiased h-full`}>
         <ToastProvider>
           <WaveBackground />
-          <div className="min-h-full pb-16">
-            <Providers>
-              <ConditionalLayout>
-                {children}
-              </ConditionalLayout>
-            </Providers>
-          </div>
-          <Footer />
+          <Providers>
+            <PageWrapper>
+              {children}
+            </PageWrapper>
+          </Providers>
         </ToastProvider>
       </body>
     </html>

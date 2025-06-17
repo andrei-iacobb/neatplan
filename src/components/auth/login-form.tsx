@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -19,7 +19,7 @@ const loginSchema = z.object({
 type LoginValues = z.infer<typeof loginSchema>
 
 interface LoginFormProps {
-  onToggle: () => void
+  onToggle?: () => void
   prefillEmail?: string
   returnTo?: string
 }
@@ -37,6 +37,12 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
       password: "",
     },
   })
+
+  useEffect(() => {
+    if (prefillEmail) {
+      form.reset({ email: prefillEmail, password: "" })
+    }
+  }, [prefillEmail, form.reset])
 
   async function onSubmit(data: LoginValues) {
     setIsLoading(true)
@@ -84,7 +90,7 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
               autoComplete="email"
               autoCorrect="off"
               disabled={isLoading}
-              className="h-14 pl-12 pr-4 bg-gray-800/50 border border-gray-700/50 text-gray-100 placeholder:text-gray-400 focus:border-teal-500/70 focus:ring-2 focus:ring-teal-500/20 rounded-xl backdrop-blur-sm transition-all duration-200 hover:border-gray-600/70"
+              className="h-14 pl-12 pr-4 bg-gray-800/50 border border-gray-700/50 text-gray-100 placeholder:text-gray-400 focus:border-blue-500/70 focus:ring-2 focus:ring-blue-500/20 rounded-xl backdrop-blur-sm transition-all duration-200 hover:border-gray-600/70"
             />
           </div>
           {form.formState.errors.email && (
@@ -114,7 +120,7 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
               autoCapitalize="none"
               autoComplete="current-password"
               disabled={isLoading}
-              className="h-14 pl-12 pr-12 bg-gray-800/50 border border-gray-700/50 text-gray-100 placeholder:text-gray-400 focus:border-teal-500/70 focus:ring-2 focus:ring-teal-500/20 rounded-xl backdrop-blur-sm transition-all duration-200 hover:border-gray-600/70"
+              className="h-14 pl-12 pr-12 bg-gray-800/50 border border-gray-700/50 text-gray-100 placeholder:text-gray-400 focus:border-blue-500/70 focus:ring-2 focus:ring-blue-500/20 rounded-xl backdrop-blur-sm transition-all duration-200 hover:border-gray-600/70"
             />
             <button
               type="button"
@@ -160,7 +166,7 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
           <Button 
             type="submit" 
             disabled={isLoading}
-            className="w-full h-14 font-semibold bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white disabled:from-gray-600 disabled:to-gray-700 disabled:text-gray-400 rounded-xl transition-all duration-200 border-0 shadow-lg hover:shadow-teal-500/25 hover:scale-[1.02] active:scale-[0.98]"
+            className="w-full h-14 font-semibold bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white disabled:from-gray-600 disabled:to-gray-700 disabled:text-gray-400 rounded-xl transition-all duration-200 border-0 shadow-lg hover:shadow-blue-500/25 hover:scale-[1.02] active:scale-[0.98]"
           >
             {isLoading ? (
               <div className="flex items-center gap-2">
@@ -173,25 +179,6 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
           </Button>
         </motion.div>
       </form>
-
-      {/* Toggle to Register */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4, duration: 0.3 }}
-        className="text-center pt-4 border-t border-gray-700/50"
-      >
-        <p className="text-sm text-gray-400 mb-2">
-          Don't have an account?
-        </p>
-        <button 
-          type="button" 
-          className="text-sm font-medium text-teal-400 hover:text-teal-300 transition-all duration-200 hover:underline underline-offset-4"
-          onClick={onToggle}
-        >
-          Create account
-        </button>
-      </motion.div>
     </div>
   )
 } 

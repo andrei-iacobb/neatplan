@@ -42,7 +42,6 @@ export async function GET() {
         id: equip.id,
         name: equip.name,
         description: equip.description,
-        location: equip.location,
         type: equip.type,
         model: equip.model,
         serialNumber: equip.serialNumber,
@@ -92,12 +91,7 @@ export async function POST(request: Request) {
     const { 
       name, 
       description, 
-      location, 
-      type, 
-      model, 
-      serialNumber, 
-      purchaseDate, 
-      warrantyExpiry 
+      type
     } = body
 
     if (!name) {
@@ -111,12 +105,7 @@ export async function POST(request: Request) {
       data: {
         name,
         description,
-        location,
         type: type || 'OTHER',
-        model,
-        serialNumber,
-        purchaseDate: purchaseDate ? new Date(purchaseDate) : null,
-        warrantyExpiry: warrantyExpiry ? new Date(warrantyExpiry) : null
       }
     })
 

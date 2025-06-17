@@ -60,15 +60,40 @@ export const authOptions: AuthOptions = {
       }
       return session
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id
         token.email = user.email
         token.name = user.name
         token.role = user.role
         token.isAdmin = user.isAdmin
+        
+        // Create session tracking entry when user signs in
+        if (account) {
+          try {
+            const sessionToken = `session_${user.id}_${Date.now()}`
+            await prisma.userSession.create({
+              data: {
+                userId: user.id,
+                sessionToken,
+                ipAddress: null, // Will be updated by middleware
+                userAgent: null, // Will be updated by middleware
+                loginAt: new Date(),
+                lastActivity: new Date(),
+                isActive: true
+              }
+            })
+            token.sessionToken = sessionToken
+          } catch (error) {
+            console.error('Failed to create session tracking:', error)
+          }
+        }
       }
       return token
+    },
+    async signIn({ user, account, profile }) {
+      // Additional session tracking can be done here if needed
+      return true
     }
   },
   secret: process.env.NEXTAUTH_SECRET,

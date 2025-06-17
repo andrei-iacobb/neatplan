@@ -241,7 +241,7 @@ export default function RoomsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-teal-500 mx-auto mb-4" />
           <p className="text-gray-400">Loading rooms...</p>
@@ -257,7 +257,7 @@ export default function RoomsPage() {
   const roomTypes = Array.from(new Set(rooms.map(room => room.type)))
 
   return (
-    <div className="min-h-screen bg-gray-900">
+          <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-100 mb-2">Room Management</h1>

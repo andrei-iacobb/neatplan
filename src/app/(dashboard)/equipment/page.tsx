@@ -6,14 +6,14 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Plus, Search, Filter, Edit, Trash2, Calendar, MapPin, 
-  Wrench, AlertCircle, CheckCircle, Clock, Settings, X
+  Wrench, AlertCircle, CheckCircle, Clock, Settings, X,
+  HeartHandshake, Sparkles, Box, Loader2
 } from 'lucide-react'
 
 interface Equipment {
   id: string
   name: string
   description: string
-  location: string
   type: string
   model: string
   serialNumber: string
@@ -33,6 +33,25 @@ interface Equipment {
   }[]
 }
 
+interface Schedule {
+  id: string
+  title: string
+  suggestedFrequency?: string
+  tasks: any[]
+}
+
+type ViewMode = 'EQUIPMENT' | 'SCHEDULES'
+type AssignMode = 'QUICK' | 'MANUAL'
+
+enum ScheduleFrequency {
+  DAILY = 'DAILY',
+  WEEKLY = 'WEEKLY',
+  BIWEEKLY = 'BIWEEKLY',
+  MONTHLY = 'MONTHLY',
+  QUARTERLY = 'QUARTERLY',
+  YEARLY = 'YEARLY'
+}
+
 interface EquipmentResponse {
   equipment: Equipment[]
   total: number
@@ -41,99 +60,47 @@ interface EquipmentResponse {
 interface EquipmentFormData {
   name: string
   description: string
-  location: string
   type: string
-  model: string
-  serialNumber: string
-  purchaseDate: string
-  warrantyExpiry: string
 }
 
-const equipmentTypeIcons: Record<string, string> = {
-  // Cleaning Equipment
-  VACUUM_CLEANER: '🧹',
-  FLOOR_SCRUBBER: '🧽',
-  CARPET_CLEANER: '🧽',
-  PRESSURE_WASHER: '💦',
-  WINDOW_CLEANING: '🪟',
-  CLEANING_CART: '🛒',
-  
-  // Building Systems
-  HVAC_SYSTEM: '🌬️',
-  AIR_PURIFIER: '🌿',
-  
-  // Kitchen Equipment
-  DISHWASHER: '🍽️',
-  WASHING_MACHINE: '👕',
-  DRYER: '🔥',
-  MICROWAVE: '📱',
-  REFRIGERATOR: '🧊',
-  COFFEE_MACHINE: '☕',
-  KITCHEN_EQUIPMENT: '🍳',
-  
-  // Office Equipment
-  PRINTER: '🖨️',
-  COMPUTER: '💻',
-  PROJECTOR: '📽️',
-  
-  // Residential/Healthcare Equipment
-  WHEELCHAIR: '♿',
-  SARA_STEADY: '🚶‍♀️',
-  HOIST: '⬆️',
-  SHOWER_CHAIR: '🚿',
-  TOILET_FRAME: '🚽',
-  WALKING_FRAME: '🚶‍♂️',
-  WALKING_STICK: '🦯',
-  ZIMMER_FRAME: '🚶',
-  HOSPITAL_BED: '🛏️',
-  COMMODE: '🚽',
-  MOBILITY_SCOOTER: '🛴',
-  PATIENT_LIFT: '⬆️',
-  TRANSFER_BOARD: '📋',
-  STANDING_AID: '🧍',
-  ROLLATOR: '🚶‍♀️',
-  GRAB_RAILS: '🤚',
-  BATH_LIFT: '🛁',
-  RISE_RECLINE_CHAIR: '🪑',
-  PROFILING_BED: '🛏️',
-  MATTRESS: '🛏️',
-  CUSHION: '🛋️',
-  
-  // General
-  INDUSTRIAL_EQUIPMENT: '⚙️',
-  OTHER: '📦'
+const equipmentTypeIcons: { [key: string]: React.ReactNode } = {
+  RESIDENT_AID: <HeartHandshake className="w-6 h-6" />,
+  CLEANING_EQUIPMENT: <Sparkles className="w-6 h-6" />,
+  OTHER: <Box className="w-6 h-6" />
 }
 
-const equipmentTypes = Object.keys(equipmentTypeIcons).map(key => ({
-  value: key,
-  label: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-}))
+const equipmentTypes = [
+  { value: 'RESIDENT_AID', label: 'Resident Aid' },
+  { value: 'CLEANING_EQUIPMENT', label: 'Cleaning Equipment' },
+  { value: 'OTHER', label: 'Other' }
+]
 
 export default function EquipmentPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [equipment, setEquipment] = useState<Equipment[]>([])
+  const [schedules, setSchedules] = useState<Schedule[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [typeFilter, setTypeFilter] = useState('all')
-  const [locationFilter, setLocationFilter] = useState('all')
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<ViewMode>('EQUIPMENT')
+  const [assignMode, setAssignMode] = useState<AssignMode>('QUICK')
+  const [selectedSchedule, setSelectedSchedule] = useState<string>('')
+  const [selectedFrequency, setSelectedFrequency] = useState<ScheduleFrequency>(ScheduleFrequency.WEEKLY)
+  const [selectedEquipmentType, setSelectedEquipmentType] = useState<string>('OTHER')
+  const [isAssigning, setIsAssigning] = useState(false)
 
   const [formData, setFormData] = useState<EquipmentFormData>({
     name: '',
     description: '',
-    location: '',
     type: 'OTHER',
-    model: '',
-    serialNumber: '',
-    purchaseDate: '',
-    warrantyExpiry: ''
   })
 
   useEffect(() => {
@@ -148,7 +115,18 @@ export default function EquipmentPage() {
     }
 
     if (status === 'authenticated') {
-      fetchEquipment()
+      Promise.all([
+        fetch('/api/admin/equipment').then(res => res.json()),
+        fetch('/api/schedules').then(res => res.json())
+      ]).then(([equipmentData, schedulesData]) => {
+        setEquipment(equipmentData.equipment)
+        setSchedules(schedulesData)
+        setIsLoading(false)
+      }).catch(error => {
+        console.error('Error fetching data:', error)
+        setError('Failed to load data')
+        setIsLoading(false)
+      })
     }
   }, [status, session, router])
 
@@ -163,12 +141,7 @@ export default function EquipmentPage() {
     setFormData({
       name: '',
       description: '',
-      location: '',
       type: 'OTHER',
-      model: '',
-      serialNumber: '',
-      purchaseDate: '',
-      warrantyExpiry: ''
     })
   }
 
@@ -185,6 +158,82 @@ export default function EquipmentPage() {
       setError('Failed to load equipment')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  async function handleQuickAssign() {
+    if (!selectedSchedule || !selectedEquipmentType || !selectedFrequency) return
+
+    setIsAssigning(true)
+    try {
+      // Get all equipment of selected type
+      const targetEquipment = equipment.filter(equip => equip.type === selectedEquipmentType)
+      
+      // Assign schedule to each equipment
+      await Promise.all(
+        targetEquipment.map(equip =>
+          fetch(`/api/admin/equipment/${equip.id}/schedules`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              scheduleId: selectedSchedule,
+              frequency: selectedFrequency
+            })
+          })
+        )
+      )
+
+      setSuccessMessage(`Schedule assigned to all ${selectedEquipmentType.toLowerCase().replace('_', ' ')} equipment`)
+      setSelectedSchedule('')
+      setSelectedFrequency(ScheduleFrequency.WEEKLY) // Reset to default
+      // Refresh equipment data
+      fetchEquipment()
+    } catch (error) {
+      console.error('Error assigning schedules:', error)
+      setError('Failed to assign schedules')
+    } finally {
+      setIsAssigning(false)
+    }
+  }
+
+  // Handler for schedule selection that sets suggested frequency automatically
+  const handleScheduleSelection = (scheduleId: string) => {
+    setSelectedSchedule(scheduleId)
+    
+    if (scheduleId) {
+      const schedule = schedules.find(s => s.id === scheduleId)
+      if (schedule?.suggestedFrequency) {
+        setSelectedFrequency(schedule.suggestedFrequency as ScheduleFrequency)
+      }
+    }
+  }
+
+  async function handleManualAssign() {
+    if (!selectedSchedule || !selectedEquipment || !selectedFrequency) return
+
+    setIsAssigning(true)
+    try {
+      const response = await fetch(`/api/admin/equipment/${selectedEquipment.id}/schedules`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scheduleId: selectedSchedule,
+          frequency: selectedFrequency
+        })
+      })
+
+      if (!response.ok) throw new Error('Failed to assign schedule')
+
+      setSuccessMessage('Schedule assigned successfully')
+      setSelectedSchedule('')
+      setSelectedEquipment(null)
+      // Refresh equipment data
+      fetchEquipment()
+    } catch (error) {
+      console.error('Error assigning schedule:', error)
+      setError('Failed to assign schedule')
+    } finally {
+      setIsAssigning(false)
     }
   }
 
@@ -275,12 +324,7 @@ export default function EquipmentPage() {
     setFormData({
       name: equip.name,
       description: equip.description || '',
-      location: equip.location || '',
       type: equip.type,
-      model: equip.model || '',
-      serialNumber: equip.serialNumber || '',
-      purchaseDate: equip.purchaseDate ? new Date(equip.purchaseDate).toISOString().split('T')[0] : '',
-      warrantyExpiry: equip.warrantyExpiry ? new Date(equip.warrantyExpiry).toISOString().split('T')[0] : ''
     })
     setShowEditModal(true)
   }
@@ -293,15 +337,12 @@ export default function EquipmentPage() {
   const filteredEquipment = equipment.filter(equip => {
     const matchesSearch = equip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          equip.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         equip.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (equip.model && equip.model.toLowerCase().includes(searchTerm.toLowerCase()))
     const matchesType = typeFilter === 'all' || equip.type === typeFilter
-    const matchesLocation = locationFilter === 'all' || equip.location === locationFilter
     
-    return matchesSearch && matchesType && matchesLocation
+    return matchesSearch && matchesType
   })
 
-  const locations = [...new Set(equipment.map(e => e.location))].sort()
   const types = [...new Set(equipment.map(e => e.type))].sort()
 
   const getStatusColor = (status: string) => {
@@ -369,22 +410,48 @@ export default function EquipmentPage() {
           <h1 className="text-3xl font-bold text-gray-100">Equipment Management</h1>
           <p className="text-gray-400 mt-2">Manage maintenance equipment and schedules</p>
         </div>
-        <button
-          onClick={() => {
-            resetForm()
-            setShowAddModal(true)
-          }}
-          className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Add Equipment
-        </button>
+        <div className="flex items-center gap-4">
+          {/* View Mode Toggle */}
+          <div className="flex rounded-lg bg-gray-800 border border-gray-600 p-1">
+            <button
+              onClick={() => setViewMode('EQUIPMENT')}
+              className={`px-4 py-2 rounded transition-colors ${
+                viewMode === 'EQUIPMENT'
+                  ? 'bg-teal-600 text-white'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+            >
+              Equipment
+            </button>
+            <button
+              onClick={() => setViewMode('SCHEDULES')}
+              className={`px-4 py-2 rounded transition-colors ${
+                viewMode === 'SCHEDULES'
+                  ? 'bg-teal-600 text-white'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+            >
+              Assign Schedules
+            </button>
+          </div>
+          
+          <button
+            onClick={() => {
+              resetForm()
+              setShowAddModal(true)
+            }}
+            className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            Add Equipment
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
       <div className="bg-gray-800/50 rounded-lg p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="relative">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="relative md:col-span-2">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
@@ -401,22 +468,9 @@ export default function EquipmentPage() {
             className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
           >
             <option value="all">All Types</option>
-            {types.map(type => (
-              <option key={type} value={type}>
-                {type.replace('_', ' ')}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={locationFilter}
-            onChange={(e) => setLocationFilter(e.target.value)}
-            className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
-          >
-            <option value="all">All Locations</option>
-            {locations.map(location => (
-              <option key={location} value={location}>
-                {location}
+            {equipmentTypes.map(type => (
+              <option key={type.value} value={type.value}>
+                {type.label}
               </option>
             ))}
           </select>
@@ -428,8 +482,181 @@ export default function EquipmentPage() {
         </div>
       </div>
 
+      {/* Schedule Assignment Section */}
+      {viewMode === 'SCHEDULES' && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-100 mb-6">Schedule Assignment</h2>
+          
+          {/* Assignment Mode Toggle */}
+          <div className="flex gap-2 mb-6">
+            <button
+              onClick={() => setAssignMode('QUICK')}
+              className={`px-4 py-2 rounded ${
+                assignMode === 'QUICK'
+                  ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
+                  : 'bg-gray-800/50 text-gray-400 hover:bg-teal-500/10 hover:text-teal-300'
+              } border transition-colors`}
+            >
+              Quick Assign
+            </button>
+            <button
+              onClick={() => setAssignMode('MANUAL')}
+              className={`px-4 py-2 rounded ${
+                assignMode === 'MANUAL'
+                  ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
+                  : 'bg-gray-800/50 text-gray-400 hover:bg-teal-500/10 hover:text-teal-300'
+              } border transition-colors`}
+            >
+              Manual Assign
+            </button>
+          </div>
+
+          {assignMode === 'QUICK' && (
+            <div className="bg-gray-900/50 rounded-lg border border-gray-600 p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-100 mb-4">Quick Assignment</h3>
+              <p className="text-gray-400 mb-4">Assign a schedule to all equipment of a specific type</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Schedule</label>
+                  <select
+                    value={selectedSchedule}
+                    onChange={(e) => handleScheduleSelection(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                  >
+                    <option value="">Select Schedule</option>
+                    {schedules.map(schedule => (
+                      <option key={schedule.id} value={schedule.id}>
+                        {schedule.title} ({schedule.tasks.length} tasks)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Equipment Type</label>
+                  <select
+                    value={selectedEquipmentType}
+                    onChange={(e) => setSelectedEquipmentType(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                  >
+                    {equipmentTypes.map(type => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Frequency</label>
+                  <select
+                    value={selectedFrequency}
+                    onChange={(e) => setSelectedFrequency(e.target.value as ScheduleFrequency)}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                  >
+                    <option value="DAILY">Daily</option>
+                    <option value="WEEKLY">Weekly</option>
+                    <option value="BIWEEKLY">Bi-weekly</option>
+                    <option value="MONTHLY">Monthly</option>
+                    <option value="QUARTERLY">Quarterly</option>
+                    <option value="YEARLY">Yearly</option>
+                  </select>
+                </div>
+              </div>
+              
+              <button
+                onClick={handleQuickAssign}
+                disabled={!selectedSchedule || !selectedEquipmentType || isAssigning}
+                className="flex items-center px-4 py-2 bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 rounded border border-teal-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isAssigning ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4 mr-2" />
+                )}
+                Assign to All {selectedEquipmentType.replace('_', ' ')} Equipment
+              </button>
+            </div>
+          )}
+
+          {assignMode === 'MANUAL' && (
+            <div className="bg-gray-900/50 rounded-lg border border-gray-600 p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-100 mb-4">Manual Assignment</h3>
+              <p className="text-gray-400 mb-4">Assign a schedule to a specific equipment</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Schedule</label>
+                  <select
+                    value={selectedSchedule}
+                    onChange={(e) => handleScheduleSelection(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                  >
+                    <option value="">Select Schedule</option>
+                    {schedules.map(schedule => (
+                      <option key={schedule.id} value={schedule.id}>
+                        {schedule.title} ({schedule.tasks.length} tasks)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Equipment</label>
+                  <select
+                    value={selectedEquipment?.id || ''}
+                    onChange={(e) => {
+                      const equip = equipment.find(r => r.id === e.target.value)
+                      setSelectedEquipment(equip || null)
+                    }}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                  >
+                    <option value="">Select Equipment</option>
+                    {equipment.map(equip => (
+                      <option key={equip.id} value={equip.id}>
+                        {equip.name} ({equip.type.replace('_', ' ')})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Frequency</label>
+                  <select
+                    value={selectedFrequency}
+                    onChange={(e) => setSelectedFrequency(e.target.value as ScheduleFrequency)}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                  >
+                    <option value="DAILY">Daily</option>
+                    <option value="WEEKLY">Weekly</option>
+                    <option value="BIWEEKLY">Bi-weekly</option>
+                    <option value="MONTHLY">Monthly</option>
+                    <option value="QUARTERLY">Quarterly</option>
+                    <option value="YEARLY">Yearly</option>
+                  </select>
+                </div>
+              </div>
+              
+              <button
+                onClick={handleManualAssign}
+                disabled={!selectedSchedule || !selectedEquipment || isAssigning}
+                className="flex items-center px-4 py-2 bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 rounded border border-teal-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isAssigning ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4 mr-2" />
+                )}
+                Assign Schedule
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Equipment Grid */}
-      {filteredEquipment.length === 0 ? (
+      {viewMode === 'EQUIPMENT' && filteredEquipment.length === 0 ? (
         <div className="text-center py-12">
           <Wrench className="w-16 h-16 text-gray-500 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-100 mb-2">
@@ -453,7 +680,7 @@ export default function EquipmentPage() {
             </button>
           )}
         </div>
-      ) : (
+      ) : viewMode === 'EQUIPMENT' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEquipment.map((equip, index) => (
             <motion.div
@@ -469,10 +696,6 @@ export default function EquipmentPage() {
                   <span className="text-2xl">{equipmentTypeIcons[equip.type] || '📦'}</span>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-100">{equip.name}</h3>
-                    <div className="flex items-center gap-2 text-sm text-gray-400">
-                      <MapPin className="w-3 h-3" />
-                      <span>{equip.location}</span>
-                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -550,7 +773,7 @@ export default function EquipmentPage() {
             </motion.div>
           ))}
         </div>
-      )}
+      ) : null}
 
       {/* Add Equipment Modal */}
       <AnimatePresence>
@@ -574,116 +797,51 @@ export default function EquipmentPage() {
                 </div>
 
                 <form onSubmit={handleAddEquipment} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Name *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
-                        placeholder="Enter equipment name"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Type
-                      </label>
-                      <select
-                        value={formData.type}
-                        onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
-                      >
-                        {equipmentTypes.map(type => (
-                          <option key={type.value} value={type.value}>
-                            {type.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Location
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.location}
-                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
-                        placeholder="Enter location"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Model
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.model}
-                        onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
-                        placeholder="Enter model"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Serial Number
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.serialNumber}
-                        onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
-                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
-                        placeholder="Enter serial number"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Purchase Date
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.purchaseDate}
-                        onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })}
-                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Warranty Expiry
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.warrantyExpiry}
-                        onChange={(e) => setFormData({ ...formData, warrantyExpiry: e.target.value })}
-                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Description
-                      </label>
-                      <textarea
-                        rows={3}
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
-                        placeholder="Enter description"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                      placeholder="Enter equipment name"
+                    />
                   </div>
 
-                  <div className="flex items-center justify-end gap-3 pt-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Type
+                    </label>
+                    <select
+                      value={formData.type}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                    >
+                      {equipmentTypes.map(type => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                      placeholder="Enter description"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-4 md:col-span-2">
                     <button
                       type="button"
                       onClick={() => setShowAddModal(false)}
@@ -739,116 +897,51 @@ export default function EquipmentPage() {
                 </div>
 
                 <form onSubmit={handleEditEquipment} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Name *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
-                        placeholder="Enter equipment name"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Type
-                      </label>
-                      <select
-                        value={formData.type}
-                        onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
-                      >
-                        {equipmentTypes.map(type => (
-                          <option key={type.value} value={type.value}>
-                            {type.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Location
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.location}
-                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
-                        placeholder="Enter location"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Model
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.model}
-                        onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
-                        placeholder="Enter model"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Serial Number
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.serialNumber}
-                        onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
-                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
-                        placeholder="Enter serial number"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Purchase Date
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.purchaseDate}
-                        onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })}
-                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Warranty Expiry
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.warrantyExpiry}
-                        onChange={(e) => setFormData({ ...formData, warrantyExpiry: e.target.value })}
-                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Description
-                      </label>
-                      <textarea
-                        rows={3}
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
-                        placeholder="Enter description"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                      placeholder="Enter equipment name"
+                    />
                   </div>
 
-                  <div className="flex items-center justify-end gap-3 pt-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Type
+                    </label>
+                    <select
+                      value={formData.type}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                    >
+                      {equipmentTypes.map(type => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                      placeholder="Enter description"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-4 md:col-span-2">
                     <button
                       type="button"
                       onClick={() => {
@@ -911,7 +1004,6 @@ export default function EquipmentPage() {
                     <span className="text-2xl">{equipmentTypeIcons[selectedEquipment.type] || '📦'}</span>
                     <div>
                       <h3 className="text-lg font-semibold text-gray-100">{selectedEquipment.name}</h3>
-                      <p className="text-sm text-gray-400">{selectedEquipment.location}</p>
                     </div>
                   </div>
                   
