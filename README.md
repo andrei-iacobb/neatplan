@@ -1,69 +1,118 @@
-# CleanTrack - Advanced Cleaning Management System
+# 🧹 CleanTrack
 
-A modern, AI-powered cleaning management system built with Next.js, TypeScript, and Prisma. Features intelligent document processing, seamless account switching, and comprehensive task management.
+<div align="center">
 
-## 🚀 Features
+![CleanTrack Logo](https://via.placeholder.com/200x100/4F46E5/FFFFFF?text=CleanTrack)
 
-### **Multi-User System**
-- **Administrator**: Full system access, room management, schedule creation
-- **Manager**: Standard access for operations oversight  
-- **Cleaner**: Task-focused interface for cleaning operations
+**A comprehensive cleaning management system with real-time tracking and mobile support**
 
-### **Seamless Account Switching**
-- Instant switching between user roles without login redirects
-- Session persistence across browser restarts
-- Visual session indicators and role-based access control
+[![Next.js](https://img.shields.io/badge/Next.js-15.3.2-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Prisma](https://img.shields.io/badge/Prisma-6.8.2-2D3748?style=for-the-badge&logo=prisma)](https://www.prisma.io/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-336791?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
 
-### **AI-Powered Schedule Management**
-- Intelligent document processing for cleaning schedules
-- Automatic frequency detection from uploaded documents
-- Manual override capabilities for AI suggestions
-- Smart schedule assignment with auto-frequency selection
+[🚀 Live Demo](#) • [📖 Documentation](#documentation) • [🐛 Report Bug](../../issues) • [✨ Request Feature](../../issues)
 
-### **Enhanced Room Management**
-- 54+ pre-configured rooms (bedrooms, offices, meeting rooms)
-- Floor-based organization (Ground Floor, Upstairs)
-- Real-time schedule status tracking
-- Bulk assignment capabilities
+</div>
 
-### **Advanced UI/UX**
-- Modern dark theme with teal accents
-- Responsive design for desktop and mobile
-- Animated transitions and micro-interactions
-- Intuitive navigation and filtering
+---
 
-## 🏗️ Architecture
+## 📋 Table of Contents
 
-### **Tech Stack**
-- **Frontend**: Next.js 15, TypeScript, Tailwind CSS
-- **Backend**: Next.js API routes, Prisma ORM
-- **Database**: PostgreSQL (or SQLite for development)
-- **Authentication**: NextAuth.js with JWT
-- **AI**: Custom document processing and frequency detection
+- [✨ Features](#-features)
+- [🎯 Demo](#-demo)
+- [🚀 Quick Start](#-quick-start)
+- [🔧 Installation](#-installation)
+- [📱 Usage](#-usage)
+- [🌐 Deployment](#-deployment)
+- [🛠️ Tech Stack](#️-tech-stack)
+- [📊 Database Schema](#-database-schema)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
 
-### **Key Components**
-- **Multi-User Authentication**: Session-based switching between roles
-- **Schedule Engine**: AI-powered frequency detection and assignment
-- **Room Management**: Hierarchical organization and bulk operations
-- **Task Interface**: Role-specific dashboards and workflows
+---
 
-## 🎯 Quick Start
+## ✨ Features
 
-### **Account Access**
+### 🎛️ **Admin Dashboard**
+- 📊 Real-time statistics and analytics
+- 🏢 Room and equipment management
+- 📅 Schedule assignment and monitoring
+- 👥 User session tracking
+- 📈 Live activity monitoring with 30-second updates
+- 🔄 Equipment maintenance scheduling
 
-| Role | Email | Password | Access Level |
-|------|-------|----------|--------------|
-| **Administrator** | `admin@cleantrack.com` | `admin123` | Full system access |
-| **Manager** | `user@cleantrack.com` | `user123` | Standard operations |
-| **Cleaner** | `cleaner@cleantrack.com` | `cleaner123` | Task management |
+### 🧹 **Cleaner Interface**
+- 📱 Mobile-responsive personal dashboard
+- 📋 Assigned room and equipment schedules
+- ✅ Task completion tracking
+- 🎯 Priority-based task organization
+- 📍 Location-based room filtering
 
-### **Development Setup**
+### 🔄 **Real-Time Features**
+- 🟢 Live session tracking and monitoring
+- 📡 Activity updates every 30 seconds
+- 👁️ User presence indicators
+- 🚪 Automatic logout detection
+- 📊 Real-time dashboard statistics
+
+### 🛡️ **Security & Authentication**
+- 🔐 NextAuth.js integration
+- 👤 Role-based access control (Admin/Cleaner)
+- 🔑 Secure session management
+- 🛡️ CSRF protection
+- 🔒 Environment-based configuration
+
+### 📱 **Mobile Support**
+- 📲 Fully responsive design
+- 👆 Touch-friendly interface
+- 📱 Mobile-optimized navigation
+- 🔄 Offline-capable PWA features
+
+---
+
+## 🎯 Demo
+
+<div align="center">
+
+### Admin Dashboard
+![Admin Dashboard](https://via.placeholder.com/800x400/1F2937/FFFFFF?text=Admin+Dashboard+Screenshot)
+
+### Cleaner Interface
+![Cleaner Interface](https://via.placeholder.com/800x400/059669/FFFFFF?text=Cleaner+Interface+Screenshot)
+
+### Mobile View
+![Mobile View](https://via.placeholder.com/400x600/7C3AED/FFFFFF?text=Mobile+View+Screenshot)
+
+</div>
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- **Node.js** 18.0 or higher
+- **PostgreSQL** 15.0 or higher
+- **npm** or **yarn**
+
+### 1-Minute Setup
 
 ```bash
+# Clone the repository
+git clone https://github.com/yourusername/cleantrack.git
+cd cleantrack
+
 # Install dependencies
 npm install
 
-# Set up database
+# Setup environment
+cp .env.example .env
+# Edit .env with your database credentials
+
+# Setup database
+npx prisma generate
 npx prisma db push
 npx prisma db seed
 
@@ -71,121 +120,304 @@ npx prisma db seed
 npm run dev
 ```
 
-Visit `http://localhost:3002` (or next available port)
-
-## 💡 How to Use
-
-### **1. Account Switching**
-- Login with any account
-- Hover over the sidebar to expand
-- Click your account section to see the switcher
-- Use "Quick Access" to instantly switch between roles
-
-### **2. Room Management (Admin/Manager)**
-- Navigate to "Rooms" in the sidebar
-- Toggle between Bedrooms, Other Rooms, and Schedules
-- Use Quick Assignment for bulk schedule application
-- Manual Assignment for specific room configurations
-
-### **3. Schedule Management**
-- Upload documents for AI processing
-- Review and edit AI-detected frequencies
-- Assign schedules to rooms with automatic frequency selection
-- Monitor completion status and overdue items
-
-### **4. Cleaning Operations (Cleaner)**
-- Access the dedicated cleaner interface at `/clean`
-- View prioritized task lists (Overdue, Due Today, Upcoming)
-- Filter by floor, room type, or search terms
-- Complete tasks with progress tracking
-
-## 🔧 Advanced Features
-
-### **AI Document Processing**
-- Automatic extraction of cleaning schedules from uploaded documents
-- Frequency detection (Daily, Weekly, Monthly, Quarterly, Yearly)
-- Task identification and categorization
-- Manual override capabilities for AI suggestions
-
-### **Session Management**
-- JWT-based authentication with 30-day expiration
-- Local storage of session tokens for quick switching
-- Automatic session cleanup and validation
-- Cross-browser session persistence
-
-### **Smart Scheduling**
-- Auto-frequency selection based on AI detection
-- Bulk assignment to room types
-- Schedule status tracking and notifications
-- Customizable frequency overrides
-
-## 🎨 Design System
-
-### **Color Palette**
-- **Primary**: Teal (`#14B8A6`) - Actions, links, active states
-- **Background**: Dark gray (`#111827`) - Main background
-- **Surface**: Medium gray (`#1F2937`) - Cards, modals
-- **Text**: Light gray (`#F9FAFB`) - Primary text
-- **Accent**: Blue (`#3B82F6`) - Session indicators, secondary actions
-
-### **Typography**
-- **Headings**: Font weights 600-700, responsive sizing
-- **Body**: Font weight 400, optimized line heights
-- **Labels**: Font weight 500, small sizing for metadata
-
-### **Components**
-- **Buttons**: Consistent hover states, loading indicators
-- **Cards**: Subtle borders, hover animations
-- **Modals**: Backdrop blur, smooth transitions
-- **Forms**: Inline validation, clear error states
-
-## 📊 System Architecture
-
-### **Database Schema**
-- **Users**: Multi-role authentication system
-- **Rooms**: Hierarchical organization with metadata
-- **Schedules**: AI-enhanced template system
-- **RoomSchedules**: Assignment and tracking junction
-- **Tasks**: Granular operation definitions
-
-### **API Structure**
-```
-/api
-├── auth/          # Authentication endpoints
-├── rooms/         # Room management
-├── schedules/     # Schedule operations
-├── cleaner/       # Cleaner-specific endpoints
-└── upload/        # Document processing
-```
-
-### **Frontend Architecture**
-```
-/src
-├── app/           # Next.js app router
-├── components/    # Reusable UI components
-├── hooks/         # Custom React hooks
-├── lib/           # Utility functions
-└── types/         # TypeScript definitions
-```
-
-## 🚀 Production Deployment
-
-The system is production-ready with:
-- Environment-based configuration
-- Secure session management
-- Optimized database queries
-- Responsive design
-- Error boundary handling
-- Performance monitoring
-
-## 🔒 Security Features
-
-- **JWT Authentication**: Secure token-based sessions
-- **Role-Based Access**: Granular permission system
-- **Session Validation**: Automatic token verification
-- **CSRF Protection**: Built-in Next.js security
-- **Data Sanitization**: Input validation and cleaning
+🎉 **That's it!** Open [http://localhost:3000](http://localhost:3000) and start cleaning!
 
 ---
 
-**Built with ❤️ for efficient facility management**
+## 🔧 Installation
+
+<details>
+<summary><b>📦 Detailed Installation Guide</b></summary>
+
+### 1. Clone Repository
+```bash
+git clone https://github.com/yourusername/cleantrack.git
+cd cleantrack
+```
+
+### 2. Install Dependencies
+```bash
+npm install
+# or
+yarn install
+```
+
+### 3. Database Setup
+```bash
+# Create PostgreSQL database
+createdb cleantrack
+
+# Generate Prisma client
+npx prisma generate
+
+# Push database schema
+npx prisma db push
+
+# Seed with sample data
+npx prisma db seed
+```
+
+### 4. Environment Configuration
+```bash
+# Copy environment template
+cp .env.example .env
+```
+
+Edit `.env` file:
+```env
+DATABASE_URL="postgresql://username:password@localhost:5432/cleantrack"
+NEXTAUTH_SECRET="your-secret-key-here"
+NEXTAUTH_URL="http://localhost:3000"
+```
+
+### 5. Build & Start
+```bash
+# Development
+npm run dev
+
+# Production
+npm run build
+npm start
+```
+
+</details>
+
+---
+
+## 📱 Usage
+
+### Default Login Credentials
+
+| Role | Email | Password |
+|------|-------|----------|
+| **Admin** | `admin@cleantrack.com` | `admin123` |
+| **Cleaner** | `cleaner@cleantrack.com` | `cleaner123` |
+| **User** | `user@cleantrack.com` | `user123` |
+
+### Admin Workflow
+
+1. **Dashboard Overview** - View real-time statistics
+2. **Manage Rooms** - Add, edit, and organize cleaning spaces
+3. **Equipment Management** - Track maintenance schedules
+4. **Schedule Assignment** - Assign cleaning tasks to rooms/equipment
+5. **Monitor Activity** - Track user sessions and task completion
+
+### Cleaner Workflow
+
+1. **Personal Dashboard** - View assigned tasks
+2. **Task Management** - Complete room and equipment schedules
+3. **Progress Tracking** - Monitor completion status
+4. **Mobile Access** - Use on any device
+
+---
+
+## 🌐 Deployment
+
+### 🪟 Windows Self-Hosting
+
+Perfect for small to medium businesses:
+
+```bash
+# Use provided Windows scripts
+scripts\windows\install.bat
+scripts\windows\start.bat
+```
+
+📖 **Full Windows Guide**: [README-Windows.md](README-Windows.md)
+
+### ☁️ Cloud Deployment
+
+<details>
+<summary><b>Deploy to Vercel</b></summary>
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyourusername%2Fcleantrack)
+
+1. Connect your PostgreSQL database
+2. Set environment variables
+3. Deploy!
+
+</details>
+
+<details>
+<summary><b>Deploy to Railway</b></summary>
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/cleantrack)
+
+1. One-click deployment
+2. Automatic PostgreSQL provisioning
+3. Environment setup included
+
+</details>
+
+<details>
+<summary><b>Deploy with Docker</b></summary>
+
+```bash
+# Build image
+docker build -t cleantrack .
+
+# Run container
+docker run -p 3000:3000 --env-file .env cleantrack
+```
+
+</details>
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Framework**: Next.js 15.3.2
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Components**: Radix UI
+- **Animations**: Framer Motion
+- **Icons**: Lucide React
+
+### Backend
+- **Runtime**: Node.js
+- **Framework**: Next.js API Routes
+- **Database**: PostgreSQL
+- **ORM**: Prisma
+- **Authentication**: NextAuth.js
+- **Session Management**: Custom implementation
+
+### Development
+- **Package Manager**: npm
+- **Linting**: ESLint
+- **Formatting**: Prettier
+- **Type Checking**: TypeScript
+- **Database Management**: Prisma Studio
+
+---
+
+## 📊 Database Schema
+
+<details>
+<summary><b>📋 View Database Structure</b></summary>
+
+```mermaid
+erDiagram
+    User ||--o{ UserSession : has
+    User ||--o{ Task : creates
+    Room ||--o{ RoomSchedule : has
+    Equipment ||--o{ EquipmentSchedule : has
+    Schedule ||--o{ RoomSchedule : assigned_to
+    Schedule ||--o{ EquipmentSchedule : assigned_to
+    Schedule ||--o{ ScheduleTask : contains
+    RoomSchedule ||--o{ RoomScheduleCompletionLog : completed
+    EquipmentSchedule ||--o{ EquipmentScheduleCompletionLog : completed
+
+    User {
+        string id PK
+        string email UK
+        string name
+        boolean isAdmin
+        enum role
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Room {
+        string id PK
+        string name UK
+        string description
+        string floor
+        enum type
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Equipment {
+        string id PK
+        string name UK
+        string description
+        string type
+        datetime createdAt
+        datetime updatedAt
+    }
+```
+
+</details>
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Here's how you can help:
+
+### 🐛 Bug Reports
+- Use the [issue tracker](../../issues)
+- Include steps to reproduce
+- Provide system information
+
+### ✨ Feature Requests
+- Check [existing issues](../../issues) first
+- Describe the feature and use case
+- Consider implementation approach
+
+### 🔧 Pull Requests
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes
+4. Add tests if applicable
+5. Commit: `git commit -m 'Add amazing feature'`
+6. Push: `git push origin feature/amazing-feature`
+7. Open a Pull Request
+
+### 📋 Development Setup
+```bash
+# Clone your fork
+git clone https://github.com/yourusername/cleantrack.git
+
+# Install dependencies
+npm install
+
+# Setup development database
+npm run db:setup
+
+# Start development server
+npm run dev
+
+# Run tests
+npm test
+```
+
+---
+
+## 📈 Roadmap
+
+- [ ] 📧 Email notifications for overdue tasks
+- [ ] 📊 Advanced analytics and reporting
+- [ ] 🔔 Push notifications
+- [ ] 📱 Native mobile app
+- [ ] 🌍 Multi-language support
+- [ ] 🔗 API for third-party integrations
+- [ ] 📦 Inventory management
+- [ ] 🎨 Custom themes and branding
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- [Next.js](https://nextjs.org/) - The React framework for production
+- [Prisma](https://www.prisma.io/) - Next-generation ORM
+- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework
+- [NextAuth.js](https://next-auth.js.org/) - Authentication for Next.js
+- [Framer Motion](https://www.framer.com/motion/) - Animation library
+
+---
+
+<div align="center">
+
+**Made with ❤️ for cleaning professionals**
+
+[⭐ Star this repo](../../stargazers) • [🐛 Report issues](../../issues) • [💬 Discussions](../../discussions)
+
+</div>
