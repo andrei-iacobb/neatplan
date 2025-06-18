@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { compare } from 'bcryptjs'
-import { db } from '@/lib/db'
+import { prisma } from '@/lib/db'
 import * as z from 'zod'
 
 const loginSchema = z.object({
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     const body = await req.json()
     const { email, password } = loginSchema.parse(body)
 
-    const user = await db.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { email },
     })
 

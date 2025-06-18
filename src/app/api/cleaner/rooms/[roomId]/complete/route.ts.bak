@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/db'
 import { ScheduleFrequency, ScheduleStatus } from '@prisma/client'
 
 export async function POST(
   request: Request,
-  context: { params: Promise<{ roomId: string }> }
+  { params }: { params: { roomId: string } }
 ) {
-  const params = await context.params
   try {
     const session = await getServerSession(authOptions)
     
@@ -151,10 +150,10 @@ function calculateNextDueDate(frequency: ScheduleFrequency): Date {
     case ScheduleFrequency.YEARLY:
       nextDue.setFullYear(now.getFullYear() + 1)
       break
-    // case ScheduleFrequency.CUSTOM:
-    //   // For custom frequency, default to weekly
-    //   nextDue.setDate(now.getDate() + 7)
-    //   break
+    case ScheduleFrequency.CUSTOM:
+      // For custom frequency, default to weekly
+      nextDue.setDate(now.getDate() + 7)
+      break
     default:
       // Default to daily if frequency is not recognized
       nextDue.setDate(now.getDate() + 1)

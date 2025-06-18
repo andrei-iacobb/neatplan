@@ -37,7 +37,7 @@ function calculateNextDueDate(frequency: ScheduleFrequency, lastCompleted: Date)
 
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<{ id: string; scheduleId: string }> }
+  { params }: { params: { id: string; scheduleId: string } }
 ) {
   try {
     const { completedTasks } = await request.json()

@@ -3,9 +3,10 @@ import { prisma } from '@/lib/db'
 
 export async function PUT(
   request: Request,
-  { params }: { params: { taskId: string } }
+  context: { params: Promise<{ taskId: string }> }
 ) {
   try {
+    const params = await context.params
     const { taskId } = params
     const { roomId } = await request.json()
 

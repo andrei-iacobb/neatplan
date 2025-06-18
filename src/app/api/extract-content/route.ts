@@ -1,8 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import natural from 'natural'
-
-// Initialize NLP tools
-const sentenceTokenizer = new natural.SentenceTokenizer(['en'])
 
 // Force dynamic behavior for the API route
 export const dynamic = 'force-dynamic'
@@ -21,11 +17,11 @@ const CLEANING_KEYWORDS = [
 ]
 
 function extractRelevantContent(content: string): string {
-  // Tokenize into sentences
-  const sentences = sentenceTokenizer.tokenize(content)
-  
-  // Initialize TF-IDF
-  const tfidf = new natural.TfIdf()
+  // Split into sentences using simple regex
+  const sentences = content
+    .split(/[.!?]+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 10)
   
   // Process each sentence
   const processedSentences = sentences.map(sentence => {
@@ -35,27 +31,20 @@ function extractRelevantContent(content: string): string {
       .replace(/\([Ff]requency:?\s*([^)]+)\)/i, '(Frequency: $1)') // Standardize frequency format
       .trim()
   })
-
-  // Add each processed sentence as a document
-  processedSentences.forEach(sentence => {
-    tfidf.addDocument(sentence.toLowerCase())
-  })
   
   // Score sentences based on relevance
-  const sentenceScores = processedSentences.map((sentence, idx) => {
+  const sentenceScores = processedSentences.map((sentence) => {
     let score = 0
+    const lowerSentence = sentence.toLowerCase()
     
-    // Calculate TF-IDF score for cleaning keywords
+    // Check for cleaning keywords
     CLEANING_KEYWORDS.forEach(keyword => {
-      tfidf.tfidfs(keyword, (docIndex, measure) => {
-        if (docIndex === idx) {
-          score += measure
-        }
-      })
+      if (lowerSentence.includes(keyword)) {
+        score += 2
+      }
     })
     
     // Bonus points for important patterns
-    const lowerSentence = sentence.toLowerCase()
     if (
       /task|checklist|schedule/.test(lowerSentence) ||
       /^(area|room|date|type):/.test(lowerSentence) ||

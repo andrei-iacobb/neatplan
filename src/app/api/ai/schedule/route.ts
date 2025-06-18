@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { getServerSession } from 'next-auth'
-import natural from 'natural'
 import { PrismaClient } from '@prisma/client'
 import { getSchedulePrimaryFrequency, inferFrequencyFromTasks } from '@/lib/frequency-mapping'
 
@@ -11,9 +10,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-// Initialize NLP tools
-const tokenizer = new natural.WordTokenizer()
-const sentenceTokenizer = new natural.SentenceTokenizer(['en'])
+// Simple text processing without natural library
 
 // Rough token estimation (1 token ≈ 4 characters)
 const MAX_TOKENS_PER_REQUEST = 6000 // Leave room for system prompt and response
