@@ -6,6 +6,7 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
+import { apiRequest } from '@/lib/url-utils'
 
 interface ScheduleDialogProps {
   onScheduleCreated: () => void
@@ -26,7 +27,7 @@ export function ScheduleDialog({ onScheduleCreated }: ScheduleDialogProps) {
 
     setIsLoading(true)
     try {
-      const response = await fetch('/api/schedules', {
+      const response = await apiRequest('/api/schedules', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

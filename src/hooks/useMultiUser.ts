@@ -1,5 +1,6 @@
 import { useSession } from 'next-auth/react'
 import { useState, useEffect } from 'react'
+import { apiRequest } from '@/lib/url-utils'
 
 interface StoredSession {
   email: string
@@ -101,7 +102,7 @@ export function useMultiUser() {
       }
 
       // Call the switch account API
-      const response = await fetch('/api/auth/switch-account', {
+      const response = await apiRequest('/api/auth/switch-account', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

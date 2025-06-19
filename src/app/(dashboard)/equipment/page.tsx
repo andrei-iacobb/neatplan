@@ -9,6 +9,7 @@ import {
   Wrench, AlertCircle, CheckCircle, Clock, Settings, X,
   HeartHandshake, Sparkles, Box, Loader2
 } from 'lucide-react'
+import { apiRequest } from '@/lib/url-utils'
 
 interface Equipment {
   id: string
@@ -116,8 +117,8 @@ export default function EquipmentPage() {
 
     if (status === 'authenticated') {
       Promise.all([
-        fetch('/api/admin/equipment').then(res => res.json()),
-        fetch('/api/schedules').then(res => res.json())
+        apiRequest('/api/admin/equipment').then(res => res.json()),
+        apiRequest('/api/schedules').then(res => res.json())
       ]).then(([equipmentData, schedulesData]) => {
         setEquipment(equipmentData.equipment)
         setSchedules(schedulesData)
@@ -148,7 +149,7 @@ export default function EquipmentPage() {
   const fetchEquipment = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/admin/equipment')
+      const response = await apiRequest('/api/admin/equipment')
       if (!response.ok) throw new Error('Failed to fetch equipment')
       
       const data: EquipmentResponse = await response.json()
@@ -172,7 +173,7 @@ export default function EquipmentPage() {
       // Assign schedule to each equipment
       await Promise.all(
         targetEquipment.map(equip =>
-          fetch(`/api/admin/equipment/${equip.id}/schedules`, {
+          apiRequest(`/api/admin/equipment/${equip.id}/schedules`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -213,7 +214,7 @@ export default function EquipmentPage() {
 
     setIsAssigning(true)
     try {
-      const response = await fetch(`/api/admin/equipment/${selectedEquipment.id}/schedules`, {
+      const response = await apiRequest(`/api/admin/equipment/${selectedEquipment.id}/schedules`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -243,7 +244,7 @@ export default function EquipmentPage() {
 
     try {
       setIsSubmitting(true)
-      const response = await fetch('/api/admin/equipment', {
+      const response = await apiRequest('/api/admin/equipment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -271,7 +272,7 @@ export default function EquipmentPage() {
 
     try {
       setIsSubmitting(true)
-      const response = await fetch(`/api/admin/equipment/${selectedEquipment.id}`, {
+      const response = await apiRequest(`/api/admin/equipment/${selectedEquipment.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -299,7 +300,7 @@ export default function EquipmentPage() {
 
     try {
       setIsSubmitting(true)
-      const response = await fetch(`/api/admin/equipment/${selectedEquipment.id}`, {
+      const response = await apiRequest(`/api/admin/equipment/${selectedEquipment.id}`, {
         method: 'DELETE'
       })
 

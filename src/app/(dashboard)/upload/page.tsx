@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { Upload, X, FileText, Combine, Layers } from 'lucide-react'
+import { apiRequest } from '@/lib/url-utils'
 
 type ProcessingMode = 'combine' | 'individual' | null
 
@@ -77,7 +78,7 @@ export default function UploadPage() {
         const formData = new FormData()
         formData.append('file', files[i])
 
-        const response = await fetch('/api/process-document', {
+        const response = await apiRequest('/api/process-document', {
           method: 'POST',
           body: formData
         })
@@ -117,7 +118,7 @@ export default function UploadPage() {
         const formData = new FormData()
         formData.append('file', files[i])
 
-        const response = await fetch('/api/extract-content', {
+        const response = await apiRequest('/api/extract-content', {
           method: 'POST',
           body: formData
         })
@@ -144,7 +145,7 @@ export default function UploadPage() {
     ).join('')
     
     // Process the combined content as a single schedule
-    const response = await fetch('/api/ai/schedule', {
+    const response = await apiRequest('/api/ai/schedule', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -177,7 +178,7 @@ export default function UploadPage() {
         const formData = new FormData()
         formData.append('file', files[0])
 
-        const response = await fetch('/api/process-document', {
+        const response = await apiRequest('/api/process-document', {
           method: 'POST',
           body: formData
         })

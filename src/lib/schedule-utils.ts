@@ -25,10 +25,10 @@ export function calculateNextDueDate(
     case 'YEARLY':
       date.setFullYear(date.getFullYear() + 1)
       break
-    case 'CUSTOM':
-      // For custom frequency, default to weekly
-      date.setDate(date.getDate() + 7)
-      break
+    // case 'CUSTOM':
+    //   // For custom frequency, default to weekly
+    //   date.setDate(date.getDate() + 7)
+    //   break
     default:
       throw new Error(`Unsupported frequency: ${frequency}`)
   }
@@ -54,8 +54,8 @@ export function getFrequencyLabel(frequency: ScheduleFrequency): string {
       return 'Quarterly'
     case 'YEARLY':
       return 'Yearly'
-    case 'CUSTOM':
-      return 'Custom'
+    // case 'CUSTOM':
+    //   return 'Custom'
     default:
       return 'Unknown'
   }

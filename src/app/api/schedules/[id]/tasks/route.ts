@@ -3,7 +3,8 @@ import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/db'
 
 // Add a task to a schedule
-export async function POST(req: Request, context: { params: Promise<{ id: string }> } }) {
+export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
+  const params = await context.params
   try {
     const session = await getServerSession()
     if (!session) {

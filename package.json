@@ -5,9 +5,13 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
+    "build:static": "NEXT_OUTPUT=export next build",
     "start": "next start",
+    "start:prod": "NODE_ENV=production next start",
     "lint": "next lint",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "deploy:static": "npm run build:static && echo 'Static files built in ./out directory'",
+    "deploy:standalone": "npm run build && echo 'Standalone app built - ready for deployment'"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.9.1",

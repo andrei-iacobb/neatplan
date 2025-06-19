@@ -6,8 +6,9 @@ import bcrypt from 'bcryptjs'
 
 export async function PUT(
   request: Request,
-  context: { params: Promise<{ id: string }> } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params
   try {
     const session = await getServerSession(authOptions)
     
@@ -44,8 +45,9 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  context: { params: Promise<{ id: string }> } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params
   try {
     const session = await getServerSession(authOptions)
     

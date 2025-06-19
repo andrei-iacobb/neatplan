@@ -243,9 +243,6 @@ export async function GET() {
           id: equip.id,
           name: equip.name,
           type: equip.type,
-          location: equip.location || 'Unknown Location',
-          model: equip.model || '',
-          serialNumber: equip.serialNumber || '',
           priority: equipmentPriority,
           nextDue: earliestDue.toISOString(),
           summary: {

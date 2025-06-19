@@ -5,9 +5,10 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Loader2, Home, Calendar, DoorOpen, BarChart3, AlertTriangle, CheckCircle, Clock, Target, Wrench } from 'lucide-react'
-import { ScheduleStatus } from '@/types/schedule'
+import { ScheduleStatus } from '@prisma/client'
 import { useToast } from '@/components/ui/toast-context'
 import { useSessionTracking } from '@/hooks/useSessionTracking'
+import { apiRequest } from '@/lib/url-utils'
 
 interface Room {
   id: string
@@ -62,23 +63,23 @@ export default function HomePage() {
   const fetchDashboardData = async () => {
     try {
       const [roomsData, equipmentData, schedulesData, equipmentSchedulesData, activityData] = await Promise.all([
-        fetch('/api/rooms').then(res => {
+        apiRequest('/api/rooms').then(res => {
           if (!res.ok) throw new Error('Failed to fetch rooms')
           return res.json()
         }),
-        fetch('/api/admin/equipment').then(res => {
+        apiRequest('/api/admin/equipment').then(res => {
           if (!res.ok) throw new Error('Failed to fetch equipment')
           return res.json()
         }),
-        fetch('/api/room-schedules').then(res => {
+        apiRequest('/api/room-schedules').then(res => {
           if (!res.ok) throw new Error('Failed to fetch schedules')
           return res.json()
         }),
-        fetch('/api/equipment-schedules').then(res => {
+        apiRequest('/api/equipment-schedules').then(res => {
           if (!res.ok) throw new Error('Failed to fetch equipment schedules')
           return res.json()
         }),
-        fetch('/api/admin/recent-activity').then(res => {
+        apiRequest('/api/admin/recent-activity').then(res => {
           if (!res.ok) throw new Error('Failed to fetch recent activity')
           return res.json()
         })
@@ -114,7 +115,7 @@ export default function HomePage() {
 
     const interval = setInterval(async () => {
       try {
-        const activityResponse = await fetch('/api/admin/recent-activity')
+        const activityResponse = await apiRequest('/api/admin/recent-activity')
         if (activityResponse.ok) {
           const activityData = await activityResponse.json()
           setRecentActivity(activityData.activities || [])

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 import { Loader2, Upload } from 'lucide-react'
 import { Schedule } from '@/generated/prisma'
+import { apiRequest } from '@/lib/url-utils'
 
 interface ScheduleUploaderProps {
   onScheduleGenerated: (schedule: Schedule) => void
@@ -43,7 +44,7 @@ export function ScheduleUploader({ onScheduleGenerated }: ScheduleUploaderProps)
       const fileContent = await readFileContent(file)
 
       // Call OpenAI API
-      const response = await fetch('/api/ai/schedule', {
+      const response = await apiRequest('/api/ai/schedule', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: fileContent })

@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { getScheduleDisplayName } from '@/lib/schedule-utils'
+import { apiRequest } from '@/lib/url-utils'
 import { AnimatePresence } from 'framer-motion'
 
 interface Schedule {
@@ -196,7 +197,7 @@ export default function CleanerDashboard() {
         setError(null)
       }
       
-      const response = await fetch('/api/cleaner/dashboard', {
+      const response = await apiRequest('/api/cleaner/dashboard', {
         // Add cache control for better performance
         headers: {
           'Cache-Control': 'max-age=30, stale-while-revalidate=60'

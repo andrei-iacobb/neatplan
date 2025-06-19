@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react'
+import { ScheduleFrequency } from '@prisma/client'
 import type { Schedule, ScheduleTask } from '@/types/schedule'
-import { ScheduleFrequency } from '@/types/schedule'
+import { apiRequest } from '@/lib/url-utils'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Pencil, Plus, Save, Trash, X } from 'lucide-react'
@@ -27,7 +28,7 @@ export function ScheduleList({ schedules, onUpdate, isEditMode }: ScheduleListPr
 
   const updateSchedule = async (scheduleId: string) => {
     try {
-      const response = await fetch(`/api/schedules/${scheduleId}`, {
+      const response = await apiRequest(`/api/schedules/${scheduleId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -54,7 +55,7 @@ export function ScheduleList({ schedules, onUpdate, isEditMode }: ScheduleListPr
       isDeleting.current.add(scheduleId)
       setDeletedScheduleIds(prev => new Set([...prev, scheduleId]))
 
-      const response = await fetch(`/api/schedules/${scheduleId}`, {
+      const response = await apiRequest(`/api/schedules/${scheduleId}`, {
         method: 'DELETE'
       })
 
@@ -78,7 +79,7 @@ export function ScheduleList({ schedules, onUpdate, isEditMode }: ScheduleListPr
 
   const updateTask = async (scheduleId: string, taskId: string, task: typeof newTask) => {
     try {
-      const response = await fetch(`/api/schedules/${scheduleId}/tasks/${taskId}`, {
+      const response = await apiRequest(`/api/schedules/${scheduleId}/tasks/${taskId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(task)
@@ -96,7 +97,7 @@ export function ScheduleList({ schedules, onUpdate, isEditMode }: ScheduleListPr
 
   const deleteTask = async (scheduleId: string, taskId: string) => {
     try {
-      const response = await fetch(`/api/schedules/${scheduleId}/tasks/${taskId}`, {
+      const response = await apiRequest(`/api/schedules/${scheduleId}/tasks/${taskId}`, {
         method: 'DELETE'
       })
 
@@ -116,7 +117,7 @@ export function ScheduleList({ schedules, onUpdate, isEditMode }: ScheduleListPr
     }
 
     try {
-      const response = await fetch(`/api/schedules/${scheduleId}/tasks`, {
+      const response = await apiRequest(`/api/schedules/${scheduleId}/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newTask)

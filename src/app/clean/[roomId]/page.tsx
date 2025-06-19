@@ -22,6 +22,7 @@ import {
   AlertCircle
 } from 'lucide-react'
 import Link from 'next/link'
+import { apiRequest } from '@/lib/url-utils'
 
 interface ScheduleTask {
   id: string
@@ -105,7 +106,7 @@ export default function CleanRoomPage() {
       setIsLoading(true)
       setError(null)
       
-      const response = await fetch(`/api/cleaner/rooms/${params.roomId}`)
+      const response = await apiRequest(`/api/cleaner/rooms/${params.roomId}`)
       
       if (!response.ok) {
         if (response.status === 404) {
@@ -180,7 +181,7 @@ export default function CleanRoomPage() {
       const endTime = new Date()
       const duration = Math.round((endTime.getTime() - startTime.getTime()) / 1000 / 60) // minutes
 
-      const response = await fetch(`/api/cleaner/rooms/${params.roomId}/complete`, {
+      const response = await apiRequest(`/api/cleaner/rooms/${params.roomId}/complete`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

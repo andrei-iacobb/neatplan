@@ -8,7 +8,7 @@ import { Prisma } from '@prisma/client'
 // POST /api/rooms/[id]/schedules - Assign a schedule to a room
 export async function POST(
   request: Request,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -106,7 +106,7 @@ export async function POST(
 // GET /api/rooms/[id]/schedules - Get all schedules for a room
 export async function GET(
   request: Request,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -149,7 +149,7 @@ export async function GET(
 // PATCH /api/rooms/[id]/schedules/[scheduleId] - Mark a room schedule as completed
 export async function PATCH(
   request: Request,
-  context: { params: { id: string; scheduleId: string } }
+  context: { params: Promise<{ id: string; scheduleId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)

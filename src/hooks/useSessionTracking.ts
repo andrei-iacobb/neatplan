@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
+import { apiRequest } from '@/lib/url-utils'
 
 interface SessionTrackingOptions {
   updateInterval?: number // in milliseconds, default 5 minutes
@@ -20,7 +21,7 @@ export function useSessionTracking(options: SessionTrackingOptions = {}) {
     if (!session?.user) return
 
     try {
-      await fetch('/api/session-tracking', {
+      await apiRequest('/api/session-tracking', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -39,7 +40,7 @@ export function useSessionTracking(options: SessionTrackingOptions = {}) {
     if (!session?.user) return
 
     try {
-      await fetch('/api/session-tracking', {
+      await apiRequest('/api/session-tracking', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

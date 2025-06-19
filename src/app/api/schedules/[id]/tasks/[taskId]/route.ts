@@ -5,8 +5,9 @@ import { prisma } from '@/lib/db'
 // Update a task
 export async function PUT(
   req: Request,
-  context: { params: Promise<{ id: string; taskId: string }> } }
+  context: { params: Promise<{ id: string; taskId: string }> }
 ) {
+  const params = await context.params
   try {
     const session = await getServerSession()
     if (!session) {
@@ -43,8 +44,9 @@ export async function PUT(
 // Delete a task
 export async function DELETE(
   req: Request,
-  context: { params: Promise<{ id: string; taskId: string }> } }
+  context: { params: Promise<{ id: string; taskId: string }> }
 ) {
+  const params = await context.params
   try {
     const session = await getServerSession()
     if (!session) {

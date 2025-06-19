@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useToast } from '@/components/ui/toast-context'
 import { Loader2, Calendar, CheckCircle2, X, Trash2, Building2, Pencil } from 'lucide-react'
-import { ScheduleFrequency, ScheduleStatus, type RoomSchedule } from '@/types/schedule'
+import { ScheduleFrequency, ScheduleStatus } from '@prisma/client'
 import { getFrequencyLabel, getScheduleDisplayName } from '@/lib/schedule-utils'
+import { apiRequest } from '@/lib/url-utils'
 
 interface Room {
   id: string
@@ -21,6 +22,20 @@ interface Schedule {
   detectedFrequency?: string
   suggestedFrequency?: ScheduleFrequency
   tasks: { id: string; description: string }[]
+}
+
+interface RoomSchedule {
+  id: string
+  roomId: string
+  scheduleId: string
+  frequency: ScheduleFrequency
+  startDate?: Date
+  lastCompleted?: Date | null
+  nextDue: Date
+  status: ScheduleStatus
+  createdAt: Date
+  updatedAt: Date
+  schedule: Schedule
 }
 
 export default function RoomDetailsPage() {
@@ -46,9 +61,9 @@ export default function RoomDetailsPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch(`/api/rooms/${params.id}`).then(res => res.json()),
-      fetch('/api/schedules').then(res => res.json()),
-      fetch(`/api/rooms/${params.id}/schedules`).then(res => res.json())
+      apiRequest(`/api/rooms/${params.id}`).then(res => res.json()),
+      apiRequest('/api/schedules').then(res => res.json()),
+      apiRequest(`/api/rooms/${params.id}/schedules`).then(res => res.json())
     ]).then(([roomData, schedulesData, roomSchedulesData]) => {
       setRoom(roomData)
       setFormData({
@@ -84,7 +99,7 @@ export default function RoomDetailsPage() {
 
     setIsAssigning(true)
     try {
-      const response = await fetch(`/api/rooms/${params.id}/schedules`, {
+      const response = await apiRequest(`/api/rooms/${params.id}/schedules`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -111,7 +126,7 @@ export default function RoomDetailsPage() {
   async function completeSchedule(roomScheduleId: string) {
     setIsCompleting(true)
     try {
-      const response = await fetch(`/api/rooms/${params.id}/schedules/${roomScheduleId}`, {
+      const response = await apiRequest(`/api/rooms/${params.id}/schedules/${roomScheduleId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notes: '' })
@@ -140,7 +155,7 @@ export default function RoomDetailsPage() {
     setIsSubmitting(true)
 
     try {
-      const res = await fetch(`/api/rooms/${room.id}`, {
+      const res = await apiRequest(`/api/rooms/${room.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -165,7 +180,7 @@ export default function RoomDetailsPage() {
     setIsSubmitting(true)
 
     try {
-      const res = await fetch(`/api/rooms/${room.id}`, {
+      const res = await apiRequest(`/api/rooms/${room.id}`, {
         method: 'DELETE'
       })
 

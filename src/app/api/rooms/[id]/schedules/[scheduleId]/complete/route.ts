@@ -24,10 +24,10 @@ function calculateNextDueDate(frequency: ScheduleFrequency, lastCompleted: Date)
     case ScheduleFrequency.YEARLY:
       nextDue.setFullYear(nextDue.getFullYear() + 1)
       break
-    case ScheduleFrequency.CUSTOM:
-      // For custom frequency, default to weekly
-      nextDue.setDate(nextDue.getDate() + 7)
-      break
+    // case ScheduleFrequency.CUSTOM:
+    //   // For custom frequency, default to weekly
+    //   nextDue.setDate(nextDue.getDate() + 7)
+    //   break
     default:
       nextDue.setDate(nextDue.getDate() + 7) // Default to weekly
   }
@@ -40,6 +40,7 @@ export async function POST(
   context: { params: Promise<{ id: string; scheduleId: string }> }
 ) {
   try {
+    const params = await context.params
     const { completedTasks } = await request.json()
     const now = new Date()
 
@@ -68,7 +69,7 @@ export async function POST(
         data: {
           roomScheduleId: params.scheduleId,
           completedAt: now,
-          completedTasks: completedTasks as Prisma.JsonValue,
+          completedTasks: completedTasks as Prisma.InputJsonValue,
           notes: `Completed ${completedTasks.length} tasks for ${currentSchedule.schedule.title}`
         }
       })

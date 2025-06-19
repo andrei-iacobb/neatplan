@@ -9,6 +9,7 @@ import {
 } from './ui/select'
 import { useToast } from './ui/toast-context'
 import { getFrequencyLabel } from '@/lib/schedule-utils'
+import { apiRequest } from '@/lib/url-utils'
 import { format } from 'date-fns'
 
 interface Schedule {
@@ -43,7 +44,7 @@ export function RoomScheduleManager({ roomId, onUpdate }: RoomScheduleManagerPro
   useEffect(() => {
     async function fetchSchedules() {
       try {
-        const res = await fetch('/api/schedules')
+        const res = await apiRequest('/api/schedules')
         if (!res.ok) throw new Error('Failed to fetch schedules')
         const data = await res.json()
         setSchedules(data)
@@ -60,7 +61,7 @@ export function RoomScheduleManager({ roomId, onUpdate }: RoomScheduleManagerPro
   useEffect(() => {
     async function fetchRoomSchedules() {
       try {
-        const res = await fetch(`/api/rooms/${roomId}/schedules`)
+        const res = await apiRequest(`/api/rooms/${roomId}/schedules`)
         if (!res.ok) throw new Error('Failed to fetch room schedules')
         const data = await res.json()
         setRoomSchedules(data)
@@ -83,7 +84,7 @@ export function RoomScheduleManager({ roomId, onUpdate }: RoomScheduleManagerPro
 
     setIsLoading(true)
     try {
-      const res = await fetch(`/api/rooms/${roomId}/schedules`, {
+      const res = await apiRequest(`/api/rooms/${roomId}/schedules`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -100,7 +101,7 @@ export function RoomScheduleManager({ roomId, onUpdate }: RoomScheduleManagerPro
       onUpdate?.()
 
       // Refresh room schedules
-      const updatedRes = await fetch(`/api/rooms/${roomId}/schedules`)
+      const updatedRes = await apiRequest(`/api/rooms/${roomId}/schedules`)
       if (!updatedRes.ok) throw new Error('Failed to fetch updated schedules')
       const data = await updatedRes.json()
       setRoomSchedules(data)
@@ -114,7 +115,7 @@ export function RoomScheduleManager({ roomId, onUpdate }: RoomScheduleManagerPro
 
   const markCompleted = async (scheduleId: string) => {
     try {
-      const res = await fetch(`/api/rooms/${roomId}/schedules/${scheduleId}`, {
+      const res = await apiRequest(`/api/rooms/${roomId}/schedules/${scheduleId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notes: 'Completed via room schedule manager' })
@@ -125,7 +126,7 @@ export function RoomScheduleManager({ roomId, onUpdate }: RoomScheduleManagerPro
       showToast('Schedule marked as completed', 'success')
       
       // Refresh room schedules
-      const updatedRes = await fetch(`/api/rooms/${roomId}/schedules`)
+      const updatedRes = await apiRequest(`/api/rooms/${roomId}/schedules`)
       if (!updatedRes.ok) throw new Error('Failed to fetch updated schedules')
       const data = await updatedRes.json()
       setRoomSchedules(data)

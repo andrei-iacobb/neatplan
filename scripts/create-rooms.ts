@@ -1,5 +1,5 @@
 import { prisma } from '../src/lib/db'
-import { RoomType } from '../src/generated/prisma'
+import { RoomType } from '@prisma/client'
 
 async function createRooms() {
   const rooms = []

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { apiRequest } from '@/lib/url-utils'
 
 interface CleaningTask {
   id: string
@@ -44,7 +45,7 @@ export default function CleaningPage() {
 
   async function fetchRooms() {
     try {
-      const response = await fetch('/api/rooms')
+      const response = await apiRequest('/api/rooms')
       const data = await response.json()
       if (!response.ok) throw new Error(data.error)
       setRooms(data)
@@ -55,7 +56,7 @@ export default function CleaningPage() {
 
   async function fetchTasks() {
     try {
-      const response = await fetch('/api/cleaning-tasks')
+      const response = await apiRequest('/api/cleaning-tasks')
       const data = await response.json()
       if (!response.ok) throw new Error(data.error)
       setTasks(data)
@@ -75,7 +76,7 @@ export default function CleaningPage() {
     setError(null)
 
     try {
-      const response = await fetch('/api/process-document', {
+      const response = await apiRequest('/api/process-document', {
         method: 'POST',
         body: formData
       })
@@ -97,7 +98,7 @@ export default function CleaningPage() {
 
   async function assignTaskToRoom(taskId: string, roomId: string) {
     try {
-      const response = await fetch(`/api/cleaning-tasks/${taskId}/assign-room`, {
+      const response = await apiRequest(`/api/cleaning-tasks/${taskId}/assign-room`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

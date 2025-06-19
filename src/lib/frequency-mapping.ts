@@ -48,7 +48,7 @@ export function mapFrequencyStringToEnum(frequencyString: string | null): Schedu
   // Custom patterns - anything that doesn't fit standard frequencies
   if (frequency.includes('as needed') || frequency.includes('when required') || 
       frequency.includes('irregular') || frequency.includes('variable')) {
-    return ScheduleFrequency.CUSTOM
+    return ScheduleFrequency.WEEKLY // Default to weekly for custom frequencies
   }
   
   // Default to weekly if we can't determine

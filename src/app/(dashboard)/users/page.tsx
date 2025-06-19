@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Edit, Trash2, UserPlus, Shield, User as UserIcon, X, AlertTriangle } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
+import { apiRequest } from '@/lib/url-utils'
 
 const userSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -158,7 +159,7 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     setIsLoading(true)
     try {
-      const res = await fetch('/api/users')
+      const res = await apiRequest('/api/users')
       if (!res.ok) throw new Error('Failed to fetch users')
       const data = await res.json()
       setUsers(data)
@@ -215,7 +216,7 @@ export default function UsersPage() {
     if (!deletingUser) return
     
     try {
-      const res = await fetch(`/api/users/${deletingUser.id}`, { method: 'DELETE' })
+      const res = await apiRequest(`/api/users/${deletingUser.id}`, { method: 'DELETE' })
       if (!res.ok) {
         const errorData = await res.json()
         throw new Error(errorData.error || 'Failed to delete user.')

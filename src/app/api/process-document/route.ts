@@ -205,7 +205,8 @@ export async function POST(request: NextRequest) {
     console.log('Sending extracted content to enhanced AI processor...')
     
     // Create a mock request to our AI schedule endpoint
-    const aiScheduleResponse = await fetch(`${request.nextUrl.origin}/api/ai/schedule`, {
+    const baseUrl = process.env.NEXTAUTH_URL || request.nextUrl.origin;
+    const aiScheduleResponse = await fetch(`${baseUrl}/api/ai/schedule`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

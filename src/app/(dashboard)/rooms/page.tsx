@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useToast } from '@/components/ui/toast-context'
 import { Loader2, Plus, X, Trash2, Building2, Bed, Calendar, Layers } from 'lucide-react'
-import { ScheduleFrequency, ScheduleStatus } from '@/types/schedule'
+import { ScheduleFrequency, ScheduleStatus } from '@prisma/client'
 import { getFrequencyLabel, getScheduleDisplayName } from '@/lib/schedule-utils'
+import { apiRequest } from '@/lib/url-utils'
 
 interface Room {
   id: string
@@ -66,13 +67,13 @@ export default function RoomsPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/rooms').then(res => res.json()),
-      fetch('/api/schedules').then(res => res.json())
+      apiRequest('/api/rooms').then(res => res.json()),
+      apiRequest('/api/schedules').then(res => res.json())
     ]).then(([roomsData, schedulesData]) => {
       // Fetch schedules for each room
       Promise.all(
         roomsData.map((room: Room) =>
-          fetch(`/api/rooms/${room.id}/schedules`)
+          apiRequest(`/api/rooms/${room.id}/schedules`)
             .then(res => res.json())
             .then(schedules => ({
               ...room,
@@ -96,7 +97,7 @@ export default function RoomsPage() {
     setIsSubmitting(true)
 
     try {
-      const res = await fetch('/api/rooms', {
+      const res = await apiRequest('/api/rooms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -123,7 +124,7 @@ export default function RoomsPage() {
     setIsSubmitting(true)
 
     try {
-      const res = await fetch(`/api/rooms/${selectedRoom.id}`, {
+      const res = await apiRequest(`/api/rooms/${selectedRoom.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -149,7 +150,7 @@ export default function RoomsPage() {
     setIsSubmitting(true)
 
     try {
-      const res = await fetch(`/api/rooms/${selectedRoom.id}`, {
+      const res = await apiRequest(`/api/rooms/${selectedRoom.id}`, {
         method: 'DELETE'
       })
 
@@ -178,7 +179,7 @@ export default function RoomsPage() {
       // Assign schedule to each room
       await Promise.all(
         targetRooms.map(room =>
-          fetch(`/api/rooms/${room.id}/schedules`, {
+          apiRequest(`/api/rooms/${room.id}/schedules`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -217,7 +218,7 @@ export default function RoomsPage() {
 
     setIsAssigning(true)
     try {
-      const response = await fetch(`/api/rooms/${selectedRoom.id}/schedules`, {
+      const response = await apiRequest(`/api/rooms/${selectedRoom.id}/schedules`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

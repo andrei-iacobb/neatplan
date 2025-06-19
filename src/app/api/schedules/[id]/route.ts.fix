@@ -4,15 +4,14 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 // Update a schedule
-export async function PUT(req: Request, context: { params: Promise<{ id: string }> }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const params = await context.params
-    const { id } = params
+    const { id } = await params
     const { title } = await req.json()
     
     const schedule = await prisma.schedule.update({
@@ -31,7 +30,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
 }
 
 // Partial update a schedule (PATCH method)
-export async function PATCH(req: Request, context: { params: Promise<{ id: string }> }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     console.log('PATCH request started')
     
@@ -43,8 +42,7 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const params = await context.params
-    const { id } = params
+    const { id } = await params
     console.log('Schedule ID:', id)
     
     const body = await req.json()
@@ -79,15 +77,14 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
 }
 
 // Delete a schedule
-export async function DELETE(req: Request, context: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const params = await context.params
-    const { id } = params
+    const { id } = await params
 
     // First check if the schedule exists
     const schedule = await prisma.schedule.findUnique({

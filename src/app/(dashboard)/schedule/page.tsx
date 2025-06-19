@@ -8,6 +8,7 @@ import { Loader2, Settings2 } from 'lucide-react'
 import type { Schedule, ScheduleTask } from '@/types/schedule'
 import { Button } from '@/components/ui/button'
 import { ToastProvider } from '@/components/ui/toast-context'
+import { apiRequest } from '@/lib/url-utils'
 
 function SchedulePageContent() {
   const [schedules, setSchedules] = useState<(Schedule & { tasks: ScheduleTask[] })[]>([])
@@ -18,7 +19,7 @@ function SchedulePageContent() {
   const fetchSchedules = async () => {
     try {
       setError(null)
-      const res = await fetch('/api/schedules')
+      const res = await apiRequest('/api/schedules')
       if (!res.ok) throw new Error('Failed to fetch schedules')
       const data = await res.json()
       // Ensure we're setting a valid array
