@@ -1,0 +1,30 @@
+# Generated files
+**/generated/**
+**/prisma/generated/**
+src/generated/**
+
+# Build files
+.next/**
+out/**
+build/**
+dist/**
+
+# Node modules
+node_modules/**
+
+# Type definitions
+**/*.d.ts
+**/*.js.map
+**/*.d.ts.map
+
+# Specific problematic files
+**/wasm.js
+**/react-native.js
+**/runtime/**/*.js
+
+# Prisma generated files
+prisma/generated/**
+src/generated/prisma/**
+
+# Any other generated JavaScript files
+**/*generated*.js 

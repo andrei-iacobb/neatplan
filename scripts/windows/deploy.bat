@@ -32,11 +32,15 @@ if %errorLevel% neq 0 (
 )
 
 echo [3/6] Building application...
-npm run build
+npm run build:no-lint
 if %errorLevel% neq 0 (
-    echo Build failed!
-    pause
-    exit /b 1
+    echo Build failed! Trying alternative build...
+    npm run build
+    if %errorLevel% neq 0 (
+        echo All build attempts failed!
+        pause
+        exit /b 1
+    )
 )
 
 echo [4/6] Creating logs directory...

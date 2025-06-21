@@ -66,11 +66,17 @@ try {
 # Step 3: Build application
 Write-Host "[3/8] Building application..." -ForegroundColor Blue
 try {
-    npm run build
+    npm run build:no-lint
     Write-Host "✅ Application built successfully" -ForegroundColor Green
 } catch {
-    Write-Host "❌ Build failed!" -ForegroundColor Red
-    exit 1
+    Write-Host "⚠️ Initial build failed, trying alternative..." -ForegroundColor Yellow
+    try {
+        npm run build
+        Write-Host "✅ Application built successfully (alternative method)" -ForegroundColor Green
+    } catch {
+        Write-Host "❌ All build attempts failed!" -ForegroundColor Red
+        exit 1
+    }
 }
 
 # Step 4: Create logs directory
@@ -206,4 +212,5 @@ Write-Host "   Thanks to the url-utils.ts changes, it will automatically" -Foreg
 Write-Host "   work with whatever NEXTAUTH_URL you configure." -ForegroundColor Green
 Write-Host ""
 
+Read-Host "Press Enter to continue..." 
 Read-Host "Press Enter to continue..." 

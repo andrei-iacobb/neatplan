@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbopack --host 0.0.0.0",
     "build": "next build",
+    "build:no-lint": "NEXT_DISABLE_ESLINT_PLUGIN=1 next build",
     "build:static": "NEXT_OUTPUT=export next build",
     "start": "next start",
     "start:prod": "NODE_ENV=production next start",

@@ -63,7 +63,7 @@ export function getFrequencyLabel(frequency: ScheduleFrequency): string {
 
 export function getScheduleDisplayName(title: string, frequency?: ScheduleFrequency): string {
   // Clean up the title and extract meaningful parts
-  let cleanTitle = title
+  const cleanTitle = title
     .replace(/^(Daily|Weekly|Monthly|Quarterly|Yearly):\s*/i, '') // Remove frequency prefix
     .replace(/\s*-\s*(bedrooms?|communal|office|bathroom).*$/i, '') // Remove room type suffixes
     .replace(/\s*-\s*infection control.*$/i, '') // Remove infection control suffix
