@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   env: {
     CUSTOM_APP_URL: process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000',
   },
+  
+  // Force standalone output for better deployment
+  output: 'standalone',
 
   // Configure images
   images: {
