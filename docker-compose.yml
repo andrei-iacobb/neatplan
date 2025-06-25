@@ -17,26 +17,26 @@ services:
     networks:
       - cleantrack_network
 
-  # Comment out the db service if using external database
-  # db:
-  #   image: postgres:15
-  #   container_name: cleantrack_db
-  #   restart: always
-  #   ports:
-  #     - "5432:5432"
-  #   environment:
-  #     POSTGRES_USER: admin
-  #     POSTGRES_PASSWORD: secret
-  #     POSTGRES_DB: cleantrack
-  #   volumes:
-  #     - cleantrack_data:/var/lib/postgresql/data
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U admin -d cleantrack"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-  #   networks:
-  #     - cleantrack_network
+  Comment out the db service if using external database
+   db:
+     image: postgres:15
+     container_name: cleantrack_db
+     restart: always
+     ports:
+       - "5432:5432"
+     environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: cleantrack
+     volumes:
+       - cleantrack_data:/var/lib/postgresql/data
+     healthcheck:
+       test: ["CMD-SHELL", "pg_isready -U admin -d cleantrack"]
+       interval: 10s
+       timeout: 5s
+       retries: 5
+     networks:
+       - cleantrack_network
 
 volumes:
   cleantrack_data:
