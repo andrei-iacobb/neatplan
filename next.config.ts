@@ -6,15 +6,16 @@ const nextConfig: NextConfig = {
     CUSTOM_APP_URL: process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000',
   },
   
-  // Force standalone output for better deployment
+  // Configure output for deployment
   output: 'standalone',
-
+  
   // Configure images
   images: {
     domains: ['localhost'],
     // Add your production domains here
     // domains: ['localhost', 'yourdomain.com'],
   },
+  
   // Ensure trailing slashes for consistent routing
   trailingSlash: false,
   // Make ESLint more tolerant during build
