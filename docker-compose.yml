@@ -5,10 +5,14 @@ services:
     restart: always
     ports:
       - "0.0.0.0:3000:3000"  # Bind to all interfaces for external access
+    env_file:
+      - .env  # Load the existing .env file
     environment:
-      - DATABASE_URL=postgresql://admin:secret@db:5432/cleantrack
-      - NEXTAUTH_SECRET=your-secret-key-here-change-this-in-production
-      - NEXTAUTH_URL=http://10.60.1.195:3000  # Use the actual IP
+      # Override only the database URL for Docker (others come from .env)
+      - DATABASE_URL=postgresql://cleantrack_user:CleanTrack2024SecurePass@db:5432/cleantrack
+      # Override the NextAuth URL for external access
+      - NEXTAUTH_URL=http://10.60.1.195:3000
+      # Override NODE_ENV for Docker development
       - NODE_ENV=development
     volumes:
       - .:/app
@@ -26,13 +30,15 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: secret
+      POSTGRES_USER: cleantrack_user
+      POSTGRES_PASSWORD: CleanTrack2024SecurePass
       POSTGRES_DB: cleantrack
+      # PostgreSQL configuration for better performance
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
     volumes:
       - cleantrack_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d cleantrack"]
+      test: ["CMD-SHELL", "pg_isready -U cleantrack_user -d cleantrack"]
       interval: 10s
       timeout: 5s
       retries: 5
