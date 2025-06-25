@@ -17,7 +17,6 @@ services:
     networks:
       - cleantrack_network
 
-  Comment out the db service if using external database
    db:
      image: postgres:15
      container_name: cleantrack_db
