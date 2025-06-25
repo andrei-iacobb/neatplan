@@ -1,8 +1,8 @@
 # Use Node.js Alpine Linux image  
 FROM node:20-alpine
 
-# Add necessary packages for Prisma
-RUN apk add --no-cache libc6-compat openssl
+# Add necessary packages for Prisma and database tools
+RUN apk add --no-cache libc6-compat openssl postgresql-client
 
 WORKDIR /app
 
@@ -24,5 +24,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 EXPOSE 3000
 
-# Use development server to avoid build issues
-CMD ["npm", "run", "dev"]
+# Create a startup script to handle database migration and startup
+COPY start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
+
+# Use startup script
+CMD ["/usr/local/bin/start.sh"]
