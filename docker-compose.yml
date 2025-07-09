@@ -6,7 +6,7 @@ services:
     ports:
       - "0.0.0.0:3000:3000"  # Bind to all interfaces for external access
     env_file:
-      - .env  # Load the existing .env file
+      - .env  
     environment:
       # Override only the database URL for Docker (others come from .env)
       - DATABASE_URL=postgresql://cleantrack_user:CleanTrack2024SecurePass@db:5432/cleantrack
