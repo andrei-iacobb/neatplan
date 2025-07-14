@@ -3,168 +3,213 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* Dark theme (default) */
+    --background: 17 24 39;
+    --foreground: 243 244 246;
+    --card: 31 41 55;
+    --card-foreground: 243 244 246;
+    --border: 55 65 81;
+    --primary: 13 148 136;
+    --primary-foreground: 255 255 255;
+    --secondary: 55 65 81;
+    --secondary-foreground: 243 244 246;
+    --accent: 55 65 81;
+    --accent-foreground: 243 244 246;
+    --destructive: 220 38 38;
+    --destructive-foreground: 255 255 255;
+    --muted: 55 65 81;
+    --muted-foreground: 156 163 175;
+    --success: 5 150 105;
+    --warning: 245 158 11;
+  }
+
+  .light {
+    /* Light theme */
+    --background: 255 255 255;
+    --foreground: 17 24 39;
+    --card: 249 250 251;
+    --card-foreground: 17 24 39;
+    --border: 229 231 235;
+    --primary: 13 148 136;
+    --primary-foreground: 255 255 255;
+    --secondary: 243 244 246;
+    --secondary-foreground: 17 24 39;
+    --accent: 243 244 246;
+    --accent-foreground: 17 24 39;
+    --destructive: 220 38 38;
+    --destructive-foreground: 255 255 255;
+    --muted: 243 244 246;
+    --muted-foreground: 107 114 128;
+    --success: 5 150 105;
+    --warning: 245 158 11;
+  }
+
   html {
     scroll-behavior: smooth;
   }
 
   body {
-    background-color: rgb(17 24 39); /* gray-900 */
-    color: rgb(243 244 246); /* gray-100 */
+    background-color: rgb(var(--background));
+    color: rgb(var(--foreground));
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
-  /* Custom scrollbar for webkit browsers */
-  ::-webkit-scrollbar {
-    width: 8px;
+  /* Compact mode styles */
+  .compact-mode {
+    --spacing-scale: 0.75;
   }
 
-  ::-webkit-scrollbar-track {
-    background: rgb(31 41 55); /* gray-800 */
+  .compact-mode .card {
+    padding: calc(1rem * var(--spacing-scale, 1));
   }
 
-  ::-webkit-scrollbar-thumb {
-    background: rgb(75 85 99); /* gray-600 */
-    border-radius: 4px;
+  .compact-mode .p-6 {
+    padding: calc(1.5rem * var(--spacing-scale, 1));
   }
 
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgb(107 114 128); /* gray-500 */
+  .compact-mode .p-4 {
+    padding: calc(1rem * var(--spacing-scale, 1));
+  }
+
+  .compact-mode .p-8 {
+    padding: calc(2rem * var(--spacing-scale, 1));
+  }
+
+  .compact-mode .gap-6 {
+    gap: calc(1.5rem * var(--spacing-scale, 1));
+  }
+
+  .compact-mode .gap-4 {
+    gap: calc(1rem * var(--spacing-scale, 1));
+  }
+
+  .compact-mode .mb-8 {
+    margin-bottom: calc(2rem * var(--spacing-scale, 1));
+  }
+
+  .compact-mode .mb-6 {
+    margin-bottom: calc(1.5rem * var(--spacing-scale, 1));
+  }
+
+  .compact-mode .mb-4 {
+    margin-bottom: calc(1rem * var(--spacing-scale, 1));
+  }
+
+  /* Reduce motion styles */
+  .reduce-motion *,
+  .reduce-motion *::before,
+  .reduce-motion *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
 @layer components {
-  /* Custom card component */
   .card {
-    @apply bg-gray-800/50 border border-gray-700 rounded-lg;
+    background-color: rgb(var(--card) / 0.5);
+    border: 1px solid rgb(var(--border));
+    border-radius: 0.5rem;
+    backdrop-filter: blur(8px);
   }
 
   .card-hover {
-    @apply hover:border-teal-500/50 hover:bg-gray-700/30 transition-all duration-200;
+    transition: all 0.2s ease;
   }
 
-  /* Custom button variants */
+  .card-hover:hover {
+    border-color: rgb(var(--primary) / 0.5);
+    background-color: rgb(var(--card) / 0.7);
+  }
+
   .btn-primary {
-    @apply bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/30 transition-colors;
+    background-color: rgb(var(--primary) / 0.1);
+    border: 1px solid rgb(var(--primary) / 0.3);
+    color: rgb(var(--primary));
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: rgb(var(--primary) / 0.2);
   }
 
   .btn-secondary {
-    @apply bg-gray-700/50 hover:bg-gray-700 text-gray-300 border border-gray-600 transition-colors;
+    background-color: rgb(var(--secondary) / 0.5);
+    border: 1px solid rgb(var(--border));
+    color: rgb(var(--secondary-foreground));
+    transition: all 0.2s ease;
   }
 
-  /* Custom input styling */
+  .btn-secondary:hover {
+    background-color: rgb(var(--secondary));
+  }
+
   .input-primary {
-    @apply bg-gray-900/50 border border-gray-700 text-gray-100 focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/20 transition-colors;
+    background-color: rgb(var(--card) / 0.5);
+    border: 1px solid rgb(var(--border));
+    color: rgb(var(--foreground));
+    transition: all 0.2s ease;
   }
-}
 
-:root {
-  --background: #000000;
-  --foreground: #ffffff;
-  --gradient-start: #134e4a;    /* teal-900 */
-  --gradient-middle: #0d3230;   /* custom darker teal */
-  --gradient-end: #0a0a0a;      /* near black */
-  --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 0, 0, 0;
-  --background-end-rgb: 0, 10, 20;
-}
+  .input-primary:focus {
+    border-color: rgb(var(--primary) / 0.5);
+    outline: none;
+    box-shadow: 0 0 0 1px rgb(var(--primary) / 0.2);
+  }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Light theme text colors */
+  .light .text-gray-100 {
+    color: rgb(var(--foreground));
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  .light .text-gray-200 {
+    color: rgb(var(--foreground) / 0.9);
+  }
+
+  .light .text-gray-300 {
+    color: rgb(var(--foreground) / 0.8);
+  }
+
+  .light .text-gray-400 {
+    color: rgb(var(--muted-foreground));
+  }
+
+  .light .text-gray-500 {
+    color: rgb(var(--muted-foreground) / 0.8);
+  }
+
+  .light .text-gray-600 {
+    color: rgb(var(--muted-foreground) / 0.6);
+  }
+
+  /* Light theme background colors */
+  .light .bg-gray-800\/50 {
+    background-color: rgb(var(--card));
+  }
+
+  .light .bg-gray-900\/50 {
+    background-color: rgb(var(--card) / 0.8);
+  }
+
+  .light .border-gray-700 {
+    border-color: rgb(var(--border));
+  }
+
+  .light .border-gray-600 {
+    border-color: rgb(var(--border) / 0.8);
   }
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
+  color: #ffffff;
+  background: #000000;
   min-height: 100vh;
   overflow-x: hidden;
   font-family: Arial, Helvetica, sans-serif;
-  background: linear-gradient(
-    to bottom,
-    rgb(var(--background-start-rgb)),
-    rgb(var(--background-end-rgb))
-  );
-  background-attachment: fixed;
-  background-size: 200% 200%;
-  animation: gradientShift 15s ease infinite;
 }
 
-@keyframes gradientShift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-@keyframes glow {
-  0%, 100% {
-    text-shadow: 0 0 20px rgba(20, 184, 166, 0.1),
-                 0 0 40px rgba(20, 184, 166, 0.1);
-  }
-  50% {
-    text-shadow: 0 0 25px rgba(20, 184, 166, 0.2),
-                 0 0 50px rgba(20, 184, 166, 0.2);
-  }
-}
-
-@keyframes container-glow {
-  0%, 100% {
-    box-shadow: 0 0 25px -5px rgba(20, 184, 166, 0.1);
-    border-color: rgba(255, 255, 255, 0.03);
-  }
-  50% {
-    box-shadow: 0 0 30px -5px rgba(20, 184, 166, 0.2);
-    border-color: rgba(255, 255, 255, 0.08);
-  }
-}
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-5px);
-  }
-}
-
-.animate-glow {
-  animation: glow 3s ease-in-out infinite;
-}
-
-.animate-container {
-  animation: container-glow 3s ease-in-out infinite,
-             float 6s ease-in-out infinite;
-}
-
-.animate-fade-in {
-  animation: fade-in 0.6s ease-out forwards;
-}
-
-/* Enhance form inputs with animation */
 input, button {
   transition: all 0.3s ease;
 }
@@ -179,30 +224,4 @@ button:not(:disabled):hover {
 
 button:not(:disabled):active {
   transform: translateY(1px);
-}
-
-.glitter-background {
-  background: linear-gradient(135deg,
-    #000000 0%,
-    #001a1a 25%,
-    #001515 50%,
-    #001a1a 75%,
-    #000000 100%
-  );
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  animation: gradientShift 15s ease infinite;
-}
-
-@keyframes gradientShift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
 }

@@ -1,6 +1,5 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   // Use environment variables for dynamic configuration
   env: {
     CUSTOM_APP_URL: process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000',
@@ -8,6 +7,8 @@ const nextConfig: NextConfig = {
   
   // Configure output for deployment
   output: 'standalone',
+  
+
   
   // Configure images
   images: {
@@ -45,4 +46,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

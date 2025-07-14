@@ -1,34 +1,23 @@
-'use client'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { redirect } from 'next/navigation'
+import { DashboardOverview } from '@/components/dashboard/dashboard-overview'
 
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
-
+// Force dynamic rendering to prevent build issues
 export const dynamic = 'force-dynamic'
 
-export default function HomePage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
+export default async function HomePage() {
+  const session = await getServerSession(authOptions)
 
-  useEffect(() => {
-    if (status === 'loading') return // Still loading
-
-    if (!session) {
-      router.push('/auth')
-      return
-    }
-
-    // Redirect to appropriate dashboard based on user role
-    if (session.user?.isAdmin) {
-      router.push('/equipment')
-    } else {
-      router.push('/clean')
-    }
-  }, [session, status, router])
-
-  if (status === 'loading') {
-    return <div>Loading...</div>
+  if (!session) {
+    redirect('/auth')
   }
 
-  return null
+  // Redirect cleaners to their dashboard
+  if (!session.user?.isAdmin) {
+    redirect('/clean')
+  }
+
+  // Show admin dashboard for admin users
+  return <DashboardOverview />
 }

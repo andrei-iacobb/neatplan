@@ -5,6 +5,7 @@ import { Providers } from "./providers";
 import { WaveBackground } from "@/components/ui/wave-background";
 import { ToastProvider } from '@/components/ui/toast-context'
 import { PageWrapper } from "@/components/layout/page-wrapper";
+import { SettingsProvider } from "@/contexts/settings-context";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -28,14 +29,16 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className={`${inter.className} antialiased h-full`}>
-        <ToastProvider>
-          <WaveBackground />
-          <Providers>
-            <PageWrapper>
-              {children}
-            </PageWrapper>
-          </Providers>
-        </ToastProvider>
+        <SettingsProvider>
+          <ToastProvider>
+            <WaveBackground />
+            <Providers>
+              <PageWrapper>
+                {children}
+              </PageWrapper>
+            </Providers>
+          </ToastProvider>
+        </SettingsProvider>
       </body>
     </html>
   );
