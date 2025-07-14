@@ -34,7 +34,8 @@ export async function POST(request: NextRequest) {
       if (!targetUser) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 })
       }
-      targetEmail = targetUser.email
+      // Use notification email if set, otherwise fallback to login email
+      targetEmail = targetUser.notificationEmail || targetUser.email
     }
 
     if (!targetEmail) {
@@ -131,7 +132,19 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') as EmailRequest['type']
-    const email = searchParams.get('email') || session.user.email
+    let email = searchParams.get('email')
+
+    // If no email provided, get user's notification email preference
+    if (!email) {
+      const user = await prisma.user.findUnique({
+        where: { email: session.user.email }
+      })
+      if (user) {
+        email = user.notificationEmail || user.email
+      } else {
+        email = session.user.email
+      }
+    }
 
     if (!type || !email) {
       return NextResponse.json({ 

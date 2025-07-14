@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
 import { 
@@ -28,6 +28,69 @@ export default function SettingsPage() {
   const { playSound } = useSoundEffects()
   const [activeTab, setActiveTab] = useState('profile')
   const [isSaved, setIsSaved] = useState(false)
+  const [userProfile, setUserProfile] = useState({
+    name: '',
+    notificationEmail: '',
+    currentPassword: '',
+    newPassword: ''
+  })
+  const [profileLoading, setProfileLoading] = useState(false)
+
+  // Load user profile data
+  React.useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const response = await fetch('/api/users/profile')
+        if (response.ok) {
+          const data = await response.json()
+          setUserProfile({
+            name: data.user.name || '',
+            notificationEmail: data.user.notificationEmail || '',
+            currentPassword: '',
+            newPassword: ''
+          })
+        }
+      } catch (error) {
+        console.error('Failed to load profile:', error)
+      }
+    }
+    
+    if (session?.user) {
+      loadProfile()
+    }
+  }, [session])
+
+  const handleSaveProfile = async () => {
+    setProfileLoading(true)
+    try {
+      const response = await fetch('/api/users/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userProfile)
+      })
+
+      const data = await response.json()
+      if (response.ok) {
+        playSound('success')
+        setIsSaved(true)
+        setTimeout(() => setIsSaved(false), 2000)
+        // Clear password fields
+        setUserProfile(prev => ({ 
+          ...prev, 
+          currentPassword: '', 
+          newPassword: '' 
+        }))
+      } else {
+        playSound('error')
+        console.error('Profile update failed:', data.error)
+      }
+    } catch (error) {
+      playSound('error')
+      console.error('Profile update error:', error)
+    } finally {
+      setProfileLoading(false)
+    }
+  }
 
   const handleSaveSettings = async () => {
     try {
@@ -112,7 +175,8 @@ export default function SettingsPage() {
                     </label>
                     <input
                       type="text"
-                      defaultValue={session?.user?.name || ''}
+                      value={userProfile.name}
+                      onChange={(e) => setUserProfile(prev => ({ ...prev, name: e.target.value }))}
                       className="input-primary w-full px-3 py-2 rounded-lg"
                       placeholder="Enter your name"
                     />
@@ -120,14 +184,30 @@ export default function SettingsPage() {
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Email
+                      Login Email
                     </label>
                     <input
                       type="email"
-                      defaultValue={session?.user?.email || ''}
-                      className="input-primary w-full px-3 py-2 rounded-lg"
+                      value={session?.user?.email || ''}
+                      className="input-primary w-full px-3 py-2 rounded-lg bg-gray-800/50"
                       placeholder="Enter your email"
+                      disabled
                     />
+                    <p className="text-xs text-gray-500 mt-1">Used for login - contact admin to change</p>
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Notification Email
+                    </label>
+                    <input
+                      type="email"
+                      value={userProfile.notificationEmail}
+                      onChange={(e) => setUserProfile(prev => ({ ...prev, notificationEmail: e.target.value }))}
+                      className="input-primary w-full px-3 py-2 rounded-lg"
+                      placeholder="Email for notifications (leave empty to use login email)"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Where you'll receive notifications. Leave blank to use your login email.</p>
                   </div>
                   
                   <div>
@@ -157,15 +237,39 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input
                       type="password"
+                      value={userProfile.currentPassword}
+                      onChange={(e) => setUserProfile(prev => ({ ...prev, currentPassword: e.target.value }))}
                       placeholder="Current password"
                       className="input-primary px-3 py-2 rounded-lg"
                     />
                     <input
                       type="password"
+                      value={userProfile.newPassword}
+                      onChange={(e) => setUserProfile(prev => ({ ...prev, newPassword: e.target.value }))}
                       placeholder="New password"
                       className="input-primary px-3 py-2 rounded-lg"
                     />
                   </div>
+                </div>
+
+                {/* Save Profile Button */}
+                <div className="pt-4 border-t border-gray-700">
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={profileLoading}
+                    className={`btn-primary flex items-center px-6 py-2 rounded-lg ${
+                      isSaved ? 'bg-green-500/20 text-green-300 border-green-500/30' : ''
+                    }`}
+                  >
+                    {profileLoading ? (
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    ) : isSaved ? (
+                      <Save className="w-4 h-4 mr-2" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    {isSaved ? 'Profile Saved!' : 'Save Profile'}
+                  </button>
                 </div>
               </motion.div>
             )}
@@ -330,7 +434,7 @@ export default function SettingsPage() {
                       ))}
                     </div>
                     <p className="text-xs text-gray-500 mt-2">
-                      Click to send test emails to {session?.user?.email}
+                      Click to send test emails to {userProfile.notificationEmail || session?.user?.email}
                     </p>
                   </div>
                 </div>

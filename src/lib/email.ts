@@ -122,7 +122,7 @@ class EmailService {
         console.log('Using Ethereal email for testing:', testAccount.user)
       }
 
-      this.transporter = nodemailer.createTransporter(emailConfig)
+      this.transporter = nodemailer.createTransport(emailConfig)
       
       // Verify connection
       await this.transporter.verify()

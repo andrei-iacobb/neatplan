@@ -9,16 +9,17 @@ datasource db {
 }
 
 model User {
-  id        String        @id @default(cuid())
-  email     String        @unique
-  password  String
-  name      String?
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  isAdmin   Boolean       @default(false)
-  role      UserRole      @default(CLEANER)
-  tasks     Task[]        @relation("UserTasks")
-  sessions  UserSession[]
+  id                String        @id @default(cuid())
+  email             String        @unique
+  notificationEmail String?       // Optional separate email for notifications
+  password          String
+  name              String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  isAdmin           Boolean       @default(false)
+  role              UserRole      @default(CLEANER)
+  tasks             Task[]        @relation("UserTasks")
+  sessions          UserSession[]
 
   @@map("users")
 }
