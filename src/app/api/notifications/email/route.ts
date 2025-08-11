@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 })
       }
       // Use notification email if set, otherwise fallback to login email
-      targetEmail = targetUser.notificationEmail || targetUser.email
+      targetEmail = targetUser.email
     }
 
     if (!targetEmail) {
@@ -140,7 +140,7 @@ export async function GET(request: NextRequest) {
         where: { email: session.user.email }
       })
       if (user) {
-        email = user.notificationEmail || user.email
+        email = user.email
       } else {
         email = session.user.email
       }

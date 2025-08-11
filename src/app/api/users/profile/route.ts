@@ -66,7 +66,6 @@ export async function PUT(request: NextRequest) {
       select: {
         id: true,
         email: true,
-        notificationEmail: true,
         name: true,
         isAdmin: true,
         role: true,
@@ -100,7 +99,6 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         email: true,
-        notificationEmail: true,
         name: true,
         isAdmin: true,
         role: true,
