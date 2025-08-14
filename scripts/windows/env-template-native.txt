@@ -35,10 +35,19 @@ NEXTAUTH_URL="http://localhost:3000"
 # OPENAI_API_KEY="sk-your-openai-api-key-here"
 
 # ===============================================
+# CRON / SCHEDULED TASKS SECURITY
+# ===============================================
+# Shared secret to protect cron endpoints when not invoked by Vercel scheduled functions
+# CRON_SECRET="your-strong-cron-secret"
+
+# ===============================================
 # APPLICATION CONFIGURATION
 # ===============================================
 # Environment mode
 NODE_ENV="development"
+
+# Allowed CORS origin for API responses (avoid '*')
+# CORS_ALLOWED_ORIGIN="http://localhost:3000"
 
 # For production:
 # NODE_ENV="production"

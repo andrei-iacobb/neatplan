@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import bcrypt from 'bcrypt'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/db'
 
 export async function GET(request: Request) {
   try {
@@ -15,7 +15,18 @@ export async function GET(request: Request) {
       )
     }
 
-    const users = await prisma.user.findMany()
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        isAdmin: true,
+        role: true,
+        isBlocked: true,
+        forcePasswordChange: true,
+        temporaryUnblockUntil: true,
+      }
+    })
 
     return NextResponse.json(users)
 

@@ -3,16 +3,9 @@ services:
     build: .
     container_name: cleantrack_web
     restart: always
-    ports:
-      - "0.0.0.0:3000:3000"  # Bind to all interfaces for external access
     env_file:
       - .env  
     environment:
-      # Override only the database URL for Docker (others come from .env)
-      - DATABASE_URL=postgresql://cleantrack_user:CleanTrack2024SecurePass@db:5432/cleantrack
-      # Override the NextAuth URL for external access
-      - NEXTAUTH_URL=http://10.60.1.195:3000
-      # Override NODE_ENV for Docker development
       - NODE_ENV=development
     volumes:
       - .:/app
@@ -22,28 +15,38 @@ services:
         condition: service_healthy
     networks:
       - cleantrack_network
+    # For local development, expose only on localhost. In production, remove ports and
+    # place the app behind a reverse proxy (e.g., Traefik, Nginx) instead of binding 0.0.0.0
+    ports:
+      - "127.0.0.1:3000:3000"
 
   db:
     image: postgres:15
     container_name: cleantrack_db
     restart: always
-    ports:
-      - "5432:5432"
     environment:
-      POSTGRES_USER: cleantrack_user
-      POSTGRES_PASSWORD: CleanTrack2024SecurePass
-      POSTGRES_DB: cleantrack
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      # Prefer file-based secret for password; fallback to env var if not provided
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      # POSTGRES_PASSWORD can be used for development if secrets are not set
+      # POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       # PostgreSQL configuration for better performance
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
     volumes:
       - cleantrack_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cleantrack_user -d cleantrack"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - cleantrack_network
+    # For local development, expose DB only on localhost. In production, remove this mapping.
+    ports:
+      - "127.0.0.1:5432:5432"
+    secrets:
+      - postgres_password
 
 volumes:
   cleantrack_data:
@@ -51,3 +54,7 @@ volumes:
 networks:
   cleantrack_network:
     driver: bridge
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt

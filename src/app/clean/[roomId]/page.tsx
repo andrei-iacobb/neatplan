@@ -39,6 +39,7 @@ interface RoomSchedule {
   status: 'PENDING' | 'OVERDUE' | 'COMPLETED' | 'PAUSED' | 'NOT_DUE_YET'
   tasks: ScheduleTask[]
   estimatedDuration: string
+  completedToday?: boolean
 }
 
 interface Room {
@@ -423,7 +424,7 @@ export default function CleanRoomPage() {
             const progress = getCompletionProgress(schedule)
             const progressPercentage = progress.total > 0 ? (progress.completed / progress.total) * 100 : 0
             const isExpanded = expandedSchedules.has(schedule.id)
-            const actualStatus = getScheduleStatus(schedule)
+            const actualStatus = schedule.completedToday ? 'COMPLETED' : getScheduleStatus(schedule)
             const isDueToday = isScheduleDueToday(schedule)
             const isUrgent = isScheduleUrgent(schedule)
             const dueDateInfo = getDueDateDisplay(schedule)
@@ -471,7 +472,7 @@ export default function CleanRoomPage() {
                       
                       <div className="flex items-center gap-4 text-sm">
                         <span className={dueDateInfo.color}>
-                          {dueDateInfo.text}
+                          {schedule.completedToday ? 'Completed today' : dueDateInfo.text}
                         </span>
                         <span className="text-gray-500">•</span>
                         <div className="flex items-center gap-1 text-gray-400">

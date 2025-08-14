@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { prisma } from '@/lib/db'
+import { checkRateLimitByUserOrIp } from '@/lib/rate-limit'
 import sharp from 'sharp'
 
 // Initialize OpenAI client
@@ -118,6 +119,15 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Rate limit per user (or IP if not authed): 3 requests per minute
+    const rate = checkRateLimitByUserOrIp(request as any, 'process_document', 3, 60 * 1000)
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded. Please try again shortly.' },
+        { status: 429, headers: { 'Retry-After': String(rate.retryAfterSeconds) } }
+      )
+    }
+
     // Parse the incoming form data
     const formData = await request.formData()
     const file = formData.get('file')
@@ -251,9 +261,10 @@ export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, {
     status: 200,
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': process.env.CORS_ALLOWED_ORIGIN || process.env.NEXTAUTH_URL || request.headers.get('origin') || '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Vary': 'Origin',
     },
   })
 }
@@ -263,9 +274,10 @@ export async function GET() {
   return new NextResponse("Method not allowed", { 
     status: 405,
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': process.env.CORS_ALLOWED_ORIGIN || process.env.NEXTAUTH_URL || '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
+      'Vary': 'Origin',
     }
   })
 }

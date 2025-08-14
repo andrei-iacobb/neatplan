@@ -63,7 +63,7 @@ export function DashboardOverview() {
       const rooms = roomsRes.ok && 'json' in roomsRes ? await roomsRes.json() : []
       const equipment = equipmentRes.ok && 'json' in equipmentRes ? await equipmentRes.json() : { equipment: [] }
       const schedules = schedulesRes.ok && 'json' in schedulesRes ? await schedulesRes.json() : []
-      const activity = activityRes.ok && 'json' in activityRes ? await activityRes.json() : { recentActivity: [] }
+      const activity = activityRes.ok && 'json' in activityRes ? await activityRes.json() : { activities: [] }
 
       setStats({
         totalUsers: Array.isArray(users) ? users.length : 0,
@@ -73,7 +73,7 @@ export function DashboardOverview() {
         completedToday: 0, // TODO: Calculate from API
         overdueItems: 0,   // TODO: Calculate from API
         pendingItems: 0,   // TODO: Calculate from API
-        recentActivity: activity.recentActivity || []
+        recentActivity: activity.activities || []
       })
 
     } catch (error) {

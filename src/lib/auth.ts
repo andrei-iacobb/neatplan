@@ -33,10 +33,44 @@ export const authOptions: AuthOptions = {
           throw new Error("Invalid credentials")
         }
 
+        // Blocked handling
+        if (user.isBlocked) {
+          const now = new Date()
+          if (!user.temporaryUnblockUntil || now > user.temporaryUnblockUntil) {
+            throw new Error("Access denied")
+          }
+        }
+
         const isPasswordValid = await compare(credentials.password, user.password)
 
         if (!isPasswordValid) {
+          try {
+            const updated = await prisma.user.update({
+              where: { id: user.id },
+              data: {
+                failedLoginCount: { increment: 1 },
+                lastFailedLoginAt: new Date(),
+              },
+              select: { failedLoginCount: true }
+            })
+            if ((updated.failedLoginCount ?? 0) >= 5) {
+              await prisma.user.update({
+                where: { id: user.id },
+                data: { isBlocked: true }
+              })
+            }
+          } catch {}
           throw new Error("Invalid credentials")
+        }
+
+        // Successful login resets counters
+        if (user.failedLoginCount && user.failedLoginCount > 0) {
+          try {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { failedLoginCount: 0, lastFailedLoginAt: null }
+            })
+          } catch {}
         }
 
         return {
@@ -45,6 +79,7 @@ export const authOptions: AuthOptions = {
           name: user.name,
           role: (user as any).role,
           isAdmin: user.isAdmin,
+          forcePasswordChange: (user as any).forcePasswordChange === true,
         }
       }
     })
@@ -57,6 +92,7 @@ export const authOptions: AuthOptions = {
         session.user.email = token.email as string
         session.user.role = token.role as any
         session.user.isAdmin = token.isAdmin as boolean
+        ;(session.user as any).forcePasswordChange = (token as any).forcePasswordChange === true
       }
       return session
     },
@@ -67,6 +103,7 @@ export const authOptions: AuthOptions = {
         token.name = user.name
         token.role = user.role
         token.isAdmin = user.isAdmin
+        ;(token as any).forcePasswordChange = (user as any).forcePasswordChange === true
         
         // Create session tracking entry when user signs in
         if (account) {

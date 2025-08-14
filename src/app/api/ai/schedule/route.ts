@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { getServerSession } from 'next-auth'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { getSchedulePrimaryFrequency, inferFrequencyFromTasks } from '@/lib/frequency-mapping'
+import { checkRateLimitByUserOrIp } from '@/lib/rate-limit'
 
-const prisma = new PrismaClient()
+// Use shared Prisma client
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -302,7 +303,18 @@ async function analyzeDocumentMetadata(content: string): Promise<any> {
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession()
+    // Rate limit per user (or IP if not authed): 5 requests per minute
+    const preSession = await getServerSession()
+    const preIdentifier = preSession?.user?.email || null
+    const rate = checkRateLimitByUserOrIp(req as any, 'ai_schedule', 5, 60 * 1000, preIdentifier)
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded. Please try again shortly.' },
+        { status: 429, headers: { 'Retry-After': String(rate.retryAfterSeconds) } }
+      )
+    }
+
+    const session = preSession
     if (!session) {
       return NextResponse.json(
         { error: 'Unauthorized' },

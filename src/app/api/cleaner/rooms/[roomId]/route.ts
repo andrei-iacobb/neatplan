@@ -42,10 +42,16 @@ export async function GET(
               }
             }
           },
+          // Include schedules due soon/overdue plus those completed today
           where: {
-            status: {
-              in: ['PENDING', 'OVERDUE']
-            }
+            OR: [
+              { status: { in: ['PENDING', 'OVERDUE'] } },
+              {
+                lastCompleted: {
+                  gte: new Date(new Date().setHours(0, 0, 0, 0))
+                }
+              }
+            ]
           }
         }
       }
@@ -65,12 +71,14 @@ export async function GET(
       type: room.type,
       floor: room.floor || 'Unknown Floor',
       description: room.description,
-      schedules: room.schedules.map(roomSchedule => ({
+      schedules: room.schedules
+        .map(roomSchedule => ({
         id: roomSchedule.id,
         title: roomSchedule.schedule.title,
         frequency: roomSchedule.frequency,
         nextDue: roomSchedule.nextDue.toISOString(),
         status: roomSchedule.status,
+        completedToday: roomSchedule.lastCompleted && (new Date(roomSchedule.lastCompleted).setHours(0,0,0,0) === new Date().setHours(0,0,0,0)),
         estimatedDuration: calculateEstimatedDuration(roomSchedule.schedule.tasks),
         tasks: roomSchedule.schedule.tasks.map(task => ({
           id: task.id,
@@ -78,7 +86,13 @@ export async function GET(
           frequency: task.frequency,
           additionalNotes: task.additionalNotes
         }))
-      }))
+        })
+        .sort((a, b) => {
+          // Move completedToday to bottom
+          if (a.completedToday && !b.completedToday) return 1
+          if (!a.completedToday && b.completedToday) return -1
+          return 0
+        }))
     }
 
     return NextResponse.json(transformedRoom)

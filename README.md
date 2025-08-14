@@ -234,6 +234,12 @@ scripts\windows\start.bat
 
 1. Connect your PostgreSQL database
 2. Set environment variables
+
+### 🔐 Security & Ops
+
+- Use `CORS_ALLOWED_ORIGIN` to restrict browser access.
+- Do not expose services on `0.0.0.0` in production; terminate TLS and forward via a reverse proxy.
+- For Docker: use secrets (`secrets/postgres_password.txt`) and refer to it via `POSTGRES_PASSWORD_FILE`; avoid hardcoded passwords.
 3. Deploy!
 
 </details>

@@ -1,39 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { ScheduleStatus, ScheduleFrequency, Prisma } from '@prisma/client'
-
-function calculateNextDueDate(frequency: ScheduleFrequency, lastCompleted: Date): Date {
-  const nextDue = new Date(lastCompleted)
-  
-  switch (frequency) {
-    case ScheduleFrequency.DAILY:
-      nextDue.setDate(nextDue.getDate() + 1)
-      break
-    case ScheduleFrequency.WEEKLY:
-      nextDue.setDate(nextDue.getDate() + 7)
-      break
-    case ScheduleFrequency.BIWEEKLY:
-      nextDue.setDate(nextDue.getDate() + 14)
-      break
-    case ScheduleFrequency.MONTHLY:
-      nextDue.setMonth(nextDue.getMonth() + 1)
-      break
-    case ScheduleFrequency.QUARTERLY:
-      nextDue.setMonth(nextDue.getMonth() + 3)
-      break
-    case ScheduleFrequency.YEARLY:
-      nextDue.setFullYear(nextDue.getFullYear() + 1)
-      break
-    // case ScheduleFrequency.CUSTOM:
-    //   // For custom frequency, default to weekly
-    //   nextDue.setDate(nextDue.getDate() + 7)
-    //   break
-    default:
-      nextDue.setDate(nextDue.getDate() + 7) // Default to weekly
-  }
-  
-  return nextDue
-}
+import { ScheduleStatus, Prisma } from '@prisma/client'
+import { calculateNextDueDate } from '@/lib/schedule-utils'
 
 export async function POST(
   request: NextRequest,
@@ -60,7 +28,7 @@ export async function POST(
     }
 
     // Calculate the next due date based on frequency
-    const nextDue = calculateNextDueDate(currentSchedule.frequency, now)
+    const nextDue = calculateNextDueDate(currentSchedule.frequency as any, now)
 
     // Update everything in a transaction to ensure data consistency
     const result = await prisma.$transaction(async (tx) => {
@@ -80,8 +48,7 @@ export async function POST(
         data: {
           lastCompleted: now,
           nextDue: nextDue,
-          status: ScheduleStatus.PENDING, // Reset to pending for next cycle
-          startDate: now // Update start date to now
+          status: ScheduleStatus.PENDING // Reset to pending for next cycle
         }
       })
 

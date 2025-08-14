@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { emailService } from '@/lib/email'
 import { prisma } from '@/lib/db'
+import { checkRateLimitByUserOrIp } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,18 @@ interface EmailRequest {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    // Rate limit per user: 20 notifications per hour
+    const preSession = await getServerSession(authOptions)
+    const userIdOrEmail = preSession?.user?.email || null
+    const rate = checkRateLimitByUserOrIp(request as any, 'notifications_email', 20, 60 * 60 * 1000, userIdOrEmail)
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded for notifications. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(rate.retryAfterSeconds) } }
+      )
+    }
+
+    const session = preSession
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

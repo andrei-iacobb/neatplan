@@ -184,7 +184,7 @@ export async function PATCH(
     }
 
     // Calculate the next due date based on frequency
-    const nextDue = calculateNextDueDate(roomSchedule.frequency, now)
+    const nextDue = calculateNextDueDate(roomSchedule.frequency as any, now)
 
     // Update the room schedule and create a completion log
     const [updated] = await prisma.$transaction([
@@ -198,7 +198,7 @@ export async function PATCH(
         data: {
           lastCompleted: now,
           nextDue,
-          status: 'COMPLETED',
+          status: 'PENDING',
           completionLogs: {
             create: {
               notes,

@@ -34,6 +34,9 @@ export async function GET() {
               }
             }
           }
+        },
+        completedBy: {
+          select: { id: true, name: true, email: true }
         }
       },
       orderBy: {
@@ -90,10 +93,10 @@ export async function GET() {
       ...recentRoomCompletions.map(log => ({
         id: log.id,
         type: 'room_completion',
-        title: `Room "${log.roomSchedule.room.name}" cleaned`,
-        description: `${log.roomSchedule.schedule.title} completed`,
+        title: `${log.completedBy?.name || log.completedBy?.email || 'Cleaner'} completed "${log.roomSchedule.schedule.title}"`,
+        description: `Room "${log.roomSchedule.room.name}" cleaned`,
         timestamp: log.completedAt,
-        userEmail: null, // Not tracked in completion logs currently
+        userEmail: log.completedBy?.email || null,
         metadata: {
           roomName: log.roomSchedule.room.name,
           roomType: log.roomSchedule.room.type,

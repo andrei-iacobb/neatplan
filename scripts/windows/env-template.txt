@@ -16,6 +16,12 @@ NEXTAUTH_URL="http://localhost:3000"
 # For production with domain
 # NEXTAUTH_URL="https://yourdomain.com"
 
+# Allowed CORS origin for API responses (avoid '*')
+# CORS_ALLOWED_ORIGIN="http://localhost:3000"
+
+# Cron protection secret (used to protect scheduled routes)
+# CRON_SECRET="your-strong-cron-secret"
+
 # Optional: Email Configuration (for password resets and notifications)
 # EMAIL_SERVER_HOST="smtp.gmail.com"
 # EMAIL_SERVER_PORT=587

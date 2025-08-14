@@ -18,9 +18,9 @@ export async function PUT(
 
     const { id } = params
     const body = await request.json()
-    const { name, email, password, isAdmin } = body
+    const { name, email, password, isAdmin, isBlocked, forcePasswordChange } = body
 
-    let dataToUpdate: any = { name, email, isAdmin }
+    let dataToUpdate: any = { name, email, isAdmin, isBlocked, forcePasswordChange }
 
     if (password) {
       dataToUpdate.password = await bcrypt.hash(password, 12)

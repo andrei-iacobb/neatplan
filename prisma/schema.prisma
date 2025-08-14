@@ -20,6 +20,12 @@ model User {
   role              UserRole      @default(CLEANER)
   tasks             Task[]        @relation("UserTasks")
   sessions          UserSession[]
+  // Account security fields
+  isBlocked               Boolean      @default(false)
+  forcePasswordChange     Boolean      @default(false)
+  temporaryUnblockUntil   DateTime?
+  failedLoginCount        Int          @default(0)
+  lastFailedLoginAt       DateTime?
 
   @@map("users")
 }
@@ -154,6 +160,8 @@ model RoomScheduleCompletionLog {
   updatedAt      DateTime     @updatedAt
   completedTasks Json         @default("[]")
   roomSchedule   RoomSchedule @relation(fields: [roomScheduleId], references: [id], onDelete: Cascade)
+  completedByUserId String?
+  completedBy       User?       @relation(fields: [completedByUserId], references: [id])
 
   @@map("room_schedule_completion_logs")
 }

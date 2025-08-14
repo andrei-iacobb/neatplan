@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { ScheduleFrequency, ScheduleStatus } from '@prisma/client'
+import { ScheduleStatus } from '@prisma/client'
+import { calculateNextDueDate } from '@/lib/schedule-utils'
 
 export async function POST(
   request: Request,
@@ -75,7 +76,7 @@ export async function POST(
     }
 
     // Calculate next due date based on frequency
-    const nextDue = calculateNextDueDate(roomSchedule.frequency)
+    const nextDue = calculateNextDueDate(roomSchedule.frequency as any)
 
     // Start a transaction to update schedule and create completion log
     const result = await prisma.$transaction(async (tx) => {
@@ -85,7 +86,8 @@ export async function POST(
           roomScheduleId: scheduleId,
           completedTasks: completedTasks as any,
           notes: notes || null,
-          completedAt: new Date()
+          completedAt: new Date(),
+          completedByUserId: session.user.id
         }
       })
 
@@ -95,7 +97,7 @@ export async function POST(
           id: scheduleId
         },
         data: {
-          status: ScheduleStatus.COMPLETED, // Mark as completed, not pending
+          status: ScheduleStatus.PENDING,
           lastCompleted: new Date(),
           nextDue: nextDue
         }
@@ -128,38 +130,4 @@ export async function POST(
   }
 }
 
-function calculateNextDueDate(frequency: ScheduleFrequency): Date {
-  const now = new Date()
-  const nextDue = new Date(now)
-
-  switch (frequency) {
-    case ScheduleFrequency.DAILY:
-      nextDue.setDate(now.getDate() + 1)
-      break
-    case ScheduleFrequency.WEEKLY:
-      nextDue.setDate(now.getDate() + 7)
-      break
-    case ScheduleFrequency.BIWEEKLY:
-      nextDue.setDate(now.getDate() + 14)
-      break
-    case ScheduleFrequency.MONTHLY:
-      nextDue.setMonth(now.getMonth() + 1)
-      break
-    case ScheduleFrequency.QUARTERLY:
-      nextDue.setMonth(now.getMonth() + 3)
-      break
-    case ScheduleFrequency.YEARLY:
-      nextDue.setFullYear(now.getFullYear() + 1)
-      break
-    // case ScheduleFrequency.CUSTOM:
-    //   // For custom frequency, default to weekly
-    //   nextDue.setDate(now.getDate() + 7)
-    //   break
-    default:
-      // Default to daily if frequency is not recognized
-      nextDue.setDate(now.getDate() + 1)
-      break
-  }
-
-  return nextDue
-} 
+// unified calculateNextDueDate is used from lib

@@ -21,6 +21,21 @@ const cleanerRoutes = [
 ]
 
 export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname
+
+  // Allow scheduled cron route with trusted header or shared secret
+  if (path.startsWith('/api/cron')) {
+    const isVercelCron = request.headers.get('x-vercel-cron') !== null
+    const providedSecret = request.headers.get('x-cron-secret') || request.nextUrl.searchParams.get('secret')
+    const expectedSecret = process.env.CRON_SECRET
+
+    if (isVercelCron || (expectedSecret && providedSecret === expectedSecret)) {
+      return NextResponse.next()
+    }
+
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const token = await getToken({ req: request })
   
   // Check if the current path is a public route
@@ -33,8 +48,12 @@ export async function middleware(request: NextRequest) {
     if (token) {
       // If user is authenticated and tries to access auth page, redirect to appropriate dashboard
       if (request.nextUrl.pathname.startsWith('/auth')) {
-        const redirectPath = token.isAdmin ? '/' : '/clean'
-        return NextResponse.redirect(new URL(redirectPath, request.url))
+        const mustChange = (token as any).forcePasswordChange === true
+        const desiredPath = mustChange ? '/auth/change-password' : (token.isAdmin ? '/' : '/clean')
+        // Avoid redirect loop when already on the change-password page
+        if (request.nextUrl.pathname !== '/auth/change-password' || !mustChange) {
+          return NextResponse.redirect(new URL(desiredPath, request.url))
+        }
       }
       return NextResponse.next()
     }
@@ -48,8 +67,18 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
+  // Enforce password change before accessing app
+  const mustChange = (token as any).forcePasswordChange === true
+  if (mustChange) {
+    const isChangePasswordPage = path.startsWith('/auth/change-password')
+    const isChangePasswordApi = path.startsWith('/api/auth/change-password')
+    const isAuthStatic = path.startsWith('/_next') || path.startsWith('/favicon.ico')
+    if (!isChangePasswordPage && !isChangePasswordApi && !isAuthStatic) {
+      return NextResponse.redirect(new URL('/auth/change-password', request.url))
+    }
+  }
+
   const isAdmin = token.isAdmin as boolean
-  const path = request.nextUrl.pathname
 
   // Check if the user is trying to access admin routes
   if (adminRoutes.some(route => path.startsWith(route))) {

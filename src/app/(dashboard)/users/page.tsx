@@ -25,6 +25,9 @@ interface User {
   name: string
   email: string
   isAdmin: boolean
+  isBlocked?: boolean
+  forcePasswordChange?: boolean
+  temporaryUnblockUntil?: string | null
 }
 
 function UserFormModal({ user, onClose, onSave }: { user: Partial<User> | null, onClose: () => void, onSave: (data: any) => void }) {
@@ -264,7 +267,15 @@ export default function UsersPage() {
                   <tr key={user.id} className="hover:bg-gray-700/30 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-100">{user.name}</div>
-                      <div className="text-sm text-gray-400">{user.email}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm text-gray-400">{user.email}</div>
+                        {user.isBlocked && (!user.temporaryUnblockUntil || new Date(user.temporaryUnblockUntil) < new Date()) && (
+                          <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-red-900 text-red-200">Blocked</span>
+                        )}
+                        {user.forcePasswordChange && (
+                          <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-yellow-900 text-yellow-200">Pwd change req</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.isAdmin ? 'bg-teal-900 text-teal-200' : 'bg-gray-600 text-gray-200'}`}>
@@ -273,6 +284,43 @@ export default function UsersPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                       <button onClick={() => { setEditingUser(user); setIsModalOpen(true); }} className="p-2 text-gray-400 hover:text-teal-400 rounded-full hover:bg-gray-700 transition-colors"><Edit className="w-4 h-4" /></button>
+                      {user.isBlocked ? (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const res = await apiRequest(`/api/users/${user.id}/unblock`, { method: 'POST' })
+                              if (!res.ok) throw new Error('Failed to unblock user')
+                              toast({ description: 'User unblocked for 10 minutes. Must change password on next login.' })
+                              fetchUsers()
+                            } catch (e: any) {
+                              toast({ description: e.message, variant: 'destructive' })
+                            }
+                          }}
+                          className="p-2 text-red-300 hover:text-red-100 rounded-full hover:bg-red-900/50 transition-colors"
+                        >
+                          Unblock
+                        </button>
+                      ) : (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const res = await apiRequest(`/api/users/${user.id}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ isBlocked: true })
+                              })
+                              if (!res.ok) throw new Error('Failed to block user')
+                              toast({ description: 'User blocked' })
+                              fetchUsers()
+                            } catch (e: any) {
+                              toast({ description: e.message, variant: 'destructive' })
+                            }
+                          }}
+                          className="p-2 text-red-300 hover:text-red-100 rounded-full hover:bg-red-900/50 transition-colors"
+                        >
+                          Block
+                        </button>
+                      )}
                       <button onClick={() => setDeletingUser(user)} className="p-2 text-gray-400 hover:text-red-400 rounded-full hover:bg-gray-700 transition-colors"><Trash2 className="w-4 h-4" /></button>
                     </td>
                   </tr>
