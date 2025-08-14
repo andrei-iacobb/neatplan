@@ -1,6 +1,6 @@
 @echo off
 echo ===============================================
-echo CleanTrack Windows Server 2022 Deployment
+echo NeatPlan Windows Server 2022 Deployment
 echo ===============================================
 echo.
 
@@ -53,7 +53,7 @@ npm install -g pm2-windows-service
 echo [6/6] Setting up environment...
 if not exist ".env.production" (
     echo Creating .env.production template...
-    echo # CleanTrack Production Configuration > .env.production
+    echo # NeatPlan Production Configuration > .env.production
     echo # Database Configuration >> .env.production
     echo DATABASE_URL="your_production_database_url" >> .env.production
     echo. >> .env.production
@@ -92,6 +92,6 @@ echo - Local: http://localhost:3000
 echo - Network: http://your-server-ip:3000
 echo.
 echo Configure Windows Firewall:
-echo New-NetFirewallRule -DisplayName "CleanTrack App" -Direction Inbound -Port 3000 -Protocol TCP -Action Allow
+echo New-NetFirewallRule -DisplayName "NeatPlan App" -Direction Inbound -Port 3000 -Protocol TCP -Action Allow
 echo.
 pause 

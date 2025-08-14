@@ -4,8 +4,8 @@ echo Creating database backup...
 :: Set your database credentials here
 set DB_HOST=localhost
 set DB_PORT=5432
-set DB_USER=cleantrack_user
-set DB_NAME=cleantrack
+set DB_USER=neatplan_user
+set DB_NAME=neatplan
 
 :: Prompt for password (you can set PGPASSWORD environment variable instead)
 set /p DB_PASSWORD=Enter database password: 
@@ -19,7 +19,7 @@ set "YYYY=%dt:~0,4%" & set "MM=%dt:~4,2%" & set "DD=%dt:~6,2%"
 set "HH=%dt:~8,2%" & set "MIN=%dt:~10,2%" & set "SS=%dt:~12,2%"
 set "timestamp=%YYYY%%MM%%DD%_%HH%%MIN%%SS%"
 
-set BACKUP_FILE=backups\cleantrack_backup_%timestamp%.sql
+set BACKUP_FILE=backups\neatplan_backup_%timestamp%.sql
 
 :: Set password environment variable
 set PGPASSWORD=%DB_PASSWORD%

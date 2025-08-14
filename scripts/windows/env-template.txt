@@ -1,9 +1,9 @@
-# CleanTrack Environment Configuration Template
+# NeatPlan Environment Configuration Template
 # Copy this file to .env in the project root and update the values
 
 # Database Configuration
 # Replace with your actual database credentials
-DATABASE_URL="postgresql://cleantrack_user:your_secure_password@localhost:5432/cleantrack"
+DATABASE_URL="postgresql://neatplan_user:your_secure_password@localhost:5432/neatplan"
 
 # NextAuth Configuration
 # Generate a secure secret with: openssl rand -base64 32

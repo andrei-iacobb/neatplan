@@ -30,7 +30,7 @@ export function Logo({
   width,
   height,
   className,
-  alt = 'CleanTrack Logo',
+  alt = 'NeatPlan Logo',
   priority = false
 }: LogoProps) {
   const [imageError, setImageError] = useState(false)
@@ -119,14 +119,14 @@ export function LogoWithText({
 
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      <Logo {...logoProps} alt="CleanTrack" />
+      <Logo {...logoProps} alt="NeatPlan" />
       {showText && (
         <span className={cn(
           "font-bold text-gray-100",
           textSizeMap[textSize],
           textClassName
         )}>
-          CleanTrack
+          NeatPlan
         </span>
       )}
     </div>

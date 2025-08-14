@@ -8,9 +8,9 @@ export const ASSETS = {
   logos: {
     main: '/assets/logos/logo.png',
     // Add more logo variants here as needed
-    // light: '/assets/logos/cleantrack-logo-light.svg',
-    // dark: '/assets/logos/cleantrack-logo-dark.svg',
-    // horizontal: '/assets/logos/cleantrack-logo-horizontal.svg',
+    // light: '/assets/logos/neatplan-logo-light.svg',
+    // dark: '/assets/logos/neatplan-logo-dark.svg',
+    // horizontal: '/assets/logos/neatplan-logo-horizontal.svg',
   },
   
   // Icons

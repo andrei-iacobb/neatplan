@@ -20,7 +20,7 @@ interface EmailNotification {
 // Email templates
 const templates = {
   task_reminder: {
-    subject: 'Task Reminder - CleanTrack',
+    subject: 'Task Reminder - NeatPlan',
     html: (data: any) => `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #0D9488;">Task Reminder</h2>
@@ -32,12 +32,12 @@ const templates = {
           <p style="margin: 0; color: #64748b;">Due: ${data.dueDate}</p>
         </div>
         <p>Please complete this task on time.</p>
-        <p>Best regards,<br>CleanTrack Team</p>
+        <p>Best regards,<br>NeatPlan Team</p>
       </div>
     `
   },
   schedule_update: {
-    subject: 'Schedule Update - CleanTrack',
+    subject: 'Schedule Update - NeatPlan',
     html: (data: any) => `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #0D9488;">Schedule Update</h2>
@@ -49,12 +49,12 @@ const templates = {
           ${data.newDate ? `<p style="margin: 0; color: #64748b;">New Date: ${data.newDate}</p>` : ''}
         </div>
         <p>Please check your dashboard for the latest schedule.</p>
-        <p>Best regards,<br>CleanTrack Team</p>
+        <p>Best regards,<br>NeatPlan Team</p>
       </div>
     `
   },
   system_alert: {
-    subject: 'System Alert - CleanTrack',
+    subject: 'System Alert - NeatPlan',
     html: (data: any) => `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #DC2626;">System Alert</h2>
@@ -64,12 +64,12 @@ const templates = {
           <p style="margin: 0; color: #7f1d1d;">${data.message}</p>
         </div>
         <p>Please take appropriate action if required.</p>
-        <p>Best regards,<br>CleanTrack Team</p>
+        <p>Best regards,<br>NeatPlan Team</p>
       </div>
     `
   },
   completion_notice: {
-    subject: 'Task Completed - CleanTrack',
+    subject: 'Task Completed - NeatPlan',
     html: (data: any) => `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #059669;">Task Completed</h2>
@@ -82,7 +82,7 @@ const templates = {
           <p style="margin: 0; color: #15803d;">Completed at: ${data.completedAt}</p>
         </div>
         <p>Thank you for maintaining our cleaning standards!</p>
-        <p>Best regards,<br>CleanTrack Team</p>
+        <p>Best regards,<br>NeatPlan Team</p>
       </div>
     `
   }
@@ -147,7 +147,7 @@ class EmailService {
       }
 
       const mailOptions = {
-        from: process.env.SMTP_FROM || 'CleanTrack <noreply@cleantrack.com>',
+        from: process.env.SMTP_FROM || 'NeatPlan <noreply@neatplan.com>',
         to: notification.to,
         subject: notification.subject || template.subject,
         html: template.html(notification.data || {})
@@ -175,7 +175,7 @@ class EmailService {
   }): Promise<boolean> {
     return this.sendNotification({
       to: userEmail,
-      subject: 'Task Reminder - CleanTrack',
+      subject: 'Task Reminder - NeatPlan',
       type: 'task_reminder',
       data: taskData
     })
@@ -189,7 +189,7 @@ class EmailService {
   }): Promise<boolean> {
     return this.sendNotification({
       to: userEmail,
-      subject: 'Schedule Update - CleanTrack',
+      subject: 'Schedule Update - NeatPlan',
       type: 'schedule_update',
       data: updateData
     })
@@ -202,7 +202,7 @@ class EmailService {
   }): Promise<boolean> {
     return this.sendNotification({
       to: userEmail,
-      subject: 'System Alert - CleanTrack',
+      subject: 'System Alert - NeatPlan',
       type: 'system_alert',
       data: alertData
     })
@@ -217,7 +217,7 @@ class EmailService {
   }): Promise<boolean> {
     return this.sendNotification({
       to: userEmail,
-      subject: 'Task Completed - CleanTrack',
+      subject: 'Task Completed - NeatPlan',
       type: 'completion_notice',
       data: completionData
     })

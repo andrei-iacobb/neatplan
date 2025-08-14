@@ -1,18 +1,18 @@
-# CleanTrack Database Setup Script
-# Creates database and user for CleanTrack application
+# NeatPlan Database Setup Script
+# Creates database and user for NeatPlan application
 
 param(
-    [string]$PostgresPassword = "CleanTrack2024SecurePass",
-    [string]$DatabaseName = "cleantrack",
-    [string]$DatabaseUser = "cleantrack_user",
-    [string]$DatabasePassword = "CleanTrack2024SecurePass",
+    [string]$PostgresPassword = "NeatPlan2024SecurePass",
+    [string]$DatabaseName = "neatplan",
+    [string]$DatabaseUser = "neatplan_user",
+    [string]$DatabasePassword = "NeatPlan2024SecurePass",
     [string]$PostgresUser = "postgres",
     [string]$Host = "localhost",
     [int]$Port = 5432
 )
 
 Write-Host "===============================================" -ForegroundColor Cyan
-Write-Host "CleanTrack Database Setup" -ForegroundColor Cyan
+Write-Host "NeatPlan Database Setup" -ForegroundColor Cyan
 Write-Host "===============================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -192,10 +192,10 @@ if ($envExists) {
     # Create new .env file from template
     if (Test-Path "scripts\windows\env-template-native.txt") {
         $envContent = Get-Content "scripts\windows\env-template-native.txt" -Raw
-        $envContent = $envContent -replace 'DATABASE_URL="postgresql://cleantrack_user:CleanTrack2024SecurePass@localhost:5432/cleantrack"', "DATABASE_URL=`"$connectionString`""
+        $envContent = $envContent -replace 'DATABASE_URL="postgresql://neatplan_user:NeatPlan2024SecurePass@localhost:5432/neatplan"', "DATABASE_URL=`"$connectionString`""
     } else {
         $envContent = @"
-# CleanTrack Environment Configuration
+# NeatPlan Environment Configuration
 DATABASE_URL="$connectionString"
 NEXTAUTH_SECRET="your-super-secret-key-here-32-chars-minimum"
 NEXTAUTH_URL="http://localhost:3000"

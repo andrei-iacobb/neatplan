@@ -1,5 +1,5 @@
 @echo off
-echo Starting CleanTrack application...
+echo Starting NeatPlan application...
 echo.
 
 :: Check if .env file exists
@@ -19,7 +19,7 @@ if not exist ".next" (
     exit /b 1
 )
 
-echo CleanTrack is starting...
+echo NeatPlan is starting...
 echo Access the application at: http://localhost:3000
 echo Press Ctrl+C to stop the application
 echo.

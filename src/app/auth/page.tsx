@@ -41,7 +41,7 @@ function AuthContent() {
                 </div>
                 
                 <h1 className="text-3xl font-bold mb-2 text-gray-100 animate-glow">
-                  CleanTrack
+                  NeatPlan
                 </h1>
                 <p className="text-gray-400 text-sm leading-relaxed">
                   Professional cleaning management system
@@ -95,7 +95,7 @@ export default function AuthPage() {
                   />
                 </div>
                 <h1 className="text-3xl font-bold mb-2 text-gray-100 animate-glow">
-                  CleanTrack
+                  NeatPlan
                 </h1>
                 <p className="text-gray-400 text-sm">
                   Loading...

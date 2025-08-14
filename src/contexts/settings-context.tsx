@@ -74,7 +74,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   // Load settings from localStorage on mount
   useEffect(() => {
-    const savedSettings = localStorage.getItem('cleantrack-settings')
+    const savedSettings = localStorage.getItem('neatplan-settings')
     if (savedSettings) {
       try {
         const parsed = JSON.parse(savedSettings)
@@ -155,7 +155,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setIsLoading(true)
     try {
       // Save to localStorage
-      localStorage.setItem('cleantrack-settings', JSON.stringify(settings))
+      localStorage.setItem('neatplan-settings', JSON.stringify(settings))
       
       // TODO: Save to API endpoint
       // await fetch('/api/user/settings', {
@@ -178,14 +178,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   const resetSettings = () => {
     setSettings(defaultSettings)
-    localStorage.removeItem('cleantrack-settings')
+    localStorage.removeItem('neatplan-settings')
   }
 
   // Auto-save when settings change (if auto-save is enabled)
   useEffect(() => {
     if (settings.system.autoSave) {
       const timeoutId = setTimeout(() => {
-        localStorage.setItem('cleantrack-settings', JSON.stringify(settings))
+        localStorage.setItem('neatplan-settings', JSON.stringify(settings))
       }, 1000) // Debounce auto-save by 1 second
       
       return () => clearTimeout(timeoutId)

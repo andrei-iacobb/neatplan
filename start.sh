@@ -1,10 +1,10 @@
 #!/bin/sh
 
-echo "Starting CleanTrack application..."
+echo "Starting NeatPlan application..."
 
 # Wait for database to be ready
 echo "Waiting for database connection..."
-until pg_isready -h db -p 5432 -U cleantrack_user; do
+until pg_isready -h db -p 5432 -U neatplan_user; do
   echo "Database is unavailable - sleeping"
   sleep 1
 done

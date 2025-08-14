@@ -1,6 +1,6 @@
 module.exports = {
   apps: [{
-    name: 'cleantrack',
+    name: 'neatplan',
     script: 'node_modules/next/dist/bin/next',
     args: 'start',
     cwd: process.cwd(),

@@ -1,8 +1,8 @@
-# 🧹 CleanTrack
+# 🧹 NeatPlan
 
 <div align="center">
 
-![CleanTrack Logo](https://via.placeholder.com/200x100/4F46E5/FFFFFF?text=CleanTrack)
+![NeatPlan Logo](https://via.placeholder.com/200x100/4F46E5/FFFFFF?text=NeatPlan)
 
 **A comprehensive cleaning management system with real-time tracking and mobile support**
 
@@ -101,8 +101,8 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/cleantrack.git
-cd cleantrack
+git clone https://github.com/yourusername/neatplan.git
+cd neatplan
 
 # Install dependencies
 npm install
@@ -131,8 +131,8 @@ npm run dev
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/yourusername/cleantrack.git
-cd cleantrack
+git clone https://github.com/yourusername/neatplan.git
+cd neatplan
 ```
 
 ### 2. Install Dependencies
@@ -145,7 +145,7 @@ yarn install
 ### 3. Database Setup
 ```bash
 # Create PostgreSQL database
-createdb cleantrack
+createdb neatplan
 
 # Generate Prisma client
 npx prisma generate
@@ -165,7 +165,7 @@ cp .env.example .env
 
 Edit `.env` file:
 ```env
-DATABASE_URL="postgresql://username:password@localhost:5432/cleantrack"
+DATABASE_URL="postgresql://username:password@localhost:5432/neatplan"
 NEXTAUTH_SECRET="your-secret-key-here"
 NEXTAUTH_URL="http://localhost:3000"
 ```
@@ -190,9 +190,9 @@ npm start
 
 | Role | Email | Password |
 |------|-------|----------|
-| **Admin** | `admin@cleantrack.com` | `admin123` |
-| **Cleaner** | `cleaner@cleantrack.com` | `cleaner123` |
-| **User** | `user@cleantrack.com` | `user123` |
+| **Admin** | `admin@neatplan.com` | `admin123` |
+| **Cleaner** | `cleaner@neatplan.com` | `cleaner123` |
+| **User** | `user@neatplan.com` | `user123` |
 
 ### Admin Workflow
 
@@ -230,7 +230,7 @@ scripts\windows\start.bat
 <details>
 <summary><b>Deploy to Vercel</b></summary>
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyourusername%2Fcleantrack)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyourusername%2Fneatplan)
 
 1. Connect your PostgreSQL database
 2. Set environment variables
@@ -239,7 +239,7 @@ scripts\windows\start.bat
 
 - Use `CORS_ALLOWED_ORIGIN` to restrict browser access.
 - Do not expose services on `0.0.0.0` in production; terminate TLS and forward via a reverse proxy.
-- For Docker: use secrets (`secrets/postgres_password.txt`) and refer to it via `POSTGRES_PASSWORD_FILE`; avoid hardcoded passwords.
+- For Docker: store the DB password in `.env` as `POSTGRES_PASSWORD` and use it directly. Do not commit `.env`.
 3. Deploy!
 
 </details>
@@ -247,7 +247,7 @@ scripts\windows\start.bat
 <details>
 <summary><b>Deploy to Railway</b></summary>
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/cleantrack)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/neatplan)
 
 1. One-click deployment
 2. Automatic PostgreSQL provisioning
@@ -260,10 +260,10 @@ scripts\windows\start.bat
 
 ```bash
 # Build image
-docker build -t cleantrack .
+docker build -t neatplan .
 
 # Run container
-docker run -p 3000:3000 --env-file .env cleantrack
+docker run -p 3000:3000 --env-file .env neatplan
 ```
 
 </details>
@@ -374,7 +374,7 @@ We welcome contributions! Here's how you can help:
 ### 📋 Development Setup
 ```bash
 # Clone your fork
-git clone https://github.com/yourusername/cleantrack.git
+git clone https://github.com/yourusername/neatplan.git
 
 # Install dependencies
 npm install

@@ -1,14 +1,14 @@
-# CleanTrack Native Windows Environment Configuration
+# NeatPlan Native Windows Environment Configuration
 # Copy this file to .env in the project root and update the values
 
 # ===============================================
 # DATABASE CONFIGURATION (Native PostgreSQL)
 # ===============================================
 # Native local PostgreSQL connection
-DATABASE_URL="postgresql://cleantrack_user:CleanTrack2024SecurePass@localhost:5432/cleantrack"
+DATABASE_URL="postgresql://neatplan_user:NeatPlan2024SecurePass@localhost:5432/neatplan"
 
 # Alternative if using different credentials:
-# DATABASE_URL="postgresql://postgres:your_postgres_password@localhost:5432/cleantrack"
+# DATABASE_URL="postgresql://postgres:your_postgres_password@localhost:5432/neatplan"
 
 # ===============================================
 # NEXTAUTH CONFIGURATION
@@ -90,7 +90,7 @@ PORT=3000
 # WINDOWS-SPECIFIC CONFIGURATION
 # ===============================================
 # Windows service name (if installing as service)
-# SERVICE_NAME="CleanTrack"
+# SERVICE_NAME="NeatPlan"
 
 # Windows firewall port (should match PORT above)
 # FIREWALL_PORT=3000

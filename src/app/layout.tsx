@@ -10,7 +10,7 @@ import { SettingsProvider } from "@/contexts/settings-context";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "CleanTrack",
+  title: "NeatPlan",
   description: "Track your cleaning tasks and schedule",
 };
 

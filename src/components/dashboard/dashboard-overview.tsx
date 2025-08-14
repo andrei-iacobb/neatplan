@@ -40,6 +40,7 @@ export function DashboardOverview() {
   })
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [weekly, setWeekly] = useState<number[]>([])
 
   useEffect(() => {
     fetchDashboardStats()
@@ -50,12 +51,13 @@ export function DashboardOverview() {
       setIsLoading(true)
       
       // Fetch data from multiple endpoints
-      const [usersRes, roomsRes, equipmentRes, schedulesRes, activityRes] = await Promise.all([
+      const [usersRes, roomsRes, equipmentRes, schedulesRes, activityRes, weeklyRes] = await Promise.all([
         apiRequest('/api/users').catch(() => ({ ok: false })),
         apiRequest('/api/rooms').catch(() => ({ ok: false })),
         apiRequest('/api/admin/equipment').catch(() => ({ ok: false })),
         apiRequest('/api/schedules').catch(() => ({ ok: false })),
-        apiRequest('/api/admin/recent-activity').catch(() => ({ ok: false }))
+        apiRequest('/api/admin/recent-activity').catch(() => ({ ok: false })),
+        apiRequest('/api/admin/completion-stats').catch(() => ({ ok: false }))
       ])
 
       // Process the data
@@ -64,6 +66,7 @@ export function DashboardOverview() {
       const equipment = equipmentRes.ok && 'json' in equipmentRes ? await equipmentRes.json() : { equipment: [] }
       const schedules = schedulesRes.ok && 'json' in schedulesRes ? await schedulesRes.json() : []
       const activity = activityRes.ok && 'json' in activityRes ? await activityRes.json() : { activities: [] }
+      const weeklyJson = weeklyRes.ok && 'json' in weeklyRes ? await weeklyRes.json() : { counts: [] }
 
       setStats({
         totalUsers: Array.isArray(users) ? users.length : 0,
@@ -75,6 +78,8 @@ export function DashboardOverview() {
         pendingItems: 0,   // TODO: Calculate from API
         recentActivity: activity.activities || []
       })
+
+      setWeekly(Array.isArray(weeklyJson.counts) ? weeklyJson.counts : [])
 
     } catch (error) {
       console.error('Error fetching dashboard stats:', error)
@@ -201,6 +206,14 @@ export function DashboardOverview() {
         ))}
       </div>
 
+      {/* Weekly Completion */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-100 mb-4">Weekly Completion</h2>
+        <div className="card backdrop-blur-sm p-6 shadow-lg">
+          <SimpleBars values={weekly.length ? weekly : [0,0,0,0,0,0,0]} />
+        </div>
+      </div>
+
       {/* Quick Actions */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold text-gray-100 mb-4">Quick Actions</h2>
@@ -250,6 +263,24 @@ export function DashboardOverview() {
           )}
         </div>
       </div>
+    </div>
+  )
+} 
+
+function SimpleBars({ values }: { values: number[] }) {
+  const max = Math.max(1, ...values)
+  return (
+    <div className="h-28 flex items-end gap-2">
+      {values.map((v, i) => (
+        <motion.div
+          key={i}
+          initial={{ height: 0, opacity: 0.7 }}
+          animate={{ height: `${Math.round((v / max) * 100)}%`, opacity: 1 }}
+          transition={{ duration: 0.6, delay: i * 0.05 }}
+          className="w-6 rounded-md bg-gradient-to-t from-blue-600/70 to-teal-400/70 border border-blue-400/20"
+          title={`${v}`}
+        />
+      ))}
     </div>
   )
 } 

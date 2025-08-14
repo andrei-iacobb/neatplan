@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo CleanTrack Windows Installation Script
+echo NeatPlan Windows Installation Script
 echo ========================================
 echo.
 
@@ -71,7 +71,7 @@ echo 2. Run 'start.bat' to start the application
 echo 3. Access the application at http://localhost:3000
 echo.
 echo Default login credentials:
-echo Admin: admin@cleantrack.com / admin123
-echo Cleaner: cleaner@cleantrack.com / cleaner123
+echo Admin: admin@neatplan.com / admin123
+echo Cleaner: cleaner@neatplan.com / cleaner123
 echo.
 pause 

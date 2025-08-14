@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
             
             <div style="background: #e0f2fe; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3 style="color: #0369a1; margin-top: 0;">📧 Email Delivery Ready</h3>
-              <p style="color: #0369a1; margin: 8px 0;">Your CleanTrack application can now send notifications:</p>
+              <p style="color: #0369a1; margin: 8px 0;">Your NeatPlan application can now send notifications:</p>
               <ul style="color: #0369a1; margin: 8px 0 0 20px;">
                 <li>Task reminders</li>
                 <li>Schedule updates</li>
@@ -97,14 +97,14 @@ export async function POST(request: NextRequest) {
             <div style="text-align: center; margin-top: 30px;">
               <p style="color: #64748b; font-size: 14px;">
                 This email was sent automatically to test your SMTP configuration.<br>
-                You can now safely enable email notifications in your CleanTrack settings.
+                You can now safely enable email notifications in your NeatPlan settings.
               </p>
             </div>
           </div>
           
           <div style="background: #1e293b; padding: 20px; text-align: center;">
             <p style="color: #94a3b8; margin: 0; font-size: 14px;">
-              © 2025 CleanTrack - Professional Cleaning Management System
+              © 2025 NeatPlan - Professional Cleaning Management System
             </p>
           </div>
         </div>
@@ -113,16 +113,16 @@ export async function POST(request: NextRequest) {
       const info = await transporter.sendMail({
         from: config.from,
         to: session?.user?.email || config.user,
-        subject: '🧹 CleanTrack SMTP Test - Configuration Successful!',
+        subject: '🧹 NeatPlan SMTP Test - Configuration Successful!',
         html: testEmailHtml,
         text: `
-CleanTrack SMTP Test - Configuration Successful!
+NeatPlan SMTP Test - Configuration Successful!
 
 ✅ Connection Established
 Successfully connected to your SMTP server: ${config.host}:${config.port}
 
 📧 Email Delivery Ready
-Your CleanTrack application can now send notifications:
+Your NeatPlan application can now send notifications:
 - Task reminders
 - Schedule updates  
 - System alerts
@@ -135,7 +135,7 @@ Authentication: ${config.user}
 Test Time: ${new Date().toLocaleString()}
 
 This email was sent automatically to test your SMTP configuration.
-You can now safely enable email notifications in your CleanTrack settings.
+You can now safely enable email notifications in your NeatPlan settings.
         `
       })
 

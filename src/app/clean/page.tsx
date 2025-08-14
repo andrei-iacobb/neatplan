@@ -970,9 +970,25 @@ function RoomCard({ room, index, priority }: RoomCardProps) {
             </div>
           </div>
         </div>
+
+        {/* Bottom-integrated progress bar */}
+        <div className="mt-4 h-2 rounded-full bg-gray-800/60 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-blue-500 to-teal-400"
+            style={{ width: `${computeRoomProgressPercent(room)}%` }}
+          />
+        </div>
       </Link>
     </motion.div>
   )
+}
+
+function computeRoomProgressPercent(room: Room): number {
+  const total = room.summary?.totalTasks || 0
+  const completed = room.summary?.completedCount || 0
+  if (!total) return 0
+  const pct = Math.max(0, Math.min(100, Math.round((completed / total) * 100)))
+  return pct
 }
 
 // NEW: Equipment Card Component

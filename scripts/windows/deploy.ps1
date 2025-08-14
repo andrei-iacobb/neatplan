@@ -1,4 +1,4 @@
-# CleanTrack Windows Server 2022 PowerShell Deployment Script
+# NeatPlan Windows Server 2022 PowerShell Deployment Script
 # Run this script as Administrator
 
 param(
@@ -23,7 +23,7 @@ function Get-ServerIP {
 }
 
 Write-Host "===============================================" -ForegroundColor Cyan
-Write-Host "CleanTrack Windows Server 2022 Deployment" -ForegroundColor Cyan
+Write-Host "NeatPlan Windows Server 2022 Deployment" -ForegroundColor Cyan
 Write-Host "===============================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -115,7 +115,7 @@ if (-not [string]::IsNullOrEmpty($Domain)) {
 # Create .env.production if it doesn't exist
 if (-not (Test-Path ".env.production")) {
     $envContent = @"
-# CleanTrack Production Configuration
+# NeatPlan Production Configuration
 # Generated on $(Get-Date)
 
 # Database Configuration
@@ -142,16 +142,16 @@ PORT=$Port
 # Step 7: Configure Windows Firewall
 Write-Host "[7/8] Configuring Windows Firewall..." -ForegroundColor Blue
 try {
-    $existingRule = Get-NetFirewallRule -DisplayName "CleanTrack App" -ErrorAction SilentlyContinue
+    $existingRule = Get-NetFirewallRule -DisplayName "NeatPlan App" -ErrorAction SilentlyContinue
     if (-not $existingRule) {
-        New-NetFirewallRule -DisplayName "CleanTrack App" -Direction Inbound -Port $Port -Protocol TCP -Action Allow | Out-Null
+        New-NetFirewallRule -DisplayName "NeatPlan App" -Direction Inbound -Port $Port -Protocol TCP -Action Allow | Out-Null
         Write-Host "✅ Firewall rule created for port $Port" -ForegroundColor Green
     } else {
         Write-Host "⚠️  Firewall rule already exists" -ForegroundColor Yellow
     }
 } catch {
     Write-Host "⚠️  Could not configure firewall automatically" -ForegroundColor Yellow
-    Write-Host "   Run manually: New-NetFirewallRule -DisplayName 'CleanTrack App' -Direction Inbound -Port $Port -Protocol TCP -Action Allow" -ForegroundColor Gray
+    Write-Host "   Run manually: New-NetFirewallRule -DisplayName 'NeatPlan App' -Direction Inbound -Port $Port -Protocol TCP -Action Allow" -ForegroundColor Gray
 }
 
 # Step 8: Optional IIS setup
@@ -201,9 +201,9 @@ Write-Host "   Network: $nextAuthUrl"
 Write-Host ""
 
 Write-Host "📊 Useful Commands:" -ForegroundColor Yellow
-Write-Host "   View logs: pm2 logs cleantrack"
-Write-Host "   Restart app: pm2 restart cleantrack"
-Write-Host "   Stop app: pm2 stop cleantrack"
+Write-Host "   View logs: pm2 logs neatplan"
+Write-Host "   Restart app: pm2 restart neatplan"
+Write-Host "   Stop app: pm2 stop neatplan"
 Write-Host "   App status: pm2 status"
 Write-Host ""
 

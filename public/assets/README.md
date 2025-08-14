@@ -1,13 +1,13 @@
-# CleanTrack Assets
+# NeatPlan Assets
 
-This folder contains all static assets for the CleanTrack application.
+This folder contains all static assets for the NeatPlan application.
 
 ## Folder Structure
 
 ```
 public/assets/
 ├── logos/              # Application logos and branding
-│   └── cleantrack-logo.svg
+│   └── neatplan-logo.svg
 ├── icons/              # Icons and favicons
 └── images/             # Other images and graphics
 ```
@@ -30,11 +30,11 @@ public/assets/
 
 You can create different versions of your logo:
 
-- `cleantrack-logo.svg` - Main logo (current)
-- `cleantrack-logo-light.svg` - Light theme variant
-- `cleantrack-logo-dark.svg` - Dark theme variant
-- `cleantrack-logo-horizontal.svg` - Horizontal layout
-- `cleantrack-logo-mark.svg` - Logo mark only (no text)
+- `neatplan-logo.svg` - Main logo (current)
+- `neatplan-logo-light.svg` - Light theme variant
+- `neatplan-logo-dark.svg` - Dark theme variant
+- `neatplan-logo-horizontal.svg` - Horizontal layout
+- `neatplan-logo-mark.svg` - Logo mark only (no text)
 
 ### Usage Examples
 
@@ -67,10 +67,10 @@ Update `src/lib/assets.ts` when adding new logo variants:
 ```tsx
 export const ASSETS = {
   logos: {
-    main: '/assets/logos/cleantrack-logo.svg',
-    light: '/assets/logos/cleantrack-logo-light.svg',
-    dark: '/assets/logos/cleantrack-logo-dark.svg',
-    horizontal: '/assets/logos/cleantrack-logo-horizontal.svg',
+    main: '/assets/logos/neatplan-logo.svg',
+    light: '/assets/logos/neatplan-logo-light.svg',
+    dark: '/assets/logos/neatplan-logo-dark.svg',
+    horizontal: '/assets/logos/neatplan-logo-horizontal.svg',
   }
 }
 ```
@@ -79,7 +79,7 @@ export const ASSETS = {
 
 1. **Use SVG when possible** - Better for responsive design
 2. **Optimize images** - Compress files to reduce bundle size
-3. **Consistent naming** - Follow the `cleantrack-logo-variant.ext` pattern
+3. **Consistent naming** - Follow the `neatplan-logo-variant.ext` pattern
 4. **Update configuration** - Always update `assets.ts` when adding files
 5. **Test different sizes** - Ensure logos look good at all sizes
 
@@ -91,4 +91,4 @@ The current logo is a simple SVG with:
 - 64x64px default size
 - Scalable to any dimension
 
-You can replace `cleantrack-logo.svg` with your own logo file to update the branding throughout the entire application. 
+You can replace `neatplan-logo.svg` with your own logo file to update the branding throughout the entire application. 

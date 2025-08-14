@@ -7,12 +7,12 @@ async function main() {
   // Create or update admin user
   const adminPassword = await hash('admin123', 12)
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@cleantrack.com' },
+    where: { email: 'admin@neatplan.com' },
     update: {
       isAdmin: true,
     },
     create: {
-      email: 'admin@cleantrack.com',
+      email: 'admin@neatplan.com',
       password: adminPassword,
       name: 'System Administrator',
       isAdmin: true,
@@ -23,12 +23,12 @@ async function main() {
   // Create or update cleaner user
   const cleanerPassword = await hash('cleaner123', 12)
   const cleaner = await prisma.user.upsert({
-    where: { email: 'cleaner@cleantrack.com' },
+    where: { email: 'cleaner@neatplan.com' },
     update: {
       isAdmin: false,
     },
     create: {
-      email: 'cleaner@cleantrack.com',
+      email: 'cleaner@neatplan.com',
       password: cleanerPassword,
       name: 'Sarah Johnson',
       isAdmin: false,
@@ -39,12 +39,12 @@ async function main() {
   // Create or update regular user
   const userPassword = await hash('user123', 12)
   const user = await prisma.user.upsert({
-    where: { email: 'user@cleantrack.com' },
+    where: { email: 'user@neatplan.com' },
     update: {
       isAdmin: false,
     },
     create: {
-      email: 'user@cleantrack.com',
+      email: 'user@neatplan.com',
       password: userPassword,
       name: 'Michael Chen',
       isAdmin: false,

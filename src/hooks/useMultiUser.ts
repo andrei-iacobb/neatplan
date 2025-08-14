@@ -16,7 +16,7 @@ interface SessionUser {
   isAdmin: boolean
 }
 
-const STORAGE_KEY = 'cleantrack_multi_sessions'
+const STORAGE_KEY = 'neatplan_multi_sessions'
 const MAX_SESSIONS = 5
 
 export function useMultiUser() {

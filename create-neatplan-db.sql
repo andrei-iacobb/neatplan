@@ -32,3 +32,5 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO neatplan_use
 
 -- Display success message
 SELECT 'NeatPlan database and user created successfully!' AS result;
+
+

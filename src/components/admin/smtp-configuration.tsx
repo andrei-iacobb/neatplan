@@ -324,7 +324,7 @@ export function SMTPConfiguration() {
                 type="email"
                 value={config.from}
                 onChange={(e) => handleConfigChange('from', e.target.value)}
-                placeholder="CleanTrack <noreply@yourcompany.com>"
+                placeholder="NeatPlan <noreply@yourcompany.com>"
                 className="input-primary w-full px-3 py-2 rounded-lg"
               />
               <p className="text-xs text-gray-500 mt-1">

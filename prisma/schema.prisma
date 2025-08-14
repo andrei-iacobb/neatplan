@@ -20,6 +20,7 @@ model User {
   role              UserRole      @default(CLEANER)
   tasks             Task[]        @relation("UserTasks")
   sessions          UserSession[]
+  roomScheduleCompletionLogs RoomScheduleCompletionLog[]
   // Account security fields
   isBlocked               Boolean      @default(false)
   forcePasswordChange     Boolean      @default(false)

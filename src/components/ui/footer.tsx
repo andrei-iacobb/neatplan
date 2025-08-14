@@ -8,7 +8,7 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-4 py-2">
         <div className="text-center">
           <p className="text-xs text-gray-400">
-            © {currentYear} CleanTrack. All rights reserved. Developed by{' '}
+            © {currentYear} NeatPlan. All rights reserved. Developed by{' '}
             <a 
               href="https://andrei.iacob.uk/" 
               target="_blank" 

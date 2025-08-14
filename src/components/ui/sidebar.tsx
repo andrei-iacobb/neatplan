@@ -107,7 +107,7 @@ export function Sidebar() {
                   <Logo size="sm" />
                 </motion.div>
                   
-                {/* CleanTrack text - appears when expanded */}
+                {/* NeatPlan text - appears when expanded */}
                 <motion.div
                   animate={{ 
                     opacity: isExpanded ? 1 : 0,
@@ -120,7 +120,7 @@ export function Sidebar() {
                   }}
                   className="ml-3 font-bold text-gray-100 text-xl whitespace-nowrap"
                 >
-                  CleanTrack
+                  NeatPlan
                 </motion.div>
               </div>
             </div>

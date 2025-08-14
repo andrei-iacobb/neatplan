@@ -141,7 +141,7 @@ export default function CleanLayout({
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="text-blue-400 font-bold text-xl">CleanTrack</div>
+              <div className="text-blue-400 font-bold text-xl">NeatPlan</div>
               <span className="text-gray-400 text-sm">Cleaner Portal</span>
             </div>
             

@@ -1,8 +1,8 @@
-# CleanTrack PostgreSQL Installation Script for Windows
+# NeatPlan PostgreSQL Installation Script for Windows
 # Run as Administrator
 
 param(
-    [string]$PostgresPassword = "CleanTrack2024SecurePass",
+    [string]$PostgresPassword = "NeatPlan2024SecurePass",
     [string]$InstallPath = "C:\Program Files\PostgreSQL\15",
     [switch]$SkipDownload = $false,
     [switch]$Silent = $false
@@ -16,7 +16,7 @@ function Test-Administrator {
 }
 
 Write-Host "===============================================" -ForegroundColor Cyan
-Write-Host "CleanTrack PostgreSQL Installation" -ForegroundColor Cyan
+Write-Host "NeatPlan PostgreSQL Installation" -ForegroundColor Cyan
 Write-Host "===============================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -45,7 +45,7 @@ if ($postgresService) {
     
     Write-Host ""
     Write-Host "📝 Next steps:"
-    Write-Host "1. Run setup-database.ps1 to create the CleanTrack database"
+    Write-Host "1. Run setup-database.ps1 to create the NeatPlan database"
     Write-Host "2. Or manually create database using pgAdmin"
     exit 0
 }
@@ -87,7 +87,7 @@ if ($chocoInstalled -and -not $SkipDownload) {
             Write-Host "   Username: postgres"
             Write-Host "   Password: $PostgresPassword"
             Write-Host ""
-            Write-Host "🔄 Next: Run setup-database.ps1 to create CleanTrack database"
+            Write-Host "🔄 Next: Run setup-database.ps1 to create NeatPlan database"
             exit 0
         }
     } catch {
@@ -180,7 +180,7 @@ try {
         Write-Host ""
         Write-Host "📝 Next Steps:"
         Write-Host "1. Run: .\scripts\windows\setup-database.ps1"
-        Write-Host "2. Or manually create CleanTrack database using pgAdmin"
+        Write-Host "2. Or manually create NeatPlan database using pgAdmin"
         Write-Host ""
         Write-Host "🔍 Test Connection:"
         Write-Host "   psql -U postgres -h localhost -c '\l'"
@@ -208,4 +208,4 @@ try {
 }
 
 Write-Host ""
-Write-Host "✅ Ready for CleanTrack database setup!" -ForegroundColor Green 
+Write-Host "✅ Ready for NeatPlan database setup!" -ForegroundColor Green 
