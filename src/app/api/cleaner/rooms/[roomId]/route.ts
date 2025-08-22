@@ -86,13 +86,13 @@ export async function GET(
           frequency: task.frequency,
           additionalNotes: task.additionalNotes
         }))
-        })
+        }))
         .sort((a, b) => {
           // Move completedToday to bottom
           if (a.completedToday && !b.completedToday) return 1
           if (!a.completedToday && b.completedToday) return -1
           return 0
-        }))
+        })
     }
 
     return NextResponse.json(transformedRoom)

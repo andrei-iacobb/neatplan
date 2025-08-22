@@ -5,11 +5,18 @@ import { prisma } from '@/lib/db'
 import { getSchedulePrimaryFrequency, inferFrequencyFromTasks } from '@/lib/frequency-mapping'
 import { checkRateLimitByUserOrIp } from '@/lib/rate-limit'
 
-// Use shared Prisma client
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// Lazy OpenAI client to avoid build-time env errors
+let openaiClient: OpenAI | null = null
+function getOpenAI(): OpenAI {
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) {
+    throw new Error('OpenAI API key not configured')
+  }
+  if (!openaiClient) {
+    openaiClient = new OpenAI({ apiKey })
+  }
+  return openaiClient
+}
 
 // Simple text processing without natural library
 
@@ -227,7 +234,7 @@ async function extractTasksFromChunk(chunk: string): Promise<any[]> {
     console.log('Chunk content preview:', chunk.substring(0, 500))
     console.log('================================')
     
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: "gpt-4",
       messages: [
         { role: "system", content: TASK_EXTRACTION_PROMPT },
@@ -276,7 +283,7 @@ async function analyzeDocumentMetadata(content: string): Promise<any> {
     // Use only the first part of the document for metadata (titles, headers, etc.)
     const metadataContent = content.substring(0, MAX_TOKENS_PER_REQUEST * CHARS_PER_TOKEN / 2)
     
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: "gpt-4",
       messages: [
         { role: "system", content: ANALYSIS_PROMPT },
@@ -322,7 +329,7 @@ export async function POST(req: Request) {
       )
     }
 
-    if (!openai.apiKey) {
+    if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
         { error: 'OpenAI API key not configured' },
         { status: 500 }

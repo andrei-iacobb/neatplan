@@ -4,10 +4,18 @@ import { prisma } from '@/lib/db'
 import { checkRateLimitByUserOrIp } from '@/lib/rate-limit'
 import sharp from 'sharp'
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-})
+// Lazy OpenAI client
+let openaiClient: OpenAI | null = null
+function getOpenAI(): OpenAI {
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) {
+    throw new Error('OpenAI API key not configured')
+  }
+  if (!openaiClient) {
+    openaiClient = new OpenAI({ apiKey })
+  }
+  return openaiClient
+}
 
 // Force dynamic behavior for the API route
 export const dynamic = 'force-dynamic'
@@ -174,7 +182,7 @@ export async function POST(request: NextRequest) {
       const base64Image = imageBuffer.toString('base64')
       
       // Use Vision API for image
-      const visionResponse = await openai.chat.completions.create({
+      const visionResponse = await getOpenAI().chat.completions.create({
         model: "gpt-4-vision-preview",
         messages: [
           {
