@@ -113,25 +113,32 @@ export default function DemoPage() {
 
 function SegmentedRoleToggle({ role, onChange }: { role: DemoRole; onChange: (r: DemoRole) => void }) {
   return (
-    <div className="relative mt-8 inline-flex rounded-2xl bg-gray-800/70 border border-gray-700/70">
-      <motion.div
-        className="absolute top-1 bottom-1 w-1/2 rounded-xl"
-        animate={{ left: role === "ADMIN" ? 4 : '50%' }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        style={{ background: 'linear-gradient(135deg, rgba(59,130,246,.25), rgba(45,212,191,.25))' }}
-      />
-      <button
-        onClick={() => onChange("ADMIN")}
-        className={`relative z-10 px-6 py-2 text-sm md:text-base rounded-2xl transition-colors ${role === 'ADMIN' ? 'text-white' : 'text-gray-300 hover:text-white'}`}
-      >
-        <span className="opacity-70 mr-2">View as</span> Admin
-      </button>
-      <button
-        onClick={() => onChange("CLEANER")}
-        className={`relative z-10 px-6 py-2 text-sm md:text-base rounded-2xl transition-colors ${role === 'CLEANER' ? 'text-white' : 'text-gray-300 hover:text-white'}`}
-      >
-        Cleaner
-      </button>
+    <div className="flex items-center mt-8">
+      {/* View as label */}
+      <span className="px-4 py-2 text-sm md:text-base text-gray-400 bg-gray-800/70 border border-gray-700/70 rounded-l-2xl select-none">
+        View as
+      </span>
+      {/* Toggle group */}
+      <div className="relative flex w-64 rounded-r-2xl bg-gray-800/70 border-t border-b border-r border-gray-700/70">
+        <motion.div
+          className="absolute top-1 bottom-1 w-[48%] rounded-xl shadow-lg border border-blue-400/20"
+          animate={{ left: role === "ADMIN" ? 4 : 'calc(50% + 2px)' }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          style={{ background: 'linear-gradient(135deg, rgba(59,130,246,.25), rgba(45,212,191,.25))' }}
+        />
+        <button
+          onClick={() => onChange("ADMIN")}
+          className={`relative z-10 w-1/2 px-6 py-2 text-sm md:text-base rounded-r-none rounded-l-xl transition-colors ${role === 'ADMIN' ? 'text-white' : 'text-gray-300 hover:text-white'}`}
+        >
+          Admin
+        </button>
+        <button
+          onClick={() => onChange("CLEANER")}
+          className={`relative z-10 w-1/2 px-6 py-2 text-sm md:text-base rounded-l-none rounded-r-xl transition-colors ${role === 'CLEANER' ? 'text-white' : 'text-gray-300 hover:text-white'}`}
+        >
+          Cleaner
+        </button>
+      </div>
     </div>
   )
 }
