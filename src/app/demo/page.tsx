@@ -17,6 +17,15 @@ import {
   Rocket,
   CheckCircle2,
   BadgeCheck,
+  Bot,
+  Upload,
+  Mail,
+  Activity,
+  History,
+  ArrowLeftRight,
+  Gauge,
+  KeyRound,
+  Clock,
 } from "lucide-react"
 
 type DemoRole = "ADMIN" | "CLEANER"
@@ -303,6 +312,15 @@ function Highlights() {
         <Pill icon={Wrench} text="Equipment" />
         <Pill icon={ShieldCheck} text="RBAC" />
         <Pill icon={CheckCircle2} text="Task tracking" />
+        <Pill icon={Bot} text="AI extraction" />
+        <Pill icon={Upload} text="Document upload" />
+        <Pill icon={Mail} text="Email notifications" />
+        <Pill icon={Clock} text="Cron automation" />
+        <Pill icon={Activity} text="Health checks" />
+        <Pill icon={Gauge} text="Rate limiting" />
+        <Pill icon={History} text="Recent activity" />
+        <Pill icon={ArrowLeftRight} text="Account switch" />
+        <Pill icon={KeyRound} text="Password policy" />
       </div>
     </Card>
   )
