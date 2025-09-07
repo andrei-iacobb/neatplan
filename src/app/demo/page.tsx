@@ -32,6 +32,8 @@ type DemoRole = "ADMIN" | "CLEANER"
 
 export default function DemoPage() {
   const [role, setRole] = useState<DemoRole>("ADMIN")
+  const [scenario, setScenario] = useState<'normal' | 'overdue' | 'equipment'>('normal')
+  const [showDemoView, setShowDemoView] = useState(false)
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950 text-gray-100">
@@ -55,24 +57,64 @@ export default function DemoPage() {
             A modern cleaning operations platform for admins and cleaners. Explore how each role works using the toggle below.
           </p>
 
-          {/* Role Segmented Control */}
-          <SegmentedRoleToggle role={role} onChange={setRole} />
+          <div className="mt-6">
+            <button onClick={() => setShowDemoView(true)} className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600/70 to-teal-500/70 text-white border border-blue-500/40 hover:from-blue-600 hover:to-teal-500 transition-colors text-sm" aria-label="Open demo view">
+              See Demo
+            </button>
+          </div>
         </div>
       </section>
 
       {/* Preview */}
-      <section className="max-w-7xl mx-auto px-4 py-8">
+      <section className="max-w-7xl mx-auto px-4 py-6">
         <motion.div
           key={role}
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-5"
         >
-          {role === "ADMIN" ? <AdminPreview /> : <CleanerPreview />}
-          <Highlights />
+          <div className="lg:col-span-2">
+            <Highlights />
+          </div>
         </motion.div>
       </section>
+
+      {/* Inline Demo Modal */}
+      {showDemoView && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowDemoView(false)} />
+          <div className="relative max-w-5xl w-[92%] md:w-[80%] lg:w-[70%] max-h-[85vh] overflow-auto rounded-2xl border border-gray-700/60 bg-gray-900/90 backdrop-blur-md shadow-2xl p-4 md:p-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold">Demo View</h3>
+              <button onClick={() => setShowDemoView(false)} className="px-3 py-1.5 rounded-lg bg-gray-800/70 border border-gray-700 text-gray-300 hover:bg-gray-800">Close</button>
+            </div>
+            {/* In-modal controls: View as + Scenarios */}
+            <div className="mb-4">
+              <SegmentedRoleToggle role={role} onChange={setRole} />
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {([
+                  { key: 'normal', label: 'Normal day' },
+                  { key: 'overdue', label: 'Many overdue' },
+                  { key: 'equipment', label: 'Equipment-heavy' },
+                ] as const).map(opt => (
+                  <button
+                    key={opt.key}
+                    onClick={() => setScenario(opt.key)}
+                    className={`px-3 py-1.5 rounded-lg border text-sm transition-colors ${scenario === opt.key ? 'bg-teal-500/20 border-teal-400/40 text-teal-200' : 'bg-gray-900/40 border-gray-700/50 text-gray-300 hover:border-teal-400/30'}`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+                <span className="ml-2 text-xs text-gray-500">role: {role}</span>
+              </div>
+            </div>
+            {role === 'ADMIN' ? <MockAdminDashboard scenario={scenario} /> : <MockCleanerDashboard scenario={scenario} />}
+          </div>
+        </div>
+      )}
+
+      
 
       {/* Features & Stack */}
       <section className="max-w-7xl mx-auto px-4 pb-16 pt-4 grid md:grid-cols-2 gap-6">
@@ -186,8 +228,11 @@ function Kpi({ label, value, accent = 'text-blue-300' }: { label: string; value:
   )
 }
 
-function SimpleBars({ values }: { values: number[] }) {
+function SimpleBars({ values, color = 'blue' }: { values: number[]; color?: 'blue' | 'red' }) {
   const max = Math.max(1, ...values)
+  const colorClasses = color === 'red'
+    ? 'from-rose-600/70 to-orange-400/70 border-rose-400/30'
+    : 'from-blue-600/70 to-teal-400/70 border-blue-400/20'
   return (
     <div className="h-28 flex items-end gap-2">
       {values.map((v, i) => (
@@ -196,7 +241,7 @@ function SimpleBars({ values }: { values: number[] }) {
           initial={{ height: 0, opacity: 0.7 }}
           animate={{ height: `${Math.round((v / max) * 100)}%`, opacity: 1 }}
           transition={{ duration: 0.6, delay: i * 0.05 }}
-          className="w-6 rounded-md bg-gradient-to-t from-blue-600/70 to-teal-400/70 border border-blue-400/20"
+          className={`w-6 rounded-md bg-gradient-to-t ${colorClasses} border`}
           title={`${v}%`}
         />
       ))}
@@ -204,133 +249,73 @@ function SimpleBars({ values }: { values: number[] }) {
   )
 }
 
-function AdminPreview() {
-  return (
-    <Card>
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold">Admin Overview</h3>
-        <span className="text-xs text-gray-400">interactive demo</span>
-      </div>
-
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-        <Kpi label="Active Cleaners" value="12" accent="text-emerald-400" />
-        <Kpi label="Rooms Overdue" value="5" accent="text-rose-400" />
-        <Kpi label="Equipment Due" value="7" accent="text-amber-300" />
-        <Kpi label="Today’s Tasks" value="84" accent="text-blue-300" />
-      </div>
-
-      {/* Chart + Activity */}
-      <div className="mt-5 grid md:grid-cols-2 gap-4">
-        <div className="p-4 rounded-xl bg-gray-900/40 border border-gray-700/50">
-          <h4 className="text-sm font-medium mb-3">Weekly Completion</h4>
-          <SimpleBars values={[72, 88, 64, 91, 83, 75, 95]} />
-        </div>
-
-        <div className="p-4 rounded-xl bg-gray-900/40 border border-gray-700/50">
-          <h4 className="text-sm font-medium mb-2">Recent Activity</h4>
-          <ul className="space-y-2 text-sm text-gray-300">
-            <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Room 12 cleaned • Sarah J</li>
-            <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Room 7 cleaned • Mark L</li>
-            <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Filter replaced • Boiler A</li>
-          </ul>
-        </div>
-      </div>
-
-      {/* CTAs (disabled in demo) */}
-      <div className="mt-4 flex gap-3">
-        <button className="px-4 py-2 rounded-lg bg-blue-600/60 text-white border border-blue-500/40 cursor-not-allowed" title="Demo only">Open Admin Dashboard</button>
-        <button className="px-4 py-2 rounded-lg bg-gray-700/60 text-gray-300 border border-gray-600 cursor-not-allowed" title="Demo only">Export Report</button>
-      </div>
-    </Card>
-  )
-}
-
-function CleanerPreview() {
-  return (
-    <Card>
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold">Cleaner Today</h3>
-        <span className="text-xs text-gray-400">sample route</span>
-      </div>
-      <ul className="mt-3 space-y-3">
-        {[
-          { room: "Main Office", task: "Dust & vacuum", due: "Today", progress: 80 },
-          { room: "Kitchen", task: "Surface sanitize", due: "Today", progress: 45 },
-          { room: "Conference A", task: "Glass & table", due: "Today", progress: 10 },
-        ].map((item, i) => (
-          <li key={i} className="p-3 rounded-xl bg-gray-900/40 border border-gray-700/50">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-medium">{item.room}</div>
-                <div className="text-sm text-gray-400">{item.task}</div>
-              </div>
-              <span className="text-xs text-blue-300">{item.due}</span>
-            </div>
-            <div className="mt-3 h-2 rounded-full bg-gray-800/60 overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${item.progress}%` }}
-                transition={{ duration: 0.7, delay: i * 0.1 }}
-                className="h-full rounded-full bg-gradient-to-r from-blue-500 to-teal-400"
-              />
-            </div>
-          </li>
-        ))}
-      </ul>
-
-      <div className="mt-4 grid md:grid-cols-2 gap-3">
-        <div className="p-3 rounded-xl bg-gray-900/40 border border-gray-700/50">
-          <h4 className="text-sm font-medium mb-2">Quick Tips</h4>
-          <ul className="text-sm text-gray-300 space-y-1">
-            <li>• Prioritize overdue rooms first</li>
-            <li>• Mark each task as soon as completed</li>
-            <li>• Check equipment tasks after lunch</li>
-          </ul>
-        </div>
-        <div className="p-3 rounded-xl bg-gray-900/40 border border-gray-700/50">
-          <h4 className="text-sm font-medium mb-2">Shift Summary</h4>
-          <div className="text-sm text-gray-300">3/12 tasks completed • ETA 4h 10m</div>
-        </div>
-      </div>
-
-      <div className="mt-4">
-        <button className="px-4 py-2 rounded-lg bg-teal-600/60 text-white border border-teal-500/40 cursor-not-allowed" title="Demo only">Open Cleaner Portal</button>
-      </div>
-    </Card>
-  )
-}
+// Removed InteractiveScenarios card in favor of top scenario bar and expanded Highlights
 
 function Highlights() {
+  const items = [
+    { icon: Users, text: 'Live sessions', desc: 'Presence and session tracking so you can see who is online and when they were last active.' },
+    { icon: Calendar, text: 'Schedules', desc: 'Each room and equipment has its own schedule with clear frequencies and next-due dates.' },
+    { icon: DoorOpen, text: 'Rooms', desc: 'Create rooms, attach schedules, and track tasks and progress by location.' },
+    { icon: Wrench, text: 'Equipment', desc: 'Manage maintenance schedules for equipment alongside room cleaning tasks.' },
+    { icon: ShieldCheck, text: 'RBAC', desc: 'Role-based access: Admins manage, Cleaners focus on their tasks.' },
+    { icon: CheckCircle2, text: 'Task tracking', desc: 'Statuses across tasks (pending, in progress, completed, overdue) with quick at-a-glance views.' },
+    { icon: Bot, text: 'AI extraction', desc: 'Upload documents to automatically extract tasks and suggest schedule frequencies.' },
+    { icon: Upload, text: 'Document upload', desc: 'Support for PDF/DOCX/images that feed into AI processing for schedules.' },
+    { icon: Mail, text: 'Email notifications', desc: 'Future: notify responsible staff about overdue rooms or upcoming work.' },
+    { icon: Clock, text: 'Cron automation', desc: 'Automated checks to keep statuses and reminders up-to-date.' },
+    { icon: Activity, text: 'Health checks', desc: 'Built-in health endpoint to monitor system readiness.' },
+    { icon: Gauge, text: 'Rate limiting', desc: 'Protect critical endpoints from abuse with per-user/IP limits.' },
+    { icon: History, text: 'Recent activity', desc: 'Audit-friendly feed of recent actions across the system.' },
+    { icon: ArrowLeftRight, text: 'Account switch', desc: 'Quickly switch between multiple stored accounts during admin sessions.' },
+    { icon: KeyRound, text: 'Password policy', desc: 'Enforce password changes and block after repeated failed attempts.' },
+  ]
   return (
     <Card>
       <h3 className="font-semibold">What you’ll see</h3>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
-        <Pill icon={Users} text="Live sessions" />
-        <Pill icon={Calendar} text="Schedules" />
-        <Pill icon={DoorOpen} text="Rooms" />
-        <Pill icon={Wrench} text="Equipment" />
-        <Pill icon={ShieldCheck} text="RBAC" />
-        <Pill icon={CheckCircle2} text="Task tracking" />
-        <Pill icon={Bot} text="AI extraction" />
-        <Pill icon={Upload} text="Document upload" />
-        <Pill icon={Mail} text="Email notifications" />
-        <Pill icon={Clock} text="Cron automation" />
-        <Pill icon={Activity} text="Health checks" />
-        <Pill icon={Gauge} text="Rate limiting" />
-        <Pill icon={History} text="Recent activity" />
-        <Pill icon={ArrowLeftRight} text="Account switch" />
-        <Pill icon={KeyRound} text="Password policy" />
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
+        {items.map(({ icon, text, desc }) => (
+          <Pill key={text} icon={icon} text={text} desc={desc} />
+        ))}
       </div>
     </Card>
   )
 }
 
-function Pill({ icon: Icon, text }: { icon: any; text: string }) {
+function Pill({ icon: Icon, text, desc }: { icon: any; text: string; desc?: string }) {
+  const [open, setOpen] = useState(false)
   return (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-900/40 border border-gray-700/50 text-sm">
-      <Icon className="w-4 h-4 text-blue-300" />
-      <span>{text}</span>
+    <div
+      className="relative group"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onFocus={() => setOpen(true)}
+      onBlur={() => setOpen(false)}
+      tabIndex={0}
+      aria-haspopup="dialog"
+      aria-expanded={open}
+    >
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-900/40 border border-gray-700/50 text-sm">
+        <Icon className="w-4 h-4 text-blue-300" />
+        <span>{text}</span>
+      </div>
+
+      {/* Hover popover */}
+      <motion.div
+        initial={{ opacity: 0, y: 8, scale: 0.98 }}
+        animate={{ opacity: open ? 1 : 0, y: open ? 0 : 8, scale: open ? 1 : 0.98 }}
+        transition={{ duration: 0.18 }}
+        className={`absolute z-30 left-0 top-full mt-2 w-64 md:w-72 rounded-xl bg-gray-900/95 border border-gray-700/60 shadow-xl p-4 pointer-events-none ${open ? 'block' : 'hidden'}`}
+      >
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5">
+            <Icon className="w-6 h-6 text-teal-300" />
+          </div>
+          <div>
+            <div className="font-semibold text-gray-100 mb-1">{text}</div>
+            <div className="text-sm text-gray-300 leading-snug">{desc || 'Details coming soon.'}</div>
+          </div>
+        </div>
+      </motion.div>
     </div>
   )
 }
@@ -366,3 +351,127 @@ function FeaturePanel({
 }
 
 
+function MockAdminDashboard({ scenario }: { scenario: 'normal' | 'overdue' | 'equipment' }) {
+  // Mock of DashboardOverview: no API calls, static data
+  const mockStats = {
+    totalUsers: 18,
+    totalRooms: 42,
+    totalEquipment: scenario === 'equipment' ? 54 : 27,
+    totalSchedules: scenario === 'overdue' ? 24 : 19,
+  }
+  const weekly = scenario === 'overdue' ? [35, 40, 28, 30, 25, 20, 18] : [72, 88, 64, 91, 83, 75, 95]
+  const quickActions = [
+    { name: 'Manage Rooms', icon: DoorOpen, description: 'Add, edit, and manage cleaning locations' },
+    { name: 'Equipment', icon: Wrench, description: 'Manage maintenance equipment and schedules' },
+    { name: 'Schedules', icon: Calendar, description: 'Create and manage cleaning schedules' },
+    { name: 'Users', icon: Users, description: 'Manage team members and permissions' },
+  ]
+  const recent = ['Room 12 cleaned • Sarah J', 'Room 7 cleaned • Mark L', 'Filter replaced • Boiler A']
+
+  return (
+    <div className="max-w-7xl mx-auto relative z-10">
+      <div className="mb-6">
+        <h4 className="text-xl font-semibold text-gray-100">Admin Dashboard</h4>
+        <p className="text-gray-400 text-sm">Mocked data preview</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {[{ name: 'Total Users', value: mockStats.totalUsers, icon: Users, color: 'text-blue-400' },
+          { name: 'Rooms', value: mockStats.totalRooms, icon: DoorOpen, color: 'text-green-400' },
+          { name: 'Equipment', value: mockStats.totalEquipment, icon: Wrench, color: 'text-orange-400' },
+          { name: 'Active Schedules', value: mockStats.totalSchedules, icon: Calendar, color: 'text-purple-400' }
+        ].map((stat, i) => (
+          <motion.div key={stat.name} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="p-4 rounded-xl bg-gray-900/40 border border-gray-700/60">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-xs">{stat.name}</p>
+                <p className="text-2xl font-bold text-gray-100 mt-1">{stat.value}</p>
+              </div>
+              <stat.icon className={`w-6 h-6 ${stat.color}`} />
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div className="p-4 rounded-xl bg-gray-900/40 border border-gray-700/60">
+          <h5 className="text-sm font-medium mb-3">Weekly Completion</h5>
+          <SimpleBars values={weekly} />
+        </div>
+        <div className="p-4 rounded-xl bg-gray-900/40 border border-gray-700/60">
+          <h5 className="text-sm font-medium mb-2">Recent Activity</h5>
+          <ul className="space-y-2 text-sm text-gray-300">
+            {recent.map((item, i) => (
+              <li key={i} className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span className={scenario === 'overdue' && i === 0 ? 'text-rose-300' : ''}>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <div className="mb-2">
+        <h5 className="text-sm font-medium mb-3">Quick Actions</h5>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          {quickActions.map((a, i) => (
+            <motion.div key={a.name} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + i * 0.05 }} className="p-4 rounded-xl bg-gray-900/40 border border-gray-700/60">
+              <div className="flex items-center mb-2">
+                <a.icon className="w-5 h-5 mr-2" />
+                <h6 className="font-medium">{a.name}</h6>
+              </div>
+              <p className="text-xs text-gray-400">{a.description}</p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MockCleanerDashboard({ scenario }: { scenario: 'normal' | 'overdue' | 'equipment' }) {
+  const base = [
+    { room: 'Main Office', task: 'Dust & vacuum', due: 'Today', progress: 80 },
+    { room: 'Kitchen', task: 'Surface sanitize', due: 'Today', progress: 45 },
+    { room: 'Conference A', task: 'Glass & table', due: 'Today', progress: 10 },
+  ]
+  const overdueSet = [
+    { room: 'Storage', task: 'Deep sweep', due: 'Overdue', progress: 0 },
+    { room: 'Reception', task: 'Windows', due: 'Overdue', progress: 0 },
+  ]
+  const equipSet = [
+    { room: 'Boiler A', task: 'Filter replace', due: 'Today', progress: 20 },
+    { room: 'Air Purifier 2', task: 'Clean intake', due: 'Today', progress: 35 },
+  ]
+  const tasks = scenario === 'overdue' ? [...overdueSet, ...base] : scenario === 'equipment' ? [...equipSet, ...base] : base
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="text-lg font-semibold">Cleaner Dashboard</h4>
+        <span className="text-xs text-gray-400">Mocked data preview</span>
+      </div>
+      <ul className="space-y-3">
+        {tasks.map((item, i) => (
+          <li key={i} className="p-3 rounded-xl bg-gray-900/40 border border-gray-700/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium">{item.room}</div>
+                <div className="text-sm text-gray-400">{item.task}</div>
+              </div>
+              <span className={`text-xs ${item.due === 'Overdue' ? 'text-rose-300' : 'text-blue-300'}`}>{item.due}</span>
+            </div>
+            <div className="mt-3 h-2 rounded-full bg-gray-800/60 overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${item.progress}%` }}
+                transition={{ duration: 0.7, delay: i * 0.1 }}
+                className={`h-full rounded-full bg-gradient-to-r ${item.due === 'Overdue' ? 'from-rose-500 to-orange-400' : 'from-blue-500 to-teal-400'}`}
+              />
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
