@@ -39,6 +39,17 @@ export default function RootLayout({
             </Providers>
           </ToastProvider>
         </SettingsProvider>
+        {/* Plausible Analytics */}
+          <script
+            defer
+            data-domain="neatplan.app"
+            src="https://plausible.iacob.uk/js/script.file-downloads.hash.outbound-links.pageview-props.revenue.tagged-events.js"
+          />
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) }`
+            }}
+          />
       </body>
     </html>
   );
