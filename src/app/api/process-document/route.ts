@@ -221,9 +221,10 @@ export async function POST(request: NextRequest) {
 
     // Use our enhanced AI schedule processing system
     console.log('Sending extracted content to enhanced AI processor...')
-    
+
     // Create a mock request to our AI schedule endpoint
-    const baseUrl = process.env.NEXTAUTH_URL || request.nextUrl.origin;
+    // SECURITY: Use fixed internal URL to prevent SSRF attacks
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
     const aiScheduleResponse = await fetch(`${baseUrl}/api/ai/schedule`, {
       method: 'POST',
       headers: {
@@ -266,12 +267,14 @@ export async function POST(request: NextRequest) {
 
 // Handle OPTIONS preflight request
 export async function OPTIONS(request: NextRequest) {
+  const allowedOrigin = process.env.CORS_ALLOWED_ORIGIN || process.env.NEXTAUTH_URL || 'http://localhost:3000'
   return new NextResponse(null, {
     status: 200,
     headers: {
-      'Access-Control-Allow-Origin': process.env.CORS_ALLOWED_ORIGIN || process.env.NEXTAUTH_URL || request.headers.get('origin') || '*',
+      'Access-Control-Allow-Origin': allowedOrigin,
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Credentials': 'true',
       'Vary': 'Origin',
     },
   })
@@ -279,10 +282,11 @@ export async function OPTIONS(request: NextRequest) {
 
 // Handle GET requests
 export async function GET() {
-  return new NextResponse("Method not allowed", { 
+  const allowedOrigin = process.env.CORS_ALLOWED_ORIGIN || process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  return new NextResponse("Method not allowed", {
     status: 405,
     headers: {
-      'Access-Control-Allow-Origin': process.env.CORS_ALLOWED_ORIGIN || process.env.NEXTAUTH_URL || '*',
+      'Access-Control-Allow-Origin': allowedOrigin,
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
       'Vary': 'Origin',

@@ -2,6 +2,7 @@ import { AuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { compare } from "bcryptjs"
 import { prisma } from "@/lib/db"
+import { randomBytes } from "crypto"
 
 export const authOptions: AuthOptions = {
   session: {
@@ -59,7 +60,9 @@ export const authOptions: AuthOptions = {
                 data: { isBlocked: true }
               })
             }
-          } catch {}
+          } catch (error) {
+            console.error('Failed to update login attempt counter:', error)
+          }
           throw new Error("Invalid credentials")
         }
 
@@ -70,7 +73,9 @@ export const authOptions: AuthOptions = {
               where: { id: user.id },
               data: { failedLoginCount: 0, lastFailedLoginAt: null }
             })
-          } catch {}
+          } catch (error) {
+            console.error('Failed to reset login attempt counter:', error)
+          }
         }
 
         return {
@@ -108,7 +113,8 @@ export const authOptions: AuthOptions = {
         // Create session tracking entry when user signs in
         if (account) {
           try {
-            const sessionToken = `session_${user.id}_${Date.now()}`
+            // Generate cryptographically secure random session token
+            const sessionToken = randomBytes(32).toString('hex')
             await prisma.userSession.create({
               data: {
                 userId: user.id,
