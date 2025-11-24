@@ -11,8 +11,9 @@
     "start:prod": "NODE_ENV=production next start",
     "lint": "next lint",
     "prisma:seed": "ts-node prisma/seed.ts",
-    "deploy:static": "npm run build:static && echo 'Static files built in ./out directory'",
-    "deploy:standalone": "npm run build && echo 'Standalone app built - ready for deployment'"
+    "validate-env": "node scripts/validate-env.js",
+    "deploy:static": "npm run validate-env && npm run build:static && echo 'Static files built in ./out directory'",
+    "deploy:standalone": "npm run validate-env && npm run build && echo 'Standalone app built - ready for deployment'"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.9.1",

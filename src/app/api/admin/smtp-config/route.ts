@@ -16,6 +16,9 @@ interface SMTPConfig {
   enabled: boolean
 }
 
+// SECURITY WARNING: Storing SMTP passwords in a file is not recommended for production.
+// Use environment variables instead (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, etc.)
+// This file-based storage is provided for development convenience only.
 const CONFIG_FILE = path.join(process.cwd(), '.smtp-config.json')
 
 // Helper to check if user is admin
@@ -132,15 +135,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Save configuration to file
-    try {
-      fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2))
-    } catch (writeError) {
-      console.error('Failed to write SMTP config:', writeError)
-      return NextResponse.json(
-        { error: 'Failed to save configuration' },
-        { status: 500 }
-      )
+    // SECURITY: In production, use environment variables instead of file storage
+    // Only save to file in development mode
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2))
+      } catch (writeError) {
+        console.error('Failed to write SMTP config:', writeError)
+        return NextResponse.json(
+          { error: 'Failed to save configuration' },
+          { status: 500 }
+        )
+      }
+    } else {
+      // In production, log a warning that config should be set via environment variables
+      console.warn('SMTP configuration should be set via environment variables in production, not file storage')
     }
 
     // Update environment variables for current session
