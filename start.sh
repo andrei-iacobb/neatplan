@@ -2,9 +2,14 @@
 
 echo "Starting NeatPlan application..."
 
-# Wait for database to be ready
+# Wait for database to be ready using DATABASE_URL
+if [ -z "$DATABASE_URL" ]; then
+  echo "DATABASE_URL is not set"
+  exit 1
+fi
+
 echo "Waiting for database connection..."
-until pg_isready -h db -p 5432 -U neatplan_user; do
+until pg_isready -d "$DATABASE_URL"; do
   echo "Database is unavailable - sleeping"
   sleep 1
 done
