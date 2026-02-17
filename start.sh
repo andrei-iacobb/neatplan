@@ -9,7 +9,9 @@ if [ -z "$DATABASE_URL" ]; then
 fi
 
 echo "Waiting for database connection..."
-until pg_isready -d "$DATABASE_URL"; do
+# pg_isready does not accept Prisma query params like ?schema=...
+DB_READY_URL="${DATABASE_URL%%\?*}"
+until pg_isready -d "$DB_READY_URL"; do
   echo "Database is unavailable - sleeping"
   sleep 1
 done
