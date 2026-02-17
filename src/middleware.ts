@@ -90,7 +90,9 @@ export async function middleware(request: NextRequest) {
   // Protect all other routes
   if (!token) {
     const redirectUrl = new URL('/auth', request.url)
-    redirectUrl.searchParams.set('callbackUrl', request.url)
+    const callbackBase = process.env.NEXTAUTH_URL || request.url
+    const callbackUrl = new URL(`${request.nextUrl.pathname}${request.nextUrl.search}`, callbackBase)
+    redirectUrl.searchParams.set('callbackUrl', callbackUrl.toString())
     return NextResponse.redirect(redirectUrl)
   }
 
