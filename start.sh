@@ -27,4 +27,4 @@ npx prisma migrate deploy
 # npm run prisma:seed
 
 echo "Starting development server..."
-exec npm run dev 
+exec npm run start -- -H 0.0.0.0 -p 4040

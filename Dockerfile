@@ -22,6 +22,9 @@ COPY --chown=nextjs:nodejs . .
 # Generate Prisma client for the correct platform
 RUN npx prisma generate
 
+# Build the Next.js app for production startup
+RUN npm run build:no-lint
+
 # Set environment variables - use production by default
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -33,7 +36,7 @@ RUN chmod +x /usr/local/bin/start.sh
 # Switch to non-root user
 USER nextjs
 
-EXPOSE 3000
+EXPOSE 4040
 
 # Use startup script
 CMD ["/usr/local/bin/start.sh"]
