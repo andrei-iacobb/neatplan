@@ -1,16 +1,20 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import { useThemeColors } from '@/hooks/useThemeColors'
 import { ScheduleUploader } from '@/components/ScheduleUploader'
 import { ScheduleDialog } from '@/components/ScheduleDialog'
 import { ScheduleList } from '@/components/ScheduleList'
-import { Loader2, Settings2 } from 'lucide-react'
+import { Settings2, Sparkles } from 'lucide-react'
 import type { Schedule, ScheduleTask } from '@/types/schedule'
-import { Button } from '@/components/ui/button'
 import { ToastProvider } from '@/components/ui/toast-context'
 import { apiRequest } from '@/lib/url-utils'
 
+const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } }
+
 function SchedulePageContent() {
+  const tc = useThemeColors()
   const [schedules, setSchedules] = useState<(Schedule & { tasks: ScheduleTask[] })[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -43,81 +47,106 @@ function SchedulePageContent() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex flex-col gap-8">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-100">Cleaning Schedule</h1>
-            <p className="mt-2 text-gray-400">Manage and organize your cleaning tasks efficiently</p>
+    <div className="max-w-[1100px] mx-auto relative z-10 pb-8">
+      {/* Header */}
+      <div className="flex justify-between items-start mb-10">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="w-4 h-4" style={{ color: 'rgb(16,185,129)' }} />
+            <p className="text-[13px] font-medium tracking-wide uppercase" style={{ color: tc.accentLabel }}>Cleaning Schedules</p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className={`bg-gray-800/50 border-gray-700 hover:bg-gray-800 hover:border-gray-600 transition-colors ${
-              isEditMode ? 'bg-gray-800 border-gray-600' : ''
-            }`}
-            onClick={() => setIsEditMode(!isEditMode)}
-          >
-            <Settings2 className="h-4 w-4 mr-2" />
-            {isEditMode ? 'Exit Edit Mode' : 'Edit Mode'}
-          </Button>
+          <h1 className="text-[32px] font-bold tracking-tight mb-1" style={{ color: tc.textPrimary }}>Cleaning Schedule</h1>
+          <p className="text-[15px]" style={{ color: tc.textMuted }}>Manage and organize your cleaning tasks efficiently</p>
         </div>
+        <button
+          className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-200"
+          style={{
+            background: isEditMode ? tc.tabActiveBg : tc.btnSecondaryBg,
+            color: isEditMode ? tc.tabActiveText : tc.btnSecondaryText,
+            border: `1px solid ${isEditMode ? tc.tabActiveBorder : tc.btnSecondaryBorder}`,
+          }}
+          onMouseEnter={(e) => {
+            if (!isEditMode) {
+              e.currentTarget.style.background = tc.btnSecondaryHoverBg
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isEditMode) {
+              e.currentTarget.style.background = tc.btnSecondaryBg
+            }
+          }}
+          onClick={() => setIsEditMode(!isEditMode)}
+        >
+          <Settings2 className="w-4 h-4" />
+          {isEditMode ? 'Exit Edit Mode' : 'Edit Mode'}
+        </button>
+      </div>
 
-        {/* Actions - Only visible in edit mode */}
-        {isEditMode && (
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg p-6 shadow-lg border border-gray-800">
-              <h2 className="text-lg font-medium text-gray-100 mb-4">Upload Schedule</h2>
-              <ScheduleUploader onScheduleGenerated={handleScheduleGenerated} />
-            </div>
+      {/* Actions - Only visible in edit mode */}
+      {isEditMode && (
+        <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.06 }} className="grid sm:grid-cols-2 gap-3 mb-6">
+          <div
+            className="rounded-xl p-5"
+            style={{ background: tc.cardBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}
+          >
+            <h2 className="text-[15px] font-semibold mb-4" style={{ color: tc.textPrimary }}>Upload Schedule</h2>
+            <ScheduleUploader onScheduleGenerated={handleScheduleGenerated} />
+          </div>
 
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg p-6 shadow-lg border border-gray-800">
-              <h2 className="text-lg font-medium text-gray-100 mb-4">Create Schedule</h2>
-              <p className="text-gray-400 text-sm mb-4">Create a new cleaning schedule manually with custom tasks and frequencies.</p>
-              <ScheduleDialog onScheduleCreated={fetchSchedules} />
-            </div>
+          <div
+            className="rounded-xl p-5"
+            style={{ background: tc.cardBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}
+          >
+            <h2 className="text-[15px] font-semibold mb-4" style={{ color: tc.textPrimary }}>Create Schedule</h2>
+            <p className="text-[13px] mb-4" style={{ color: tc.textSecondary }}>Create a new cleaning schedule manually with custom tasks and frequencies.</p>
+            <ScheduleDialog onScheduleCreated={fetchSchedules} />
+          </div>
+        </motion.div>
+      )}
+
+      {/* Schedules List */}
+      <motion.div {...fadeUp} transition={{ duration: 0.35, delay: isEditMode ? 0.12 : 0.06 }}>
+        {!isEditMode && schedules.length > 0 && (
+          <div className="flex justify-end mb-4">
+            <ScheduleDialog onScheduleCreated={fetchSchedules} />
           </div>
         )}
-
-        {/* Schedules List */}
-        <div className={isEditMode ? "mt-4" : ""}>
-          {!isEditMode && schedules.length > 0 && (
-            <div className="flex justify-end mb-4">
-              <ScheduleDialog onScheduleCreated={fetchSchedules} />
+        <div
+          className="rounded-xl overflow-hidden"
+          style={{ background: tc.cardBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}
+        >
+          {isLoading ? (
+            <div className="flex items-center justify-center p-12">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+                className="w-8 h-8 rounded-full border-2 border-transparent"
+                style={{ borderTopColor: 'rgb(16,185,129)', borderRightColor: 'rgba(16,185,129,0.3)' }}
+              />
+            </div>
+          ) : error ? (
+            <div className="p-6">
+              <p className="text-[13px]" style={{ color: tc.statusOverdue.text }}>{error}</p>
+            </div>
+          ) : schedules.length === 0 ? (
+            <div className="p-12 text-center">
+              <p className="text-[13px]" style={{ color: tc.textMuted }}>
+                {isEditMode
+                  ? "No schedules yet. Create one or upload a document to get started."
+                  : "No schedules yet. Click 'Edit Mode' to create your first schedule."}
+              </p>
+            </div>
+          ) : (
+            <div className="p-6">
+              <ScheduleList
+                schedules={schedules}
+                onUpdate={fetchSchedules}
+                isEditMode={isEditMode}
+              />
             </div>
           )}
-          <div className={`bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg shadow-lg border border-gray-800 overflow-hidden ${
-            !isEditMode ? 'bg-opacity-50' : ''
-          }`}>
-            {isLoading ? (
-              <div className="flex items-center justify-center p-12">
-                <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-              </div>
-            ) : error ? (
-              <div className="p-6">
-                <p className="text-red-400">{error}</p>
-              </div>
-            ) : schedules.length === 0 ? (
-              <div className="p-12 text-center">
-                <p className="text-gray-400">
-                  {isEditMode 
-                    ? "No schedules yet. Create one or upload a document to get started."
-                    : "No schedules yet. Click 'Edit Mode' to create your first schedule."}
-                </p>
-              </div>
-            ) : (
-              <div className="p-6">
-                <ScheduleList
-                  schedules={schedules}
-                  onUpdate={fetchSchedules}
-                  isEditMode={isEditMode}
-                />
-              </div>
-            )}
-          </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }
@@ -128,4 +157,4 @@ export default function SchedulePage() {
       <SchedulePageContent />
     </ToastProvider>
   )
-} 
+}

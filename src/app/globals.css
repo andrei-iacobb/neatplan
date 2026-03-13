@@ -4,99 +4,134 @@
 
 @layer base {
   :root {
-    /* Dark theme (default) */
-    --background: 17 24 39;
-    --foreground: 243 244 246;
-    --card: 31 41 55;
-    --card-foreground: 243 244 246;
-    --border: 55 65 81;
-    --primary: 13 148 136;
+    /* Light theme (default) */
+    --background: 250 250 252;
+    --foreground: 17 17 27;
+    --card: 255 255 255;
+    --card-foreground: 17 17 27;
+    --border: 0 0 0;
+    --border-alpha: 0.08;
+    --primary: 16 185 129;
     --primary-foreground: 255 255 255;
-    --secondary: 55 65 81;
-    --secondary-foreground: 243 244 246;
-    --accent: 55 65 81;
-    --accent-foreground: 243 244 246;
-    --destructive: 220 38 38;
+    --secondary: 245 245 247;
+    --secondary-foreground: 17 17 27;
+    --accent: 99 102 241;
+    --accent-foreground: 17 17 27;
+    --destructive: 239 68 68;
     --destructive-foreground: 255 255 255;
-    --muted: 55 65 81;
-    --muted-foreground: 156 163 175;
-    --success: 5 150 105;
+    --muted: 245 245 247;
+    --muted-foreground: 100 100 120;
+    --success: 16 185 129;
     --warning: 245 158 11;
+    --surface: 255 255 255;
+    --surface-raised: 250 250 252;
+    --surface-overlay: 255 255 255;
+    --text-primary: 17 17 27;
+    --text-secondary: 75 75 95;
+    --text-muted: 140 140 160;
+    --sidebar-bg: 255 255 255;
+    --sidebar-border: 0 0 0;
+    --sidebar-border-alpha: 0.06;
+    --dot-grid-opacity: 0.4;
+    --dot-grid-color: 0 0 0;
+    --bg-glow-primary: 16 185 129;
+    --bg-glow-secondary: 99 102 241;
+    --bg-glow-opacity: 0.04;
+    --vignette-opacity: 0.08;
+  }
+
+  .dark {
+    --background: 10 10 15;
+    --foreground: 232 232 237;
+    --card: 22 22 31;
+    --card-foreground: 232 232 237;
+    --border: 255 255 255;
+    --border-alpha: 0.07;
+    --primary: 16 185 129;
+    --primary-foreground: 255 255 255;
+    --secondary: 30 30 42;
+    --secondary-foreground: 232 232 237;
+    --accent: 99 102 241;
+    --accent-foreground: 232 232 237;
+    --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
+    --muted: 30 30 42;
+    --muted-foreground: 139 139 158;
+    --success: 16 185 129;
+    --warning: 245 158 11;
+    --surface: 22 22 31;
+    --surface-raised: 28 28 38;
+    --surface-overlay: 14 14 20;
+    --text-primary: 232 232 237;
+    --text-secondary: 170 170 190;
+    --text-muted: 100 100 120;
+    --sidebar-bg: 14 14 20;
+    --sidebar-border: 255 255 255;
+    --sidebar-border-alpha: 0.06;
+    --dot-grid-opacity: 0.35;
+    --dot-grid-color: 255 255 255;
+    --bg-glow-primary: 16 185 129;
+    --bg-glow-secondary: 99 102 241;
+    --bg-glow-opacity: 0.04;
+    --vignette-opacity: 0.4;
   }
 
   .light {
-    /* Light theme */
-    --background: 255 255 255;
-    --foreground: 17 24 39;
-    --card: 249 250 251;
-    --card-foreground: 17 24 39;
-    --border: 229 231 235;
-    --primary: 13 148 136;
+    --background: 250 250 252;
+    --foreground: 17 17 27;
+    --card: 255 255 255;
+    --card-foreground: 17 17 27;
+    --border: 0 0 0;
+    --border-alpha: 0.08;
+    --primary: 16 185 129;
     --primary-foreground: 255 255 255;
-    --secondary: 243 244 246;
-    --secondary-foreground: 17 24 39;
-    --accent: 243 244 246;
-    --accent-foreground: 17 24 39;
-    --destructive: 220 38 38;
+    --secondary: 245 245 247;
+    --secondary-foreground: 17 17 27;
+    --accent: 99 102 241;
+    --accent-foreground: 17 17 27;
+    --destructive: 239 68 68;
     --destructive-foreground: 255 255 255;
-    --muted: 243 244 246;
-    --muted-foreground: 107 114 128;
-    --success: 5 150 105;
+    --muted: 245 245 247;
+    --muted-foreground: 100 100 120;
+    --success: 16 185 129;
     --warning: 245 158 11;
+    --surface: 255 255 255;
+    --surface-raised: 250 250 252;
+    --surface-overlay: 255 255 255;
+    --text-primary: 17 17 27;
+    --text-secondary: 75 75 95;
+    --text-muted: 140 140 160;
+    --sidebar-bg: 255 255 255;
+    --sidebar-border: 0 0 0;
+    --sidebar-border-alpha: 0.06;
+    --dot-grid-opacity: 0.4;
+    --dot-grid-color: 0 0 0;
+    --bg-glow-primary: 16 185 129;
+    --bg-glow-secondary: 99 102 241;
+    --bg-glow-opacity: 0.04;
+    --vignette-opacity: 0.08;
   }
 
-  html {
-    scroll-behavior: smooth;
-  }
+  html { scroll-behavior: smooth; }
 
   body {
     background-color: rgb(var(--background));
     color: rgb(var(--foreground));
-    transition: background-color 0.3s ease, color 0.3s ease;
+    min-height: 100vh;
+    overflow-x: hidden;
   }
 
-  /* Compact mode styles */
-  .compact-mode {
-    --spacing-scale: 0.75;
-  }
+  .compact-mode { --spacing-scale: 0.75; }
+  .compact-mode .card { padding: calc(1rem * var(--spacing-scale, 1)); }
+  .compact-mode .p-6 { padding: calc(1.5rem * var(--spacing-scale, 1)); }
+  .compact-mode .p-4 { padding: calc(1rem * var(--spacing-scale, 1)); }
+  .compact-mode .p-8 { padding: calc(2rem * var(--spacing-scale, 1)); }
+  .compact-mode .gap-6 { gap: calc(1.5rem * var(--spacing-scale, 1)); }
+  .compact-mode .gap-4 { gap: calc(1rem * var(--spacing-scale, 1)); }
+  .compact-mode .mb-8 { margin-bottom: calc(2rem * var(--spacing-scale, 1)); }
+  .compact-mode .mb-6 { margin-bottom: calc(1.5rem * var(--spacing-scale, 1)); }
+  .compact-mode .mb-4 { margin-bottom: calc(1rem * var(--spacing-scale, 1)); }
 
-  .compact-mode .card {
-    padding: calc(1rem * var(--spacing-scale, 1));
-  }
-
-  .compact-mode .p-6 {
-    padding: calc(1.5rem * var(--spacing-scale, 1));
-  }
-
-  .compact-mode .p-4 {
-    padding: calc(1rem * var(--spacing-scale, 1));
-  }
-
-  .compact-mode .p-8 {
-    padding: calc(2rem * var(--spacing-scale, 1));
-  }
-
-  .compact-mode .gap-6 {
-    gap: calc(1.5rem * var(--spacing-scale, 1));
-  }
-
-  .compact-mode .gap-4 {
-    gap: calc(1rem * var(--spacing-scale, 1));
-  }
-
-  .compact-mode .mb-8 {
-    margin-bottom: calc(2rem * var(--spacing-scale, 1));
-  }
-
-  .compact-mode .mb-6 {
-    margin-bottom: calc(1.5rem * var(--spacing-scale, 1));
-  }
-
-  .compact-mode .mb-4 {
-    margin-bottom: calc(1rem * var(--spacing-scale, 1));
-  }
-
-  /* Reduce motion styles */
   .reduce-motion *,
   .reduce-motion *::before,
   .reduce-motion *::after {
@@ -109,119 +144,191 @@
 
 @layer components {
   .card {
-    background-color: rgb(var(--card) / 0.5);
-    border: 1px solid rgb(var(--border));
-    border-radius: 0.5rem;
-    backdrop-filter: blur(8px);
+    background-color: rgb(var(--surface) / 0.7);
+    border: 1px solid rgb(var(--border) / var(--border-alpha));
+    border-radius: 0.75rem;
   }
 
   .card-hover {
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
   }
 
   .card-hover:hover {
-    border-color: rgb(var(--primary) / 0.5);
-    background-color: rgb(var(--card) / 0.7);
+    border-color: rgb(var(--border) / calc(var(--border-alpha) * 2.5));
+    background-color: rgb(var(--surface) / 0.9);
   }
 
   .btn-primary {
-    background-color: rgb(var(--primary) / 0.1);
-    border: 1px solid rgb(var(--primary) / 0.3);
-    color: rgb(var(--primary));
-    transition: all 0.2s ease;
+    background-color: rgb(var(--primary));
+    color: rgb(var(--primary-foreground));
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.15s ease;
   }
 
-  .btn-primary:hover {
-    background-color: rgb(var(--primary) / 0.2);
-  }
+  .btn-primary:hover { opacity: 0.9; }
 
   .btn-secondary {
-    background-color: rgb(var(--secondary) / 0.5);
-    border: 1px solid rgb(var(--border));
+    background-color: rgb(var(--secondary));
+    border: 1px solid rgb(var(--border) / var(--border-alpha));
     color: rgb(var(--secondary-foreground));
-    transition: all 0.2s ease;
+    border-radius: 0.5rem;
+    transition: all 0.15s ease;
   }
 
   .btn-secondary:hover {
-    background-color: rgb(var(--secondary));
+    background-color: rgb(var(--secondary) / 0.8);
+    border-color: rgb(var(--border) / calc(var(--border-alpha) * 2));
   }
 
   .input-primary {
-    background-color: rgb(var(--card) / 0.5);
-    border: 1px solid rgb(var(--border));
+    background-color: rgb(var(--surface) / 0.5);
+    border: 1px solid rgb(var(--border) / var(--border-alpha));
     color: rgb(var(--foreground));
-    transition: all 0.2s ease;
+    border-radius: 0.5rem;
+    transition: all 0.15s ease;
   }
 
   .input-primary:focus {
     border-color: rgb(var(--primary) / 0.5);
     outline: none;
-    box-shadow: 0 0 0 1px rgb(var(--primary) / 0.2);
+    box-shadow: 0 0 0 2px rgb(var(--primary) / 0.1);
   }
 
-  /* Light theme text colors */
-  .light .text-gray-100 {
-    color: rgb(var(--foreground));
+  /*
+   * ===============================================
+   * LIGHT THEME OVERRIDES
+   * Remap all hardcoded dark-mode Tailwind classes
+   * so every page is themed without JSX changes.
+   * ===============================================
+   */
+
+  /* --- Text colors --- */
+  .light .text-gray-100 { color: rgb(17 17 27); }
+  .light .text-gray-200 { color: rgb(17 17 27 / 0.88); }
+  .light .text-gray-300 { color: rgb(55 55 75); }
+  .light .text-gray-400 { color: rgb(100 100 120); }
+  .light .text-gray-500 { color: rgb(140 140 160); }
+  .light .text-gray-600 { color: rgb(160 160 175); }
+  .light .text-white { color: rgb(17 17 27); }
+
+  /* --- Background colors --- */
+  .light .bg-gray-800\/50,
+  .light .bg-gray-800\/30 { background-color: rgb(255 255 255 / 0.7); }
+  .light .bg-gray-800 { background-color: rgb(255 255 255); }
+  .light .bg-gray-900\/50 { background-color: rgb(245 245 247 / 0.8); }
+  .light .bg-gray-900 { background-color: rgb(250 250 252); }
+  .light .bg-gray-700 { background-color: rgb(255 255 255); }
+  .light .bg-gray-700\/30,
+  .light .bg-gray-700\/50 { background-color: rgb(0 0 0 / 0.03); }
+  .light .bg-gray-600 { background-color: rgb(229 231 235); }
+  .light .bg-black\/50,
+  .light .bg-black\/60 { background-color: rgb(0 0 0 / 0.3); }
+  .light .bg-black\/20 { background-color: rgb(0 0 0 / 0.04); }
+
+  /* Gradient backgrounds */
+  .light .from-gray-900 { --tw-gradient-from: rgb(250 250 252); }
+  .light .to-gray-800 { --tw-gradient-to: rgb(245 245 247); }
+  .light .from-gray-800 { --tw-gradient-from: rgb(255 255 255); }
+
+  /* --- Border colors --- */
+  .light .border-gray-700 { border-color: rgb(0 0 0 / 0.08); }
+  .light .border-gray-700\/50 { border-color: rgb(0 0 0 / 0.06); }
+  .light .border-gray-600 { border-color: rgb(0 0 0 / 0.1); }
+  .light .border-gray-800 { border-color: rgb(0 0 0 / 0.06); }
+  .light .border-white\/5,
+  .light .border-white\/10 { border-color: rgb(0 0 0 / 0.06); }
+
+  /* --- Divide colors --- */
+  .light .divide-gray-700 > :not([hidden]) ~ :not([hidden]) { border-color: rgb(0 0 0 / 0.08); }
+  .light .divide-gray-700\/50 > :not([hidden]) ~ :not([hidden]) { border-color: rgb(0 0 0 / 0.06); }
+
+  /* --- Hover states --- */
+  .light .hover\:bg-gray-700\/30:hover { background-color: rgb(0 0 0 / 0.04); }
+  .light .hover\:bg-gray-800:hover { background-color: rgb(245 245 247); }
+  .light .hover\:bg-gray-700:hover { background-color: rgb(245 245 247); }
+  .light .hover\:bg-gray-600:hover { background-color: rgb(229 231 235); }
+  .light .hover\:border-gray-500:hover { border-color: rgb(0 0 0 / 0.15); }
+  .light .hover\:border-gray-600:hover { border-color: rgb(0 0 0 / 0.12); }
+  .light .hover\:text-gray-300:hover { color: rgb(17 17 27 / 0.8); }
+  .light .hover\:text-gray-200:hover { color: rgb(17 17 27 / 0.9); }
+
+  /* --- Focus states --- */
+  .light .focus\:border-teal-500:focus { border-color: rgb(20 184 166); }
+
+  /* --- Ring/outline --- */
+  .light .peer-focus\:ring-teal-300\/20 { --tw-ring-color: rgb(94 234 212 / 0.15); }
+
+  /* --- Placeholder --- */
+  .light .placeholder-gray-400::placeholder { color: rgb(156 163 175); }
+
+  /* --- Form elements in light mode --- */
+  .light select,
+  .light input:not([type="checkbox"]):not([type="radio"]),
+  .light textarea {
+    color: rgb(17 17 27) !important;
   }
 
-  .light .text-gray-200 {
-    color: rgb(var(--foreground) / 0.9);
+  .light select option {
+    background-color: white;
+    color: rgb(17 17 27);
   }
 
-  .light .text-gray-300 {
-    color: rgb(var(--foreground) / 0.8);
+  /* --- Specific accent overrides --- */
+  .light .bg-teal-500\/20 { background-color: rgb(20 184 166 / 0.1); }
+  .light .bg-teal-500\/10 { background-color: rgb(20 184 166 / 0.06); }
+  .light .bg-teal-500\/5 { background-color: rgb(20 184 166 / 0.04); }
+  .light .text-teal-300 { color: rgb(13 148 136); }
+  .light .text-teal-400 { color: rgb(13 148 136); }
+  .light .text-teal-500 { color: rgb(13 148 136); }
+  .light .border-teal-500\/50 { border-color: rgb(20 184 166 / 0.25); }
+  .light .border-teal-500\/30 { border-color: rgb(20 184 166 / 0.2); }
+  .light .border-teal-500 { border-color: rgb(20 184 166 / 0.4); }
+  .light .bg-teal-600 { background-color: rgb(13 148 136); }
+  .light .hover\:bg-teal-500\/20:hover { background-color: rgb(20 184 166 / 0.12); }
+  .light .hover\:bg-teal-500\/10:hover { background-color: rgb(20 184 166 / 0.08); }
+  .light .hover\:bg-teal-500\/30:hover { background-color: rgb(20 184 166 / 0.15); }
+  .light .hover\:bg-teal-700:hover { background-color: rgb(15 118 110); }
+
+  /* Status badge backgrounds */
+  .light .bg-teal-900 { background-color: rgb(204 251 241); }
+  .light .text-teal-200 { color: rgb(15 118 110); }
+  .light .bg-red-900 { background-color: rgb(254 226 226); }
+  .light .text-red-200 { color: rgb(185 28 28); }
+  .light .bg-red-900\/50 { background-color: rgb(254 226 226 / 0.6); }
+  .light .hover\:bg-red-900\/50:hover { background-color: rgb(254 226 226 / 0.8); }
+  .light .bg-yellow-900 { background-color: rgb(254 249 195); }
+  .light .text-yellow-200 { color: rgb(146 64 14); }
+
+  /* Shadows for light mode cards */
+  .light .shadow-lg { box-shadow: 0 1px 3px rgb(0 0 0 / 0.06), 0 1px 2px rgb(0 0 0 / 0.04); }
+  .light .shadow-xl { box-shadow: 0 4px 6px rgb(0 0 0 / 0.05), 0 2px 4px rgb(0 0 0 / 0.03); }
+
+  /* --- White/opacity backgrounds in light mode --- */
+  .light .bg-white\/5 { background-color: rgb(0 0 0 / 0.03); }
+
+  /* Toggle switch in light mode */
+  .light .peer-checked\:bg-teal-600:checked ~ div,
+  .light .peer-checked\:bg-teal-600 { background-color: rgb(13 148 136); }
+  .light .bg-gray-600:not(:checked) { background-color: rgb(209 213 219); }
+
+  /* Ensure modals have proper background */
+  .light .bg-gray-800.rounded-lg,
+  .light .bg-gray-800.rounded-xl,
+  .light .bg-gray-800.border {
+    background-color: rgb(255 255 255);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   }
 
-  .light .text-gray-400 {
-    color: rgb(var(--muted-foreground));
-  }
-
-  .light .text-gray-500 {
-    color: rgb(var(--muted-foreground) / 0.8);
-  }
-
-  .light .text-gray-600 {
-    color: rgb(var(--muted-foreground) / 0.6);
-  }
-
-  /* Light theme background colors */
-  .light .bg-gray-800\/50 {
-    background-color: rgb(var(--card));
-  }
-
-  .light .bg-gray-900\/50 {
-    background-color: rgb(var(--card) / 0.8);
-  }
-
-  .light .border-gray-700 {
-    border-color: rgb(var(--border));
-  }
-
-  .light .border-gray-600 {
-    border-color: rgb(var(--border) / 0.8);
-  }
+  /* Gradient purple/pink accent cards */
+  .light .from-purple-500\/10 { --tw-gradient-from: rgb(147 51 234 / 0.06); }
+  .light .to-pink-500\/10 { --tw-gradient-to: rgb(236 72 153 / 0.06); }
+  .light .from-teal-500\/10 { --tw-gradient-from: rgb(20 184 166 / 0.06); }
+  .light .to-blue-500\/10 { --tw-gradient-to: rgb(59 130 246 / 0.06); }
+  .light .hover\:from-purple-500\/20:hover { --tw-gradient-from: rgb(147 51 234 / 0.1); }
+  .light .hover\:to-pink-500\/20:hover { --tw-gradient-to: rgb(236 72 153 / 0.1); }
+  .light .hover\:from-teal-500\/20:hover { --tw-gradient-from: rgb(20 184 166 / 0.1); }
+  .light .hover\:to-blue-500\/20:hover { --tw-gradient-to: rgb(59 130 246 / 0.1); }
 }
 
-body {
-  color: #ffffff;
-  background: #000000;
-  min-height: 100vh;
-  overflow-x: hidden;
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-input, button {
-  transition: all 0.3s ease;
-}
-
-input:focus {
-  transform: scale(1.01);
-}
-
-button:not(:disabled):hover {
-  transform: translateY(-1px);
-}
-
-button:not(:disabled):active {
-  transform: translateY(1px);
-}

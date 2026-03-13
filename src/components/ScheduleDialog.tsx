@@ -7,12 +7,14 @@ import { Input } from './ui/input'
 import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { apiRequest } from '@/lib/url-utils'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 interface ScheduleDialogProps {
   onScheduleCreated: () => void
 }
 
 export function ScheduleDialog({ onScheduleCreated }: ScheduleDialogProps) {
+  const tc = useThemeColors()
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
   const [frequency, setFrequency] = useState('')
@@ -30,15 +32,15 @@ export function ScheduleDialog({ onScheduleCreated }: ScheduleDialogProps) {
       const response = await apiRequest('/api/schedules', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          title, 
+        body: JSON.stringify({
+          title,
           frequency: frequency.trim() || null,
-          tasks: [] 
+          tasks: []
         })
       })
 
       if (!response.ok) throw new Error('Failed to create schedule')
-      
+
       toast.success('Schedule created')
       setOpen(false)
       setTitle('')
@@ -54,38 +56,39 @@ export function ScheduleDialog({ onScheduleCreated }: ScheduleDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button 
-          variant="outline" 
-          className="w-full bg-gray-800/50 border-gray-700 hover:bg-gray-800 hover:border-gray-600 transition-colors"
+        <Button
+          variant="outline"
+          className="w-full transition-colors"
+          style={{ background: tc.btnSecondaryBg, borderColor: tc.btnSecondaryBorder, color: tc.btnSecondaryText }}
         >
           <Plus className="h-4 w-4 mr-2" />
           Create New Schedule
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-gray-900 border-gray-800">
+      <DialogContent style={{ background: tc.modalBg, borderColor: tc.cardBorder }}>
         <DialogHeader>
-          <DialogTitle className="text-gray-100">Create New Schedule</DialogTitle>
+          <DialogTitle style={{ color: tc.textPrimary }}>Create New Schedule</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Schedule Title</label>
+              <label className="text-sm font-medium" style={{ color: tc.textSecondary }}>Schedule Title</label>
               <Input
                 placeholder="e.g., Weekly Kitchen Cleaning"
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 disabled={isLoading}
-                className="bg-gray-800/50 border-gray-700 text-gray-100 placeholder:text-gray-500 focus:border-gray-600"
+                style={{ background: tc.inputBg, borderColor: tc.inputBorder, color: tc.inputText }}
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Frequency</label>
+              <label className="text-sm font-medium" style={{ color: tc.textSecondary }}>Frequency</label>
               <Input
                 placeholder="e.g., Daily, Weekly, Monthly"
                 value={frequency}
                 onChange={e => setFrequency(e.target.value)}
                 disabled={isLoading}
-                className="bg-gray-800/50 border-gray-700 text-gray-100 placeholder:text-gray-500 focus:border-gray-600"
+                style={{ background: tc.inputBg, borderColor: tc.inputBorder, color: tc.inputText }}
               />
             </div>
           </div>
@@ -95,14 +98,14 @@ export function ScheduleDialog({ onScheduleCreated }: ScheduleDialogProps) {
               variant="outline"
               onClick={() => setOpen(false)}
               disabled={isLoading}
-              className="bg-transparent border-gray-700 hover:bg-gray-800 hover:border-gray-600"
+              style={{ background: 'transparent', borderColor: tc.btnSecondaryBorder, color: tc.btnSecondaryText }}
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={isLoading}
-              className="bg-gray-200 text-gray-900 hover:bg-gray-300 transition-colors"
+              style={{ background: tc.btnPrimaryBg, borderColor: tc.btnPrimaryBorder, color: tc.btnPrimaryText }}
             >
               {isLoading ? 'Creating...' : 'Create Schedule'}
             </Button>
@@ -111,4 +114,4 @@ export function ScheduleDialog({ onScheduleCreated }: ScheduleDialogProps) {
       </DialogContent>
     </Dialog>
   )
-} 
+}

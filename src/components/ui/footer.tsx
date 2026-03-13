@@ -1,25 +1,31 @@
 "use client"
 
+import { useSettings } from "@/contexts/settings-context"
+
 export function Footer() {
   const currentYear = new Date().getFullYear()
-  
+  const { resolvedTheme } = useSettings()
+  const isDark = resolvedTheme === 'dark'
+
   return (
-    <footer className="w-full border-t border-gray-700/50 bg-gray-900/80 backdrop-blur-sm flex-shrink-0">
-      <div className="max-w-7xl mx-auto px-4 py-2">
-        <div className="text-center">
-          <p className="text-xs text-gray-400">
-            © {currentYear} NeatPlan. All rights reserved. Developed by{' '}
-            <a 
-              href="https://andrei.iacob.uk/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-blue-300 font-medium hover:text-blue-200 transition-colors duration-200 cursor-pointer"
-            >
-              Andrei Iacob
-            </a>
-          </p>
-        </div>
+    <footer className="w-full flex-shrink-0 transition-colors duration-300"
+      style={{ borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` }}>
+      <div className="px-6 py-2.5">
+        <p className="text-[11px] text-center" style={{ color: isDark ? 'rgba(139,139,158,0.6)' : 'rgba(140,140,160,0.6)' }}>
+          &copy; {currentYear} NeatPlan. All rights reserved. Developed by{' '}
+          <a
+            href="https://andrei.iacob.uk/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-colors duration-150"
+            style={{ color: isDark ? 'rgba(139,139,158,0.8)' : 'rgba(100,100,120,0.8)' }}
+            onMouseEnter={(e) => e.currentTarget.style.color = 'rgb(16,185,129)'}
+            onMouseLeave={(e) => e.currentTarget.style.color = isDark ? 'rgba(139,139,158,0.8)' : 'rgba(100,100,120,0.8)'}
+          >
+            Andrei Iacob
+          </a>
+        </p>
       </div>
     </footer>
   )
-} 
+}

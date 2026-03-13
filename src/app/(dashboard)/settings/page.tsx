@@ -3,11 +3,11 @@
 import React, { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
-import { 
-  User, 
-  Palette, 
-  Bell, 
-  Shield, 
+import {
+  User,
+  Palette,
+  Bell,
+  Shield,
   Monitor,
   Moon,
   Sun,
@@ -16,16 +16,36 @@ import {
   Settings as SettingsIcon,
   Download,
   Trash2,
-  Volume2
+  Volume2,
+  Sparkles
 } from 'lucide-react'
 import { useSettings } from '@/contexts/settings-context'
 import { useSoundEffects } from '@/hooks/useSoundEffects'
+import { useThemeColors } from '@/hooks/useThemeColors'
 import { SMTPConfiguration } from '@/components/admin/smtp-configuration'
+
+const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } }
+
+function Toggle({ checked, onChange, tc }: { checked: boolean; onChange: (v: boolean) => void; tc: ReturnType<typeof useThemeColors> }) {
+  return (
+    <div
+      style={{ background: checked ? tc.toggleActiveBg : tc.toggleBg }}
+      className="w-11 h-6 rounded-full relative cursor-pointer transition-colors duration-200"
+      onClick={() => onChange(!checked)}
+    >
+      <div
+        className="absolute top-[2px] h-5 w-5 bg-white rounded-full transition-all duration-200"
+        style={{ left: checked ? '22px' : '2px' }}
+      />
+    </div>
+  )
+}
 
 export default function SettingsPage() {
   const { data: session } = useSession()
   const { settings, updateSetting, saveSettings, isLoading, resolvedTheme } = useSettings()
   const { playSound } = useSoundEffects()
+  const tc = useThemeColors()
   const [activeTab, setActiveTab] = useState('profile')
   const [isSaved, setIsSaved] = useState(false)
   const [userProfile, setUserProfile] = useState({
@@ -35,6 +55,11 @@ export default function SettingsPage() {
     newPassword: ''
   })
   const [profileLoading, setProfileLoading] = useState(false)
+  const [hoveredTab, setHoveredTab] = useState<string | null>(null)
+  const [saveHovered, setSaveHovered] = useState(false)
+  const [profileSaveHovered, setProfileSaveHovered] = useState(false)
+  const [exportHovered, setExportHovered] = useState(false)
+  const [hoveredTestBtn, setHoveredTestBtn] = useState<string | null>(null)
 
   // Load user profile data
   React.useEffect(() => {
@@ -54,7 +79,7 @@ export default function SettingsPage() {
         console.error('Failed to load profile:', error)
       }
     }
-    
+
     if (session?.user) {
       loadProfile()
     }
@@ -75,10 +100,10 @@ export default function SettingsPage() {
         setIsSaved(true)
         setTimeout(() => setIsSaved(false), 2000)
         // Clear password fields
-        setUserProfile(prev => ({ 
-          ...prev, 
-          currentPassword: '', 
-          newPassword: '' 
+        setUserProfile(prev => ({
+          ...prev,
+          currentPassword: '',
+          newPassword: ''
         }))
       } else {
         playSound('error')
@@ -126,27 +151,38 @@ export default function SettingsPage() {
   ]
 
   return (
-    <div className="max-w-7xl mx-auto relative z-10">
+    <div className="max-w-[1100px] mx-auto relative z-10 pb-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-100 mb-2">Settings</h1>
-        <p className="text-gray-400">Manage your preferences and account settings</p>
+      <div className="mb-10">
+        <div className="flex items-center gap-2 mb-2">
+          <Sparkles className="w-4 h-4" style={{ color: 'rgb(16,185,129)' }} />
+          <p className="text-[13px] font-medium tracking-wide uppercase" style={{ color: tc.accentLabel }}>Configuration</p>
+        </div>
+        <h1 className="text-[32px] font-bold tracking-tight mb-1" style={{ color: tc.textPrimary }}>Settings</h1>
+        <p className="text-[15px]" style={{ color: tc.textMuted }}>Manage your preferences and account settings</p>
       </div>
 
-      <div className="flex gap-8">
+      <div className="flex gap-6">
         {/* Sidebar Navigation */}
-        <div className="w-64 flex-shrink-0">
-          <div className="card p-4 sticky top-6">
-            <nav className="space-y-2">
+        <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.05 }} className="w-56 flex-shrink-0">
+          <div className="rounded-xl p-3 sticky top-6" style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}>
+            <nav className="space-y-1">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center px-3 py-2 rounded-lg transition-colors ${
+                  onMouseEnter={() => setHoveredTab(tab.id)}
+                  onMouseLeave={() => setHoveredTab(null)}
+                  className="w-full flex items-center px-3 py-2 rounded-lg transition-colors text-[13px] font-medium"
+                  style={
                     activeTab === tab.id
-                      ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
-                      : 'text-gray-400 hover:text-gray-300 hover:bg-gray-700/50'
-                  }`}
+                      ? { background: tc.tabActiveBg, color: tc.tabActiveText, border: '1px solid ' + tc.tabActiveBorder }
+                      : {
+                          background: hoveredTab === tab.id ? tc.tabInactiveHoverBg : 'transparent',
+                          color: hoveredTab === tab.id ? tc.tabInactiveHoverText : tc.tabInactiveText,
+                          border: '1px solid transparent'
+                        }
+                  }
                 >
                   <tab.icon className="w-4 h-4 mr-3" />
                   {tab.name}
@@ -154,76 +190,88 @@ export default function SettingsPage() {
               ))}
             </nav>
           </div>
-        </div>
+        </motion.div>
 
         {/* Main Content */}
-        <div className="flex-1">
-          <div className="card p-6">
+        <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.1 }} className="flex-1">
+          <div className="rounded-xl p-6" style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}>
             {/* Profile Tab */}
             {activeTab === 'profile' && (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                {...fadeUp}
+                transition={{ duration: 0.35 }}
                 className="space-y-6"
               >
-                <h2 className="text-xl font-semibold text-gray-100 mb-4">Profile Settings</h2>
-                
+                <h2 className="text-[17px] font-semibold mb-4" style={{ color: tc.textPrimary }}>Profile Settings</h2>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-[13px] font-medium mb-2" style={{ color: tc.textSecondary }}>
                       Name
                     </label>
                     <input
                       type="text"
                       value={userProfile.name}
                       onChange={(e) => setUserProfile(prev => ({ ...prev, name: e.target.value }))}
-                      className="input-primary w-full px-3 py-2 rounded-lg"
+                      className="w-full px-3 py-2 rounded-lg text-[13px] outline-none transition-colors"
+                      style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
+                      onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
+                      onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
                       placeholder="Enter your name"
                     />
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-[13px] font-medium mb-2" style={{ color: tc.textSecondary }}>
                       Login Email
                     </label>
                     <input
                       type="email"
                       value={session?.user?.email || ''}
-                      className="input-primary w-full px-3 py-2 rounded-lg bg-gray-800/50"
+                      className="w-full px-3 py-2 rounded-lg text-[13px] outline-none opacity-60"
+                      style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
                       placeholder="Enter your email"
                       disabled
                     />
-                    <p className="text-xs text-gray-500 mt-1">Used for login - contact admin to change</p>
+                    <p className="text-[11px] mt-1" style={{ color: tc.textFaint }}>Used for login - contact admin to change</p>
                   </div>
-                  
+
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-[13px] font-medium mb-2" style={{ color: tc.textSecondary }}>
                       Notification Email
                     </label>
                     <input
                       type="email"
                       value={userProfile.notificationEmail}
                       onChange={(e) => setUserProfile(prev => ({ ...prev, notificationEmail: e.target.value }))}
-                      className="input-primary w-full px-3 py-2 rounded-lg"
+                      className="w-full px-3 py-2 rounded-lg text-[13px] outline-none transition-colors"
+                      style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
+                      onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
+                      onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
                       placeholder="Email for notifications (leave empty to use login email)"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Where you'll receive notifications. Leave blank to use your login email.</p>
+                    <p className="text-[11px] mt-1" style={{ color: tc.textFaint }}>Where you'll receive notifications. Leave blank to use your login email.</p>
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-[13px] font-medium mb-2" style={{ color: tc.textSecondary }}>
                       Role
                     </label>
-                    <div className="input-primary w-full px-3 py-2 rounded-lg bg-gray-800/50">
+                    <div className="w-full px-3 py-2 rounded-lg text-[13px] opacity-60" style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}>
                       {(session?.user as any)?.role || 'User'}
                     </div>
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-[13px] font-medium mb-2" style={{ color: tc.textSecondary }}>
                       Time Zone
                     </label>
-                    <select className="input-primary w-full px-3 py-2 rounded-lg">
+                    <select
+                      className="w-full px-3 py-2 rounded-lg text-[13px] outline-none transition-colors"
+                      style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
+                      onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
+                      onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
+                    >
                       <option>UTC-8 (Pacific Time)</option>
                       <option>UTC-5 (Eastern Time)</option>
                       <option>UTC+0 (GMT)</option>
@@ -232,39 +280,48 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-gray-700">
-                  <h3 className="text-lg font-medium text-gray-200 mb-4">Change Password</h3>
+                <div className="pt-4" style={{ borderTop: '1px solid ' + tc.divider }}>
+                  <h3 className="text-[15px] font-medium mb-4" style={{ color: tc.textPrimary }}>Change Password</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input
                       type="password"
                       value={userProfile.currentPassword}
                       onChange={(e) => setUserProfile(prev => ({ ...prev, currentPassword: e.target.value }))}
                       placeholder="Current password"
-                      className="input-primary px-3 py-2 rounded-lg"
+                      className="px-3 py-2 rounded-lg text-[13px] outline-none transition-colors"
+                      style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
+                      onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
+                      onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
                     />
                     <input
                       type="password"
                       value={userProfile.newPassword}
                       onChange={(e) => setUserProfile(prev => ({ ...prev, newPassword: e.target.value }))}
                       placeholder="New password"
-                      className="input-primary px-3 py-2 rounded-lg"
+                      className="px-3 py-2 rounded-lg text-[13px] outline-none transition-colors"
+                      style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
+                      onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
+                      onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
                     />
                   </div>
                 </div>
 
                 {/* Save Profile Button */}
-                <div className="pt-4 border-t border-gray-700">
+                <div className="pt-4" style={{ borderTop: '1px solid ' + tc.divider }}>
                   <button
                     onClick={handleSaveProfile}
                     disabled={profileLoading}
-                    className={`btn-primary flex items-center px-6 py-2 rounded-lg ${
-                      isSaved ? 'bg-green-500/20 text-green-300 border-green-500/30' : ''
-                    }`}
+                    onMouseEnter={() => setProfileSaveHovered(true)}
+                    onMouseLeave={() => setProfileSaveHovered(false)}
+                    className="flex items-center px-6 py-2 rounded-lg text-[13px] font-medium transition-colors"
+                    style={
+                      isSaved
+                        ? { background: tc.statusCompleted.bg, color: tc.statusCompleted.text, border: '1px solid ' + tc.statusCompleted.border }
+                        : { background: profileSaveHovered ? tc.btnPrimaryHoverBg : tc.btnPrimaryBg, color: tc.btnPrimaryText, border: '1px solid ' + tc.btnPrimaryBorder }
+                    }
                   >
                     {profileLoading ? (
                       <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    ) : isSaved ? (
-                      <Save className="w-4 h-4 mr-2" />
                     ) : (
                       <Save className="w-4 h-4 mr-2" />
                     )}
@@ -277,15 +334,15 @@ export default function SettingsPage() {
             {/* Appearance Tab */}
             {activeTab === 'appearance' && (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                {...fadeUp}
+                transition={{ duration: 0.35 }}
                 className="space-y-6"
               >
-                <h2 className="text-xl font-semibold text-gray-100 mb-4">Appearance Settings</h2>
-                
-                <div className="space-y-4">
+                <h2 className="text-[17px] font-semibold mb-4" style={{ color: tc.textPrimary }}>Appearance Settings</h2>
+
+                <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-3">
+                    <label className="block text-[13px] font-medium mb-3" style={{ color: tc.textSecondary }}>
                       Theme
                     </label>
                     <div className="grid grid-cols-3 gap-3">
@@ -297,11 +354,12 @@ export default function SettingsPage() {
                             playSound('click')
                           }}
                           onMouseEnter={() => playSound('hover')}
-                          className={`flex items-center justify-center p-4 rounded-lg border transition-colors ${
+                          className="flex items-center justify-center p-4 rounded-lg text-[13px] font-medium transition-colors"
+                          style={
                             settings.theme === option.value
-                              ? 'border-teal-500 bg-teal-500/10 text-teal-300'
-                              : 'border-gray-600 bg-gray-800/30 text-gray-400 hover:border-gray-500'
-                          }`}
+                              ? { background: tc.tabActiveBg, color: tc.tabActiveText, border: '1px solid ' + tc.tabActiveBorder }
+                              : { background: tc.cardBg, color: tc.tabInactiveText, border: '1px solid ' + tc.cardBorder }
+                          }
                         >
                           <option.icon className="w-5 h-5 mr-2" />
                           {option.label}
@@ -313,50 +371,26 @@ export default function SettingsPage() {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <label className="text-sm font-medium text-gray-300">Compact Mode</label>
-                        <p className="text-xs text-gray-500">Reduce spacing and padding</p>
+                        <label className="text-[13px] font-medium" style={{ color: tc.textSecondary }}>Compact Mode</label>
+                        <p className="text-[11px]" style={{ color: tc.textFaint }}>Reduce spacing and padding</p>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.display.compactMode}
-                          onChange={(e) => handleSettingChange('display', 'compactMode', e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                      </label>
+                      <Toggle checked={settings.display.compactMode} onChange={(v) => handleSettingChange('display', 'compactMode', v)} tc={tc} />
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div>
-                        <label className="text-sm font-medium text-gray-300">Animations</label>
-                        <p className="text-xs text-gray-500">Enable smooth transitions and animations</p>
+                        <label className="text-[13px] font-medium" style={{ color: tc.textSecondary }}>Animations</label>
+                        <p className="text-[11px]" style={{ color: tc.textFaint }}>Enable smooth transitions and animations</p>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.display.animationsEnabled}
-                          onChange={(e) => handleSettingChange('display', 'animationsEnabled', e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                      </label>
+                      <Toggle checked={settings.display.animationsEnabled} onChange={(v) => handleSettingChange('display', 'animationsEnabled', v)} tc={tc} />
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div>
-                        <label className="text-sm font-medium text-gray-300">Sound Effects</label>
-                        <p className="text-xs text-gray-500">Play sounds for interactions</p>
+                        <label className="text-[13px] font-medium" style={{ color: tc.textSecondary }}>Sound Effects</label>
+                        <p className="text-[11px]" style={{ color: tc.textFaint }}>Play sounds for interactions</p>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.display.soundEnabled}
-                          onChange={(e) => handleSettingChange('display', 'soundEnabled', e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                      </label>
+                      <Toggle checked={settings.display.soundEnabled} onChange={(v) => handleSettingChange('display', 'soundEnabled', v)} tc={tc} />
                     </div>
                   </div>
                 </div>
@@ -366,20 +400,20 @@ export default function SettingsPage() {
             {/* Notifications Tab */}
             {activeTab === 'notifications' && (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                {...fadeUp}
+                transition={{ duration: 0.35 }}
                 className="space-y-6"
               >
-                <h2 className="text-xl font-semibold text-gray-100 mb-4">Notification Settings</h2>
-                
+                <h2 className="text-[17px] font-semibold mb-4" style={{ color: tc.textPrimary }}>Notification Settings</h2>
+
                 <div className="space-y-4">
                   {Object.entries(settings.notifications).map(([key, value]) => (
                     <div key={key} className="flex items-center justify-between">
                       <div>
-                        <label className="text-sm font-medium text-gray-300 capitalize">
+                        <label className="text-[13px] font-medium capitalize" style={{ color: tc.textSecondary }}>
                           {key.replace(/([A-Z])/g, ' $1').trim()}
                         </label>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-[11px]" style={{ color: tc.textFaint }}>
                           {key === 'email' && 'Receive notifications via email'}
                           {key === 'push' && 'Receive browser push notifications'}
                           {key === 'taskReminders' && 'Get reminders for upcoming tasks'}
@@ -387,21 +421,13 @@ export default function SettingsPage() {
                           {key === 'systemAlerts' && 'Important system notifications'}
                         </p>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={value}
-                          onChange={(e) => handleSettingChange('notifications', key, e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                      </label>
+                      <Toggle checked={value} onChange={(v) => handleSettingChange('notifications', key, v)} tc={tc} />
                     </div>
                   ))}
 
                   {/* Test Email Section */}
-                  <div className="pt-4 border-t border-gray-700">
-                    <h3 className="text-lg font-medium text-gray-200 mb-4">Test Email Notifications</h3>
+                  <div className="pt-4" style={{ borderTop: '1px solid ' + tc.divider }}>
+                    <h3 className="text-[15px] font-medium mb-4" style={{ color: tc.textPrimary }}>Test Email Notifications</h3>
                     <div className="grid grid-cols-2 gap-2">
                       {[
                         { type: 'task_reminder', label: 'Task Reminder' },
@@ -427,13 +453,20 @@ export default function SettingsPage() {
                               console.error('Test email error:', error)
                             }
                           }}
-                          className="btn-secondary text-xs px-3 py-2 rounded"
+                          onMouseEnter={() => setHoveredTestBtn(test.type)}
+                          onMouseLeave={() => setHoveredTestBtn(null)}
+                          className="text-[12px] font-medium px-3 py-2 rounded-lg transition-colors"
+                          style={{
+                            background: hoveredTestBtn === test.type ? tc.btnSecondaryHoverBg : tc.btnSecondaryBg,
+                            color: tc.btnSecondaryText,
+                            border: '1px solid ' + tc.btnSecondaryBorder
+                          }}
                         >
                           {test.label}
                         </button>
                       ))}
                     </div>
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="text-[11px] mt-2" style={{ color: tc.textFaint }}>
                       Click to send test emails to {userProfile.notificationEmail || session?.user?.email}
                     </p>
                   </div>
@@ -444,21 +477,24 @@ export default function SettingsPage() {
             {/* Privacy Tab */}
             {activeTab === 'privacy' && (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                {...fadeUp}
+                transition={{ duration: 0.35 }}
                 className="space-y-6"
               >
-                <h2 className="text-xl font-semibold text-gray-100 mb-4">Privacy & Security</h2>
-                
+                <h2 className="text-[17px] font-semibold mb-4" style={{ color: tc.textPrimary }}>Privacy & Security</h2>
+
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-[13px] font-medium mb-2" style={{ color: tc.textSecondary }}>
                       Profile Visibility
                     </label>
-                    <select 
+                    <select
                       value={settings.privacy.profileVisibility}
                       onChange={(e) => handleSettingChange('privacy', 'profileVisibility', e.target.value)}
-                      className="input-primary w-full px-3 py-2 rounded-lg"
+                      className="w-full px-3 py-2 rounded-lg text-[13px] outline-none transition-colors"
+                      style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
+                      onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
+                      onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
                     >
                       <option value="public">Public</option>
                       <option value="team">Team Only</option>
@@ -468,44 +504,42 @@ export default function SettingsPage() {
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <label className="text-sm font-medium text-gray-300">Activity Tracking</label>
-                      <p className="text-xs text-gray-500">Allow tracking of your activity for analytics</p>
+                      <label className="text-[13px] font-medium" style={{ color: tc.textSecondary }}>Activity Tracking</label>
+                      <p className="text-[11px]" style={{ color: tc.textFaint }}>Allow tracking of your activity for analytics</p>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={settings.privacy.activityTracking}
-                        onChange={(e) => handleSettingChange('privacy', 'activityTracking', e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                    </label>
+                    <Toggle checked={settings.privacy.activityTracking} onChange={(v) => handleSettingChange('privacy', 'activityTracking', v)} tc={tc} />
                   </div>
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <label className="text-sm font-medium text-gray-300">Analytics Opt-in</label>
-                      <p className="text-xs text-gray-500">Help improve the app by sharing usage data</p>
+                      <label className="text-[13px] font-medium" style={{ color: tc.textSecondary }}>Analytics Opt-in</label>
+                      <p className="text-[11px]" style={{ color: tc.textFaint }}>Help improve the app by sharing usage data</p>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={settings.privacy.analyticsOptIn}
-                        onChange={(e) => handleSettingChange('privacy', 'analyticsOptIn', e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                    </label>
+                    <Toggle checked={settings.privacy.analyticsOptIn} onChange={(v) => handleSettingChange('privacy', 'analyticsOptIn', v)} tc={tc} />
                   </div>
 
-                  <div className="pt-4 border-t border-gray-700">
-                    <h3 className="text-lg font-medium text-gray-200 mb-4">Data Management</h3>
+                  <div className="pt-4" style={{ borderTop: '1px solid ' + tc.divider }}>
+                    <h3 className="text-[15px] font-medium mb-4" style={{ color: tc.textPrimary }}>Data Management</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <button className="btn-secondary flex items-center justify-center px-4 py-2 rounded-lg">
+                      <button
+                        onMouseEnter={() => setExportHovered(true)}
+                        onMouseLeave={() => setExportHovered(false)}
+                        className="flex items-center justify-center px-4 py-2 rounded-lg text-[13px] font-medium transition-colors"
+                        style={{
+                          background: exportHovered ? tc.btnSecondaryHoverBg : tc.btnSecondaryBg,
+                          color: tc.btnSecondaryText,
+                          border: '1px solid ' + tc.btnSecondaryBorder
+                        }}
+                      >
                         <Download className="w-4 h-4 mr-2" />
                         Export Data
                       </button>
-                      <button className="bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/30 transition-colors flex items-center justify-center px-4 py-2 rounded-lg">
+                      <button
+                        className="flex items-center justify-center px-4 py-2 rounded-lg text-[13px] font-medium transition-colors"
+                        style={{ background: tc.btnDangerBg, color: tc.btnDangerText, border: '1px solid ' + tc.btnDangerBorder }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = tc.btnDangerHoverBg}
+                        onMouseLeave={(e) => e.currentTarget.style.background = tc.btnDangerBg}
+                      >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Delete Account
                       </button>
@@ -518,37 +552,32 @@ export default function SettingsPage() {
             {/* System Tab */}
             {activeTab === 'system' && (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                {...fadeUp}
+                transition={{ duration: 0.35 }}
                 className="space-y-6"
               >
-                <h2 className="text-xl font-semibold text-gray-100 mb-4">System Settings</h2>
-                
+                <h2 className="text-[17px] font-semibold mb-4" style={{ color: tc.textPrimary }}>System Settings</h2>
+
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <label className="text-sm font-medium text-gray-300">Auto-save</label>
-                      <p className="text-xs text-gray-500">Automatically save changes</p>
+                      <label className="text-[13px] font-medium" style={{ color: tc.textSecondary }}>Auto-save</label>
+                      <p className="text-[11px]" style={{ color: tc.textFaint }}>Automatically save changes</p>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={settings.system.autoSave}
-                        onChange={(e) => handleSettingChange('system', 'autoSave', e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                    </label>
+                    <Toggle checked={settings.system.autoSave} onChange={(v) => handleSettingChange('system', 'autoSave', v)} tc={tc} />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-[13px] font-medium mb-2" style={{ color: tc.textSecondary }}>
                       Session Timeout (hours)
                     </label>
-                    <select 
+                    <select
                       value={settings.system.sessionTimeout}
                       onChange={(e) => handleSettingChange('system', 'sessionTimeout', parseInt(e.target.value))}
-                      className="input-primary w-full px-3 py-2 rounded-lg"
+                      className="w-full px-3 py-2 rounded-lg text-[13px] outline-none transition-colors"
+                      style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
+                      onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
+                      onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
                     >
                       <option value={1}>1 hour</option>
                       <option value={8}>8 hours</option>
@@ -558,13 +587,16 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-[13px] font-medium mb-2" style={{ color: tc.textSecondary }}>
                       Language
                     </label>
-                    <select 
+                    <select
                       value={settings.system.language}
                       onChange={(e) => handleSettingChange('system', 'language', e.target.value)}
-                      className="input-primary w-full px-3 py-2 rounded-lg"
+                      className="w-full px-3 py-2 rounded-lg text-[13px] outline-none transition-colors"
+                      style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
+                      onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
+                      onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
                     >
                       <option value="en">English</option>
                       <option value="es">Spanish</option>
@@ -578,24 +610,24 @@ export default function SettingsPage() {
                     <SMTPConfiguration />
                   )}
 
-                  <div className="pt-4 border-t border-gray-700">
-                    <h3 className="text-lg font-medium text-gray-200 mb-4">System Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="pt-4" style={{ borderTop: '1px solid ' + tc.divider }}>
+                    <h3 className="text-[15px] font-medium mb-4" style={{ color: tc.textPrimary }}>System Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[13px]">
                       <div>
-                        <span className="text-gray-400">Version:</span>
-                        <span className="text-gray-200 ml-2">1.0.0</span>
+                        <span style={{ color: tc.textMuted }}>Version:</span>
+                        <span className="ml-2" style={{ color: tc.textSecondary }}>1.0.0</span>
                       </div>
                       <div>
-                        <span className="text-gray-400">Last Update:</span>
-                        <span className="text-gray-200 ml-2">Jan 15, 2025</span>
+                        <span style={{ color: tc.textMuted }}>Last Update:</span>
+                        <span className="ml-2" style={{ color: tc.textSecondary }}>Jan 15, 2025</span>
                       </div>
                       <div>
-                        <span className="text-gray-400">Database:</span>
-                        <span className="text-gray-200 ml-2">PostgreSQL</span>
+                        <span style={{ color: tc.textMuted }}>Database:</span>
+                        <span className="ml-2" style={{ color: tc.textSecondary }}>PostgreSQL</span>
                       </div>
                       <div>
-                        <span className="text-gray-400">Uptime:</span>
-                        <span className="text-gray-200 ml-2">99.9%</span>
+                        <span style={{ color: tc.textMuted }}>Uptime:</span>
+                        <span className="ml-2" style={{ color: tc.textSecondary }}>99.9%</span>
                       </div>
                     </div>
                   </div>
@@ -604,18 +636,21 @@ export default function SettingsPage() {
             )}
 
             {/* Save Button */}
-            <div className="flex justify-end mt-8 pt-6 border-t border-gray-700">
+            <div className="flex justify-end mt-8 pt-6" style={{ borderTop: '1px solid ' + tc.divider }}>
               <button
                 onClick={handleSaveSettings}
                 disabled={isLoading}
-                className={`btn-primary flex items-center px-6 py-2 rounded-lg ${
-                  isSaved ? 'bg-green-500/20 text-green-300 border-green-500/30' : ''
-                }`}
+                onMouseEnter={() => setSaveHovered(true)}
+                onMouseLeave={() => setSaveHovered(false)}
+                className="flex items-center px-6 py-2 rounded-lg text-[13px] font-medium transition-colors"
+                style={
+                  isSaved
+                    ? { background: tc.statusCompleted.bg, color: tc.statusCompleted.text, border: '1px solid ' + tc.statusCompleted.border }
+                    : { background: saveHovered ? tc.btnPrimaryHoverBg : tc.btnPrimaryBg, color: tc.btnPrimaryText, border: '1px solid ' + tc.btnPrimaryBorder }
+                }
               >
                 {isLoading ? (
                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                ) : isSaved ? (
-                  <Save className="w-4 h-4 mr-2" />
                 ) : (
                   <Save className="w-4 h-4 mr-2" />
                 )}
@@ -623,8 +658,8 @@ export default function SettingsPage() {
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   )
-} 
+}

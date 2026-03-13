@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  Plus, Search, Filter, Edit, Trash2, Calendar, MapPin, 
+import {
+  Plus, Search, Filter, Edit, Trash2, Calendar, MapPin,
   Wrench, AlertCircle, CheckCircle, Clock, Settings, X,
   HeartHandshake, Sparkles, Box, Loader2
 } from 'lucide-react'
 import { apiRequest } from '@/lib/url-utils'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 interface Equipment {
   id: string
@@ -76,9 +77,26 @@ const equipmentTypes = [
   { value: 'OTHER', label: 'Other' }
 ]
 
+type ThemeColors = ReturnType<typeof useThemeColors>
+
+function getStatusStyle(status: string, tc: ThemeColors) {
+  switch (status) {
+    case 'COMPLETED': return tc.statusCompleted
+    case 'OVERDUE': return tc.statusOverdue
+    case 'PENDING': return tc.statusPending
+    default: return { bg: tc.surfaceBg, text: tc.textMuted, border: tc.cardBorder }
+  }
+}
+
+const fadeUp = {
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0 },
+}
+
 export default function EquipmentPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const tc = useThemeColors()
   const [equipment, setEquipment] = useState<Equipment[]>([])
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -97,6 +115,7 @@ export default function EquipmentPage() {
   const [selectedFrequency, setSelectedFrequency] = useState<ScheduleFrequency>(ScheduleFrequency.WEEKLY)
   const [selectedEquipmentType, setSelectedEquipmentType] = useState<string>('OTHER')
   const [isAssigning, setIsAssigning] = useState(false)
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null)
 
   const [formData, setFormData] = useState<EquipmentFormData>({
     name: '',
@@ -151,7 +170,7 @@ export default function EquipmentPage() {
       setIsLoading(true)
       const response = await apiRequest('/api/admin/equipment')
       if (!response.ok) throw new Error('Failed to fetch equipment')
-      
+
       const data: EquipmentResponse = await response.json()
       setEquipment(data.equipment)
     } catch (error) {
@@ -167,10 +186,8 @@ export default function EquipmentPage() {
 
     setIsAssigning(true)
     try {
-      // Get all equipment of selected type
       const targetEquipment = equipment.filter(equip => equip.type === selectedEquipmentType)
-      
-      // Assign schedule to each equipment
+
       await Promise.all(
         targetEquipment.map(equip =>
           apiRequest(`/api/admin/equipment/${equip.id}/schedules`, {
@@ -186,8 +203,7 @@ export default function EquipmentPage() {
 
       setSuccessMessage(`Schedule assigned to all ${selectedEquipmentType.toLowerCase().replace('_', ' ')} equipment`)
       setSelectedSchedule('')
-      setSelectedFrequency(ScheduleFrequency.WEEKLY) // Reset to default
-      // Refresh equipment data
+      setSelectedFrequency(ScheduleFrequency.WEEKLY)
       fetchEquipment()
     } catch (error) {
       console.error('Error assigning schedules:', error)
@@ -197,10 +213,9 @@ export default function EquipmentPage() {
     }
   }
 
-  // Handler for schedule selection that sets suggested frequency automatically
   const handleScheduleSelection = (scheduleId: string) => {
     setSelectedSchedule(scheduleId)
-    
+
     if (scheduleId) {
       const schedule = schedules.find(s => s.id === scheduleId)
       if (schedule?.suggestedFrequency) {
@@ -228,7 +243,6 @@ export default function EquipmentPage() {
       setSuccessMessage('Schedule assigned successfully')
       setSelectedSchedule('')
       setSelectedEquipment(null)
-      // Refresh equipment data
       fetchEquipment()
     } catch (error) {
       console.error('Error assigning schedule:', error)
@@ -340,29 +354,24 @@ export default function EquipmentPage() {
                          equip.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (equip.model && equip.model.toLowerCase().includes(searchTerm.toLowerCase()))
     const matchesType = typeFilter === 'all' || equip.type === typeFilter
-    
+
     return matchesSearch && matchesType
   })
 
   const types = [...new Set(equipment.map(e => e.type))].sort()
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'COMPLETED':
-        return 'bg-green-500/10 text-green-400 border-green-500/20'
-      case 'OVERDUE':
-        return 'bg-red-500/10 text-red-400 border-red-500/20'
-      case 'PENDING':
-        return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
-      default:
-        return 'bg-gray-500/10 text-gray-400 border-gray-500/20'
-    }
-  }
-
   if (status === 'loading' || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-teal-500"></div>
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          style={{
+            width: 48, height: 48, borderRadius: '50%',
+            border: '3px solid rgba(16,185,129,0.15)',
+            borderTopColor: 'rgb(16,185,129)',
+          }}
+        />
       </div>
     )
   }
@@ -371,15 +380,17 @@ export default function EquipmentPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-100 mb-2">Error</h2>
-          <p className="text-gray-400">{error}</p>
+          <AlertCircle className="w-16 h-16 mx-auto mb-4" style={{ color: tc.accentRed }} />
+          <h2 className="text-xl font-semibold mb-2" style={{ color: tc.textPrimary }}>Error</h2>
+          <p style={{ color: tc.textMuted }}>{error}</p>
           <button
-            onClick={() => {
-              setError(null)
-              fetchEquipment()
+            onClick={() => { setError(null); fetchEquipment() }}
+            className="mt-4 px-4 py-2 rounded-lg transition-colors"
+            style={{
+              background: tc.btnPrimaryBg,
+              color: tc.btnPrimaryText,
+              border: '1px solid ' + tc.btnPrimaryBorder,
             }}
-            className="mt-4 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-colors"
           >
             Retry
           </button>
@@ -388,8 +399,20 @@ export default function EquipmentPage() {
     )
   }
 
+  const inputStyle = {
+    background: tc.inputBg,
+    border: '1px solid ' + tc.inputBorder,
+    color: tc.inputText,
+    borderRadius: 8,
+  }
+
+  const selectStyle = {
+    ...inputStyle,
+    appearance: 'auto' as const,
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="max-w-[1100px] mx-auto relative z-10 pb-8 px-4">
       {/* Success Message */}
       <AnimatePresence>
         {successMessage && (
@@ -397,7 +420,13 @@ export default function EquipmentPage() {
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
-            className="fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2"
+            className="fixed top-4 right-4 px-6 py-3 rounded-xl z-50 flex items-center gap-2"
+            style={{
+              background: tc.statusCompleted.bg,
+              color: tc.statusCompleted.text,
+              border: '1px solid ' + tc.statusCompleted.border,
+              backdropFilter: 'blur(12px)',
+            }}
           >
             <CheckCircle className="w-5 h-5" />
             {successMessage}
@@ -406,67 +435,74 @@ export default function EquipmentPage() {
       </AnimatePresence>
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-100">Equipment Management</h1>
-          <p className="text-gray-400 mt-2">Manage maintenance equipment and schedules</p>
+      <div className="mb-10">
+        <div className="flex items-center gap-2 mb-2">
+          <Sparkles className="w-4 h-4" style={{ color: 'rgb(16,185,129)' }} />
+          <p className="text-[13px] font-medium tracking-wide uppercase" style={{ color: tc.accentLabel }}>Equipment</p>
         </div>
-        <div className="flex items-center gap-4">
-          {/* View Mode Toggle */}
-          <div className="flex rounded-lg bg-gray-800 border border-gray-600 p-1">
-            <button
-              onClick={() => setViewMode('EQUIPMENT')}
-              className={`px-4 py-2 rounded transition-colors ${
-                viewMode === 'EQUIPMENT'
-                  ? 'bg-teal-600 text-white'
-                  : 'text-gray-400 hover:text-gray-200'
-              }`}
-            >
-              Equipment
-            </button>
-            <button
-              onClick={() => setViewMode('SCHEDULES')}
-              className={`px-4 py-2 rounded transition-colors ${
-                viewMode === 'SCHEDULES'
-                  ? 'bg-teal-600 text-white'
-                  : 'text-gray-400 hover:text-gray-200'
-              }`}
-            >
-              Assign Schedules
-            </button>
-          </div>
-          
-          <button
-            onClick={() => {
-              resetForm()
-              setShowAddModal(true)
-            }}
-            className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            Add Equipment
-          </button>
-        </div>
+        <h1 className="text-[32px] font-bold tracking-tight mb-1" style={{ color: tc.textPrimary }}>Equipment Management</h1>
+        <p className="text-[15px]" style={{ color: tc.textMuted }}>Manage maintenance equipment and schedules</p>
       </div>
 
+      {/* Controls */}
+      <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.05 }} className="flex justify-between items-center mb-4">
+        <div className="flex rounded-lg p-1" style={{ background: tc.surfaceBg, border: '1px solid ' + tc.cardBorder }}>
+          {(['EQUIPMENT', 'SCHEDULES'] as ViewMode[]).map((mode) => (
+            <button
+              key={mode}
+              onClick={() => setViewMode(mode)}
+              className="px-4 py-2 rounded-md text-[13px] font-medium transition-all"
+              style={viewMode === mode ? {
+                background: tc.tabActiveBg,
+                color: tc.tabActiveText,
+                border: '1px solid ' + tc.tabActiveBorder,
+              } : {
+                background: 'transparent',
+                color: tc.tabInactiveText,
+                border: '1px solid transparent',
+              }}
+            >
+              {mode === 'EQUIPMENT' ? 'Equipment' : 'Assign Schedules'}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => { resetForm(); setShowAddModal(true) }}
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors"
+          style={{
+            background: tc.btnPrimaryBg,
+            color: tc.btnPrimaryText,
+            border: '1px solid ' + tc.btnPrimaryBorder,
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}
+        >
+          <Plus className="w-4 h-4" />
+          Add Equipment
+        </button>
+      </motion.div>
+
       {/* Filters */}
-      <div className="bg-gray-800/50 rounded-lg p-4 mb-6">
+      <motion.div {...fadeUp} transition={{ duration: 0.45, delay: 0.06 }} className="rounded-xl p-4 mb-6" style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="relative md:col-span-2">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: tc.textFaint }} />
             <input
               type="text"
               placeholder="Search equipment..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 placeholder-gray-400 focus:border-teal-500 focus:outline-none"
+              className="w-full pl-10 pr-4 py-2 rounded-lg text-sm outline-none"
+              style={inputStyle}
             />
           </div>
-          
+
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+            className="px-4 py-2 rounded-lg text-sm outline-none"
+            style={selectStyle}
           >
             <option value="all">All Types</option>
             {equipmentTypes.map(type => (
@@ -476,54 +512,53 @@ export default function EquipmentPage() {
             ))}
           </select>
 
-          <div className="text-sm text-gray-400 flex items-center gap-2">
+          <div className="text-sm flex items-center gap-2" style={{ color: tc.textMuted }}>
             <Filter className="w-4 h-4" />
             {filteredEquipment.length} of {equipment.length} equipment
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Schedule Assignment Section */}
       {viewMode === 'SCHEDULES' && (
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-100 mb-6">Schedule Assignment</h2>
-          
+        <motion.div {...fadeUp} transition={{ duration: 0.45, delay: 0.12 }} className="mb-8">
+          <h2 className="text-xl font-semibold mb-6" style={{ color: tc.textPrimary }}>Schedule Assignment</h2>
+
           {/* Assignment Mode Toggle */}
           <div className="flex gap-2 mb-6">
-            <button
-              onClick={() => setAssignMode('QUICK')}
-              className={`px-4 py-2 rounded ${
-                assignMode === 'QUICK'
-                  ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
-                  : 'bg-gray-800/50 text-gray-400 hover:bg-teal-500/10 hover:text-teal-300'
-              } border transition-colors`}
-            >
-              Quick Assign
-            </button>
-            <button
-              onClick={() => setAssignMode('MANUAL')}
-              className={`px-4 py-2 rounded ${
-                assignMode === 'MANUAL'
-                  ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
-                  : 'bg-gray-800/50 text-gray-400 hover:bg-teal-500/10 hover:text-teal-300'
-              } border transition-colors`}
-            >
-              Manual Assign
-            </button>
+            {(['QUICK', 'MANUAL'] as AssignMode[]).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setAssignMode(mode)}
+                className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                style={assignMode === mode ? {
+                  background: tc.tabActiveBg,
+                  color: tc.tabActiveText,
+                  border: '1px solid ' + tc.tabActiveBorder,
+                } : {
+                  background: tc.tabInactiveBg,
+                  color: tc.tabInactiveText,
+                  border: '1px solid ' + tc.cardBorder,
+                }}
+              >
+                {mode === 'QUICK' ? 'Quick Assign' : 'Manual Assign'}
+              </button>
+            ))}
           </div>
 
           {assignMode === 'QUICK' && (
-            <div className="bg-gray-900/50 rounded-lg border border-gray-600 p-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-100 mb-4">Quick Assignment</h3>
-              <p className="text-gray-400 mb-4">Assign a schedule to all equipment of a specific type</p>
-              
+            <div className="rounded-xl p-6 mb-6" style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}>
+              <h3 className="text-lg font-semibold mb-2" style={{ color: tc.textPrimary }}>Quick Assignment</h3>
+              <p className="text-sm mb-4" style={{ color: tc.textMuted }}>Assign a schedule to all equipment of a specific type</p>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Schedule</label>
+                  <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>Schedule</label>
                   <select
                     value={selectedSchedule}
                     onChange={(e) => handleScheduleSelection(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                    style={selectStyle}
                   >
                     <option value="">Select Schedule</option>
                     {schedules.map(schedule => (
@@ -535,11 +570,12 @@ export default function EquipmentPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Equipment Type</label>
+                  <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>Equipment Type</label>
                   <select
                     value={selectedEquipmentType}
                     onChange={(e) => setSelectedEquipmentType(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                    style={selectStyle}
                   >
                     {equipmentTypes.map(type => (
                       <option key={type.value} value={type.value}>
@@ -550,11 +586,12 @@ export default function EquipmentPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Frequency</label>
+                  <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>Frequency</label>
                   <select
                     value={selectedFrequency}
                     onChange={(e) => setSelectedFrequency(e.target.value as ScheduleFrequency)}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                    style={selectStyle}
                   >
                     <option value="DAILY">Daily</option>
                     <option value="WEEKLY">Weekly</option>
@@ -565,11 +602,16 @@ export default function EquipmentPage() {
                   </select>
                 </div>
               </div>
-              
+
               <button
                 onClick={handleQuickAssign}
                 disabled={!selectedSchedule || !selectedEquipmentType || isAssigning}
-                className="flex items-center px-4 py-2 bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 rounded border border-teal-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                style={{
+                  background: tc.btnPrimaryBg,
+                  color: tc.btnPrimaryText,
+                  border: '1px solid ' + tc.btnPrimaryBorder,
+                }}
               >
                 {isAssigning ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -582,17 +624,18 @@ export default function EquipmentPage() {
           )}
 
           {assignMode === 'MANUAL' && (
-            <div className="bg-gray-900/50 rounded-lg border border-gray-600 p-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-100 mb-4">Manual Assignment</h3>
-              <p className="text-gray-400 mb-4">Assign a schedule to a specific equipment</p>
-              
+            <div className="rounded-xl p-6 mb-6" style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}>
+              <h3 className="text-lg font-semibold mb-2" style={{ color: tc.textPrimary }}>Manual Assignment</h3>
+              <p className="text-sm mb-4" style={{ color: tc.textMuted }}>Assign a schedule to a specific equipment</p>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Schedule</label>
+                  <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>Schedule</label>
                   <select
                     value={selectedSchedule}
                     onChange={(e) => handleScheduleSelection(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                    style={selectStyle}
                   >
                     <option value="">Select Schedule</option>
                     {schedules.map(schedule => (
@@ -604,14 +647,15 @@ export default function EquipmentPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Equipment</label>
+                  <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>Equipment</label>
                   <select
                     value={selectedEquipment?.id || ''}
                     onChange={(e) => {
                       const equip = equipment.find(r => r.id === e.target.value)
                       setSelectedEquipment(equip || null)
                     }}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                    style={selectStyle}
                   >
                     <option value="">Select Equipment</option>
                     {equipment.map(equip => (
@@ -623,11 +667,12 @@ export default function EquipmentPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Frequency</label>
+                  <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>Frequency</label>
                   <select
                     value={selectedFrequency}
                     onChange={(e) => setSelectedFrequency(e.target.value as ScheduleFrequency)}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                    style={selectStyle}
                   >
                     <option value="DAILY">Daily</option>
                     <option value="WEEKLY">Weekly</option>
@@ -638,11 +683,16 @@ export default function EquipmentPage() {
                   </select>
                 </div>
               </div>
-              
+
               <button
                 onClick={handleManualAssign}
                 disabled={!selectedSchedule || !selectedEquipment || isAssigning}
-                className="flex items-center px-4 py-2 bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 rounded border border-teal-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                style={{
+                  background: tc.btnPrimaryBg,
+                  color: tc.btnPrimaryText,
+                  border: '1px solid ' + tc.btnPrimaryBorder,
+                }}
               >
                 {isAssigning ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -653,63 +703,81 @@ export default function EquipmentPage() {
               </button>
             </div>
           )}
-        </div>
+        </motion.div>
       )}
 
       {/* Equipment Grid */}
       {viewMode === 'EQUIPMENT' && filteredEquipment.length === 0 ? (
-        <div className="text-center py-12">
-          <Wrench className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-100 mb-2">
+        <motion.div {...fadeUp} transition={{ duration: 0.45, delay: 0.12 }} className="text-center py-16 rounded-xl" style={{ background: tc.emptyBg, border: '1px solid ' + tc.cardBorder }}>
+          <div className="w-14 h-14 rounded-xl mx-auto mb-4 flex items-center justify-center" style={{ background: tc.surfaceBg }}>
+            <Wrench className="w-7 h-7" style={{ color: tc.textFaint }} />
+          </div>
+          <h3 className="text-lg font-semibold mb-2" style={{ color: tc.textPrimary }}>
             {equipment.length === 0 ? 'No Equipment Added' : 'No Equipment Found'}
           </h3>
-          <p className="text-gray-400 mb-4">
-            {equipment.length === 0 
+          <p className="text-sm mb-4" style={{ color: tc.textMuted }}>
+            {equipment.length === 0
               ? 'Get started by adding your first piece of equipment'
               : 'Try adjusting your search filters'
             }
           </p>
           {equipment.length === 0 && (
             <button
-              onClick={() => {
-                resetForm()
-                setShowAddModal(true)
+              onClick={() => { resetForm(); setShowAddModal(true) }}
+              className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              style={{
+                background: tc.btnPrimaryBg,
+                color: tc.btnPrimaryText,
+                border: '1px solid ' + tc.btnPrimaryBorder,
               }}
-              className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-colors"
             >
               Add Equipment
             </button>
           )}
-        </div>
+        </motion.div>
       ) : viewMode === 'EQUIPMENT' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredEquipment.map((equip, index) => (
             <motion.div
               key={equip.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1, duration: 0.3 }}
-              className="bg-gray-800/50 border border-gray-700 rounded-lg p-6 hover:border-gray-600 transition-colors"
+              {...fadeUp}
+              transition={{ duration: 0.45, delay: 0.12 + index * 0.06 }}
+              className="rounded-xl p-5 transition-all cursor-default"
+              style={{
+                background: hoveredCard === equip.id ? tc.cardHoverBg : tc.cardBg,
+                border: '1px solid ' + (hoveredCard === equip.id ? tc.cardHoverBorder(tc.accentGreen) : tc.cardBorder),
+                boxShadow: tc.shadow,
+              }}
+              onMouseEnter={() => setHoveredCard(equip.id)}
+              onMouseLeave={() => setHoveredCard(null)}
             >
               {/* Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">{equipmentTypeIcons[equip.type] || '📦'}</span>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `rgba(16,185,129,0.${tc.iconBgAlpha})`, color: tc.accentGreen }}>
+                    {equipmentTypeIcons[equip.type] || <Box className="w-5 h-5" />}
+                  </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-100">{equip.name}</h3>
+                    <h3 className="text-base font-semibold" style={{ color: tc.textPrimary }}>{equip.name}</h3>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   <button
                     onClick={() => openEditModal(equip)}
-                    className="p-1 text-gray-400 hover:text-teal-400 transition-colors"
+                    className="p-1.5 rounded-md transition-colors"
+                    style={{ color: tc.textMuted }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = tc.accentGreen)}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = tc.textMuted)}
                     title="Edit equipment"
                   >
                     <Edit className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => openDeleteModal(equip)}
-                    className="p-1 text-gray-400 hover:text-red-400 transition-colors"
+                    className="p-1.5 rounded-md transition-colors"
+                    style={{ color: tc.textMuted }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = tc.accentRed)}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = tc.textMuted)}
                     title="Delete equipment"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -718,21 +786,21 @@ export default function EquipmentPage() {
               </div>
 
               {/* Details */}
-              <div className="space-y-2 mb-4">
+              <div className="space-y-1.5 mb-4">
                 <div className="text-sm">
-                  <span className="text-gray-400">Type:</span>
-                  <span className="text-gray-200 ml-2">{equip.type.replace('_', ' ')}</span>
+                  <span style={{ color: tc.textMuted }}>Type:</span>
+                  <span className="ml-2" style={{ color: tc.textSecondary }}>{equip.type.replace('_', ' ')}</span>
                 </div>
                 {equip.model && (
                   <div className="text-sm">
-                    <span className="text-gray-400">Model:</span>
-                    <span className="text-gray-200 ml-2">{equip.model}</span>
+                    <span style={{ color: tc.textMuted }}>Model:</span>
+                    <span className="ml-2" style={{ color: tc.textSecondary }}>{equip.model}</span>
                   </div>
                 )}
                 {equip.serialNumber && (
                   <div className="text-sm">
-                    <span className="text-gray-400">Serial:</span>
-                    <span className="text-gray-200 ml-2">{equip.serialNumber}</span>
+                    <span style={{ color: tc.textMuted }}>Serial:</span>
+                    <span className="ml-2" style={{ color: tc.textSecondary }}>{equip.serialNumber}</span>
                   </div>
                 )}
               </div>
@@ -740,34 +808,41 @@ export default function EquipmentPage() {
               {/* Schedules */}
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-medium text-gray-100">
+                  <Calendar className="w-4 h-4" style={{ color: tc.textMuted }} />
+                  <span className="text-sm font-medium" style={{ color: tc.textPrimary }}>
                     Schedules ({equip.schedules.length})
                   </span>
                 </div>
                 {equip.schedules.length > 0 ? (
-                  <div className="space-y-1">
-                    {equip.schedules.slice(0, 2).map(schedule => (
-                      <div key={schedule.id} className="flex items-center justify-between text-xs">
-                        <span className="text-gray-300">{schedule.title}</span>
-                        <span className={`px-2 py-1 rounded border ${getStatusColor(schedule.status)}`}>
-                          {schedule.status}
-                        </span>
-                      </div>
-                    ))}
+                  <div className="space-y-1.5">
+                    {equip.schedules.slice(0, 2).map(schedule => {
+                      const ss = getStatusStyle(schedule.status, tc)
+                      return (
+                        <div key={schedule.id} className="flex items-center justify-between text-xs">
+                          <span style={{ color: tc.textSecondary }}>{schedule.title}</span>
+                          <span className="px-2 py-0.5 rounded-md" style={{
+                            background: ss.bg,
+                            color: ss.text,
+                            border: '1px solid ' + ss.border,
+                          }}>
+                            {schedule.status}
+                          </span>
+                        </div>
+                      )
+                    })}
                     {equip.schedules.length > 2 && (
-                      <div className="text-xs text-gray-500 text-center">
+                      <div className="text-xs text-center" style={{ color: tc.textFaint }}>
                         +{equip.schedules.length - 2} more
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="text-xs text-gray-500">No schedules assigned</div>
+                  <div className="text-xs" style={{ color: tc.textFaint }}>No schedules assigned</div>
                 )}
               </div>
 
               {/* Stats */}
-              <div className="flex items-center justify-between text-xs text-gray-400 pt-4 border-t border-gray-700">
+              <div className="flex items-center justify-between text-xs pt-4" style={{ borderTop: '1px solid ' + tc.divider, color: tc.textFaint }}>
                 <span>{equip.totalTasks} total tasks</span>
                 <span>Added {new Date(equip.createdAt).toLocaleDateString()}</span>
               </div>
@@ -779,19 +854,21 @@ export default function EquipmentPage() {
       {/* Add Equipment Modal */}
       <AnimatePresence>
         {showAddModal && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: tc.modalOverlay }}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-gray-800 border border-gray-700 rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+              className="rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+              style={{ background: tc.modalBg, border: '1px solid ' + tc.cardBorder, boxShadow: '0 25px 50px rgba(0,0,0,0.25)' }}
             >
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-semibold text-gray-100">Add New Equipment</h2>
+                  <h2 className="text-xl font-semibold" style={{ color: tc.textPrimary }}>Add New Equipment</h2>
                   <button
                     onClick={() => setShowAddModal(false)}
-                    className="text-gray-400 hover:text-gray-300 p-1"
+                    className="p-1 rounded-md transition-colors"
+                    style={{ color: tc.textMuted }}
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -799,7 +876,7 @@ export default function EquipmentPage() {
 
                 <form onSubmit={handleAddEquipment} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
                       Name *
                     </label>
                     <input
@@ -807,19 +884,21 @@ export default function EquipmentPage() {
                       required
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                      style={inputStyle}
                       placeholder="Enter equipment name"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
                       Type
                     </label>
                     <select
                       value={formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                      style={selectStyle}
                     >
                       {equipmentTypes.map(type => (
                         <option key={type.value} value={type.value}>
@@ -829,35 +908,46 @@ export default function EquipmentPage() {
                     </select>
                   </div>
 
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
                       Description
                     </label>
                     <textarea
                       rows={3}
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
+                      style={inputStyle}
                       placeholder="Enter description"
                     />
                   </div>
 
-                  <div className="flex items-center justify-end gap-3 pt-4 md:col-span-2">
+                  <div className="flex items-center justify-end gap-3 pt-4">
                     <button
                       type="button"
                       onClick={() => setShowAddModal(false)}
-                      className="px-4 py-2 text-gray-400 hover:text-gray-300 transition-colors"
+                      className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      style={{ color: tc.textMuted }}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg transition-colors flex items-center gap-2"
+                      className="px-6 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
+                      style={{
+                        background: tc.btnPrimaryBg,
+                        color: tc.btnPrimaryText,
+                        border: '1px solid ' + tc.btnPrimaryBorder,
+                      }}
                     >
                       {isSubmitting ? (
                         <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                            style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(16,185,129,0.2)', borderTopColor: tc.accentGreen }}
+                          />
                           Adding...
                         </>
                       ) : (
@@ -875,23 +965,25 @@ export default function EquipmentPage() {
       {/* Edit Equipment Modal */}
       <AnimatePresence>
         {showEditModal && selectedEquipment && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: tc.modalOverlay }}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-gray-800 border border-gray-700 rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+              className="rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+              style={{ background: tc.modalBg, border: '1px solid ' + tc.cardBorder, boxShadow: '0 25px 50px rgba(0,0,0,0.25)' }}
             >
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-semibold text-gray-100">Edit Equipment</h2>
+                  <h2 className="text-xl font-semibold" style={{ color: tc.textPrimary }}>Edit Equipment</h2>
                   <button
                     onClick={() => {
                       setShowEditModal(false)
                       setSelectedEquipment(null)
                       resetForm()
                     }}
-                    className="text-gray-400 hover:text-gray-300 p-1"
+                    className="p-1 rounded-md transition-colors"
+                    style={{ color: tc.textMuted }}
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -899,7 +991,7 @@ export default function EquipmentPage() {
 
                 <form onSubmit={handleEditEquipment} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
                       Name *
                     </label>
                     <input
@@ -907,19 +999,21 @@ export default function EquipmentPage() {
                       required
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                      style={inputStyle}
                       placeholder="Enter equipment name"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
                       Type
                     </label>
                     <select
                       value={formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                      style={selectStyle}
                     >
                       {equipmentTypes.map(type => (
                         <option key={type.value} value={type.value}>
@@ -929,20 +1023,21 @@ export default function EquipmentPage() {
                     </select>
                   </div>
 
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
                       Description
                     </label>
                     <textarea
                       rows={3}
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:border-teal-500 focus:outline-none"
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
+                      style={inputStyle}
                       placeholder="Enter description"
                     />
                   </div>
 
-                  <div className="flex items-center justify-end gap-3 pt-4 md:col-span-2">
+                  <div className="flex items-center justify-end gap-3 pt-4">
                     <button
                       type="button"
                       onClick={() => {
@@ -950,18 +1045,28 @@ export default function EquipmentPage() {
                         setSelectedEquipment(null)
                         resetForm()
                       }}
-                      className="px-4 py-2 text-gray-400 hover:text-gray-300 transition-colors"
+                      className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      style={{ color: tc.textMuted }}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg transition-colors flex items-center gap-2"
+                      className="px-6 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
+                      style={{
+                        background: tc.btnPrimaryBg,
+                        color: tc.btnPrimaryText,
+                        border: '1px solid ' + tc.btnPrimaryBorder,
+                      }}
                     >
                       {isSubmitting ? (
                         <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                            style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(16,185,129,0.2)', borderTopColor: tc.accentGreen }}
+                          />
                           Updating...
                         </>
                       ) : (
@@ -979,22 +1084,24 @@ export default function EquipmentPage() {
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {showDeleteModal && selectedEquipment && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: tc.modalOverlay }}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-gray-800 border border-gray-700 rounded-xl shadow-xl w-full max-w-md"
+              className="rounded-xl w-full max-w-md"
+              style={{ background: tc.modalBg, border: '1px solid ' + tc.cardBorder, boxShadow: '0 25px 50px rgba(0,0,0,0.25)' }}
             >
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-gray-100">Delete Equipment</h2>
+                  <h2 className="text-xl font-semibold" style={{ color: tc.textPrimary }}>Delete Equipment</h2>
                   <button
                     onClick={() => {
                       setShowDeleteModal(false)
                       setSelectedEquipment(null)
                     }}
-                    className="text-gray-400 hover:text-gray-300 p-1"
+                    className="p-1 rounded-md transition-colors"
+                    style={{ color: tc.textMuted }}
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -1002,20 +1109,25 @@ export default function EquipmentPage() {
 
                 <div className="mb-6">
                   <div className="flex items-center gap-3 mb-4">
-                    <span className="text-2xl">{equipmentTypeIcons[selectedEquipment.type] || '📦'}</span>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `rgba(16,185,129,0.${tc.iconBgAlpha})`, color: tc.accentGreen }}>
+                      {equipmentTypeIcons[selectedEquipment.type] || <Box className="w-5 h-5" />}
+                    </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-100">{selectedEquipment.name}</h3>
+                      <h3 className="text-lg font-semibold" style={{ color: tc.textPrimary }}>{selectedEquipment.name}</h3>
                     </div>
                   </div>
-                  
-                  <p className="text-gray-300 mb-4">
+
+                  <p className="mb-4" style={{ color: tc.textSecondary }}>
                     Are you sure you want to delete this equipment? This action cannot be undone.
                   </p>
-                  
+
                   {selectedEquipment.schedules.length > 0 && (
-                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 mb-4">
-                      <p className="text-yellow-400 text-sm">
-                        ⚠️ This equipment has {selectedEquipment.schedules.length} active schedule(s) that will also be deleted.
+                    <div className="rounded-lg p-3 mb-4" style={{
+                      background: tc.statusPending.bg,
+                      border: '1px solid ' + tc.statusPending.border,
+                    }}>
+                      <p className="text-sm" style={{ color: tc.statusPending.text }}>
+                        This equipment has {selectedEquipment.schedules.length} active schedule(s) that will also be deleted.
                       </p>
                     </div>
                   )}
@@ -1027,18 +1139,28 @@ export default function EquipmentPage() {
                       setShowDeleteModal(false)
                       setSelectedEquipment(null)
                     }}
-                    className="px-4 py-2 text-gray-400 hover:text-gray-300 transition-colors"
+                    className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    style={{ color: tc.textMuted }}
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleDeleteEquipment}
                     disabled={isSubmitting}
-                    className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg transition-colors flex items-center gap-2"
+                    className="px-6 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
+                    style={{
+                      background: tc.btnDangerBg,
+                      color: tc.btnDangerText,
+                      border: '1px solid ' + tc.btnDangerBorder,
+                    }}
                   >
                     {isSubmitting ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                          style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(239,68,68,0.2)', borderTopColor: tc.accentRed }}
+                        />
                         Deleting...
                       </>
                     ) : (
@@ -1053,4 +1175,4 @@ export default function EquipmentPage() {
       </AnimatePresence>
     </div>
   )
-} 
+}

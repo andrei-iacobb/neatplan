@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { WaveBackground } from "@/components/ui/wave-background";
@@ -8,7 +8,10 @@ import { PageWrapper } from "@/components/layout/page-wrapper";
 import { SettingsProvider } from "@/contexts/settings-context";
 import Script from "next/script";
 
-const inter = Inter({ subsets: ["latin"] });
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-jakarta",
+});
 
 export const metadata: Metadata = {
   title: "NeatPlan",
@@ -29,7 +32,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full">
-      <body className={`${inter.className} antialiased h-full`}>
+      <body className={`${jakarta.variable} font-sans antialiased h-full`} style={{ fontFamily: 'var(--font-jakarta), system-ui, sans-serif' }}>
         <SettingsProvider>
           <ToastProvider>
             <WaveBackground />

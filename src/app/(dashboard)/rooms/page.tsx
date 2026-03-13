@@ -2,11 +2,19 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { useToast } from '@/components/ui/toast-context'
-import { Loader2, Plus, X, Trash2, Building2, Bed, Calendar, Layers } from 'lucide-react'
+import { useThemeColors } from '@/hooks/useThemeColors'
+import {
+  Plus, X, Trash2, Building2, Calendar, Layers,
+  BedDouble, UtensilsCrossed, Presentation, DoorOpen,
+  Sofa, Archive, ArrowRight, Sparkles,
+} from 'lucide-react'
 import { ScheduleFrequency, ScheduleStatus } from '@prisma/client'
 import { getFrequencyLabel, getScheduleDisplayName } from '@/lib/schedule-utils'
 import { apiRequest } from '@/lib/url-utils'
+
+const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } }
 
 interface Room {
   id: string
@@ -44,6 +52,7 @@ type AssignMode = 'QUICK' | 'MANUAL'
 
 export default function RoomsPage() {
   const { showToast } = useToast()
+  const tc = useThemeColors()
   const [rooms, setRooms] = useState<Room[]>([])
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -70,7 +79,6 @@ export default function RoomsPage() {
       apiRequest('/api/rooms').then(res => res.json()),
       apiRequest('/api/schedules').then(res => res.json())
     ]).then(([roomsData, schedulesData]) => {
-      // Fetch schedules for each room
       Promise.all(
         roomsData.map((room: Room) =>
           apiRequest(`/api/rooms/${room.id}/schedules`)
@@ -95,16 +103,13 @@ export default function RoomsPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setIsSubmitting(true)
-
     try {
       const res = await apiRequest('/api/rooms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       })
-
       if (!res.ok) throw new Error('Failed to create room')
-
       const newRoom = await res.json()
       setRooms(prev => [...prev, newRoom])
       setShowForm(false)
@@ -122,16 +127,13 @@ export default function RoomsPage() {
     e.preventDefault()
     if (!selectedRoom) return
     setIsSubmitting(true)
-
     try {
       const res = await apiRequest(`/api/rooms/${selectedRoom.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       })
-
       if (!res.ok) throw new Error('Failed to update room')
-
       const updatedRoom = await res.json()
       setRooms(prev => prev.map(room => room.id === selectedRoom.id ? updatedRoom : room))
       setShowEditModal(false)
@@ -148,14 +150,9 @@ export default function RoomsPage() {
   async function handleDelete() {
     if (!selectedRoom) return
     setIsSubmitting(true)
-
     try {
-      const res = await apiRequest(`/api/rooms/${selectedRoom.id}`, {
-        method: 'DELETE'
-      })
-
+      const res = await apiRequest(`/api/rooms/${selectedRoom.id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('Failed to delete room')
-
       setRooms(prev => prev.filter(room => room.id !== selectedRoom.id))
       setShowEditModal(false)
       setSelectedRoom(null)
@@ -170,29 +167,21 @@ export default function RoomsPage() {
 
   async function handleQuickAssign() {
     if (!selectedSchedule || !selectedRoomType || !selectedFrequency) return
-
     setIsAssigning(true)
     try {
-      // Get all rooms of selected type
       const targetRooms = rooms.filter(room => room.type === selectedRoomType)
-      
-      // Assign schedule to each room
       await Promise.all(
         targetRooms.map(room =>
           apiRequest(`/api/rooms/${room.id}/schedules`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              scheduleId: selectedSchedule,
-              frequency: selectedFrequency
-            })
+            body: JSON.stringify({ scheduleId: selectedSchedule, frequency: selectedFrequency })
           })
         )
       )
-
       showToast(`Schedule assigned to all ${selectedRoomType.toLowerCase()}s`, 'success')
       setSelectedSchedule('')
-      setSelectedFrequency(ScheduleFrequency.WEEKLY) // Reset to default
+      setSelectedFrequency(ScheduleFrequency.WEEKLY)
     } catch (error) {
       console.error('Error assigning schedules:', error)
       showToast('Failed to assign schedules', 'error')
@@ -201,10 +190,8 @@ export default function RoomsPage() {
     }
   }
 
-  // Handler for schedule selection that sets suggested frequency automatically
   const handleScheduleSelection = (scheduleId: string) => {
     setSelectedSchedule(scheduleId)
-    
     if (scheduleId) {
       const schedule = schedules.find(s => s.id === scheduleId)
       if (schedule?.suggestedFrequency) {
@@ -215,20 +202,14 @@ export default function RoomsPage() {
 
   async function handleManualAssign() {
     if (!selectedSchedule || !selectedRoom || !selectedFrequency) return
-
     setIsAssigning(true)
     try {
       const response = await apiRequest(`/api/rooms/${selectedRoom.id}/schedules`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          scheduleId: selectedSchedule,
-          frequency: selectedFrequency
-        })
+        body: JSON.stringify({ scheduleId: selectedSchedule, frequency: selectedFrequency })
       })
-
       if (!response.ok) throw new Error('Failed to assign schedule')
-
       showToast('Schedule assigned successfully', 'success')
       setSelectedSchedule('')
       setSelectedRoom(null)
@@ -242,11 +223,9 @@ export default function RoomsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-teal-500 mx-auto mb-4" />
-          <p className="text-gray-400">Loading rooms...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+          className="w-8 h-8 rounded-full border-2 border-transparent" style={{ borderTopColor: 'rgb(16,185,129)', borderRightColor: 'rgba(16,185,129,0.3)' }} />
       </div>
     )
   }
@@ -257,645 +236,572 @@ export default function RoomsPage() {
   const floors = Array.from(new Set(bedrooms.map(room => room.floor))).filter(Boolean)
   const roomTypes = Array.from(new Set(rooms.map(room => room.type)))
 
-  return (
-          <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-100 mb-2">Room Management</h1>
-          <p className="text-gray-400">Manage your facility's rooms and their cleaning configurations</p>
-        </div>
+  const viewTabs = [
+    { mode: 'BEDROOMS' as ViewMode, icon: BedDouble, label: 'Bedrooms' },
+    { mode: 'OTHER_ROOMS' as ViewMode, icon: Building2, label: 'Other Rooms' },
+    { mode: 'SCHEDULES' as ViewMode, icon: Calendar, label: 'Schedules' },
+  ]
 
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-2">
-            <div className="flex gap-2">
+  return (
+    <div className="max-w-[1100px] mx-auto relative z-10 pb-8">
+      {/* Header */}
+      <div className="mb-10">
+        <div className="flex items-center gap-2 mb-2">
+          <Sparkles className="w-4 h-4" style={{ color: 'rgb(16,185,129)' }} />
+          <p className="text-[13px] font-medium tracking-wide uppercase" style={{ color: tc.accentLabel }}>Room Management</p>
+        </div>
+        <h1 className="text-[32px] font-bold tracking-tight mb-1" style={{ color: tc.textPrimary }}>Room Management</h1>
+        <p className="text-[15px]" style={{ color: tc.textMuted }}>Manage your facility's rooms and their cleaning configurations</p>
+      </div>
+
+      {/* Controls */}
+      <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.05 }} className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2">
+          <div className="flex gap-2">
+            {viewTabs.map((tab) => (
               <button
-                onClick={() => setViewMode('BEDROOMS')}
-                className={`flex items-center px-3 py-1.5 rounded ${
-                  viewMode === 'BEDROOMS'
-                    ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
-                    : 'bg-gray-800/50 text-gray-400 hover:bg-teal-500/10 hover:text-teal-300'
-                } border transition-colors`}
+                key={tab.mode}
+                onClick={() => setViewMode(tab.mode)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-200"
+                style={viewMode === tab.mode
+                  ? { background: tc.tabActiveBg, color: tc.tabActiveText, border: `1px solid ${tc.tabActiveBorder}` }
+                  : { background: tc.tabInactiveBg, color: tc.tabInactiveText, border: '1px solid transparent' }
+                }
+                onMouseEnter={(e) => { if (viewMode !== tab.mode) { e.currentTarget.style.background = tc.tabInactiveHoverBg; e.currentTarget.style.color = tc.tabInactiveHoverText }}}
+                onMouseLeave={(e) => { if (viewMode !== tab.mode) { e.currentTarget.style.background = tc.tabInactiveBg; e.currentTarget.style.color = tc.tabInactiveText }}}
               >
-                <Bed className="w-4 h-4 mr-2" />
-                Bedrooms
+                <tab.icon className="w-3.5 h-3.5" />
+                {tab.label}
               </button>
-              <button
-                onClick={() => setViewMode('OTHER_ROOMS')}
-                className={`flex items-center px-3 py-1.5 rounded ${
-                  viewMode === 'OTHER_ROOMS'
-                    ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
-                    : 'bg-gray-800/50 text-gray-400 hover:bg-teal-500/10 hover:text-teal-300'
-                } border transition-colors`}
-              >
-                <Building2 className="w-4 h-4 mr-2" />
-                Other Rooms
-              </button>
-              <button
-                onClick={() => setViewMode('SCHEDULES')}
-                className={`flex items-center px-3 py-1.5 rounded ${
-                  viewMode === 'SCHEDULES'
-                    ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
-                    : 'bg-gray-800/50 text-gray-400 hover:bg-teal-500/10 hover:text-teal-300'
-                } border transition-colors`}
-              >
-                <Calendar className="w-4 h-4 mr-2" />
-                Schedules
-              </button>
+            ))}
+          </div>
+          {viewMode === 'BEDROOMS' && floors.length > 0 && (
+            <div className="flex gap-2 ml-4 pl-4" style={{ borderLeft: `1px solid ${tc.divider}` }}>
+              {floors.map(floor => (
+                <button
+                  key={floor}
+                  onClick={() => setSelectedFloor(floor!)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-200"
+                  style={selectedFloor === floor
+                    ? { background: tc.tabActiveBg, color: tc.tabActiveText, border: `1px solid ${tc.tabActiveBorder}` }
+                    : { background: tc.tabInactiveBg, color: tc.tabInactiveText, border: '1px solid transparent' }
+                  }
+                  onMouseEnter={(e) => { if (selectedFloor !== floor) { e.currentTarget.style.background = tc.tabInactiveHoverBg; e.currentTarget.style.color = tc.tabInactiveHoverText }}}
+                  onMouseLeave={(e) => { if (selectedFloor !== floor) { e.currentTarget.style.background = tc.tabInactiveBg; e.currentTarget.style.color = tc.tabInactiveText }}}
+                >
+                  <Building2 className="w-3.5 h-3.5" />
+                  {floor}
+                </button>
+              ))}
             </div>
-            {viewMode === 'BEDROOMS' && (
-              <div className="flex gap-2 ml-6 border-l border-gray-700 pl-6">
-                {floors.map(floor => (
-                  <button
-                    key={floor}
-                    onClick={() => setSelectedFloor(floor!)}
-                    className={`flex items-center px-3 py-1.5 rounded ${
-                      selectedFloor === floor
-                        ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
-                        : 'bg-gray-800/50 text-gray-400 hover:bg-teal-500/10 hover:text-teal-300'
-                    } border transition-colors`}
-                  >
-                    <Building2 className="w-4 h-4 mr-2" />
-                    {floor}
-                  </button>
+          )}
+        </div>
+        {viewMode !== 'SCHEDULES' && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors"
+            style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: `1px solid ${tc.btnPrimaryBorder}` }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}
+          >
+            <Plus className="w-4 h-4" />
+            Add Room
+          </button>
+        )}
+      </motion.div>
+
+      {/* Main Content */}
+      <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.1 }}
+        className="rounded-xl p-5"
+        style={{ background: tc.cardBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}>
+
+        {viewMode === 'BEDROOMS' && (
+          <div>
+            <h2 className="text-[15px] font-semibold mb-4" style={{ color: tc.textPrimary }}>
+              Bedrooms - {selectedFloor} ({filteredBedrooms.length} rooms)
+            </h2>
+            {filteredBedrooms.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3" style={{ background: tc.emptyBg }}>
+                  <Building2 className="w-5 h-5" style={{ color: tc.textFaint }} />
+                </div>
+                <p className="text-[13px] font-medium" style={{ color: tc.textMuted }}>No bedrooms found on this floor</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {filteredBedrooms.map((room, i) => (
+                  <RoomCard key={room.id} room={room} tc={tc} delay={i * 0.04} onEdit={(room) => {
+                    setSelectedRoom(room)
+                    setFormData({ name: room.name, description: room.description || '', floor: room.floor || 'Ground Floor', type: room.type })
+                    setShowEditModal(true)
+                  }} />
                 ))}
               </div>
             )}
           </div>
-          {viewMode !== 'SCHEDULES' && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="flex items-center px-4 py-2 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 rounded border border-teal-500/30 transition-colors"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Room
-            </button>
-          )}
-        </div>
+        )}
 
-        <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-6">
-          {viewMode === 'BEDROOMS' && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-100 mb-4">
-                Bedrooms - {selectedFloor} ({filteredBedrooms.length} rooms)
-              </h2>
-              {filteredBedrooms.length === 0 ? (
-                <div className="text-center py-8">
-                  <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-400">No bedrooms found on this floor</p>
+        {viewMode === 'OTHER_ROOMS' && (
+          <div>
+            <h2 className="text-[15px] font-semibold mb-4" style={{ color: tc.textPrimary }}>
+              Other Rooms ({otherRooms.length} rooms)
+            </h2>
+            {otherRooms.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3" style={{ background: tc.emptyBg }}>
+                  <Building2 className="w-5 h-5" style={{ color: tc.textFaint }} />
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {filteredBedrooms.map((room) => (
-                    <RoomCard key={room.id} room={room} onEdit={(room) => {
-                      setSelectedRoom(room)
-                      setFormData({
-                        name: room.name,
-                        description: room.description || '',
-                        floor: room.floor || 'Ground Floor',
-                        type: room.type
-                      })
-                      setShowEditModal(true)
-                    }} />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {viewMode === 'OTHER_ROOMS' && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-100 mb-4">
-                Other Rooms ({otherRooms.length} rooms)
-              </h2>
-              {otherRooms.length === 0 ? (
-                <div className="text-center py-8">
-                  <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-400">No other rooms found</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {otherRooms.map((room) => (
-                    <RoomCard key={room.id} room={room} onEdit={(room) => {
-                      setSelectedRoom(room)
-                      setFormData({
-                        name: room.name,
-                        description: room.description || '',
-                        floor: room.floor || 'Ground Floor',
-                        type: room.type
-                      })
-                      setShowEditModal(true)
-                    }} />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {viewMode === 'SCHEDULES' && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-100 mb-6">Schedule Assignment</h2>
-              
-              {/* Assignment Mode Toggle */}
-              <div className="flex gap-2 mb-6">
-                <button
-                  onClick={() => setAssignMode('QUICK')}
-                  className={`px-4 py-2 rounded ${
-                    assignMode === 'QUICK'
-                      ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
-                      : 'bg-gray-800/50 text-gray-400 hover:bg-teal-500/10 hover:text-teal-300'
-                  } border transition-colors`}
-                >
-                  Quick Assign
-                </button>
-                <button
-                  onClick={() => setAssignMode('MANUAL')}
-                  className={`px-4 py-2 rounded ${
-                    assignMode === 'MANUAL'
-                      ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
-                      : 'bg-gray-800/50 text-gray-400 hover:bg-teal-500/10 hover:text-teal-300'
-                  } border transition-colors`}
-                >
-                  Manual Assign
-                </button>
+                <p className="text-[13px] font-medium" style={{ color: tc.textMuted }}>No other rooms found</p>
               </div>
-
-              {assignMode === 'QUICK' && (
-                <div className="bg-gray-900/50 rounded-lg border border-gray-600 p-6 mb-6">
-                  <h3 className="text-lg font-semibold text-gray-100 mb-4">Quick Assignment</h3>
-                  <p className="text-gray-400 mb-4">Assign a schedule to all rooms of a specific type</p>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Schedule</label>
-                      <select
-                        value={selectedSchedule}
-                        onChange={(e) => handleScheduleSelection(e.target.value)}
-                        className="w-full rounded-md bg-gray-800 border border-gray-600 text-gray-100 px-3 py-2"
-                      >
-                        <option value="">Select schedule...</option>
-                        {schedules.map((schedule) => (
-                          <option key={schedule.id} value={schedule.id}>
-                            {getScheduleDisplayName(schedule.title)}
-                          </option>
-                        ))}
-                      </select>
-                      {selectedSchedule && schedules.find(s => s.id === selectedSchedule)?.suggestedFrequency && (
-                        <p className="mt-1 text-xs text-teal-400">
-                          ✨ AI detected: "{schedules.find(s => s.id === selectedSchedule)?.suggestedFrequency}"
-                        </p>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Room Type</label>
-                      <select
-                        value={selectedRoomType}
-                        onChange={(e) => setSelectedRoomType(e.target.value)}
-                        className="w-full rounded-md bg-gray-800 border border-gray-600 text-gray-100 px-3 py-2"
-                      >
-                        {roomTypes.map((type) => (
-                          <option key={type} value={type}>
-                            {type.replace('_', ' ')} ({rooms.filter(r => r.type === type).length} rooms)
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Frequency
-                        {selectedSchedule && schedules.find(s => s.id === selectedSchedule)?.suggestedFrequency && (
-                          <span className="ml-2 text-xs text-teal-400">(Auto-selected from AI detection)</span>
-                        )}
-                      </label>
-                      <select
-                        value={selectedFrequency}
-                        onChange={(e) => setSelectedFrequency(e.target.value as ScheduleFrequency)}
-                        className="w-full rounded-md bg-gray-800 border border-gray-600 text-gray-100 px-3 py-2"
-                      >
-                        {Object.values(ScheduleFrequency).map((freq) => (
-                          <option key={freq} value={freq}>
-                            {getFrequencyLabel(freq)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  
-                  <button
-                    onClick={handleQuickAssign}
-                    disabled={!selectedSchedule || !selectedRoomType || isAssigning}
-                    className="flex items-center px-4 py-2 bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 rounded border border-teal-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isAssigning ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Plus className="w-4 h-4 mr-2" />
-                    )}
-                    Assign to All {selectedRoomType.replace('_', ' ')}s
-                  </button>
-                </div>
-              )}
-
-              {assignMode === 'MANUAL' && (
-                <div className="bg-gray-900/50 rounded-lg border border-gray-600 p-6 mb-6">
-                  <h3 className="text-lg font-semibold text-gray-100 mb-4">Manual Assignment</h3>
-                  <p className="text-gray-400 mb-4">Assign a schedule to a specific room</p>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Schedule</label>
-                      <select
-                        value={selectedSchedule}
-                        onChange={(e) => handleScheduleSelection(e.target.value)}
-                        className="w-full rounded-md bg-gray-800 border border-gray-600 text-gray-100 px-3 py-2"
-                      >
-                        <option value="">Select schedule...</option>
-                        {schedules.map((schedule) => (
-                          <option key={schedule.id} value={schedule.id}>
-                            {getScheduleDisplayName(schedule.title)}
-                          </option>
-                        ))}
-                      </select>
-                      {selectedSchedule && schedules.find(s => s.id === selectedSchedule)?.suggestedFrequency && (
-                        <p className="mt-1 text-xs text-teal-400">
-                          ✨ AI detected: "{schedules.find(s => s.id === selectedSchedule)?.suggestedFrequency}"
-                        </p>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Room</label>
-                      <select
-                        value={selectedRoom?.id || ''}
-                        onChange={(e) => {
-                          const room = rooms.find(r => r.id === e.target.value)
-                          setSelectedRoom(room || null)
-                        }}
-                        className="w-full rounded-md bg-gray-800 border border-gray-600 text-gray-100 px-3 py-2"
-                      >
-                        <option value="">Select room...</option>
-                        {rooms.map((room) => (
-                          <option key={room.id} value={room.id}>
-                            {room.name} ({room.type.replace('_', ' ')})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Frequency
-                        {selectedSchedule && schedules.find(s => s.id === selectedSchedule)?.suggestedFrequency && (
-                          <span className="ml-2 text-xs text-teal-400">(Auto-selected from AI detection)</span>
-                        )}
-                      </label>
-                      <select
-                        value={selectedFrequency}
-                        onChange={(e) => setSelectedFrequency(e.target.value as ScheduleFrequency)}
-                        className="w-full rounded-md bg-gray-800 border border-gray-600 text-gray-100 px-3 py-2"
-                      >
-                        {Object.values(ScheduleFrequency).map((freq) => (
-                          <option key={freq} value={freq}>
-                            {getFrequencyLabel(freq)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  
-                  <button
-                    onClick={handleManualAssign}
-                    disabled={!selectedSchedule || !selectedRoom || isAssigning}
-                    className="flex items-center px-4 py-2 bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 rounded border border-teal-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isAssigning ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Plus className="w-4 h-4 mr-2" />
-                    )}
-                    Assign Schedule
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Add Room Form Modal */}
-        {showForm && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-gray-800 rounded-lg border border-gray-700 p-6 w-full max-w-md">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-100">Add New Room</h2>
-                <button
-                  onClick={() => setShowForm(false)}
-                  className="text-gray-400 hover:text-gray-300"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {otherRooms.map((room, i) => (
+                  <RoomCard key={room.id} room={room} tc={tc} delay={i * 0.04} onEdit={(room) => {
+                    setSelectedRoom(room)
+                    setFormData({ name: room.name, description: room.description || '', floor: room.floor || 'Ground Floor', type: room.type })
+                    setShowEditModal(true)
+                  }} />
+                ))}
               </div>
-              
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Room Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
-                    placeholder="e.g., Room 52"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Floor
-                  </label>
-                  <select
-                    value={formData.floor}
-                    onChange={(e) => setFormData(prev => ({ ...prev, floor: e.target.value }))}
-                    className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
-                  >
-                    <option value="Ground Floor">Ground Floor</option>
-                    <option value="Upstairs">Upstairs</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Room Type
-                  </label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-                    className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
-                  >
-                    <option value="BEDROOM">Bedroom</option>
-                    <option value="OFFICE">Office</option>
-                    <option value="MEETING_ROOM">Meeting Room</option>
-                    <option value="BATHROOM">Bathroom</option>
-                    <option value="KITCHEN">Kitchen</option>
-                    <option value="LOBBY">Lobby</option>
-                    <option value="STORAGE">Storage</option>
-                    <option value="LOUNGE">Lounge</option>
-                    <option value="OTHER">Other</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Description (Optional)
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
-                    rows={3}
-                    placeholder="Room description..."
-                  />
-                </div>
-                
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex-1 flex items-center justify-center px-4 py-2 bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 rounded border border-teal-500/50 disabled:opacity-50"
-                  >
-                    {isSubmitting ? (
-                      <Loader2 className="w-4 animate-spin" />
-                    ) : (
-                      'Create Room'
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowForm(false)}
-                    className="px-4 py-2 text-gray-400 hover:text-gray-300 border border-gray-600 rounded"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
+            )}
           </div>
         )}
 
-        {/* Edit Room Modal */}
-        {showEditModal && selectedRoom && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-gray-800 rounded-lg border border-gray-700 p-6 w-full max-w-md">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-100">Edit Room</h2>
+        {viewMode === 'SCHEDULES' && (
+          <div>
+            <h2 className="text-[15px] font-semibold mb-5" style={{ color: tc.textPrimary }}>Schedule Assignment</h2>
+
+            {/* Assignment Mode Toggle */}
+            <div className="flex gap-2 mb-5">
+              {(['QUICK', 'MANUAL'] as AssignMode[]).map((mode) => (
                 <button
-                  onClick={() => {
-                    setShowEditModal(false)
-                    setSelectedRoom(null)
-                  }}
-                  className="text-gray-400 hover:text-gray-300"
+                  key={mode}
+                  onClick={() => setAssignMode(mode)}
+                  className="px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-200"
+                  style={assignMode === mode
+                    ? { background: tc.tabActiveBg, color: tc.tabActiveText, border: `1px solid ${tc.tabActiveBorder}` }
+                    : { background: tc.tabInactiveBg, color: tc.tabInactiveText, border: '1px solid transparent' }
+                  }
+                  onMouseEnter={(e) => { if (assignMode !== mode) { e.currentTarget.style.background = tc.tabInactiveHoverBg; e.currentTarget.style.color = tc.tabInactiveHoverText }}}
+                  onMouseLeave={(e) => { if (assignMode !== mode) { e.currentTarget.style.background = tc.tabInactiveBg; e.currentTarget.style.color = tc.tabInactiveText }}}
                 >
-                  <X className="w-5 h-5" />
+                  {mode === 'QUICK' ? 'Quick Assign' : 'Manual Assign'}
+                </button>
+              ))}
+            </div>
+
+            {assignMode === 'QUICK' && (
+              <div className="rounded-xl p-5 mb-4" style={{ background: tc.surfaceBg, border: `1px solid ${tc.cardBorder}` }}>
+                <h3 className="text-[14px] font-semibold mb-1" style={{ color: tc.textPrimary }}>Quick Assignment</h3>
+                <p className="text-[12px] mb-4" style={{ color: tc.textMuted }}>Assign a schedule to all rooms of a specific type</p>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>Schedule</label>
+                    <select value={selectedSchedule} onChange={(e) => handleScheduleSelection(e.target.value)}
+                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                      style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                      onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}>
+                      <option value="">Select schedule...</option>
+                      {schedules.map((s) => <option key={s.id} value={s.id}>{getScheduleDisplayName(s.title)}</option>)}
+                    </select>
+                    {selectedSchedule && schedules.find(s => s.id === selectedSchedule)?.suggestedFrequency && (
+                      <p className="mt-1 text-[11px] font-medium" style={{ color: tc.accentGreen }}>
+                        AI detected: &ldquo;{schedules.find(s => s.id === selectedSchedule)?.suggestedFrequency}&rdquo;
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>Room Type</label>
+                    <select value={selectedRoomType} onChange={(e) => setSelectedRoomType(e.target.value)}
+                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                      style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                      onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}>
+                      {roomTypes.map((type) => (
+                        <option key={type} value={type}>{type.replace('_', ' ')} ({rooms.filter(r => r.type === type).length} rooms)</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>
+                      Frequency
+                      {selectedSchedule && schedules.find(s => s.id === selectedSchedule)?.suggestedFrequency && (
+                        <span className="ml-1 text-[10px]" style={{ color: tc.accentGreen }}>(AI auto-selected)</span>
+                      )}
+                    </label>
+                    <select value={selectedFrequency} onChange={(e) => setSelectedFrequency(e.target.value as ScheduleFrequency)}
+                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                      style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                      onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}>
+                      {Object.values(ScheduleFrequency).map((freq) => <option key={freq} value={freq}>{getFrequencyLabel(freq)}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <button onClick={handleQuickAssign} disabled={!selectedSchedule || !selectedRoomType || isAssigning}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: `1px solid ${tc.btnPrimaryBorder}` }}
+                  onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}>
+                  {isAssigning ? (
+                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                      className="w-4 h-4 rounded-full border-2 border-transparent" style={{ borderTopColor: tc.btnPrimaryText, borderRightColor: 'transparent' }} />
+                  ) : (
+                    <Plus className="w-4 h-4" />
+                  )}
+                  Assign to All {selectedRoomType.replace('_', ' ')}s
                 </button>
               </div>
-              
-              <form onSubmit={handleEdit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Room Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Floor
-                  </label>
-                  <select
-                    value={formData.floor}
-                    onChange={(e) => setFormData(prev => ({ ...prev, floor: e.target.value }))}
-                    className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
-                  >
-                    <option value="Ground Floor">Ground Floor</option>
-                    <option value="Upstairs">Upstairs</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Room Type
-                  </label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-                    className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
-                  >
-                    <option value="BEDROOM">Bedroom</option>
-                    <option value="OFFICE">Office</option>
-                    <option value="MEETING_ROOM">Meeting Room</option>
-                    <option value="BATHROOM">Bathroom</option>
-                    <option value="KITCHEN">Kitchen</option>
-                    <option value="LOBBY">Lobby</option>
-                    <option value="STORAGE">Storage</option>
-                    <option value="LOUNGE">Lounge</option>
-                    <option value="OTHER">Other</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
-                    rows={3}
-                  />
-                </div>
-                
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex-1 flex items-center justify-center px-4 py-2 bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 rounded border border-teal-500/50 disabled:opacity-50"
-                  >
-                    {isSubmitting ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      'Update Room'
+            )}
+
+            {assignMode === 'MANUAL' && (
+              <div className="rounded-xl p-5 mb-4" style={{ background: tc.surfaceBg, border: `1px solid ${tc.cardBorder}` }}>
+                <h3 className="text-[14px] font-semibold mb-1" style={{ color: tc.textPrimary }}>Manual Assignment</h3>
+                <p className="text-[12px] mb-4" style={{ color: tc.textMuted }}>Assign a schedule to a specific room</p>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>Schedule</label>
+                    <select value={selectedSchedule} onChange={(e) => handleScheduleSelection(e.target.value)}
+                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                      style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                      onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}>
+                      <option value="">Select schedule...</option>
+                      {schedules.map((s) => <option key={s.id} value={s.id}>{getScheduleDisplayName(s.title)}</option>)}
+                    </select>
+                    {selectedSchedule && schedules.find(s => s.id === selectedSchedule)?.suggestedFrequency && (
+                      <p className="mt-1 text-[11px] font-medium" style={{ color: tc.accentGreen }}>
+                        AI detected: &ldquo;{schedules.find(s => s.id === selectedSchedule)?.suggestedFrequency}&rdquo;
+                      </p>
                     )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={isSubmitting}
-                    className="px-4 py-2 text-red-400 hover:text-red-300 border border-red-500/50 rounded disabled:opacity-50"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowEditModal(false)
-                      setSelectedRoom(null)
-                    }}
-                    className="px-4 py-2 text-gray-400 hover:text-gray-300 border border-gray-600 rounded"
-                  >
-                    Cancel
-                  </button>
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>Room</label>
+                    <select value={selectedRoom?.id || ''} onChange={(e) => { const room = rooms.find(r => r.id === e.target.value); setSelectedRoom(room || null) }}
+                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                      style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                      onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}>
+                      <option value="">Select room...</option>
+                      {rooms.map((r) => <option key={r.id} value={r.id}>{r.name} ({r.type.replace('_', ' ')})</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>
+                      Frequency
+                      {selectedSchedule && schedules.find(s => s.id === selectedSchedule)?.suggestedFrequency && (
+                        <span className="ml-1 text-[10px]" style={{ color: tc.accentGreen }}>(AI auto-selected)</span>
+                      )}
+                    </label>
+                    <select value={selectedFrequency} onChange={(e) => setSelectedFrequency(e.target.value as ScheduleFrequency)}
+                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                      style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                      onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}>
+                      {Object.values(ScheduleFrequency).map((freq) => <option key={freq} value={freq}>{getFrequencyLabel(freq)}</option>)}
+                    </select>
+                  </div>
                 </div>
-              </form>
-            </div>
+
+                <button onClick={handleManualAssign} disabled={!selectedSchedule || !selectedRoom || isAssigning}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: `1px solid ${tc.btnPrimaryBorder}` }}
+                  onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}>
+                  {isAssigning ? (
+                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                      className="w-4 h-4 rounded-full border-2 border-transparent" style={{ borderTopColor: tc.btnPrimaryText, borderRightColor: 'transparent' }} />
+                  ) : (
+                    <Plus className="w-4 h-4" />
+                  )}
+                  Assign Schedule
+                </button>
+              </div>
+            )}
           </div>
         )}
-      </div>
+      </motion.div>
+
+      {/* Add Room Modal */}
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: tc.modalOverlay }}>
+          <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.2 }}
+            className="rounded-xl p-6 w-full max-w-md mx-4"
+            style={{ background: tc.modalBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}>
+            <div className="flex justify-between items-center mb-5">
+              <h2 className="text-[16px] font-semibold" style={{ color: tc.textPrimary }}>Add New Room</h2>
+              <button onClick={() => setShowForm(false)} className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
+                style={{ color: tc.textMuted }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = tc.textSecondary; e.currentTarget.style.background = tc.hoverRow }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = tc.textMuted; e.currentTarget.style.background = 'transparent' }}>
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <FormField label="Room Name" tc={tc}>
+                <input type="text" required value={formData.name} onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                  style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
+                  placeholder="e.g., Room 52" />
+              </FormField>
+              <FormField label="Floor" tc={tc}>
+                <select value={formData.floor} onChange={(e) => setFormData(prev => ({ ...prev, floor: e.target.value }))}
+                  className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                  style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}>
+                  <option value="Ground Floor">Ground Floor</option>
+                  <option value="Upstairs">Upstairs</option>
+                </select>
+              </FormField>
+              <FormField label="Room Type" tc={tc}>
+                <RoomTypeSelect value={formData.type} onChange={(v) => setFormData(prev => ({ ...prev, type: v }))} tc={tc} />
+              </FormField>
+              <FormField label="Description (Optional)" tc={tc}>
+                <textarea value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors resize-none"
+                  style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
+                  rows={3} placeholder="Room description..." />
+              </FormField>
+              <div className="flex gap-3 pt-2" style={{ borderTop: `1px solid ${tc.divider}`, paddingTop: '16px' }}>
+                <button type="submit" disabled={isSubmitting}
+                  className="flex-1 flex items-center justify-center px-4 py-2 rounded-lg text-[13px] font-medium transition-colors disabled:opacity-50"
+                  style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: `1px solid ${tc.btnPrimaryBorder}` }}
+                  onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}>
+                  {isSubmitting ? 'Creating...' : 'Create Room'}
+                </button>
+                <button type="button" onClick={() => setShowForm(false)}
+                  className="px-4 py-2 rounded-lg text-[13px] font-medium transition-colors"
+                  style={{ background: tc.btnSecondaryBg, color: tc.btnSecondaryText, border: `1px solid ${tc.btnSecondaryBorder}` }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = tc.btnSecondaryHoverBg }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnSecondaryBg }}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Edit Room Modal */}
+      {showEditModal && selectedRoom && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: tc.modalOverlay }}>
+          <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.2 }}
+            className="rounded-xl p-6 w-full max-w-md mx-4"
+            style={{ background: tc.modalBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}>
+            <div className="flex justify-between items-center mb-5">
+              <h2 className="text-[16px] font-semibold" style={{ color: tc.textPrimary }}>Edit Room</h2>
+              <button onClick={() => { setShowEditModal(false); setSelectedRoom(null) }}
+                className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
+                style={{ color: tc.textMuted }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = tc.textSecondary; e.currentTarget.style.background = tc.hoverRow }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = tc.textMuted; e.currentTarget.style.background = 'transparent' }}>
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleEdit} className="space-y-4">
+              <FormField label="Room Name" tc={tc}>
+                <input type="text" required value={formData.name} onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                  style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }} />
+              </FormField>
+              <FormField label="Floor" tc={tc}>
+                <select value={formData.floor} onChange={(e) => setFormData(prev => ({ ...prev, floor: e.target.value }))}
+                  className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                  style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}>
+                  <option value="Ground Floor">Ground Floor</option>
+                  <option value="Upstairs">Upstairs</option>
+                </select>
+              </FormField>
+              <FormField label="Room Type" tc={tc}>
+                <RoomTypeSelect value={formData.type} onChange={(v) => setFormData(prev => ({ ...prev, type: v }))} tc={tc} />
+              </FormField>
+              <FormField label="Description" tc={tc}>
+                <textarea value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors resize-none"
+                  style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
+                  rows={3} />
+              </FormField>
+              <div className="flex gap-3 pt-2" style={{ borderTop: `1px solid ${tc.divider}`, paddingTop: '16px' }}>
+                <button type="submit" disabled={isSubmitting}
+                  className="flex-1 flex items-center justify-center px-4 py-2 rounded-lg text-[13px] font-medium transition-colors disabled:opacity-50"
+                  style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: `1px solid ${tc.btnPrimaryBorder}` }}
+                  onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}>
+                  {isSubmitting ? 'Saving...' : 'Update Room'}
+                </button>
+                <button type="button" onClick={handleDelete} disabled={isSubmitting}
+                  className="px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
+                  style={{ background: tc.btnDangerBg, color: tc.btnDangerText, border: `1px solid ${tc.btnDangerBorder}` }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = tc.btnDangerHoverBg }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnDangerBg }}>
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <button type="button" onClick={() => { setShowEditModal(false); setSelectedRoom(null) }}
+                  className="px-4 py-2 rounded-lg text-[13px] font-medium transition-colors"
+                  style={{ background: tc.btnSecondaryBg, color: tc.btnSecondaryText, border: `1px solid ${tc.btnSecondaryBorder}` }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = tc.btnSecondaryHoverBg }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnSecondaryBg }}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </div>
   )
 }
 
-// Room Card Component
+// Helper components
+type TC = ReturnType<typeof useThemeColors>
+
+function FormField({ label, tc, children }: { label: string; tc: TC; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>{label}</label>
+      {children}
+    </div>
+  )
+}
+
+function RoomTypeSelect({ value, onChange, tc }: { value: string; onChange: (v: string) => void; tc: TC }) {
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)}
+      className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+      style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}>
+      <option value="BEDROOM">Bedroom</option>
+      <option value="OFFICE">Office</option>
+      <option value="MEETING_ROOM">Meeting Room</option>
+      <option value="BATHROOM">Bathroom</option>
+      <option value="KITCHEN">Kitchen</option>
+      <option value="LOBBY">Lobby</option>
+      <option value="STORAGE">Storage</option>
+      <option value="LOUNGE">Lounge</option>
+      <option value="OTHER">Other</option>
+    </select>
+  )
+}
+
+function getRoomTypeIcon(type: string) {
+  const c = "w-[18px] h-[18px]"
+  switch (type) {
+    case 'BEDROOM': return <BedDouble className={c} />
+    case 'OFFICE': return <Building2 className={c} />
+    case 'KITCHEN': return <UtensilsCrossed className={c} />
+    case 'MEETING_ROOM': return <Presentation className={c} />
+    case 'LOUNGE': return <Sofa className={c} />
+    case 'STORAGE': return <Archive className={c} />
+    default: return <DoorOpen className={c} />
+  }
+}
+
+function getStatusStyle(status: string, tc: TC) {
+  switch (status) {
+    case 'OVERDUE': return tc.statusOverdue
+    case 'COMPLETED': return tc.statusCompleted
+    case 'PENDING': return tc.statusPending
+    default: return { bg: tc.emptyBg, text: tc.textMuted, border: tc.cardBorder }
+  }
+}
+
 interface RoomCardProps {
   room: Room
+  tc: TC
+  delay: number
   onEdit: (room: Room) => void
 }
 
-function RoomCard({ room, onEdit }: RoomCardProps) {
-  const getRoomTypeIcon = (type: string) => {
-    switch (type) {
-      case 'BEDROOM': return '🛏️'
-      case 'BATHROOM': return '🚿'
-      case 'KITCHEN': return '🍳'
-      case 'OFFICE': return '💼'
-      case 'MEETING_ROOM': return '🪑'
-      case 'LOBBY': return '🏢'
-      case 'STORAGE': return '📦'
-      case 'LOUNGE': return '🛋️'
-      default: return '🏠'
-    }
-  }
-
-  const getStatusColor = (status?: string) => {
-    switch (status) {
-      case 'OVERDUE': return 'text-red-400 bg-red-400/10 border-red-400/20'
-      case 'PENDING': return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20'
-      case 'COMPLETED': return 'text-green-400 bg-green-400/10 border-green-400/20'
-      default: return 'text-gray-400 bg-gray-400/10 border-gray-400/20'
-    }
-  }
-
+function RoomCard({ room, tc, delay, onEdit }: RoomCardProps) {
   const activeSchedules = room.schedules?.filter(s => s.status !== 'COMPLETED') || []
   const completedSchedules = room.schedules?.filter(s => s.status === 'COMPLETED') || []
+  const accent = tc.accentGreen
 
   return (
-    <div className="bg-gray-900/50 border border-gray-600 rounded-lg p-4 hover:border-gray-500 transition-colors">
+    <motion.div {...fadeUp} transition={{ duration: 0.3, delay: 0.15 + delay }}
+      className="group rounded-xl p-4 transition-all duration-200 relative overflow-hidden"
+      style={{ background: tc.cardBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = tc.cardHoverBorder(accent); e.currentTarget.style.background = tc.cardHoverBg }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = tc.cardBorder; e.currentTarget.style.background = tc.cardBg }}>
+      <div className="absolute top-0 right-0 w-20 h-20 rounded-full -translate-y-8 translate-x-8" style={{ background: accent, opacity: tc.glowOpacity }} />
+
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">{getRoomTypeIcon(room.type)}</span>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${accent}${tc.iconBgAlpha}`, color: accent }}>
+            {getRoomTypeIcon(room.type)}
+          </div>
           <div>
-            <h3 className="font-semibold text-gray-100">{room.name}</h3>
-            <p className="text-sm text-gray-400">{room.floor}</p>
+            <h3 className="text-[13px] font-semibold" style={{ color: tc.textPrimary }}>{room.name}</h3>
+            <p className="text-[11px]" style={{ color: tc.textMuted }}>{room.floor}</p>
           </div>
         </div>
-        <button
-          onClick={() => onEdit(room)}
-          className="text-gray-400 hover:text-teal-300 transition-colors"
-        >
-          <Layers className="w-4 h-4" />
+        <button onClick={() => onEdit(room)} className="p-1 rounded transition-colors"
+          style={{ color: tc.textMuted }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = tc.accentGreen }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = tc.textMuted }}>
+          <Layers className="w-3.5 h-3.5" />
         </button>
       </div>
 
       {room.description && (
-        <p className="text-sm text-gray-400 mb-3">{room.description}</p>
+        <p className="text-[11px] mb-3 leading-relaxed" style={{ color: tc.textMuted }}>{room.description}</p>
       )}
 
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-300">Active Schedules:</span>
-          <span className="text-gray-100">{activeSchedules.length}</span>
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-medium" style={{ color: tc.textSecondary }}>Active Schedules:</span>
+          <span className="text-[12px] font-bold tabular-nums" style={{ color: activeSchedules.length > 0 ? tc.textPrimary : tc.textFaint }}>{activeSchedules.length}</span>
         </div>
-        
+
         {activeSchedules.length > 0 && (
           <div className="space-y-1">
-            {activeSchedules.slice(0, 2).map((schedule) => (
-              <div key={schedule.id} className="flex items-center justify-between text-xs">
-                <span className="text-gray-400 truncate">
-                  {getScheduleDisplayName(schedule.schedule.title, schedule.frequency)}
-                </span>
-                <span className={`px-2 py-0.5 rounded border ${getStatusColor(schedule.status)}`}>
-                  {schedule.status}
-                </span>
-              </div>
-            ))}
+            {activeSchedules.slice(0, 2).map((schedule) => {
+              const ss = getStatusStyle(schedule.status, tc)
+              return (
+                <div key={schedule.id} className="flex items-center justify-between">
+                  <span className="text-[10px] truncate mr-2" style={{ color: tc.textMuted }}>
+                    {getScheduleDisplayName(schedule.schedule.title, schedule.frequency)}
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold flex-shrink-0"
+                    style={{ background: ss.bg, color: ss.text, border: `1px solid ${ss.border}` }}>
+                    {schedule.status}
+                  </span>
+                </div>
+              )
+            })}
             {activeSchedules.length > 2 && (
-              <p className="text-xs text-gray-500">+{activeSchedules.length - 2} more</p>
+              <p className="text-[10px]" style={{ color: tc.textFaint }}>+{activeSchedules.length - 2} more</p>
             )}
           </div>
         )}
 
         {completedSchedules.length > 0 && (
-          <div className="text-xs text-gray-500">
+          <p className="text-[10px]" style={{ color: tc.textFaint }}>
             {completedSchedules.length} completed schedule{completedSchedules.length !== 1 ? 's' : ''}
-          </div>
+          </p>
         )}
       </div>
 
-      <div className="mt-3 pt-3 border-t border-gray-700">
-        <Link
-          href={`/rooms/${room.id}`}
-          className="text-sm text-teal-400 hover:text-teal-300 transition-colors"
-        >
-          View Details →
+      <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${tc.divider}` }}>
+        <Link href={`/rooms/${room.id}`}
+          className="text-[12px] font-medium flex items-center gap-1 transition-colors"
+          style={{ color: tc.accentGreen }}
+          onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.8' }}
+          onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}>
+          View Details <ArrowRight className="w-3 h-3" />
         </Link>
       </div>
-    </div>
+    </motion.div>
   )
-} 
+}

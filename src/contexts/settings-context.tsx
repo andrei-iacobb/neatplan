@@ -30,7 +30,7 @@ export interface SettingsState {
 }
 
 const defaultSettings: SettingsState = {
-  theme: 'dark',
+  theme: 'light',
   notifications: {
     email: true,
     push: true,
@@ -70,7 +70,7 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<SettingsState>(defaultSettings)
   const [isLoading, setIsLoading] = useState(false)
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('dark')
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light')
 
   // Load settings from localStorage on mount
   useEffect(() => {

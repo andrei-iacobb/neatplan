@@ -7,12 +7,14 @@ import { toast } from 'sonner'
 import { Loader2, Upload } from 'lucide-react'
 import { Schedule } from '@/generated/prisma'
 import { apiRequest } from '@/lib/url-utils'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 interface ScheduleUploaderProps {
   onScheduleGenerated: (schedule: Schedule) => void
 }
 
 export function ScheduleUploader({ onScheduleGenerated }: ScheduleUploaderProps) {
+  const tc = useThemeColors()
   const [isLoading, setIsLoading] = useState(false)
   const [showInput, setShowInput] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -59,7 +61,7 @@ export function ScheduleUploader({ onScheduleGenerated }: ScheduleUploaderProps)
       onScheduleGenerated(schedule)
 
       toast.success('Schedule generated successfully')
-      
+
       // Hide the input after successful upload
       setShowInput(false)
     } catch (error: any) {
@@ -86,16 +88,17 @@ export function ScheduleUploader({ onScheduleGenerated }: ScheduleUploaderProps)
 
   return (
     <div className="space-y-4">
-      <p className="text-gray-400 text-sm mb-4">
-        Upload a document containing your cleaning schedule details. We'll automatically process it and create a structured schedule.
+      <p className="text-sm mb-4" style={{ color: tc.textMuted }}>
+        Upload a document containing your cleaning schedule details. We&apos;ll automatically process it and create a structured schedule.
       </p>
-      
+
       <div className="relative">
         <Button
           onClick={handleButtonClick}
           disabled={isLoading}
           variant="outline"
-          className="w-full bg-gray-800/50 border-gray-700 hover:bg-gray-800 hover:border-gray-600 transition-colors"
+          className="w-full transition-colors"
+          style={{ background: tc.btnSecondaryBg, borderColor: tc.btnSecondaryBorder, color: tc.btnSecondaryText }}
         >
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -104,7 +107,7 @@ export function ScheduleUploader({ onScheduleGenerated }: ScheduleUploaderProps)
           )}
           {isLoading ? "Processing..." : "Select Document"}
         </Button>
-        
+
         <Input
           ref={fileInputRef}
           type="file"
@@ -114,8 +117,8 @@ export function ScheduleUploader({ onScheduleGenerated }: ScheduleUploaderProps)
           className="hidden"
         />
       </div>
-      
-      <p className="text-xs text-gray-500">
+
+      <p className="text-xs" style={{ color: tc.textFaint }}>
         Accepts .docx or .pdf files (max 5MB)
       </p>
     </div>
@@ -125,7 +128,7 @@ export function ScheduleUploader({ onScheduleGenerated }: ScheduleUploaderProps)
 async function readFileContent(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
-    
+
     reader.onload = (e) => {
       try {
         const content = e.target?.result
@@ -138,8 +141,8 @@ async function readFileContent(file: File): Promise<string> {
         reject(error)
       }
     }
-    
+
     reader.onerror = () => reject(new Error('Failed to read file'))
     reader.readAsText(file)
   })
-} 
+}

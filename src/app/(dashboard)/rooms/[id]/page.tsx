@@ -2,11 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 import { useToast } from '@/components/ui/toast-context'
+import { useThemeColors } from '@/hooks/useThemeColors'
 import { Loader2, Calendar, CheckCircle2, X, Trash2, Building2, Pencil } from 'lucide-react'
 import { ScheduleFrequency, ScheduleStatus } from '@prisma/client'
 import { getFrequencyLabel, getScheduleDisplayName } from '@/lib/schedule-utils'
 import { apiRequest } from '@/lib/url-utils'
+
+const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } }
 
 interface Room {
   id: string
@@ -42,6 +46,7 @@ export default function RoomDetailsPage() {
   const params = useParams()
   const router = useRouter()
   const { showToast } = useToast()
+  const tc = useThemeColors()
   const [room, setRoom] = useState<Room | null>(null)
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [roomSchedules, setRoomSchedules] = useState<RoomSchedule[]>([])
@@ -82,10 +87,9 @@ export default function RoomDetailsPage() {
     })
   }, [params.id, showToast])
 
-  // Add handler for schedule selection that sets suggested frequency
   const handleScheduleSelection = (scheduleId: string) => {
     setSelectedSchedule(scheduleId)
-    
+
     if (scheduleId) {
       const schedule = schedules.find(s => s.id === scheduleId)
       if (schedule?.suggestedFrequency) {
@@ -104,7 +108,7 @@ export default function RoomDetailsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           scheduleId: selectedSchedule,
-          frequency: selectedFrequency // This can be undefined now, API will use suggested frequency
+          frequency: selectedFrequency
         })
       })
 
@@ -114,7 +118,7 @@ export default function RoomDetailsPage() {
       setRoomSchedules(prev => [...prev, newRoomSchedule])
       showToast('Schedule assigned successfully', 'success')
       setSelectedSchedule('')
-      setSelectedFrequency(ScheduleFrequency.WEEKLY) // Reset to default
+      setSelectedFrequency(ScheduleFrequency.WEEKLY)
     } catch (error) {
       console.error('Error assigning schedule:', error)
       showToast('Failed to assign schedule', 'error')
@@ -199,7 +203,8 @@ export default function RoomDetailsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+          className="w-8 h-8 rounded-full border-2 border-transparent" style={{ borderTopColor: 'rgb(16,185,129)', borderRightColor: 'rgba(16,185,129,0.3)' }} />
       </div>
     )
   }
@@ -207,74 +212,100 @@ export default function RoomDetailsPage() {
   if (!room) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-400">Room not found</p>
+        <p className="text-[13px]" style={{ color: tc.textMuted }}>Room not found</p>
       </div>
     )
   }
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex justify-between items-start mb-8">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-100">{room.name}</h1>
-          {room.description && (
-            <p className="mt-2 text-gray-400">{room.description}</p>
-          )}
-          <div className="mt-4 flex items-center gap-4 text-sm text-gray-400">
-            {room.floor && <span>Floor: {room.floor}</span>}
-            <span>Type: {room.type}</span>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowEditModal(true)}
-            className="flex items-center px-3 py-1.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 rounded border border-teal-500/30"
-          >
-            <Pencil className="w-4 h-4 mr-2" />
-            Edit Room
-          </button>
-        </div>
-      </div>
+  function getStatusStyle(status: ScheduleStatus) {
+    if (status === ScheduleStatus.COMPLETED) return tc.statusCompleted
+    if (status === ScheduleStatus.OVERDUE) return tc.statusOverdue
+    return tc.statusPending
+  }
 
-      <div className="space-y-6">
+  return (
+    <div className="max-w-[1100px] mx-auto relative z-10 pb-8">
+      {/* Page Header */}
+      <motion.div {...fadeUp} transition={{ duration: 0.4 }} className="mb-8">
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${tc.accentGreen}${tc.iconBgAlpha}` }}>
+                <Building2 className="w-[18px] h-[18px]" style={{ color: tc.accentGreen }} strokeWidth={1.8} />
+              </div>
+              <h1 className="text-[28px] font-bold tracking-tight" style={{ color: tc.textPrimary }}>{room.name}</h1>
+            </div>
+            {room.description && (
+              <p className="text-[14px] mt-2 ml-12" style={{ color: tc.textSecondary }}>{room.description}</p>
+            )}
+            <div className="flex items-center gap-4 text-[12px] mt-3 ml-12" style={{ color: tc.textMuted }}>
+              {room.floor && <span>Floor: {room.floor}</span>}
+              <span>Type: {room.type}</span>
+            </div>
+          </div>
+          <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.1 }}>
+            <button
+              onClick={() => setShowEditModal(true)}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors duration-150"
+              style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: `1px solid ${tc.btnPrimaryBorder}` }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              Edit Room
+            </button>
+          </motion.div>
+        </div>
+      </motion.div>
+
+      <div className="space-y-4">
         {/* Assign New Schedule Section */}
-        <div className="bg-gray-800/50 rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-100 mb-4">Assign New Schedule</h2>
+        <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.1 }}
+          className="rounded-xl p-5"
+          style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}
+        >
+          <h2 className="text-[15px] font-semibold mb-4" style={{ color: tc.textPrimary }}>Assign New Schedule</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>
                 Schedule
               </label>
               <select
                 value={selectedSchedule}
                 onChange={(e) => handleScheduleSelection(e.target.value)}
-                className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
+                className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors duration-150"
+                style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
               >
                 <option value="">Select a schedule</option>
                 {schedules.map((schedule) => (
                   <option key={schedule.id} value={schedule.id}>
                     {schedule.title}
-                    {schedule.detectedFrequency && ' ✨ (AI-detected)'}
+                    {schedule.detectedFrequency && ' (AI-detected)'}
                   </option>
                 ))}
               </select>
               {selectedSchedule && schedules.find(s => s.id === selectedSchedule)?.detectedFrequency && (
-                <p className="mt-1 text-xs text-teal-400">
-                  ✨ AI detected frequency: "{schedules.find(s => s.id === selectedSchedule)?.detectedFrequency}"
+                <p className="mt-1.5 text-[11px] font-medium" style={{ color: tc.accentGreen }}>
+                  AI detected frequency: &ldquo;{schedules.find(s => s.id === selectedSchedule)?.detectedFrequency}&rdquo;
                 </p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>
                 Frequency
                 {selectedSchedule && schedules.find(s => s.id === selectedSchedule)?.suggestedFrequency && (
-                  <span className="ml-2 text-xs text-teal-400">(Auto-selected from AI detection)</span>
+                  <span className="ml-2 text-[11px]" style={{ color: tc.accentGreen }}>(Auto-selected from AI detection)</span>
                 )}
               </label>
               <select
                 value={selectedFrequency}
                 onChange={(e) => setSelectedFrequency(e.target.value as ScheduleFrequency)}
-                className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
+                className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors duration-150"
+                style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
               >
                 {Object.values(ScheduleFrequency).map((freq) => (
                   <option key={freq} value={freq}>
@@ -284,177 +315,226 @@ export default function RoomDetailsPage() {
               </select>
             </div>
           </div>
-          <button
-            onClick={assignSchedule}
-            disabled={!selectedSchedule || isAssigning}
-            className="mt-4 px-4 py-2 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 rounded-md border border-teal-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isAssigning ? 'Assigning...' : 'Assign Schedule'}
-          </button>
-        </div>
+          <div className="mt-4" style={{ borderTop: `1px solid ${tc.divider}`, paddingTop: '16px' }}>
+            <button
+              onClick={assignSchedule}
+              disabled={!selectedSchedule || isAssigning}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: `1px solid ${tc.btnPrimaryBorder}` }}
+              onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}
+            >
+              {isAssigning ? 'Assigning...' : 'Assign Schedule'}
+            </button>
+          </div>
+        </motion.div>
 
         {/* Assigned Schedules Section */}
-        <div className="bg-gray-800/50 rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-100 mb-4">Assigned Schedules</h2>
-          <div className="space-y-4">
+        <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.2 }}
+          className="rounded-xl p-5"
+          style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}
+        >
+          <h2 className="text-[15px] font-semibold mb-4" style={{ color: tc.textPrimary }}>Assigned Schedules</h2>
+          <div className="space-y-2.5">
             {roomSchedules.length === 0 ? (
-              <p className="text-gray-400">No schedules assigned yet.</p>
+              <div className="flex flex-col items-center justify-center py-10">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3" style={{ background: tc.emptyBg }}>
+                  <Calendar className="w-5 h-5" style={{ color: tc.textFaint }} />
+                </div>
+                <p className="text-[13px] font-medium" style={{ color: tc.textMuted }}>No schedules assigned yet</p>
+                <p className="text-[11px] mt-1" style={{ color: tc.textFaint }}>Use the form above to assign a schedule to this room</p>
+              </div>
             ) : (
-              roomSchedules.map((roomSchedule) => (
-                <div
-                  key={roomSchedule.id}
-                  className="flex items-center justify-between bg-gray-900/50 rounded-lg p-4 border border-gray-700"
-                >
-                  <div>
-                    <h3 className="text-gray-100 font-medium">
-                      {getScheduleDisplayName(roomSchedule.schedule.title, roomSchedule.frequency)}
-                    </h3>
-                    <div className="mt-1 text-sm text-gray-400">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        {getFrequencyLabel(roomSchedule.frequency)}
-                      </div>
-                      <div className="mt-1">
-                        Next due: {new Date(roomSchedule.nextDue).toLocaleDateString()}
+              roomSchedules.map((roomSchedule, i) => {
+                const statusStyle = getStatusStyle(roomSchedule.status)
+                return (
+                  <motion.div
+                    key={roomSchedule.id}
+                    {...fadeUp}
+                    transition={{ duration: 0.3, delay: 0.25 + i * 0.05 }}
+                    className="flex items-center justify-between rounded-xl p-4"
+                    style={{ background: tc.surfaceBg, border: '1px solid ' + tc.cardBorder }}
+                  >
+                    <div>
+                      <h3 className="text-[13px] font-semibold" style={{ color: tc.textPrimary }}>
+                        {getScheduleDisplayName(roomSchedule.schedule.title, roomSchedule.frequency)}
+                      </h3>
+                      <div className="mt-1.5 flex items-center gap-3 text-[12px]" style={{ color: tc.textMuted }}>
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5" />
+                          {getFrequencyLabel(roomSchedule.frequency)}
+                        </div>
+                        <span>Next due: {new Date(roomSchedule.nextDue).toLocaleDateString()}</span>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span
-                      className={`px-2 py-1 text-xs rounded-full ${
-                        roomSchedule.status === ScheduleStatus.COMPLETED
-                          ? 'bg-green-500/10 text-green-300'
-                          : roomSchedule.status === ScheduleStatus.OVERDUE
-                          ? 'bg-red-500/10 text-red-300'
-                          : 'bg-yellow-500/10 text-yellow-300'
-                      }`}
-                    >
-                      {roomSchedule.status}
-                    </span>
-                    {roomSchedule.status !== ScheduleStatus.COMPLETED && (
-                      <button
-                        onClick={() => completeSchedule(roomSchedule.id)}
-                        disabled={isCompleting}
-                        className="flex items-center gap-1 px-3 py-1 bg-green-500/10 hover:bg-green-500/20 text-green-300 rounded-md border border-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="px-2.5 py-1 text-[11px] font-semibold rounded-full"
+                        style={{ background: statusStyle.bg, color: statusStyle.text, border: `1px solid ${statusStyle.border}` }}
                       >
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>Complete</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))
+                        {roomSchedule.status}
+                      </span>
+                      {roomSchedule.status !== ScheduleStatus.COMPLETED && (
+                        <button
+                          onClick={() => completeSchedule(roomSchedule.id)}
+                          disabled={isCompleting}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{ background: tc.statusCompleted.bg, color: tc.statusCompleted.text, border: `1px solid ${tc.statusCompleted.border}` }}
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Complete</span>
+                        </button>
+                      )}
+                    </div>
+                  </motion.div>
+                )
+              })
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Edit Room Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="bg-gray-800/50 backdrop-blur border border-gray-700 rounded-lg p-6 w-full max-w-lg mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-medium text-teal-300">Edit Room</h2>
+        <div className="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center"
+          style={{ background: tc.modalOverlay }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="rounded-xl p-6 w-full max-w-lg mx-4"
+            style={{ background: tc.modalBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}
+          >
+            <div className="flex justify-between items-center mb-5">
+              <h2 className="text-[16px] font-semibold" style={{ color: tc.textPrimary }}>Edit Room</h2>
               <button
                 onClick={() => setShowEditModal(false)}
-                className="text-gray-400 hover:text-teal-300"
+                className="w-7 h-7 rounded-md flex items-center justify-center transition-colors duration-150"
+                style={{ color: tc.textMuted }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = tc.hoverRow; e.currentTarget.style.color = tc.textSecondary }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = tc.textMuted }}
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleEdit} className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Room Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
-                    required
-                  />
+            <div style={{ borderTop: `1px solid ${tc.divider}`, paddingTop: '20px' }}>
+              <form onSubmit={handleEdit} className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>
+                      Room Name
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors duration-150"
+                      style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                      onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>
+                      Floor
+                    </label>
+                    <select
+                      value={formData.floor}
+                      onChange={e => setFormData(prev => ({ ...prev, floor: e.target.value }))}
+                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors duration-150"
+                      style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                      onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
+                    >
+                      <option value="Ground Floor">Ground Floor</option>
+                      <option value="First Floor">First Floor</option>
+                    </select>
+                  </div>
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Floor
+                  <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>
+                    Room Type
                   </label>
                   <select
-                    value={formData.floor}
-                    onChange={e => setFormData(prev => ({ ...prev, floor: e.target.value }))}
-                    className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
+                    value={formData.type}
+                    onChange={e => setFormData(prev => ({ ...prev, type: e.target.value }))}
+                    className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors duration-150"
+                    style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
                   >
-                    <option value="Ground Floor">Ground Floor</option>
-                    <option value="First Floor">First Floor</option>
+                    <option value="BEDROOM">Bedroom</option>
+                    <option value="OFFICE">Office</option>
+                    <option value="MEETING_ROOM">Meeting Room</option>
+                    <option value="BATHROOM">Bathroom</option>
+                    <option value="KITCHEN">Kitchen</option>
+                    <option value="LOBBY">Lobby</option>
+                    <option value="STORAGE">Storage</option>
+                    <option value="LOUNGE">Lounge</option>
+                    <option value="OTHER">Other</option>
                   </select>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Room Type
-                </label>
-                <select
-                  value={formData.type}
-                  onChange={e => setFormData(prev => ({ ...prev, type: e.target.value }))}
-                  className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
-                >
-                  <option value="BEDROOM">Bedroom</option>
-                  <option value="OFFICE">Office</option>
-                  <option value="MEETING_ROOM">Meeting Room</option>
-                  <option value="BATHROOM">Bathroom</option>
-                  <option value="KITCHEN">Kitchen</option>
-                  <option value="LOBBY">Lobby</option>
-                  <option value="STORAGE">Storage</option>
-                  <option value="LOUNGE">Lounge</option>
-                  <option value="OTHER">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full rounded-md bg-gray-900/50 border border-gray-700 text-gray-100 px-3 py-2"
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex justify-between">
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  className="flex items-center px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-300 rounded border border-red-500/30"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Room
-                </button>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowEditModal(false)}
-                    className="px-4 py-2 text-gray-400 hover:text-teal-300"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="px-4 py-2 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 rounded border border-teal-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSubmitting ? 'Saving...' : 'Save Changes'}
-                  </button>
+                <div>
+                  <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>
+                    Description
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors duration-150 resize-none"
+                    style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
+                    rows={3}
+                  />
                 </div>
-              </div>
-            </form>
-          </div>
+
+                <div style={{ borderTop: `1px solid ${tc.divider}`, paddingTop: '16px' }}>
+                  <div className="flex justify-between">
+                    <button
+                      type="button"
+                      onClick={handleDelete}
+                      className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors duration-150"
+                      style={{ background: tc.btnDangerBg, color: tc.btnDangerText, border: `1px solid ${tc.btnDangerBorder}` }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = tc.btnDangerHoverBg }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnDangerBg }}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete Room
+                    </button>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowEditModal(false)}
+                        className="px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors duration-150"
+                        style={{ color: tc.textMuted }}
+                        onMouseEnter={(e) => { e.currentTarget.style.color = tc.textSecondary }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = tc.textMuted }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="px-4 py-2 rounded-lg text-[13px] font-medium transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: `1px solid ${tc.btnPrimaryBorder}` }}
+                        onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}
+                      >
+                        {isSubmitting ? 'Saving...' : 'Save Changes'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </motion.div>
         </div>
       )}
     </div>
   )
-} 
+}

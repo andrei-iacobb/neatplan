@@ -3,10 +3,13 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { Upload, X, FileText, Combine, Layers } from 'lucide-react'
+import { Upload, X, FileText, Combine, Layers, Sparkles } from 'lucide-react'
 import { apiRequest } from '@/lib/url-utils'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 type ProcessingMode = 'combine' | 'individual' | null
+
+const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } }
 
 export default function UploadPage() {
   const [isDragging, setIsDragging] = useState(false)
@@ -15,9 +18,11 @@ export default function UploadPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [currentFileIndex, setCurrentFileIndex] = useState(0)
+  const [hoveredMode, setHoveredMode] = useState<string | null>(null)
   const router = useRouter()
   const dropAreaRef = React.useRef<HTMLDivElement>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const tc = useThemeColors()
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -32,12 +37,12 @@ export default function UploadPage() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(false)
-    
-    const droppedFiles = Array.from(e.dataTransfer.files).filter(file => 
-      file.type === 'application/pdf' || 
+
+    const droppedFiles = Array.from(e.dataTransfer.files).filter(file =>
+      file.type === 'application/pdf' ||
       file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     )
-    
+
     if (droppedFiles.length > 0) {
       setFiles(prev => [...prev, ...droppedFiles])
       setError(null)
@@ -47,11 +52,11 @@ export default function UploadPage() {
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(e.target.files || []).filter(file => 
-      file.type === 'application/pdf' || 
+    const selectedFiles = Array.from(e.target.files || []).filter(file =>
+      file.type === 'application/pdf' ||
       file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     )
-    
+
     if (selectedFiles.length > 0) {
       setFiles(prev => [...prev, ...selectedFiles])
       setError(null)
@@ -70,10 +75,10 @@ export default function UploadPage() {
 
   const processIndividualDocuments = async () => {
     const results = []
-    
+
     for (let i = 0; i < files.length; i++) {
       setCurrentFileIndex(i)
-      
+
       try {
         const formData = new FormData()
         formData.append('file', files[i])
@@ -94,7 +99,7 @@ export default function UploadPage() {
           schedule: data.schedule,
           success: true
         })
-        
+
       } catch (err) {
         results.push({
           file: files[i].name,
@@ -103,17 +108,17 @@ export default function UploadPage() {
         })
       }
     }
-    
+
     return results
   }
 
   const processCombinedDocuments = async () => {
     const extractedContents = []
-    
+
     // First, extract content from all documents
     for (let i = 0; i < files.length; i++) {
       setCurrentFileIndex(i)
-      
+
       try {
         const formData = new FormData()
         formData.append('file', files[i])
@@ -133,24 +138,24 @@ export default function UploadPage() {
           filename: files[i].name,
           content: data.content
         })
-        
+
       } catch (err) {
         throw new Error(`Failed to process ${files[i].name}: ${err instanceof Error ? err.message : 'Unknown error'}`)
       }
     }
-    
+
     // Combine all content with document separators
-    const combinedContent = extractedContents.map(item => 
+    const combinedContent = extractedContents.map(item =>
       `=== Document: ${item.filename} ===\n${item.content}\n\n`
     ).join('')
-    
+
     // Process the combined content as a single schedule
     const response = await apiRequest('/api/ai/schedule', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         content: combinedContent,
         title: `Combined Schedule from ${files.length} documents`
       })
@@ -167,7 +172,7 @@ export default function UploadPage() {
 
   const handleUpload = async () => {
     if (files.length === 0) return
-    
+
     // For single file, process immediately without mode selection
     if (files.length === 1) {
       setIsProcessing(true)
@@ -208,21 +213,21 @@ export default function UploadPage() {
     try {
       if (processingMode === 'individual') {
         const results = await processIndividualDocuments()
-        
+
         // Check if any failed
         const failedFiles = results.filter(r => !r.success)
         if (failedFiles.length > 0) {
           setError(`Some files failed to process: ${failedFiles.map(f => f.file).join(', ')}`)
         }
-        
+
         // Navigate to schedules page to see all created schedules
         router.push('/schedule')
-        
+
       } else if (processingMode === 'combine') {
         await processCombinedDocuments()
         router.push('/schedule')
       }
-      
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error processing documents')
     } finally {
@@ -238,89 +243,111 @@ export default function UploadPage() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
-  return (
-    <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-100 mb-2">AI Schedule Upload</h1>
-          <p className="text-gray-400">Upload cleaning documents for intelligent schedule creation with automatic frequency detection</p>
-        </div>
+  const isUploadEnabled = files.length > 0 && (files.length === 1 || processingMode) && !isProcessing
 
-        {/* Upload Area */}
-        <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-8 mb-8">
-          <div
-            ref={dropAreaRef}
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${
-              isDragging
-                ? 'border-teal-400 bg-teal-500/5'
-                : 'border-gray-600 hover:border-teal-500/50 hover:bg-gray-700/30'
-            }`}
-            onDragEnter={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-          >
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-16 h-16 rounded-lg bg-teal-500/20 flex items-center justify-center">
-                <Upload className="w-8 h-8 text-teal-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-medium text-gray-100 mb-2">
-                  Drop your files here or click to browse
-                </h3>
-                <p className="text-gray-400 text-sm">
-                  Supports PDF and DOCX files up to 10MB each. Upload multiple files for batch processing.
-                </p>
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                accept=".pdf,.docx"
-                multiple
-                onChange={handleFileChange}
-              />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="px-6 py-3 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 rounded-lg border border-teal-500/30 transition-colors"
-              >
-                Choose Files
-              </button>
+  return (
+    <div className="max-w-[1100px] mx-auto relative z-10 pb-8">
+      {/* Page Header */}
+      <div className="mb-10">
+        <div className="flex items-center gap-2 mb-2">
+          <Sparkles className="w-4 h-4" style={{ color: 'rgb(16,185,129)' }} />
+          <p className="text-[13px] font-medium tracking-wide uppercase" style={{ color: tc.accentLabel }}>Document Processing</p>
+        </div>
+        <h1 className="text-[32px] font-bold tracking-tight mb-1" style={{ color: tc.textPrimary }}>AI Schedule Upload</h1>
+        <p className="text-[15px]" style={{ color: tc.textMuted }}>
+          Upload cleaning documents for intelligent schedule creation with automatic frequency detection
+        </p>
+      </div>
+
+      {/* Upload Area */}
+      <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.05 }}
+        className="rounded-xl p-6 mb-4"
+        style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}>
+        <div
+          ref={dropAreaRef}
+          className="rounded-xl p-8 text-center transition-all duration-200 cursor-pointer"
+          style={{
+            border: '2px dashed ' + (isDragging ? tc.dropzoneActiveBorder : tc.dropzoneBorder),
+            background: isDragging ? tc.dropzoneActiveBg : tc.dropzoneBg,
+          }}
+          onDragEnter={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: tc.btnPrimaryBg }}>
+              <Upload className="w-8 h-8" style={{ color: 'rgb(16,185,129)' }} />
             </div>
+            <div>
+              <h3 className="text-[16px] font-semibold mb-2" style={{ color: tc.textPrimary }}>
+                Drop your files here or click to browse
+              </h3>
+              <p className="text-[13px]" style={{ color: tc.textMuted }}>
+                Supports PDF and DOCX files up to 10MB each. Upload multiple files for batch processing.
+              </p>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              accept=".pdf,.docx"
+              multiple
+              onChange={handleFileChange}
+            />
+            <button
+              onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click() }}
+              className="px-6 py-2.5 rounded-lg text-[13px] font-semibold transition-all duration-200"
+              style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: '1px solid ' + tc.btnPrimaryBorder }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}
+            >
+              Choose Files
+            </button>
           </div>
         </div>
+      </motion.div>
 
-        {/* Document Preview */}
+      {/* Document Preview */}
+      <AnimatePresence>
         {files.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-gray-800/50 rounded-lg border border-gray-700 p-6 mb-8"
+            {...fadeUp}
+            transition={{ duration: 0.35, delay: 0.1 }}
+            className="rounded-xl p-5 mb-4"
+            style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}
           >
-            <h3 className="text-lg font-medium text-gray-100 mb-4">
+            <h3 className="text-[15px] font-semibold mb-4" style={{ color: tc.textPrimary }}>
               Uploaded Documents ({files.length})
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {files.map((file, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg border border-gray-600"
+                  className="flex items-center justify-between p-3 rounded-lg"
+                  style={{ background: tc.emptyBg, border: '1px solid ' + tc.cardBorder }}
                 >
                   <div className="flex items-center gap-3">
-                    <FileText className="w-5 h-5 text-blue-400" />
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${tc.accentBlue}${tc.iconBgAlpha}` }}>
+                      <FileText className="w-4 h-4" style={{ color: tc.accentBlue }} />
+                    </div>
                     <div>
-                      <p className="text-gray-100 font-medium">{file.name}</p>
-                      <p className="text-gray-400 text-sm">
-                        {formatFileSize(file.size)} • {file.type.includes('pdf') ? 'PDF' : 'DOCX'}
+                      <p className="text-[13px] font-medium" style={{ color: tc.textPrimary }}>{file.name}</p>
+                      <p className="text-[11px]" style={{ color: tc.textMuted }}>
+                        {formatFileSize(file.size)} &middot; {file.type.includes('pdf') ? 'PDF' : 'DOCX'}
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => removeFile(index)}
-                    className="p-1 text-gray-400 hover:text-red-400 transition-colors"
+                    className="p-1.5 rounded-md transition-colors duration-150"
+                    style={{ color: tc.textMuted }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = tc.accentRed; e.currentTarget.style.background = tc.btnDangerBg }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = tc.textMuted; e.currentTarget.style.background = 'transparent' }}
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -329,167 +356,204 @@ export default function UploadPage() {
             </div>
           </motion.div>
         )}
+      </AnimatePresence>
 
-        {/* Processing Mode Selection */}
+      {/* Processing Mode Selection */}
+      <AnimatePresence>
         {files.length > 1 && !processingMode && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-gray-800/50 rounded-lg border border-gray-700 p-6 mb-8"
+            {...fadeUp}
+            transition={{ duration: 0.35, delay: 0.15 }}
+            className="rounded-xl p-5 mb-4"
+            style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}
           >
-            <h3 className="text-lg font-medium text-gray-100 mb-4">
+            <h3 className="text-[15px] font-semibold mb-4" style={{ color: tc.textPrimary }}>
               How would you like to process these documents?
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <button
                 onClick={() => handleProcessingModeSelect('combine')}
-                className="p-6 bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-lg hover:from-purple-500/20 hover:to-pink-500/20 transition-all text-left"
+                className="p-5 rounded-xl text-left transition-all duration-200 relative overflow-hidden"
+                style={{
+                  background: tc.cardBg,
+                  border: '1px solid ' + (hoveredMode === 'combine' ? tc.cardHoverBorder(tc.accentIndigo) : tc.cardBorder),
+                  boxShadow: hoveredMode === 'combine' ? `0 0 20px ${tc.accentIndigo}${tc.glowOpacity === '0.06' ? '10' : '08'}` : tc.shadow,
+                }}
+                onMouseEnter={(e) => { setHoveredMode('combine'); e.currentTarget.style.background = tc.cardHoverBg }}
+                onMouseLeave={(e) => { setHoveredMode(null); e.currentTarget.style.background = tc.cardBg }}
               >
+                <div className="absolute top-0 right-0 w-24 h-24 rounded-full -translate-y-8 translate-x-8" style={{ background: tc.accentIndigo, opacity: tc.glowOpacity }} />
                 <div className="flex items-center gap-3 mb-3">
-                  <Combine className="w-6 h-6 text-purple-400" />
-                  <h4 className="text-lg font-medium text-gray-100">Combine into One Schedule</h4>
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${tc.accentIndigo}${tc.iconBgAlpha}` }}>
+                    <Combine className="w-[18px] h-[18px]" style={{ color: tc.accentIndigo }} strokeWidth={1.8} />
+                  </div>
+                  <h4 className="text-[14px] font-semibold" style={{ color: tc.textPrimary }}>Combine into One Schedule</h4>
                 </div>
-                <p className="text-gray-400 text-sm">
+                <p className="text-[12px] leading-relaxed" style={{ color: tc.textMuted }}>
                   Merge all documents into a single comprehensive cleaning schedule with all tasks combined.
                 </p>
               </button>
-              
+
               <button
                 onClick={() => handleProcessingModeSelect('individual')}
-                className="p-6 bg-gradient-to-br from-teal-500/10 to-blue-500/10 border border-teal-500/30 rounded-lg hover:from-teal-500/20 hover:to-blue-500/20 transition-all text-left"
+                className="p-5 rounded-xl text-left transition-all duration-200 relative overflow-hidden"
+                style={{
+                  background: tc.cardBg,
+                  border: '1px solid ' + (hoveredMode === 'individual' ? tc.cardHoverBorder(tc.accentGreen) : tc.cardBorder),
+                  boxShadow: hoveredMode === 'individual' ? `0 0 20px ${tc.accentGreen}${tc.glowOpacity === '0.06' ? '10' : '08'}` : tc.shadow,
+                }}
+                onMouseEnter={(e) => { setHoveredMode('individual'); e.currentTarget.style.background = tc.cardHoverBg }}
+                onMouseLeave={(e) => { setHoveredMode(null); e.currentTarget.style.background = tc.cardBg }}
               >
+                <div className="absolute top-0 right-0 w-24 h-24 rounded-full -translate-y-8 translate-x-8" style={{ background: tc.accentGreen, opacity: tc.glowOpacity }} />
                 <div className="flex items-center gap-3 mb-3">
-                  <Layers className="w-6 h-6 text-teal-400" />
-                  <h4 className="text-lg font-medium text-gray-100">Create Individual Schedules</h4>
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${tc.accentGreen}${tc.iconBgAlpha}` }}>
+                    <Layers className="w-[18px] h-[18px]" style={{ color: tc.accentGreen }} strokeWidth={1.8} />
+                  </div>
+                  <h4 className="text-[14px] font-semibold" style={{ color: tc.textPrimary }}>Create Individual Schedules</h4>
                 </div>
-                <p className="text-gray-400 text-sm">
+                <p className="text-[12px] leading-relaxed" style={{ color: tc.textMuted }}>
                   Create separate cleaning schedules for each document, maintaining their distinct purposes.
                 </p>
               </button>
             </div>
           </motion.div>
         )}
+      </AnimatePresence>
 
-        {/* Error Message */}
-        <AnimatePresence>
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-300"
-            >
-              {error}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Upload Button */}
-        <div className="mt-6">
-          <button
-            onClick={handleUpload}
-            disabled={files.length === 0 || (files.length > 1 && !processingMode) || isProcessing}
-            className={`w-full py-3 rounded-lg flex items-center justify-center space-x-2 ${
-              files.length > 0 && (files.length === 1 || processingMode) && !isProcessing
-                ? 'bg-teal-500/10 text-teal-300 border border-teal-500/30 hover:bg-teal-500/20'
-                : 'bg-white/5 text-gray-400 border border-white/10 cursor-not-allowed'
-            } transition-colors`}
+      {/* Error Message */}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="mb-4 p-4 rounded-xl text-[13px] font-medium"
+            style={{ background: tc.statusOverdue.bg, border: '1px solid ' + tc.statusOverdue.border, color: tc.statusOverdue.text }}
           >
-            {isProcessing ? (
-              <>
-                <motion.span
-                  className="w-4 h-4 border-2 border-current border-t-transparent rounded-full"
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                />
-                <span>
-                  Processing... ({currentFileIndex + 1}/{files.length})
-                </span>
-              </>
-            ) : (
-              <>
-                <span>
-                  {files.length === 0 
-                    ? 'Upload Documents' 
-                    : files.length === 1 
-                    ? 'Process Document' 
-                    : processingMode === 'combine'
-                    ? `Combine ${files.length} Documents`
-                    : processingMode === 'individual'
-                    ? `Create ${files.length} Individual Schedules`
-                    : 'Select Processing Mode'
-                  }
-                </span>
-              </>
-            )}
-          </button>
-        </div>
+            {error}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        {/* Processing Steps */}
-        <AnimatePresence>
-          {isProcessing && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="mt-8 space-y-4"
-            >
-              <div className="p-4 rounded-lg bg-black/20 backdrop-blur-sm border border-white/5">
-                <h3 className="text-sm font-medium text-gray-300 mb-2">
-                  AI Schedule Processing Steps:
-                </h3>
-                <ul className="space-y-2 text-sm text-gray-400">
-                  <li className="flex items-center space-x-2">
-                    <motion.span
-                      className="w-3 h-3 border-2 border-current border-t-transparent rounded-full"
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    />
-                    <span>
-                      {processingMode === 'combine' 
-                        ? `Extracting content from document ${currentFileIndex + 1}/${files.length}: ${files[currentFileIndex]?.name}`
-                        : `Processing document ${currentFileIndex + 1}/${files.length}: ${files[currentFileIndex]?.name}`
-                      }
-                    </span>
-                  </li>
-                  <li className="flex items-center space-x-2">
-                    <motion.span
-                      className="w-3 h-3 border-2 border-current border-t-transparent rounded-full"
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear", delay: 0.1 }}
-                    />
-                    <span>🤖 Detecting cleaning frequencies with AI</span>
-                  </li>
-                  <li className="flex items-center space-x-2">
-                    <motion.span
-                      className="w-3 h-3 border-2 border-current border-t-transparent rounded-full"
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear", delay: 0.2 }}
-                    />
-                    <span>✨ Extracting structured cleaning tasks</span>
-                  </li>
-                  {processingMode === 'combine' && (
-                    <li className="flex items-center space-x-2">
-                      <motion.span
-                        className="w-3 h-3 border-2 border-current border-t-transparent rounded-full"
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear", delay: 0.3 }}
-                      />
-                      <span>🔗 Combining all documents into unified schedule</span>
-                    </li>
-                  )}
-                </ul>
-                <div className="mt-3 p-2 bg-teal-500/10 border border-teal-500/30 rounded text-xs text-teal-300">
-                  💡 {processingMode === 'combine' 
-                    ? 'All documents will be merged into one comprehensive schedule!'
-                    : 'Each document will become a separate schedule for better organization!'
-                  }
-                </div>
-              </div>
-            </motion.div>
+      {/* Upload Button */}
+      <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.2 }}>
+        <button
+          onClick={handleUpload}
+          disabled={!isUploadEnabled}
+          className="w-full py-3 rounded-xl flex items-center justify-center gap-2 text-[14px] font-semibold transition-all duration-200"
+          style={isUploadEnabled ? {
+            background: tc.btnPrimaryBg,
+            color: tc.btnPrimaryText,
+            border: '1px solid ' + tc.btnPrimaryBorder,
+          } : {
+            background: tc.emptyBg,
+            color: tc.textFaint,
+            border: '1px solid ' + tc.cardBorder,
+            cursor: 'not-allowed',
+          }}
+          onMouseEnter={(e) => { if (isUploadEnabled) e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
+          onMouseLeave={(e) => { if (isUploadEnabled) e.currentTarget.style.background = tc.btnPrimaryBg }}
+        >
+          {isProcessing ? (
+            <>
+              <motion.span
+                className="w-4 h-4 rounded-full"
+                style={{ border: '2px solid transparent', borderTopColor: 'rgb(16,185,129)', borderRightColor: 'rgba(16,185,129,0.3)' }}
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              />
+              <span>
+                Processing... ({currentFileIndex + 1}/{files.length})
+              </span>
+            </>
+          ) : (
+            <span>
+              {files.length === 0
+                ? 'Upload Documents'
+                : files.length === 1
+                ? 'Process Document'
+                : processingMode === 'combine'
+                ? `Combine ${files.length} Documents`
+                : processingMode === 'individual'
+                ? `Create ${files.length} Individual Schedules`
+                : 'Select Processing Mode'
+              }
+            </span>
           )}
-        </AnimatePresence>
-      </div>
+        </button>
+      </motion.div>
+
+      {/* Processing Steps */}
+      <AnimatePresence>
+        {isProcessing && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="mt-4"
+          >
+            <div className="rounded-xl p-5"
+              style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}>
+              <h3 className="text-[13px] font-semibold mb-3" style={{ color: tc.textPrimary }}>
+                AI Schedule Processing Steps:
+              </h3>
+              <ul className="space-y-2.5">
+                <li className="flex items-center gap-2.5">
+                  <motion.span
+                    className="w-3.5 h-3.5 rounded-full flex-shrink-0"
+                    style={{ border: '2px solid transparent', borderTopColor: 'rgb(16,185,129)', borderRightColor: 'rgba(16,185,129,0.3)' }}
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  />
+                  <span className="text-[12px] font-medium" style={{ color: tc.textSecondary }}>
+                    {processingMode === 'combine'
+                      ? `Extracting content from document ${currentFileIndex + 1}/${files.length}: ${files[currentFileIndex]?.name}`
+                      : `Processing document ${currentFileIndex + 1}/${files.length}: ${files[currentFileIndex]?.name}`
+                    }
+                  </span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <motion.span
+                    className="w-3.5 h-3.5 rounded-full flex-shrink-0"
+                    style={{ border: '2px solid transparent', borderTopColor: 'rgb(16,185,129)', borderRightColor: 'rgba(16,185,129,0.3)' }}
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear", delay: 0.1 }}
+                  />
+                  <span className="text-[12px] font-medium" style={{ color: tc.textSecondary }}>Detecting cleaning frequencies with AI</span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <motion.span
+                    className="w-3.5 h-3.5 rounded-full flex-shrink-0"
+                    style={{ border: '2px solid transparent', borderTopColor: 'rgb(16,185,129)', borderRightColor: 'rgba(16,185,129,0.3)' }}
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear", delay: 0.2 }}
+                  />
+                  <span className="text-[12px] font-medium" style={{ color: tc.textSecondary }}>Extracting structured cleaning tasks</span>
+                </li>
+                {processingMode === 'combine' && (
+                  <li className="flex items-center gap-2.5">
+                    <motion.span
+                      className="w-3.5 h-3.5 rounded-full flex-shrink-0"
+                      style={{ border: '2px solid transparent', borderTopColor: 'rgb(16,185,129)', borderRightColor: 'rgba(16,185,129,0.3)' }}
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear", delay: 0.3 }}
+                    />
+                    <span className="text-[12px] font-medium" style={{ color: tc.textSecondary }}>Combining all documents into unified schedule</span>
+                  </li>
+                )}
+              </ul>
+              <div className="mt-4 p-3 rounded-lg text-[12px] font-medium"
+                style={{ background: tc.btnPrimaryBg, border: '1px solid ' + tc.btnPrimaryBorder, color: tc.btnPrimaryText }}>
+                {processingMode === 'combine'
+                  ? 'All documents will be merged into one comprehensive schedule!'
+                  : 'Each document will become a separate schedule for better organization!'
+                }
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

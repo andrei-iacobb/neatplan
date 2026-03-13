@@ -7,9 +7,10 @@ import * as z from 'zod'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Edit, Trash2, UserPlus, Shield, User as UserIcon, X, AlertTriangle } from 'lucide-react'
+import { Plus, Edit, Trash2, UserPlus, Shield, User as UserIcon, X, AlertTriangle, Users, Sparkles } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import { apiRequest } from '@/lib/url-utils'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 const userSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -30,7 +31,11 @@ interface User {
   temporaryUnblockUntil?: string | null
 }
 
-function UserFormModal({ user, onClose, onSave }: { user: Partial<User> | null, onClose: () => void, onSave: (data: any) => void }) {
+type ThemeColors = ReturnType<typeof useThemeColors>
+
+const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } }
+
+function UserFormModal({ user, onClose, onSave, tc }: { user: Partial<User> | null, onClose: () => void, onSave: (data: any) => void, tc: ThemeColors }) {
   const { toast } = useToast()
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
@@ -56,36 +61,90 @@ function UserFormModal({ user, onClose, onSave }: { user: Partial<User> | null, 
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: tc.modalOverlay }}>
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-gray-800 border border-gray-700 rounded-xl shadow-xl w-full max-w-md"
+        className="rounded-xl w-full max-w-md"
+        style={{ background: tc.modalBg, border: '1px solid ' + tc.cardBorder }}
       >
         <form onSubmit={handleSubmit(onSubmit)} className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-100">{user?.id ? 'Edit User' : 'Add New User'}</h2>
-            <button type="button" onClick={onClose} className="p-1 text-gray-400 hover:text-gray-200"><X /></button>
+            <h2 className="text-xl font-semibold" style={{ color: tc.textPrimary }}>{user?.id ? 'Edit User' : 'Add New User'}</h2>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1 transition-colors"
+              style={{ color: tc.textMuted }}
+              onMouseEnter={(e) => e.currentTarget.style.color = tc.textPrimary}
+              onMouseLeave={(e) => e.currentTarget.style.color = tc.textMuted}
+            >
+              <X />
+            </button>
           </div>
           <div className="space-y-4">
-            <input {...register('name')} placeholder="Name" className="w-full p-2 bg-gray-700 rounded" />
-            {errors.name && <p className="text-red-400 text-sm">{errors.name.message}</p>}
-            
-            <input {...register('email')} placeholder="Email" className="w-full p-2 bg-gray-700 rounded" />
-            {errors.email && <p className="text-red-400 text-sm">{errors.email.message}</p>}
-            
-            <input type="password" {...register('password')} placeholder={user?.id ? 'New Password (optional)' : 'Password'} className="w-full p-2 bg-gray-700 rounded" />
-            {errors.password && <p className="text-red-400 text-sm">{errors.password.message}</p>}
+            <div>
+              <input
+                {...register('name')}
+                placeholder="Name"
+                className="w-full p-2.5 rounded-lg text-[14px] outline-none transition-colors"
+                style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
+                onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
+                onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
+              />
+              {errors.name && <p className="text-[12px] mt-1" style={{ color: tc.statusOverdue.text }}>{errors.name.message}</p>}
+            </div>
+
+            <div>
+              <input
+                {...register('email')}
+                placeholder="Email"
+                className="w-full p-2.5 rounded-lg text-[14px] outline-none transition-colors"
+                style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
+                onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
+                onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
+              />
+              {errors.email && <p className="text-[12px] mt-1" style={{ color: tc.statusOverdue.text }}>{errors.email.message}</p>}
+            </div>
+
+            <div>
+              <input
+                type="password"
+                {...register('password')}
+                placeholder={user?.id ? 'New Password (optional)' : 'Password'}
+                className="w-full p-2.5 rounded-lg text-[14px] outline-none transition-colors"
+                style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
+                onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
+                onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
+              />
+              {errors.password && <p className="text-[12px] mt-1" style={{ color: tc.statusOverdue.text }}>{errors.password.message}</p>}
+            </div>
 
             <div className="flex items-center gap-2">
-              <input type="checkbox" {...register('isAdmin')} id="isAdmin" className="h-4 w-4 rounded bg-gray-600 border-gray-500 text-teal-500 focus:ring-teal-500" />
-              <label htmlFor="isAdmin" className="text-gray-300">Administrator</label>
+              <input type="checkbox" {...register('isAdmin')} id="isAdmin" className="h-4 w-4 rounded accent-emerald-500" />
+              <label htmlFor="isAdmin" className="text-[13px]" style={{ color: tc.textSecondary }}>Administrator</label>
             </div>
           </div>
-          <div className="flex justify-end gap-4 mt-8">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-300">Cancel</button>
-            <button type="submit" disabled={isSubmitting} className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50">
+          <div className="flex justify-end gap-3 mt-8">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-lg text-[13px] font-medium transition-colors"
+              style={{ background: tc.btnSecondaryBg, color: tc.btnSecondaryText, border: '1px solid ' + tc.btnSecondaryBorder }}
+              onMouseEnter={(e) => e.currentTarget.style.background = tc.btnSecondaryHoverBg}
+              onMouseLeave={(e) => e.currentTarget.style.background = tc.btnSecondaryBg}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-5 py-2 rounded-lg text-[13px] font-medium transition-colors disabled:opacity-50"
+              style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: '1px solid ' + tc.btnPrimaryBorder }}
+              onMouseEnter={(e) => e.currentTarget.style.background = tc.btnPrimaryHoverBg}
+              onMouseLeave={(e) => e.currentTarget.style.background = tc.btnPrimaryBg}
+            >
               {isSubmitting ? 'Saving...' : 'Save'}
             </button>
           </div>
@@ -95,7 +154,7 @@ function UserFormModal({ user, onClose, onSave }: { user: Partial<User> | null, 
   )
 }
 
-function DeleteConfirmationModal({ user, onClose, onConfirm }: { user: User, onClose: () => void, onConfirm: () => Promise<void> }) {
+function DeleteConfirmationModal({ user, onClose, onConfirm, tc }: { user: User, onClose: () => void, onConfirm: () => Promise<void>, tc: ThemeColors }) {
   const [isDeleting, setIsDeleting] = useState(false)
 
   const handleConfirm = async () => {
@@ -105,40 +164,47 @@ function DeleteConfirmationModal({ user, onClose, onConfirm }: { user: User, onC
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: tc.modalOverlay }}>
       <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gray-800 border border-red-500/30 rounded-xl shadow-xl w-full max-w-md p-6"
+        className="rounded-xl w-full max-w-md p-6"
+        style={{ background: tc.modalBg, border: '1px solid ' + tc.btnDangerBorder }}
       >
         <div className="flex items-start gap-4">
-          <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-900/50 sm:mx-0">
-            <AlertTriangle className="h-6 w-6 text-red-400" aria-hidden="true" />
+          <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full" style={{ background: tc.statusOverdue.bg }}>
+            <AlertTriangle className="h-6 w-6" style={{ color: tc.statusOverdue.text }} aria-hidden="true" />
           </div>
           <div className="mt-0 text-left">
-            <h3 className="text-lg leading-6 font-medium text-gray-100" id="modal-title">
+            <h3 className="text-lg leading-6 font-medium" style={{ color: tc.textPrimary }}>
               Delete User
             </h3>
             <div className="mt-2">
-              <p className="text-sm text-gray-400">
-                Are you sure you want to delete <span className="font-bold text-gray-200">{user.name}</span>? This action cannot be undone.
+              <p className="text-[13px]" style={{ color: tc.textMuted }}>
+                Are you sure you want to delete <span className="font-bold" style={{ color: tc.textPrimary }}>{user.name}</span>? This action cannot be undone.
               </p>
             </div>
           </div>
         </div>
-        <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse gap-3">
+        <div className="mt-5 flex flex-row-reverse gap-3">
           <button
             type="button"
-            className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm disabled:opacity-50"
+            className="inline-flex justify-center rounded-lg px-4 py-2 text-[13px] font-medium transition-colors disabled:opacity-50"
+            style={{ background: tc.btnDangerBg, color: tc.btnDangerText, border: '1px solid ' + tc.btnDangerBorder }}
             onClick={handleConfirm}
             disabled={isDeleting}
+            onMouseEnter={(e) => e.currentTarget.style.background = tc.btnDangerHoverBg}
+            onMouseLeave={(e) => e.currentTarget.style.background = tc.btnDangerBg}
           >
             {isDeleting ? 'Deleting...' : 'Delete'}
           </button>
           <button
             type="button"
-            className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-600 shadow-sm px-4 py-2 bg-gray-700 text-base font-medium text-gray-200 hover:bg-gray-600 sm:mt-0 sm:w-auto sm:text-sm"
+            className="inline-flex justify-center rounded-lg px-4 py-2 text-[13px] font-medium transition-colors"
+            style={{ background: tc.btnSecondaryBg, color: tc.btnSecondaryText, border: '1px solid ' + tc.btnSecondaryBorder }}
             onClick={onClose}
+            onMouseEnter={(e) => e.currentTarget.style.background = tc.btnSecondaryHoverBg}
+            onMouseLeave={(e) => e.currentTarget.style.background = tc.btnSecondaryBg}
           >
             Cancel
           </button>
@@ -152,12 +218,14 @@ export default function UsersPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const { toast } = useToast()
+  const tc = useThemeColors()
   const [users, setUsers] = useState<User[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<Partial<User> | null>(null)
   const [deletingUser, setDeletingUser] = useState<User | null>(null)
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null)
 
   const fetchUsers = async () => {
     setIsLoading(true)
@@ -187,7 +255,7 @@ export default function UsersPage() {
     const isEditing = !!editingUser?.id
     const url = isEditing ? `/api/users/${editingUser.id}` : '/api/users'
     const method = isEditing ? 'PUT' : 'POST'
-    
+
     // Don't send empty password field on edit unless it's being changed
     const payload = { ...data };
     if (isEditing && !payload.password) {
@@ -209,7 +277,7 @@ export default function UsersPage() {
       title: 'Success',
       description: `User ${isEditing ? 'updated' : 'created'} successfully.`,
     })
-    
+
     setIsModalOpen(false)
     setEditingUser(null)
     fetchUsers()
@@ -217,7 +285,7 @@ export default function UsersPage() {
 
   const handleDeleteUser = async () => {
     if (!deletingUser) return
-    
+
     try {
       const res = await apiRequest(`/api/users/${deletingUser.id}`, { method: 'DELETE' })
       if (!res.ok) {
@@ -232,96 +300,181 @@ export default function UsersPage() {
     }
   }
 
-  if (isLoading) return <p className="text-center p-8">Loading users...</p>
-  if (error) return <p className="text-center p-8 text-red-400">Error: {error}</p>
+  if (isLoading) return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+        className="w-8 h-8 rounded-full border-2 border-transparent" style={{ borderTopColor: 'rgb(16,185,129)', borderRightColor: 'rgba(16,185,129,0.3)' }} />
+    </div>
+  )
+
+  if (error) return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="text-center">
+        <AlertTriangle className="w-12 h-12 mx-auto mb-3" style={{ color: 'rgb(239,68,68)' }} />
+        <p className="text-[13px] mb-4" style={{ color: tc.textMuted }}>{error}</p>
+        <button
+          onClick={fetchUsers}
+          className="px-5 py-2 text-[13px] rounded-lg font-medium"
+          style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: '1px solid ' + tc.btnPrimaryBorder }}
+        >
+          Retry
+        </button>
+      </div>
+    </div>
+  )
 
   return (
     <>
-      <div className="container mx-auto px-4 py-8">
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="flex items-center justify-between mb-8">
+      <div className="max-w-[1100px] mx-auto relative z-10 pb-8">
+        {/* Page Header */}
+        <div className="mb-10">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-100">User Management</h1>
-              <p className="text-gray-400 mt-2">Add, edit, or remove users.</p>
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-4 h-4" style={{ color: 'rgb(16,185,129)' }} />
+                <p className="text-[13px] font-medium tracking-wide uppercase" style={{ color: tc.accentLabel }}>Team Management</p>
+              </div>
+              <h1 className="text-[32px] font-bold tracking-tight mb-1" style={{ color: tc.textPrimary }}>User Management</h1>
+              <p className="text-[15px]" style={{ color: tc.textMuted }}>Add, edit, or remove users.</p>
             </div>
-            <button 
+            <button
               onClick={() => { setEditingUser({}); setIsModalOpen(true); }}
-              className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors"
+              style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: '1px solid ' + tc.btnPrimaryBorder }}
+              onMouseEnter={(e) => e.currentTarget.style.background = tc.btnPrimaryHoverBg}
+              onMouseLeave={(e) => e.currentTarget.style.background = tc.btnPrimaryBg}
             >
-              <UserPlus className="w-5 h-5" />
+              <UserPlus className="w-4 h-4" />
               Add User
             </button>
           </div>
-          
-          <div className="bg-gray-800/50 border border-gray-700 rounded-lg overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-700">
-              <thead className="bg-gray-800">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Role</th>
-                  <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
+        </div>
+
+        {/* Users Table */}
+        <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.08 }}>
+          <div className="rounded-xl overflow-hidden" style={{ background: tc.tableBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}>
+            <table className="min-w-full" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+              <thead>
+                <tr style={{ background: tc.tableHeaderBg }}>
+                  <th scope="col" className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider" style={{ color: tc.textMuted, borderBottom: '1px solid ' + tc.tableDivider }}>Name</th>
+                  <th scope="col" className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider" style={{ color: tc.textMuted, borderBottom: '1px solid ' + tc.tableDivider }}>Role</th>
+                  <th scope="col" className="relative px-6 py-3" style={{ borderBottom: '1px solid ' + tc.tableDivider }}><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700/50">
-                {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-700/30 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-100">{user.name}</div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-sm text-gray-400">{user.email}</div>
+              <tbody>
+                {users.map((user, i) => (
+                  <tr
+                    key={user.id}
+                    style={{
+                      background: hoveredRow === user.id ? tc.hoverRow : 'transparent',
+                      borderBottom: i < users.length - 1 ? '1px solid ' + tc.tableDivider : 'none',
+                    }}
+                    onMouseEnter={() => setHoveredRow(user.id)}
+                    onMouseLeave={() => setHoveredRow(null)}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap" style={{ borderBottom: i < users.length - 1 ? '1px solid ' + tc.tableDivider : 'none' }}>
+                      <div className="text-[13px] font-medium" style={{ color: tc.textPrimary }}>{user.name}</div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <div className="text-[12px]" style={{ color: tc.textMuted }}>{user.email}</div>
                         {user.isBlocked && (!user.temporaryUnblockUntil || new Date(user.temporaryUnblockUntil) < new Date()) && (
-                          <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-red-900 text-red-200">Blocked</span>
+                          <span
+                            className="px-2 py-0.5 text-[10px] font-semibold rounded-full"
+                            style={{ background: tc.statusOverdue.bg, color: tc.statusOverdue.text, border: '1px solid ' + tc.statusOverdue.border }}
+                          >
+                            Blocked
+                          </span>
                         )}
                         {user.forcePasswordChange && (
-                          <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-yellow-900 text-yellow-200">Pwd change req</span>
+                          <span
+                            className="px-2 py-0.5 text-[10px] font-semibold rounded-full"
+                            style={{ background: tc.statusPending.bg, color: tc.statusPending.text, border: '1px solid ' + tc.statusPending.border }}
+                          >
+                            Pwd change req
+                          </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.isAdmin ? 'bg-teal-900 text-teal-200' : 'bg-gray-600 text-gray-200'}`}>
-                        {user.isAdmin ? 'Admin' : 'Cleaner'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                      <button onClick={() => { setEditingUser(user); setIsModalOpen(true); }} className="p-2 text-gray-400 hover:text-teal-400 rounded-full hover:bg-gray-700 transition-colors"><Edit className="w-4 h-4" /></button>
-                      {user.isBlocked ? (
-                        <button
-                          onClick={async () => {
-                            try {
-                              const res = await apiRequest(`/api/users/${user.id}/unblock`, { method: 'POST' })
-                              if (!res.ok) throw new Error('Failed to unblock user')
-                              toast({ description: 'User unblocked for 10 minutes. Must change password on next login.' })
-                              fetchUsers()
-                            } catch (e: any) {
-                              toast({ description: e.message, variant: 'destructive' })
-                            }
-                          }}
-                          className="p-2 text-red-300 hover:text-red-100 rounded-full hover:bg-red-900/50 transition-colors"
+                    <td className="px-6 py-4 whitespace-nowrap" style={{ borderBottom: i < users.length - 1 ? '1px solid ' + tc.tableDivider : 'none' }}>
+                      {user.isAdmin ? (
+                        <span
+                          className="px-2.5 py-0.5 inline-flex text-[11px] leading-5 font-semibold rounded-full"
+                          style={{ background: tc.statusCompleted.bg, color: tc.statusCompleted.text, border: '1px solid ' + tc.statusCompleted.border }}
                         >
-                          Unblock
-                        </button>
+                          Admin
+                        </span>
                       ) : (
-                        <button
-                          onClick={async () => {
-                            try {
-                              const res = await apiRequest(`/api/users/${user.id}`, {
-                                method: 'PUT',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ isBlocked: true })
-                              })
-                              if (!res.ok) throw new Error('Failed to block user')
-                              toast({ description: 'User blocked' })
-                              fetchUsers()
-                            } catch (e: any) {
-                              toast({ description: e.message, variant: 'destructive' })
-                            }
-                          }}
-                          className="p-2 text-red-300 hover:text-red-100 rounded-full hover:bg-red-900/50 transition-colors"
+                        <span
+                          className="px-2.5 py-0.5 inline-flex text-[11px] leading-5 font-semibold rounded-full"
+                          style={{ background: tc.btnSecondaryBg, color: tc.btnSecondaryText, border: '1px solid ' + tc.btnSecondaryBorder }}
                         >
-                          Block
-                        </button>
+                          Cleaner
+                        </span>
                       )}
-                      <button onClick={() => setDeletingUser(user)} className="p-2 text-gray-400 hover:text-red-400 rounded-full hover:bg-gray-700 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" style={{ borderBottom: i < users.length - 1 ? '1px solid ' + tc.tableDivider : 'none' }}>
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => { setEditingUser(user); setIsModalOpen(true); }}
+                          className="p-2 rounded-lg transition-colors"
+                          style={{ color: tc.textMuted }}
+                          onMouseEnter={(e) => { e.currentTarget.style.color = tc.btnPrimaryText; e.currentTarget.style.background = tc.btnPrimaryBg }}
+                          onMouseLeave={(e) => { e.currentTarget.style.color = tc.textMuted; e.currentTarget.style.background = 'transparent' }}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        {user.isBlocked ? (
+                          <button
+                            onClick={async () => {
+                              try {
+                                const res = await apiRequest(`/api/users/${user.id}/unblock`, { method: 'POST' })
+                                if (!res.ok) throw new Error('Failed to unblock user')
+                                toast({ description: 'User unblocked for 10 minutes. Must change password on next login.' })
+                                fetchUsers()
+                              } catch (e: any) {
+                                toast({ description: e.message, variant: 'destructive' })
+                              }
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors"
+                            style={{ color: tc.btnDangerText, background: tc.btnDangerBg, border: '1px solid ' + tc.btnDangerBorder }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = tc.btnDangerHoverBg}
+                            onMouseLeave={(e) => e.currentTarget.style.background = tc.btnDangerBg}
+                          >
+                            Unblock
+                          </button>
+                        ) : (
+                          <button
+                            onClick={async () => {
+                              try {
+                                const res = await apiRequest(`/api/users/${user.id}`, {
+                                  method: 'PUT',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ isBlocked: true })
+                                })
+                                if (!res.ok) throw new Error('Failed to block user')
+                                toast({ description: 'User blocked' })
+                                fetchUsers()
+                              } catch (e: any) {
+                                toast({ description: e.message, variant: 'destructive' })
+                              }
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors"
+                            style={{ color: tc.btnDangerText, background: tc.btnDangerBg, border: '1px solid ' + tc.btnDangerBorder }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = tc.btnDangerHoverBg}
+                            onMouseLeave={(e) => e.currentTarget.style.background = tc.btnDangerBg}
+                          >
+                            Block
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setDeletingUser(user)}
+                          className="p-2 rounded-lg transition-colors"
+                          style={{ color: tc.textMuted }}
+                          onMouseEnter={(e) => { e.currentTarget.style.color = tc.btnDangerText; e.currentTarget.style.background = tc.btnDangerBg }}
+                          onMouseLeave={(e) => { e.currentTarget.style.color = tc.textMuted; e.currentTarget.style.background = 'transparent' }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -332,9 +485,9 @@ export default function UsersPage() {
       </div>
 
       <AnimatePresence>
-        {isModalOpen && <UserFormModal user={editingUser} onClose={() => setIsModalOpen(false)} onSave={handleSaveUser} />}
-        {deletingUser && <DeleteConfirmationModal user={deletingUser} onClose={() => setDeletingUser(null)} onConfirm={handleDeleteUser} />}
+        {isModalOpen && <UserFormModal user={editingUser} onClose={() => setIsModalOpen(false)} onSave={handleSaveUser} tc={tc} />}
+        {deletingUser && <DeleteConfirmationModal user={deletingUser} onClose={() => setDeletingUser(null)} onConfirm={handleDeleteUser} tc={tc} />}
       </AnimatePresence>
     </>
   )
-} 
+}
