@@ -43,6 +43,7 @@ model Task {
   userId      String
   user        User         @relation("UserTasks", fields: [userId], references: [id])
 
+  @@index([userId])
   @@map("tasks")
 }
 
@@ -130,6 +131,8 @@ model RoomSchedule {
   schedule       Schedule                    @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
 
   @@unique([roomId, scheduleId])
+  @@index([nextDue])
+  @@index([status])
   @@map("room_schedules")
 }
 
@@ -149,6 +152,8 @@ model EquipmentSchedule {
   schedule       Schedule                         @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
 
   @@unique([equipmentId, scheduleId])
+  @@index([nextDue])
+  @@index([status])
   @@map("equipment_schedules")
 }
 
@@ -164,6 +169,8 @@ model RoomScheduleCompletionLog {
   completedByUserId String?
   completedBy       User?       @relation(fields: [completedByUserId], references: [id])
 
+  @@index([roomScheduleId])
+  @@index([completedAt])
   @@map("room_schedule_completion_logs")
 }
 
@@ -177,6 +184,8 @@ model EquipmentScheduleCompletionLog {
   completedTasks      Json              @default("[]")
   equipmentSchedule   EquipmentSchedule @relation(fields: [equipmentScheduleId], references: [id], onDelete: Cascade)
 
+  @@index([equipmentScheduleId])
+  @@index([completedAt])
   @@map("equipment_schedule_completion_logs")
 }
 
@@ -235,6 +244,8 @@ model UserSession {
   updatedAt     DateTime @updatedAt
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([isActive, lastActivity])
   @@map("user_sessions")
 }
 

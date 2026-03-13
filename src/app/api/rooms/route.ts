@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { RoomType } from '@/generated/prisma/index.js'
 import * as z from 'zod'
@@ -13,7 +14,7 @@ const roomSchema = z.object({
 
 export async function GET() {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     
     if (!session) {
       return NextResponse.json(
@@ -39,7 +40,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     
     if (!session) {
       return NextResponse.json(

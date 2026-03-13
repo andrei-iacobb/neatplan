@@ -39,8 +39,8 @@ export async function POST(req: Request) {
       const now = new Date()
       if (!user.temporaryUnblockUntil || now > user.temporaryUnblockUntil) {
         return NextResponse.json(
-          { error: 'Account is blocked. Please contact an administrator.' },
-          { status: 423 }
+          { error: 'Invalid credentials' },
+          { status: 401 }
         )
       }
     }

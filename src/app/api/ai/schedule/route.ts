@@ -229,11 +229,7 @@ function cleanJsonResponse(response: string): string {
 
 async function extractTasksFromChunk(chunk: string): Promise<any[]> {
   try {
-    console.log('=== CHUNK PROCESSING DEBUG ===')
-    console.log('Chunk length:', chunk.length)
-    console.log('Chunk content preview:', chunk.substring(0, 500))
-    console.log('================================')
-    
+
     const completion = await getOpenAI().chat.completions.create({
       model: "gpt-4",
       messages: [
@@ -245,31 +241,16 @@ async function extractTasksFromChunk(chunk: string): Promise<any[]> {
     })
 
     const result = completion.choices[0].message?.content
-    console.log('=== AI RESPONSE DEBUG ===')
-    console.log('Raw AI response:', result)
-    console.log('==========================')
-    
     if (!result) return []
 
     const cleanedResponse = cleanJsonResponse(result)
-    console.log('=== CLEANED RESPONSE DEBUG ===')
-    console.log('Cleaned response:', cleanedResponse)
-    console.log('===============================')
-    
+
     try {
       const tasks = JSON.parse(cleanedResponse)
-      console.log('=== PARSED TASKS DEBUG ===')
-      console.log('Parsed tasks:', JSON.stringify(tasks, null, 2))
-      console.log('Is array:', Array.isArray(tasks))
-      console.log('Length:', Array.isArray(tasks) ? tasks.length : 'N/A')
-      console.log('===========================')
       
       return Array.isArray(tasks) ? tasks : []
     } catch (parseError) {
-      console.error('=== JSON PARSE ERROR ===')
-      console.error('Parse error:', parseError)
-      console.error('Attempting to parse:', cleanedResponse)
-      console.error('========================')
+      console.error('Failed to parse AI response as JSON')
       return []
     }
   } catch (error) {
@@ -311,7 +292,8 @@ async function analyzeDocumentMetadata(content: string): Promise<any> {
 export async function POST(req: Request) {
   try {
     // Rate limit per user (or IP if not authed): 5 requests per minute
-    const preSession = await getServerSession()
+    const { authOptions } = await import('@/lib/auth')
+    const preSession = await getServerSession(authOptions)
     const preIdentifier = preSession?.user?.email || null
     const rate = checkRateLimitByUserOrIp(req as any, 'ai_schedule', 5, 60 * 1000, preIdentifier)
     if (!rate.allowed) {
@@ -338,6 +320,14 @@ export async function POST(req: Request) {
 
     const { content } = await req.json()
 
+    // Limit content size to prevent abuse (500KB max)
+    if (content && content.length > 500 * 1024) {
+      return NextResponse.json(
+        { error: 'Content too large. Maximum 500KB allowed.' },
+        { status: 400 }
+      )
+    }
+
     if (!content || content.trim().length === 0) {
       return NextResponse.json(
         { error: 'Please provide file content' },
@@ -362,8 +352,9 @@ export async function POST(req: Request) {
       const chunks = smartChunkContent(processedContent, maxCharsPerChunk)
       console.log(`Split into ${chunks.length} chunks`)
       
-      // Process each chunk
-      for (let i = 0; i < chunks.length; i++) {
+      // Process each chunk (limit to 10 chunks max to prevent excessive API calls)
+      const maxChunks = Math.min(chunks.length, 10)
+      for (let i = 0; i < maxChunks; i++) {
         console.log(`Processing chunk ${i + 1}/${chunks.length}...`)
         const chunkTasks = await extractTasksFromChunk(chunks[i])
         allTasks.push(...chunkTasks)
@@ -458,7 +449,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('Error processing schedule:', error)
     return NextResponse.json(
-      { error: error?.message || 'Failed to process request' },
+      { error: 'Failed to process request' },
       { status: 500 }
     )
   }

@@ -118,11 +118,10 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid notification type' }, { status: 400 })
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: success ? 'Email sent successfully' : 'Failed to send email',
       sent: success,
-      type,
-      recipient: targetEmail
+      type
     })
 
   } catch (error) {
@@ -137,6 +136,15 @@ export async function POST(request: NextRequest) {
 // Test endpoint to send a sample notification
 export async function GET(request: NextRequest) {
   try {
+    // Rate limit: 5 test emails per hour
+    const rate = checkRateLimitByUserOrIp(request as any, 'notifications_email_test', 5, 60 * 60 * 1000)
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(rate.retryAfterSeconds) } }
+      )
+    }
+
     const session = await getServerSession(authOptions)
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -199,11 +207,10 @@ export async function GET(request: NextRequest) {
       data: testData[type]
     })
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: success ? 'Test email sent successfully' : 'Failed to send test email',
       sent: success,
-      type,
-      recipient: email
+      type
     })
 
   } catch (error) {

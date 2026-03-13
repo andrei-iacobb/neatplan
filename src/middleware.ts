@@ -49,14 +49,14 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Allow scheduled cron route with trusted header or shared secret
+  // Allow scheduled cron route with shared secret only
   if (path.startsWith('/api/cron')) {
-    const isVercelCron = request.headers.get('x-vercel-cron') !== null
     // SECURITY: Only accept secret via header, not query parameter to prevent logging
+    // Note: x-vercel-cron header alone is not sufficient as it can be spoofed
     const providedSecret = request.headers.get('x-cron-secret')
     const expectedSecret = process.env.CRON_SECRET
 
-    if (isVercelCron || (expectedSecret && providedSecret === expectedSecret)) {
+    if (expectedSecret && providedSecret === expectedSecret) {
       return NextResponse.next()
     }
 

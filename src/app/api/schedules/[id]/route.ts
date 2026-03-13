@@ -24,7 +24,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     return NextResponse.json(schedule)
   } catch (error: any) {
     return NextResponse.json(
-      { error: error?.message || 'Failed to update schedule' },
+      { error: 'Failed to update schedule' },
       { status: 500 }
     )
   }
@@ -33,46 +33,36 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
 // Partial update a schedule (PATCH method)
 export async function PATCH(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    console.log('PATCH request started')
-    
     const session = await getServerSession(authOptions)
-    console.log('Session:', session ? 'exists' : 'null')
-    
+
     if (!session) {
-      console.log('No session, returning 401')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const params = await context.params
     const { id } = params
-    console.log('Schedule ID:', id)
-    
+
     const body = await req.json()
-    console.log('Request body:', body)
-    
-    const updateData: any = {}
-    
+
+    const updateData: Record<string, unknown> = {}
+
     // Only update fields that exist in the schema
-    if (body.title !== undefined) updateData.title = body.title
+    if (body.title !== undefined) updateData.title = String(body.title).slice(0, 500)
     // Allow editing suggestedFrequency to correct AI mistakes
     if (body.suggestedFrequency !== undefined) updateData.suggestedFrequency = body.suggestedFrequency
     // Note: detectedFrequency stays read-only as a record of what AI originally detected
-    
-    console.log('Update data:', updateData)
-    
+
     const schedule = await prisma.schedule.update({
       where: { id },
       data: updateData,
       include: { tasks: true }
     })
 
-    console.log('Schedule updated successfully')
     return NextResponse.json(schedule)
-  } catch (error: any) {
-    console.error('PATCH error:', error)
-    console.error('Error stack:', error.stack)
+  } catch (error) {
+    console.error('Error updating schedule:', error)
     return NextResponse.json(
-      { error: error?.message || 'Failed to update schedule' },
+      { error: 'Failed to update schedule' },
       { status: 500 }
     )
   }
@@ -107,7 +97,7 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
   } catch (error: any) {
     console.error('Error deleting schedule:', error)
     return NextResponse.json(
-      { error: error?.message || 'Failed to delete schedule' },
+      { error: 'Failed to delete schedule' },
       { status: 500 }
     )
   }

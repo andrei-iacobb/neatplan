@@ -101,12 +101,17 @@ async function processPdfFile(buffer: Buffer): Promise<string> {
   }
 }
 
-export async function POST(request: NextRequest) {
-  if (request.method !== 'POST') {
-    return NextResponse.json({ error: 'Method not allowed' }, { status: 405 })
-  }
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
+export async function POST(request: NextRequest) {
   try {
+    const { getServerSession } = await import('next-auth')
+    const { authOptions } = await import('@/lib/auth')
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     // Parse the incoming form data
     const formData = await request.formData()
     const file = formData.get('file')
@@ -115,7 +120,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided or invalid file' }, { status: 400 })
     }
 
-    console.log('Extracting content from:', file.name, 'type:', file.type)
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: 'File too large. Maximum size is 10MB.' }, { status: 400 })
+    }
 
     // Convert file to buffer
     const bytes = await file.arrayBuffer()
@@ -166,20 +174,21 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error extracting content:', error)
     return NextResponse.json({
-      error: 'Failed to extract content',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      error: 'Failed to extract content'
     }, { status: 500 })
   }
 }
 
 // Handle OPTIONS preflight request
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS() {
+  const allowedOrigin = process.env.CORS_ALLOWED_ORIGIN || process.env.NEXTAUTH_URL || 'http://localhost:3000'
   return new NextResponse(null, {
     status: 200,
     headers: {
-      'Access-Control-Allow-Origin': process.env.CORS_ALLOWED_ORIGIN || process.env.NEXTAUTH_URL || request.headers.get('origin') || '*',
+      'Access-Control-Allow-Origin': allowedOrigin,
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Credentials': 'true',
       'Vary': 'Origin',
     },
   })

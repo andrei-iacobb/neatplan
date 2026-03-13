@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { ScheduleStatus, Prisma } from '@prisma/client'
 import { calculateNextDueDate } from '@/lib/schedule-utils'
@@ -8,8 +10,14 @@ export async function POST(
   context: { params: Promise<{ id: string; scheduleId: string }> }
 ) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const params = await context.params
-    const { completedTasks } = await request.json()
+    const body = await request.json()
+    const completedTasks = Array.isArray(body.completedTasks) ? body.completedTasks : []
     const now = new Date()
 
     // First get the current schedule to check its frequency
@@ -38,7 +46,7 @@ export async function POST(
           roomScheduleId: params.scheduleId,
           completedAt: now,
           completedTasks: completedTasks as Prisma.InputJsonValue,
-          notes: `Completed ${completedTasks.length} tasks for ${currentSchedule.schedule.title}`
+          notes: `Completed ${completedTasks.length} task(s) for ${currentSchedule.schedule.title}`
         }
       })
 

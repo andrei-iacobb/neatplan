@@ -66,7 +66,7 @@ export function useMultiUser() {
         email: user.email,
         name: user.name || user.email,
         isAdmin: user.isAdmin || false,
-        token: `session_${user.email}_${Date.now()}`, // Simplified token
+        token: crypto.randomUUID(), // Use cryptographically secure random token
         lastUsed: Date.now()
       }
 
@@ -109,7 +109,6 @@ export function useMultiUser() {
         },
         body: JSON.stringify({
           email: targetSession.email,
-          sessionToken: targetSession.token
         }),
       })
 

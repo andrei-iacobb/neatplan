@@ -121,14 +121,19 @@ async function processPdfFile(buffer: Buffer): Promise<string> {
   }
 }
 
-export async function POST(request: NextRequest) {
-  if (request.method !== 'POST') {
-    return NextResponse.json({ error: 'Method not allowed' }, { status: 405 })
-  }
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
+export async function POST(request: NextRequest) {
   try {
-    // Rate limit per user (or IP if not authed): 3 requests per minute
-    const rate = checkRateLimitByUserOrIp(request as any, 'process_document', 3, 60 * 1000)
+    const { getServerSession } = await import('next-auth')
+    const { authOptions } = await import('@/lib/auth')
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate limit per user: 3 requests per minute
+    const rate = checkRateLimitByUserOrIp(request as any, 'process_document', 3, 60 * 1000, session.user.email)
     if (!rate.allowed) {
       return NextResponse.json(
         { error: 'Rate limit exceeded. Please try again shortly.' },
@@ -144,7 +149,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided or invalid file' }, { status: 400 })
     }
 
-    console.log('Processing file:', file.name, 'type:', file.type)
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: 'File too large. Maximum size is 10MB.' }, { status: 400 })
+    }
 
     // Convert file to buffer
     const bytes = await file.arrayBuffer()
@@ -219,17 +227,13 @@ export async function POST(request: NextRequest) {
 
     console.log('Extracted content preview:', content.substring(0, 200) + '...')
 
-    // Use our enhanced AI schedule processing system
-    console.log('Sending extracted content to enhanced AI processor...')
-
-    // Create a mock request to our AI schedule endpoint
-    // SECURITY: Use fixed internal URL to prevent SSRF attacks
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-    const aiScheduleResponse = await fetch(`${baseUrl}/api/ai/schedule`, {
+    // Process content directly using the AI schedule processing logic
+    // (avoiding internal HTTP fetch which can cause SSRF and cookie forwarding issues)
+    const aiScheduleResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/ai/schedule`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Cookie': request.headers.get('Cookie') || '' // Pass along authentication
+        'Cookie': request.headers.get('Cookie') || ''
       },
       body: JSON.stringify({ content })
     })
@@ -259,8 +263,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error processing document:', error)
     return NextResponse.json({
-      error: 'Failed to process document',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      error: 'Failed to process document'
     }, { status: 500 })
   }
 }

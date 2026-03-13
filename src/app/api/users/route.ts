@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
 
 export async function GET(request: Request) {
@@ -59,7 +59,32 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-    
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      )
+    }
+
+    // Validate password strength
+    if (typeof password !== 'string' || password.length < 8) {
+      return NextResponse.json(
+        { error: 'Password must be at least 8 characters' },
+        { status: 400 }
+      )
+    }
+
+    // Validate name length
+    if (typeof name !== 'string' || name.length > 200) {
+      return NextResponse.json(
+        { error: 'Name must be 200 characters or less' },
+        { status: 400 }
+      )
+    }
+
     // Hash the password before saving
     const hashedPassword = await bcrypt.hash(password, 12)
 

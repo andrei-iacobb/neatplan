@@ -24,8 +24,7 @@ async function isAdmin(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    
-    if (!(await isAdmin(request))) {
+    if (!session?.user?.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -34,10 +33,28 @@ export async function POST(request: NextRequest) {
     // Validate required fields
     if (!config.host || !config.user || !config.from) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Host, user, and from address are required' 
+        {
+          success: false,
+          message: 'Host, user, and from address are required'
         },
+        { status: 400 }
+      )
+    }
+
+    // Validate port range
+    if (!config.port || config.port < 1 || config.port > 65535) {
+      return NextResponse.json(
+        { success: false, message: 'Port must be between 1 and 65535' },
+        { status: 400 }
+      )
+    }
+
+    // Validate host is a valid hostname (prevent SSRF to internal IPs)
+    const hostLower = config.host.toLowerCase()
+    const blockedPatterns = ['localhost', '127.0.0.1', '0.0.0.0', '::1', '10.', '172.16.', '172.17.', '172.18.', '172.19.', '172.20.', '172.21.', '172.22.', '172.23.', '172.24.', '172.25.', '172.26.', '172.27.', '172.28.', '172.29.', '172.30.', '172.31.', '192.168.', '169.254.']
+    if (blockedPatterns.some(p => hostLower.startsWith(p) || hostLower === p)) {
+      return NextResponse.json(
+        { success: false, message: 'SMTP host cannot be a private/internal address' },
         { status: 400 }
       )
     }

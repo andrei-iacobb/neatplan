@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 export async function PUT(
@@ -6,6 +8,11 @@ export async function PUT(
   context: { params: Promise<{ taskId: string }> }
 ) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const params = await context.params
     const { taskId } = params
     const { roomId } = await request.json()
@@ -43,4 +50,4 @@ export async function PUT(
       { status: 500 }
     )
   }
-} 
+}

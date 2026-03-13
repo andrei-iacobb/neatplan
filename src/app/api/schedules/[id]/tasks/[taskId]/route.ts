@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 // Update a task
@@ -9,7 +10,7 @@ export async function PUT(
 ) {
   const params = await context.params
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -35,7 +36,7 @@ export async function PUT(
     return NextResponse.json(task)
   } catch (error: any) {
     return NextResponse.json(
-      { error: error?.message || 'Failed to update task' },
+      { error: 'Failed to update task' },
       { status: 500 }
     )
   }
@@ -48,7 +49,7 @@ export async function DELETE(
 ) {
   const params = await context.params
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -60,7 +61,7 @@ export async function DELETE(
     return NextResponse.json({ success: true })
   } catch (error: any) {
     return NextResponse.json(
-      { error: error?.message || 'Failed to delete task' },
+      { error: 'Failed to delete task' },
       { status: 500 }
     )
   }

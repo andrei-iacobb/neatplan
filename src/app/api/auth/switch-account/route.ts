@@ -6,15 +6,15 @@ import { authOptions } from '@/lib/auth'
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    
-    if (!session) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+
+    if (!session?.user?.isAdmin) {
+      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 })
     }
 
-    const { email, sessionToken } = await request.json()
+    const { email } = await request.json()
 
-    if (!email || !sessionToken) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
 
     // Find the target user
@@ -25,12 +25,17 @@ export async function POST(request: NextRequest) {
         email: true,
         name: true,
         role: true,
-        isAdmin: true
+        isAdmin: true,
+        isBlocked: true,
       }
     })
 
     if (!targetUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    if (targetUser.isBlocked) {
+      return NextResponse.json({ error: 'Target user is blocked' }, { status: 403 })
     }
 
     // Return the user data for session update
@@ -49,4 +54,4 @@ export async function POST(request: NextRequest) {
     console.error('Switch account error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-} 
+}

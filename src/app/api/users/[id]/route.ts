@@ -20,7 +20,37 @@ export async function PUT(
     const body = await request.json()
     const { name, email, password, isAdmin, isBlocked, forcePasswordChange } = body
 
-    let dataToUpdate: any = { name, email, isAdmin, isBlocked, forcePasswordChange }
+    // Prevent admin from modifying their own admin/blocked status
+    if (session.user.id === id) {
+      if (isAdmin !== undefined || isBlocked !== undefined) {
+        return NextResponse.json({ error: 'Cannot modify your own admin or blocked status' }, { status: 403 })
+      }
+    }
+
+    // Validate email format if provided
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(email)) {
+        return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
+      }
+    }
+
+    // Validate password strength if provided
+    if (password && (typeof password !== 'string' || password.length < 8)) {
+      return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
+    }
+
+    // Validate name length if provided
+    if (name && (typeof name !== 'string' || name.length > 200)) {
+      return NextResponse.json({ error: 'Name must be 200 characters or less' }, { status: 400 })
+    }
+
+    const dataToUpdate: Record<string, unknown> = {}
+    if (name !== undefined) dataToUpdate.name = name
+    if (email !== undefined) dataToUpdate.email = email
+    if (isAdmin !== undefined) dataToUpdate.isAdmin = Boolean(isAdmin)
+    if (isBlocked !== undefined) dataToUpdate.isBlocked = Boolean(isBlocked)
+    if (forcePasswordChange !== undefined) dataToUpdate.forcePasswordChange = Boolean(forcePasswordChange)
 
     if (password) {
       dataToUpdate.password = await bcrypt.hash(password, 12)

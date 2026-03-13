@@ -152,13 +152,9 @@ export async function POST(request: NextRequest) {
       console.warn('SMTP configuration should be set via environment variables in production, not file storage')
     }
 
-    // Update environment variables for current session
-    process.env.SMTP_HOST = config.host
-    process.env.SMTP_PORT = config.port.toString()
-    process.env.SMTP_SECURE = config.secure.toString()
-    process.env.SMTP_USER = config.user
-    process.env.SMTP_PASS = config.pass
-    process.env.SMTP_FROM = config.from
+    // NOTE: Environment variables are NOT mutated at runtime for security.
+    // SMTP config is read from file (dev) or env vars (production).
+    // Restart the application after changing env-based SMTP config.
 
     return NextResponse.json({ 
       message: 'SMTP configuration saved successfully',

@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 // Get all schedules
 export async function GET() {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -23,7 +24,7 @@ export async function GET() {
   } catch (error: any) {
     console.error('Error fetching schedules:', error)
     return NextResponse.json(
-      { error: error?.message || 'Failed to fetch schedules' },
+      { error: 'Failed to fetch schedules' },
       { status: 500 }
     )
   }
@@ -32,7 +33,7 @@ export async function GET() {
 // Create a new schedule manually
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -50,7 +51,11 @@ export async function POST(req: Request) {
       data: {
         title,
         tasks: {
-          create: tasks || []
+          create: (tasks || []).map((t: any) => ({
+            description: String(t.description || '').slice(0, 1000),
+            frequency: t.frequency ? String(t.frequency).slice(0, 100) : null,
+            additionalNotes: t.additionalNotes ? String(t.additionalNotes).slice(0, 2000) : null,
+          }))
         }
       },
       include: {
@@ -61,7 +66,7 @@ export async function POST(req: Request) {
     return NextResponse.json(schedule)
   } catch (error: any) {
     return NextResponse.json(
-      { error: error?.message || 'Failed to create schedule' },
+      { error: 'Failed to create schedule' },
       { status: 500 }
     )
   }

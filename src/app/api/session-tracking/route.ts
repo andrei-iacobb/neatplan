@@ -19,12 +19,15 @@ export async function POST(request: Request) {
 
     if (action === 'update_activity') {
       // Update last activity for active session
+      const whereClause: any = {
+        userId: session.user.id,
+        isActive: true,
+      }
+      if (sessionToken) {
+        whereClause.sessionToken = sessionToken
+      }
       await prisma.userSession.updateMany({
-        where: {
-          userId: session.user.id,
-          isActive: true,
-          sessionToken: sessionToken || undefined
-        },
+        where: whereClause,
         data: {
           lastActivity: new Date()
         }
@@ -35,12 +38,15 @@ export async function POST(request: Request) {
 
     if (action === 'logout') {
       // Mark session as logged out
+      const whereClause: any = {
+        userId: session.user.id,
+        isActive: true,
+      }
+      if (sessionToken) {
+        whereClause.sessionToken = sessionToken
+      }
       await prisma.userSession.updateMany({
-        where: {
-          userId: session.user.id,
-          isActive: true,
-          sessionToken: sessionToken || undefined
-        },
+        where: whereClause,
         data: {
           logoutAt: new Date(),
           isActive: false

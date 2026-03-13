@@ -1,5 +1,16 @@
 import nodemailer from 'nodemailer'
 
+// HTML escape helper to prevent HTML injection in email templates
+function escapeHtml(str: string): string {
+  if (!str) return ''
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
 interface EmailConfig {
   host: string
   port: number
@@ -24,12 +35,12 @@ const templates = {
     html: (data: any) => `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #0D9488;">Task Reminder</h2>
-        <p>Hello ${data.userName},</p>
+        <p>Hello ${escapeHtml(data.userName)},</p>
         <p>You have an upcoming cleaning task:</p>
         <div style="background: #f0f9ff; padding: 16px; border-radius: 8px; margin: 16px 0;">
-          <h3 style="margin: 0 0 8px 0; color: #0369a1;">${data.taskName}</h3>
-          <p style="margin: 0; color: #64748b;">Room: ${data.roomName}</p>
-          <p style="margin: 0; color: #64748b;">Due: ${data.dueDate}</p>
+          <h3 style="margin: 0 0 8px 0; color: #0369a1;">${escapeHtml(data.taskName)}</h3>
+          <p style="margin: 0; color: #64748b;">Room: ${escapeHtml(data.roomName)}</p>
+          <p style="margin: 0; color: #64748b;">Due: ${escapeHtml(data.dueDate)}</p>
         </div>
         <p>Please complete this task on time.</p>
         <p>Best regards,<br>NeatPlan Team</p>
@@ -41,12 +52,12 @@ const templates = {
     html: (data: any) => `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #0D9488;">Schedule Update</h2>
-        <p>Hello ${data.userName},</p>
+        <p>Hello ${escapeHtml(data.userName)},</p>
         <p>Your cleaning schedule has been updated:</p>
         <div style="background: #f0f9ff; padding: 16px; border-radius: 8px; margin: 16px 0;">
-          <h3 style="margin: 0 0 8px 0; color: #0369a1;">${data.changeType}</h3>
-          <p style="margin: 0; color: #64748b;">${data.description}</p>
-          ${data.newDate ? `<p style="margin: 0; color: #64748b;">New Date: ${data.newDate}</p>` : ''}
+          <h3 style="margin: 0 0 8px 0; color: #0369a1;">${escapeHtml(data.changeType)}</h3>
+          <p style="margin: 0; color: #64748b;">${escapeHtml(data.description)}</p>
+          ${data.newDate ? `<p style="margin: 0; color: #64748b;">New Date: ${escapeHtml(data.newDate)}</p>` : ''}
         </div>
         <p>Please check your dashboard for the latest schedule.</p>
         <p>Best regards,<br>NeatPlan Team</p>
@@ -58,10 +69,10 @@ const templates = {
     html: (data: any) => `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #DC2626;">System Alert</h2>
-        <p>Hello ${data.userName},</p>
+        <p>Hello ${escapeHtml(data.userName)},</p>
         <div style="background: #fef2f2; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #DC2626;">
-          <h3 style="margin: 0 0 8px 0; color: #DC2626;">${data.alertType}</h3>
-          <p style="margin: 0; color: #7f1d1d;">${data.message}</p>
+          <h3 style="margin: 0 0 8px 0; color: #DC2626;">${escapeHtml(data.alertType)}</h3>
+          <p style="margin: 0; color: #7f1d1d;">${escapeHtml(data.message)}</p>
         </div>
         <p>Please take appropriate action if required.</p>
         <p>Best regards,<br>NeatPlan Team</p>
@@ -73,13 +84,13 @@ const templates = {
     html: (data: any) => `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #059669;">Task Completed</h2>
-        <p>Hello ${data.userName},</p>
+        <p>Hello ${escapeHtml(data.userName)},</p>
         <p>Great work! A cleaning task has been completed:</p>
         <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; margin: 16px 0;">
-          <h3 style="margin: 0 0 8px 0; color: #059669;">${data.taskName}</h3>
-          <p style="margin: 0; color: #15803d;">Room: ${data.roomName}</p>
-          <p style="margin: 0; color: #15803d;">Completed by: ${data.completedBy}</p>
-          <p style="margin: 0; color: #15803d;">Completed at: ${data.completedAt}</p>
+          <h3 style="margin: 0 0 8px 0; color: #059669;">${escapeHtml(data.taskName)}</h3>
+          <p style="margin: 0; color: #15803d;">Room: ${escapeHtml(data.roomName)}</p>
+          <p style="margin: 0; color: #15803d;">Completed by: ${escapeHtml(data.completedBy)}</p>
+          <p style="margin: 0; color: #15803d;">Completed at: ${escapeHtml(data.completedAt)}</p>
         </div>
         <p>Thank you for maintaining our cleaning standards!</p>
         <p>Best regards,<br>NeatPlan Team</p>
