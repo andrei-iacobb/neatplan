@@ -121,6 +121,23 @@ export default function CleaningPage() {
     }
   }
 
+  async function completeTask(taskId: string) {
+    try {
+      const response = await apiRequest(`/api/cleaning-tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'completed' }),
+      })
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to complete task')
+      }
+      fetchTasks()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to complete task')
+    }
+  }
+
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -220,13 +237,16 @@ export default function CleaningPage() {
                   )}
                 </div>
                 <div className="flex space-x-2 ml-4">
-                  <button 
-                    className="px-3 py-1.5 bg-teal-500/10 text-teal-300 rounded border border-teal-500/30 hover:bg-teal-500/20 transition-colors text-sm"
-                    onClick={() => {
-                      // TODO: Implement task completion
-                    }}
+                  <button
+                    className={`px-3 py-1.5 rounded border transition-colors text-sm ${
+                      task.status === 'completed'
+                        ? 'bg-green-500/10 text-green-300 border-green-500/30 cursor-default'
+                        : 'bg-teal-500/10 text-teal-300 border-teal-500/30 hover:bg-teal-500/20'
+                    }`}
+                    onClick={() => task.status !== 'completed' && completeTask(task.id)}
+                    disabled={task.status === 'completed'}
                   >
-                    Complete
+                    {task.status === 'completed' ? 'Done' : 'Complete'}
                   </button>
                 </div>
               </div>

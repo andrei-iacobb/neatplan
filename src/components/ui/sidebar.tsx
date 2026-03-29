@@ -27,7 +27,7 @@ const isActiveRoute = (pathname: string, href: string) => {
   return pathname.startsWith(href)
 }
 
-const ease = [0.25, 0.1, 0.25, 1]
+const ease: [number, number, number, number] = [0.25, 0.1, 0.25, 1]
 
 export function Sidebar() {
   const [isExpanded, setIsExpanded] = useState(false)

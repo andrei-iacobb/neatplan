@@ -12,7 +12,11 @@ function getOpenAI(): OpenAI {
     throw new Error('OpenAI API key not configured')
   }
   if (!openaiClient) {
-    openaiClient = new OpenAI({ apiKey })
+    openaiClient = new OpenAI({
+      apiKey,
+      timeout: 60_000, // 60s for vision/document processing
+      maxRetries: 2,
+    })
   }
   return openaiClient
 }
@@ -154,9 +158,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File too large. Maximum size is 10MB.' }, { status: 400 })
     }
 
+    // Validate MIME type allowlist
+    const ALLOWED_TYPES = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+    ]
+    if (!ALLOWED_TYPES.includes(file.type) && !file.type.startsWith('image/')) {
+      return NextResponse.json({ error: 'Unsupported file type. Allowed: PDF, DOCX, or images.' }, { status: 400 })
+    }
+
     // Convert file to buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
+
+    // Validate magic bytes match claimed MIME type
+    if (file.type === 'application/pdf' && !(buffer.length >= 4 && buffer.subarray(0, 4).toString() === '%PDF')) {
+      return NextResponse.json({ error: 'File content does not match PDF format' }, { status: 400 })
+    }
+    if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' &&
+        !(buffer.length >= 4 && buffer[0] === 0x50 && buffer[1] === 0x4B && buffer[2] === 0x03 && buffer[3] === 0x04)) {
+      return NextResponse.json({ error: 'File content does not match DOCX format' }, { status: 400 })
+    }
+    if (file.type.startsWith('image/')) {
+      const isJpeg = buffer[0] === 0xFF && buffer[1] === 0xD8
+      const isPng = buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47
+      const isGif = buffer.subarray(0, 3).toString() === 'GIF'
+      const isWebp = buffer.length >= 12 && buffer.subarray(0, 4).toString() === 'RIFF' && buffer.subarray(8, 12).toString() === 'WEBP'
+      if (!isJpeg && !isPng && !isGif && !isWebp) {
+        return NextResponse.json({ error: 'File content does not match a supported image format' }, { status: 400 })
+      }
+    }
 
     let content: string = ''
     let processingMethod: string = ''
@@ -191,7 +223,7 @@ export async function POST(request: NextRequest) {
       
       // Use Vision API for image
       const visionResponse = await getOpenAI().chat.completions.create({
-        model: "gpt-4-vision-preview",
+        model: "gpt-4o",
         messages: [
           {
             role: "user",
@@ -227,13 +259,14 @@ export async function POST(request: NextRequest) {
 
     console.log('Extracted content preview:', content.substring(0, 200) + '...')
 
-    // Process content directly using the AI schedule processing logic
-    // (avoiding internal HTTP fetch which can cause SSRF and cookie forwarding issues)
-    const aiScheduleResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/ai/schedule`, {
+    // Internal call to AI schedule endpoint — forward only the session cookie
+    const cookies = request.headers.get('Cookie') || ''
+    const sessionCookie = cookies.split(';').find(c => c.trim().startsWith('next-auth.session-token='))?.trim() || ''
+    const aiScheduleResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:4040'}/api/ai/schedule`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Cookie': request.headers.get('Cookie') || ''
+        ...(sessionCookie ? { 'Cookie': sessionCookie } : {}),
       },
       body: JSON.stringify({ content })
     })

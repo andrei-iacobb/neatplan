@@ -32,6 +32,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Only admins can send email notifications
+    if (!(session.user as any).isAdmin) {
+      return NextResponse.json({ error: 'Forbidden: admin access required' }, { status: 403 })
+    }
+
     const body: EmailRequest = await request.json()
     const { type, recipientEmail, recipientId, data } = body
 
@@ -148,6 +153,11 @@ export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Only admins can send test emails
+    if (!(session.user as any).isAdmin) {
+      return NextResponse.json({ error: 'Forbidden: admin access required' }, { status: 403 })
     }
 
     const { searchParams } = new URL(request.url)

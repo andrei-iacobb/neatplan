@@ -36,8 +36,12 @@ export async function PUT(
     }
 
     // Validate password strength if provided
-    if (password && (typeof password !== 'string' || password.length < 8)) {
-      return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
+    if (password) {
+      const { validatePassword } = await import('@/lib/password-policy')
+      const pwResult = validatePassword(password)
+      if (!pwResult.valid) {
+        return NextResponse.json({ error: pwResult.errors[0] }, { status: 400 })
+      }
     }
 
     // Validate name length if provided

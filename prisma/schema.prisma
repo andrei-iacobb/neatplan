@@ -27,6 +27,7 @@ model User {
   temporaryUnblockUntil   DateTime?
   failedLoginCount        Int          @default(0)
   lastFailedLoginAt       DateTime?
+  settings                Json?
 
   @@map("users")
 }

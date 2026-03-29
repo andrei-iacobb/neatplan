@@ -3,7 +3,7 @@ import { getToken } from 'next-auth/jwt'
 import type { NextRequest } from 'next/server'
 
 // Array of public routes that don't require authentication
-const publicRoutes = ['/auth', '/api/auth', '/demo']
+const publicRoutes = ['/auth', '/api/auth', '/demo', '/api/health', '/api/readyz']
 
 // Routes that only admins can access
 const adminRoutes = [

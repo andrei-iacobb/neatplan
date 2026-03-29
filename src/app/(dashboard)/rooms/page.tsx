@@ -707,11 +707,34 @@ function getRoomTypeIcon(type: string) {
   }
 }
 
+function getComputedStatus(schedule: RoomSchedule): string {
+  if (schedule.status === 'COMPLETED') return 'COMPLETED'
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const dueDate = new Date(schedule.nextDue)
+  dueDate.setHours(0, 0, 0, 0)
+  const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  if (diffDays < 0) return 'OVERDUE'
+  if (diffDays <= 2) return 'PENDING'
+  return 'SCHEDULED'
+}
+
+function getStatusLabel(status: string): string {
+  switch (status) {
+    case 'OVERDUE': return 'Overdue'
+    case 'PENDING': return 'Due Soon'
+    case 'COMPLETED': return 'Completed'
+    case 'SCHEDULED': return 'Scheduled'
+    default: return status
+  }
+}
+
 function getStatusStyle(status: string, tc: TC) {
   switch (status) {
     case 'OVERDUE': return tc.statusOverdue
     case 'COMPLETED': return tc.statusCompleted
     case 'PENDING': return tc.statusPending
+    case 'SCHEDULED': return { bg: tc.emptyBg, text: tc.textMuted, border: tc.cardBorder }
     default: return { bg: tc.emptyBg, text: tc.textMuted, border: tc.cardBorder }
   }
 }
@@ -767,7 +790,8 @@ function RoomCard({ room, tc, delay, onEdit }: RoomCardProps) {
         {activeSchedules.length > 0 && (
           <div className="space-y-1">
             {activeSchedules.slice(0, 2).map((schedule) => {
-              const ss = getStatusStyle(schedule.status, tc)
+              const computed = getComputedStatus(schedule)
+              const ss = getStatusStyle(computed, tc)
               return (
                 <div key={schedule.id} className="flex items-center justify-between">
                   <span className="text-[10px] truncate mr-2" style={{ color: tc.textMuted }}>
@@ -775,7 +799,7 @@ function RoomCard({ room, tc, delay, onEdit }: RoomCardProps) {
                   </span>
                   <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold flex-shrink-0"
                     style={{ background: ss.bg, color: ss.text, border: `1px solid ${ss.border}` }}>
-                    {schedule.status}
+                    {getStatusLabel(computed)}
                   </span>
                 </div>
               )

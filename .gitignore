@@ -23,6 +23,12 @@
 # misc
 .DS_Store
 *.pem
+*.bak
+*.fix
+*.fix2
+
+# logs
+logs/
 
 # debug
 npm-debug.log*
@@ -38,6 +44,9 @@ secrets/
 
 # SMTP configuration (contains sensitive data)
 .smtp-config.json
+
+# generated prisma client
+src/generated/
 
 # vercel
 .vercel

@@ -5,6 +5,8 @@ import { prisma } from '@/lib/db'
 import { getSchedulePrimaryFrequency, inferFrequencyFromTasks } from '@/lib/frequency-mapping'
 import { checkRateLimitByUserOrIp } from '@/lib/rate-limit'
 
+export const maxDuration = 120 // 2 minutes timeout for the route
+
 // Lazy OpenAI client to avoid build-time env errors
 let openaiClient: OpenAI | null = null
 function getOpenAI(): OpenAI {
@@ -13,12 +15,14 @@ function getOpenAI(): OpenAI {
     throw new Error('OpenAI API key not configured')
   }
   if (!openaiClient) {
-    openaiClient = new OpenAI({ apiKey })
+    openaiClient = new OpenAI({
+      apiKey,
+      timeout: 30_000, // 30s per request
+      maxRetries: 2,   // retry up to 2 times with exponential backoff
+    })
   }
   return openaiClient
 }
-
-// Simple text processing without natural library
 
 // Rough token estimation (1 token ≈ 4 characters)
 const MAX_TOKENS_PER_REQUEST = 6000 // Leave room for system prompt and response
@@ -231,7 +235,7 @@ async function extractTasksFromChunk(chunk: string): Promise<any[]> {
   try {
 
     const completion = await getOpenAI().chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o",
       messages: [
         { role: "system", content: TASK_EXTRACTION_PROMPT },
         { role: "user", content: chunk }
@@ -265,7 +269,7 @@ async function analyzeDocumentMetadata(content: string): Promise<any> {
     const metadataContent = content.substring(0, MAX_TOKENS_PER_REQUEST * CHARS_PER_TOKEN / 2)
     
     const completion = await getOpenAI().chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o",
       messages: [
         { role: "system", content: ANALYSIS_PROMPT },
         { role: "user", content: metadataContent }

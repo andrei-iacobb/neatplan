@@ -37,6 +37,9 @@ export async function POST(req: Request) {
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    if (!(session.user as any).isAdmin) {
+      return NextResponse.json({ error: 'Forbidden: admin access required' }, { status: 403 })
+    }
 
     const { title, tasks } = await req.json()
 

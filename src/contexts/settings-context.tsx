@@ -72,17 +72,32 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false)
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light')
 
-  // Load settings from localStorage on mount
+  // Load settings from API on mount, fall back to localStorage
   useEffect(() => {
-    const savedSettings = localStorage.getItem('neatplan-settings')
-    if (savedSettings) {
+    async function loadSettings() {
       try {
-        const parsed = JSON.parse(savedSettings)
-        setSettings({ ...defaultSettings, ...parsed })
-      } catch (error) {
-        console.error('Error loading settings:', error)
+        const res = await fetch('/api/user/settings')
+        if (res.ok) {
+          const data = await res.json()
+          if (data) {
+            setSettings({ ...defaultSettings, ...data })
+            return
+          }
+        }
+      } catch {
+        // API unavailable, fall back to localStorage
+      }
+      const savedSettings = localStorage.getItem('neatplan-settings')
+      if (savedSettings) {
+        try {
+          const parsed = JSON.parse(savedSettings)
+          setSettings({ ...defaultSettings, ...parsed })
+        } catch (error) {
+          console.error('Error loading settings:', error)
+        }
       }
     }
+    loadSettings()
   }, [])
 
   // Handle system theme detection and theme resolution
@@ -154,20 +169,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const saveSettings = async () => {
     setIsLoading(true)
     try {
-      // Save to localStorage
+      // Save to localStorage as cache
       localStorage.setItem('neatplan-settings', JSON.stringify(settings))
-      
-      // TODO: Save to API endpoint
-      // await fetch('/api/user/settings', {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(settings)
-      // })
-      
-      // Auto-save when enabled
-      if (settings.system.autoSave) {
-        // Settings are automatically saved to localStorage
-      }
+
+      // Persist to API
+      await fetch('/api/user/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      })
     } catch (error) {
       console.error('Error saving settings:', error)
       throw error

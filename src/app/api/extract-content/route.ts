@@ -125,9 +125,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File too large. Maximum size is 10MB.' }, { status: 400 })
     }
 
+    // Validate MIME type
+    if (file.type !== 'application/pdf' &&
+        file.type !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      return NextResponse.json({ error: 'Unsupported file type. Please upload PDF or DOCX files.' }, { status: 400 })
+    }
+
     // Convert file to buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
+
+    // Validate magic bytes
+    if (file.type === 'application/pdf' && !(buffer.length >= 4 && buffer.subarray(0, 4).toString() === '%PDF')) {
+      return NextResponse.json({ error: 'File content does not match PDF format' }, { status: 400 })
+    }
+    if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' &&
+        !(buffer.length >= 4 && buffer[0] === 0x50 && buffer[1] === 0x4B && buffer[2] === 0x03 && buffer[3] === 0x04)) {
+      return NextResponse.json({ error: 'File content does not match DOCX format' }, { status: 400 })
+    }
 
     let content: string = ''
 

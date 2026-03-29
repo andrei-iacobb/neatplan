@@ -59,8 +59,9 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
         throw new Error(result.error)
       }
 
-      // Login successful - redirect to returnTo or dashboard
-      const redirectPath = returnTo || "/"
+      // Login successful - redirect to returnTo or dashboard (prevent open redirect)
+      const isSafeRedirect = (url: string) => url.startsWith('/') && !url.startsWith('//')
+      const redirectPath = returnTo && isSafeRedirect(returnTo) ? returnTo : "/"
       router.push(redirectPath)
       router.refresh()
     } catch (err) {

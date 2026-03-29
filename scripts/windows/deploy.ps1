@@ -3,7 +3,7 @@
 
 param(
     [string]$ServerIP = "",
-    [string]$Port = "3000",
+    [string]$Port = "4040",
     [string]$Domain = "",
     [switch]$EnableSSL = $false,
     [switch]$InstallIIS = $false
@@ -185,7 +185,7 @@ Write-Host "2. Run database migrations:"
 Write-Host "   npx prisma migrate deploy" -ForegroundColor Gray
 Write-Host ""
 Write-Host "3. Start the application:"
-Write-Host "   pm2 start ecosystem.config.js --env production" -ForegroundColor Gray
+Write-Host "   pm2 start ecosystem.config.js" -ForegroundColor Gray
 Write-Host ""
 Write-Host "4. Save PM2 configuration:"
 Write-Host "   pm2 save" -ForegroundColor Gray
@@ -212,5 +212,4 @@ Write-Host "   Thanks to the url-utils.ts changes, it will automatically" -Foreg
 Write-Host "   work with whatever NEXTAUTH_URL you configure." -ForegroundColor Green
 Write-Host ""
 
-Read-Host "Press Enter to continue..." 
-Read-Host "Press Enter to continue..." 
+Read-Host "Press Enter to continue..."

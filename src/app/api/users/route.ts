@@ -70,9 +70,11 @@ export async function POST(request: Request) {
     }
 
     // Validate password strength
-    if (typeof password !== 'string' || password.length < 8) {
+    const { validatePassword } = await import('@/lib/password-policy')
+    const pwResult = validatePassword(password)
+    if (!pwResult.valid) {
       return NextResponse.json(
-        { error: 'Password must be at least 8 characters' },
+        { error: pwResult.errors[0] },
         { status: 400 }
       )
     }

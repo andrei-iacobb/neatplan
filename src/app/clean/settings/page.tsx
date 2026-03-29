@@ -68,8 +68,8 @@ export default function CleanerSettingsPage() {
   const handleChangePassword = async () => {
     setSecurityMessage(null)
 
-    if (newPassword.length < 8) {
-      setSecurityMessage({ type: 'error', text: 'New password must be at least 8 characters' })
+    if (newPassword.length < 8 || !/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/[0-9]/.test(newPassword) || !/[^A-Za-z0-9]/.test(newPassword)) {
+      setSecurityMessage({ type: 'error', text: 'Password must be at least 8 characters with uppercase, lowercase, number, and special character.' })
       return
     }
 

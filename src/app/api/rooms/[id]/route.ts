@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { RoomType } from '@/generated/prisma/index.js'
+import { RoomType } from '@prisma/client'
 import * as z from 'zod'
 import { NextRequest } from 'next/server'
 
@@ -20,12 +20,12 @@ export async function PUT(
   try {
     const session = await getServerSession(authOptions)
     const { id } = await params
-    
+
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!(session.user as any).isAdmin) {
+      return NextResponse.json({ error: 'Forbidden: admin access required' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -66,12 +66,12 @@ export async function DELETE(
   try {
     const session = await getServerSession(authOptions)
     const { id } = await params
-    
+
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!(session.user as any).isAdmin) {
+      return NextResponse.json({ error: 'Forbidden: admin access required' }, { status: 403 })
     }
 
     await prisma.room.delete({

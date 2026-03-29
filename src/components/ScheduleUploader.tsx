@@ -5,12 +5,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 import { Loader2, Upload } from 'lucide-react'
-import { Schedule } from '@/generated/prisma'
 import { apiRequest } from '@/lib/url-utils'
 import { useThemeColors } from '@/hooks/useThemeColors'
 
 interface ScheduleUploaderProps {
-  onScheduleGenerated: (schedule: Schedule) => void
+  onScheduleGenerated: (schedule: any) => void
 }
 
 export function ScheduleUploader({ onScheduleGenerated }: ScheduleUploaderProps) {

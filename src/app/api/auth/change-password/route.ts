@@ -22,8 +22,10 @@ export async function POST(request: NextRequest) {
     }
 
     const { currentPassword, newPassword } = await request.json()
-    if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
-      return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
+    const { validatePassword } = await import('@/lib/password-policy')
+    const pwResult = validatePassword(newPassword || '')
+    if (!pwResult.valid) {
+      return NextResponse.json({ error: pwResult.errors[0] }, { status: 400 })
     }
 
     const user = await prisma.user.findUnique({ where: { email: session.user.email } })
