@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { usePathname } from "next/navigation"
 import {
-  Home, Calendar, Settings, DoorOpen, Upload, LogOut, User, Wrench, ClipboardCheck
+  Home, Calendar, Settings, DoorOpen, LogOut, User, Wrench, ClipboardCheck, Menu, X
 } from "lucide-react"
 import { Logo } from "@/components/ui/logo"
 import { useSettings } from "@/contexts/settings-context"
@@ -18,7 +18,6 @@ const navigation = [
   { name: "Schedule", href: "/schedule", icon: Calendar },
   { name: "Audit Log", href: "/audit", icon: ClipboardCheck },
   { name: "Users", href: "/users", icon: User },
-  { name: "Upload", href: "/upload", icon: Upload },
   { name: "Settings", href: "/settings", icon: Settings },
 ]
 
@@ -37,6 +36,16 @@ export function Sidebar() {
   const isDark = resolvedTheme === 'dark'
   const expandRef = useRef<NodeJS.Timeout | null>(null)
   const collapseRef = useRef<NodeJS.Timeout | null>(null)
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  // Close the mobile drawer whenever the route changes or viewport becomes desktop-sized.
+  useEffect(() => { setMobileOpen(false) }, [pathname])
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)')
+    const onChange = () => { if (mq.matches) setMobileOpen(false) }
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
 
   const handleMouseEnter = () => {
     if (collapseRef.current) { clearTimeout(collapseRef.current); collapseRef.current = null }
@@ -68,11 +77,12 @@ export function Sidebar() {
   }
 
   return (
+    <>
     <motion.aside
       initial={false}
       animate={{ width: isExpanded ? 220 : 60 }}
       transition={{ duration: 0.25, ease }}
-      className="fixed left-0 top-0 h-full z-40 overflow-hidden flex flex-col transition-colors duration-300"
+      className="hidden md:flex fixed left-0 top-0 h-full z-40 overflow-hidden flex-col transition-colors duration-300"
       style={{ background: t.bg, backdropFilter: 'blur(20px)', borderRight: `1px solid ${t.border}` }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -164,5 +174,99 @@ export function Sidebar() {
         </div>
       )}
     </motion.aside>
+
+      {/* Mobile top bar */}
+      <header
+        className="md:hidden fixed top-0 left-0 right-0 h-14 z-40 flex items-center justify-between px-4"
+        style={{ background: t.bg, backdropFilter: 'blur(20px)', borderBottom: `1px solid ${t.border}` }}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <Logo size="sm" />
+          <span className="font-bold text-[15px] tracking-tight truncate" style={{ color: t.title }}>NeatPlan</span>
+        </div>
+        <button
+          onClick={() => setMobileOpen(true)}
+          aria-label="Open navigation menu"
+          className="w-10 h-10 flex items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-95"
+          style={{ color: t.navDefault }}
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      </header>
+
+      {/* Mobile drawer */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            <motion.div
+              key="overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setMobileOpen(false)}
+              className="md:hidden fixed inset-0 z-50"
+              style={{ background: 'rgba(0,0,0,0.45)' }}
+            />
+            <motion.aside
+              key="drawer"
+              initial={{ x: -280 }}
+              animate={{ x: 0 }}
+              exit={{ x: -280 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 40 }}
+              className="md:hidden fixed left-0 top-0 bottom-0 w-[264px] z-50 flex flex-col"
+              style={{ background: t.bg, backdropFilter: 'blur(20px)', borderRight: `1px solid ${t.border}` }}
+              role="dialog"
+              aria-label="Navigation"
+            >
+              <div className="h-14 flex items-center justify-between px-4 flex-shrink-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Logo size="sm" />
+                  <span className="font-bold text-[15px] tracking-tight truncate" style={{ color: t.title }}>NeatPlan</span>
+                </div>
+                <button
+                  onClick={() => setMobileOpen(false)}
+                  aria-label="Close navigation menu"
+                  className="w-9 h-9 flex items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-95"
+                  style={{ color: t.navDefault }}
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <nav className="flex-1 flex flex-col gap-0.5 px-3 pt-2 overflow-y-auto">
+                {navigation.map((item) => {
+                  const active = isActiveRoute(pathname, item.href)
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-3 rounded-lg px-3 py-3 text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+                      style={{ color: active ? 'rgb(16, 185, 129)' : t.navDefault, background: active ? t.activeBg : 'transparent' }}
+                    >
+                      <item.icon className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={active ? 2.2 : 1.8} />
+                      {item.name}
+                    </Link>
+                  )
+                })}
+              </nav>
+              {session?.user && (
+                <div className="px-3 pt-2 flex-shrink-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+                  <div className="mb-2 border-t" style={{ borderColor: t.divider }} />
+                  <button
+                    onClick={() => signOut({ callbackUrl: '/auth' })}
+                    className="w-full flex items-center gap-3 rounded-lg px-3 py-3 text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50"
+                    style={{ color: t.signoutDefault }}
+                  >
+                    <LogOut className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={1.8} />
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   )
 }

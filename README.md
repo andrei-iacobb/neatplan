@@ -67,25 +67,14 @@
 ### 📱 **Mobile Support**
 - 📲 Fully responsive design
 - 👆 Touch-friendly interface
-- 📱 Mobile-optimized navigation
-- 🔄 Offline-capable PWA features
+- 📱 Mobile-optimized navigation with touch-friendly controls targets
+- 📲 Installable PWA shell (manifest + service worker for offline auth pages)
 
 ---
 
-## 🎯 Demo
+## Screenshots
 
-<div align="center">
-
-### Admin Dashboard
-![Admin Dashboard](https://via.placeholder.com/800x400/1F2937/FFFFFF?text=Admin+Dashboard+Screenshot)
-
-### Cleaner Interface
-![Cleaner Interface](https://via.placeholder.com/800x400/059669/FFFFFF?text=Cleaner+Interface+Screenshot)
-
-### Mobile View
-![Mobile View](https://via.placeholder.com/400x600/7C3AED/FFFFFF?text=Mobile+View+Screenshot)
-
-</div>
+Run locally with `pnpm dev` or `pnpm dev:3030` and sign in to explore the admin dashboard and cleaner portal. Production screenshots are not bundled in this repo.
 
 ---
 
@@ -95,32 +84,25 @@
 
 - **Node.js** 18.0 or higher
 - **PostgreSQL** 15.0 or higher
-- **npm** or **yarn**
+- **pnpm** (recommended) or npm
 
 ### 1-Minute Setup
 
 ```bash
-# Clone the repository
 git clone https://github.com/yourusername/neatplan.git
 cd neatplan
 
-# Install dependencies
-npm install
+pnpm install
+cp env.example .env
 
-# Setup environment
-cp .env.example .env
-# Edit .env with your database credentials
+pnpm exec prisma generate
+pnpm exec prisma migrate deploy
+pnpm run prisma:seed
+pnpm run validate-env
 
-# Setup database
-npx prisma generate
-npx prisma db push
-npx prisma db seed
-
-# Start development server
-npm run dev
+pnpm dev          # http://localhost:4040
+# or: pnpm dev:3030
 ```
-
-🎉 **That's it!** Open [http://localhost:3000](http://localhost:3000) and start cleaning!
 
 ---
 
@@ -186,13 +168,21 @@ npm start
 
 ## 📱 Usage
 
-### Default Login Credentials
+### Accounts
 
-| Role | Email | Password |
-|------|-------|----------|
-| **Admin** | `admin@neatplan.com` | `admin123` |
-| **Cleaner** | `cleaner@neatplan.com` | `cleaner123` |
-| **User** | `user@neatplan.com` | `user123` |
+Default seed users are defined in `prisma/seed.ts`. **Change all passwords immediately after first login.** Do not use seed credentials in production.
+
+### Admin optional 2FA
+
+Admins can enable TOTP under **Settings → Privacy & Security**. Requires an authenticator app (Google Authenticator, 1Password, etc.).
+
+### AI document processing (optional)
+
+Requires `OPENAI_API_KEY`. Uploads are processed asynchronously via background jobs; poll `/api/process-document/jobs/:id` for status.
+
+- Model: `gpt-4o` for vision/image extraction (see `src/lib/document-jobs.ts`)
+- Rate limits apply to `/api/process-document` and `/api/ai/schedule`
+- To disable AI features: omit `OPENAI_API_KEY` — uploads will fail gracefully with a clear error
 
 ### Admin Workflow
 

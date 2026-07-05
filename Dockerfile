@@ -2,7 +2,8 @@
 FROM node:20-alpine
 
 # Add necessary packages for Prisma and database tools
-RUN apk add --no-cache libc6-compat openssl postgresql-client
+RUN apk add --no-cache libc6-compat openssl postgresql-client && \
+    npm install -g pnpm
 
 # Create a non-root user and group
 RUN addgroup -g 1001 -S nodejs && \
@@ -11,19 +12,19 @@ RUN addgroup -g 1001 -S nodejs && \
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json* ./
+COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies
-RUN npm ci
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY --chown=nextjs:nodejs . .
 
 # Generate Prisma client for the correct platform
-RUN npx prisma generate
+RUN pnpm exec prisma generate
 
 # Build the Next.js app for production startup
-RUN npm run build:no-lint
+RUN pnpm run build:no-lint
 
 # Set environment variables - use production by default
 ENV NODE_ENV=production

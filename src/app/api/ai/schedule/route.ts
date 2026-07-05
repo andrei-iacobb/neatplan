@@ -299,6 +299,11 @@ export async function POST(req: Request) {
     const { authOptions } = await import('@/lib/auth')
     const preSession = await getServerSession(authOptions)
     const preIdentifier = preSession?.user?.email || null
+    const internalJobSecret = req.headers.get('x-internal-job')
+    const isInternalJob =
+      Boolean(process.env.CRON_SECRET) &&
+      internalJobSecret === process.env.CRON_SECRET
+
     const rate = checkRateLimitByUserOrIp(req as any, 'ai_schedule', 5, 60 * 1000, preIdentifier)
     if (!rate.allowed) {
       return NextResponse.json(
@@ -308,7 +313,7 @@ export async function POST(req: Request) {
     }
 
     const session = preSession
-    if (!session) {
+    if (!session && !isInternalJob) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }

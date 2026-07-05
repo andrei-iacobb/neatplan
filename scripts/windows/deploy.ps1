@@ -56,7 +56,7 @@ try {
 # Step 2: Install dependencies
 Write-Host "[2/8] Installing dependencies..." -ForegroundColor Blue
 try {
-    npm install
+    pnpm install
     Write-Host "✅ Dependencies installed" -ForegroundColor Green
 } catch {
     Write-Host "❌ Failed to install dependencies!" -ForegroundColor Red
@@ -66,12 +66,12 @@ try {
 # Step 3: Build application
 Write-Host "[3/8] Building application..." -ForegroundColor Blue
 try {
-    npm run build:no-lint
+    pnpm run build:no-lint
     Write-Host "✅ Application built successfully" -ForegroundColor Green
 } catch {
     Write-Host "⚠️ Initial build failed, trying alternative..." -ForegroundColor Yellow
     try {
-        npm run build
+        pnpm run build
         Write-Host "✅ Application built successfully (alternative method)" -ForegroundColor Green
     } catch {
         Write-Host "❌ All build attempts failed!" -ForegroundColor Red
@@ -89,8 +89,8 @@ Write-Host "✅ Logs directory ready" -ForegroundColor Green
 # Step 5: Install PM2
 Write-Host "[5/8] Installing PM2..." -ForegroundColor Blue
 try {
-    npm install -g pm2
-    npm install -g pm2-windows-service
+    pnpm install -g pm2
+    pnpm install -g pm2-windows-service
     Write-Host "✅ PM2 installed" -ForegroundColor Green
 } catch {
     Write-Host "❌ Failed to install PM2!" -ForegroundColor Red

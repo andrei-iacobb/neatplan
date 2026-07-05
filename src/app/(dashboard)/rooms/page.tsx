@@ -236,10 +236,11 @@ export default function RoomsPage() {
   const floors = Array.from(new Set(bedrooms.map(room => room.floor))).filter(Boolean)
   const roomTypes = Array.from(new Set(rooms.map(room => room.type)))
 
+  // Room-category tabs only. The Schedules view lives on the right (next to Add Room)
+  // because it's a distinct view, not a room type.
   const viewTabs = [
     { mode: 'BEDROOMS' as ViewMode, icon: BedDouble, label: 'Bedrooms' },
     { mode: 'OTHER_ROOMS' as ViewMode, icon: Building2, label: 'Other Rooms' },
-    { mode: 'SCHEDULES' as ViewMode, icon: Calendar, label: 'Schedules' },
   ]
 
   return (
@@ -255,8 +256,8 @@ export default function RoomsPage() {
       </div>
 
       {/* Controls */}
-      <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.05 }} className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-2">
+      <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.05 }} className="flex flex-wrap justify-between items-center gap-2 mb-4">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex gap-2">
             {viewTabs.map((tab) => (
               <button
@@ -296,18 +297,34 @@ export default function RoomsPage() {
             </div>
           )}
         </div>
-        {viewMode !== 'SCHEDULES' && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors"
-            style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: `1px solid ${tc.btnPrimaryBorder}` }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}
+            onClick={() => setViewMode('SCHEDULES')}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97]"
+            style={viewMode === 'SCHEDULES'
+              ? { background: tc.tabActiveBg, color: tc.tabActiveText, border: `1px solid ${tc.tabActiveBorder}` }
+              : { background: tc.tabInactiveBg, color: tc.tabInactiveText, border: '1px solid transparent' }
+            }
+            onMouseEnter={(e) => { if (viewMode !== 'SCHEDULES') { e.currentTarget.style.background = tc.tabInactiveHoverBg; e.currentTarget.style.color = tc.tabInactiveHoverText }}}
+            onMouseLeave={(e) => { if (viewMode !== 'SCHEDULES') { e.currentTarget.style.background = tc.tabInactiveBg; e.currentTarget.style.color = tc.tabInactiveText }}}
+            aria-pressed={viewMode === 'SCHEDULES'}
           >
-            <Plus className="w-4 h-4" />
-            Add Room
+            <Calendar className="w-3.5 h-3.5" />
+            Schedules
           </button>
-        )}
+          {viewMode !== 'SCHEDULES' && (
+            <button
+              onClick={() => setShowForm(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97]"
+              style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: `1px solid ${tc.btnPrimaryBorder}` }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}
+            >
+              <Plus className="w-4 h-4" />
+              Add Room
+            </button>
+          )}
+        </div>
       </motion.div>
 
       {/* Main Content */}
@@ -752,24 +769,25 @@ function RoomCard({ room, tc, delay, onEdit }: RoomCardProps) {
   const accent = tc.accentGreen
 
   return (
-    <motion.div {...fadeUp} transition={{ duration: 0.3, delay: 0.15 + delay }}
-      className="group rounded-xl p-4 transition-all duration-200 relative overflow-hidden"
-      style={{ background: tc.cardBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}
-      onMouseEnter={(e) => { e.currentTarget.style.borderColor = tc.cardHoverBorder(accent); e.currentTarget.style.background = tc.cardHoverBg }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = tc.cardBorder; e.currentTarget.style.background = tc.cardBg }}>
-      <div className="absolute top-0 right-0 w-20 h-20 rounded-full -translate-y-8 translate-x-8" style={{ background: accent, opacity: tc.glowOpacity }} />
+    <motion.div {...fadeUp} transition={{ duration: 0.3, delay: 0.15 + delay }} className="h-full">
+      <Link href={`/rooms/${room.id}`}
+        className="group block h-full rounded-xl p-4 transition-all duration-200 relative overflow-hidden"
+        style={{ background: tc.cardBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = tc.cardHoverBorder(accent); e.currentTarget.style.background = tc.cardHoverBg }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = tc.cardBorder; e.currentTarget.style.background = tc.cardBg }}>
+      <div className="absolute top-0 right-0 w-20 h-20 rounded-full -translate-y-8 translate-x-8 pointer-events-none" style={{ background: accent, opacity: tc.glowOpacity }} />
 
       <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${accent}${tc.iconBgAlpha}`, color: accent }}>
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: `${accent}${tc.iconBgAlpha}`, color: accent }}>
             {getRoomTypeIcon(room.type)}
           </div>
-          <div>
-            <h3 className="text-[13px] font-semibold" style={{ color: tc.textPrimary }}>{room.name}</h3>
+          <div className="min-w-0">
+            <h3 className="text-[13px] font-semibold truncate" style={{ color: tc.textPrimary }}>{room.name}</h3>
             <p className="text-[11px]" style={{ color: tc.textMuted }}>{room.floor}</p>
           </div>
         </div>
-        <button onClick={() => onEdit(room)} className="p-1 rounded transition-colors"
+        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(room) }} className="p-1 rounded transition-colors flex-shrink-0"
           style={{ color: tc.textMuted }}
           onMouseEnter={(e) => { e.currentTarget.style.color = tc.accentGreen }}
           onMouseLeave={(e) => { e.currentTarget.style.color = tc.textMuted }}>
@@ -817,15 +835,13 @@ function RoomCard({ room, tc, delay, onEdit }: RoomCardProps) {
         )}
       </div>
 
-      <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${tc.divider}` }}>
-        <Link href={`/rooms/${room.id}`}
-          className="text-[12px] font-medium flex items-center gap-1 transition-colors"
-          style={{ color: tc.accentGreen }}
-          onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.8' }}
-          onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}>
-          View Details <ArrowRight className="w-3 h-3" />
-        </Link>
+      <div className="mt-3 pt-3 flex items-center justify-between" style={{ borderTop: `1px solid ${tc.divider}` }}>
+        <span className="text-[12px] font-medium transition-colors" style={{ color: tc.accentGreen }}>
+          View Details
+        </span>
+        <ArrowRight className="w-3 h-3 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" style={{ color: tc.accentGreen }} />
       </div>
+      </Link>
     </motion.div>
   )
 }

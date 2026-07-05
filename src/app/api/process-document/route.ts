@@ -190,6 +190,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const asyncMode = request.headers.get('x-async') === 'true' ||
+      request.nextUrl.searchParams.get('async') === 'true'
+
+    if (asyncMode) {
+      const { createDocumentJob, queueDocumentJob } = await import('@/lib/document-jobs')
+      const jobId = await createDocumentJob({
+        userId: session.user.id,
+        fileName: file.name,
+        fileType: file.type,
+        buffer,
+      })
+      queueDocumentJob(jobId)
+      return NextResponse.json({ jobId, status: 'PENDING' }, { status: 202 })
+    }
+
     let content: string = ''
     let processingMethod: string = ''
 

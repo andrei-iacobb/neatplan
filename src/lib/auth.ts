@@ -19,7 +19,8 @@ export const authOptions: AuthOptions = {
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
+        totpCode: { label: "Authentication Code", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -64,6 +65,17 @@ export const authOptions: AuthOptions = {
             console.error('Failed to update login attempt counter:', error)
           }
           throw new Error("Invalid credentials")
+        }
+
+        if (user.totpEnabled && user.totpSecret) {
+          const totpCode = credentials.totpCode?.trim()
+          if (!totpCode) {
+            throw new Error("TOTP_REQUIRED")
+          }
+          const { verifyTotp } = await import('@/lib/totp')
+          if (!verifyTotp(user.totpSecret, totpCode)) {
+            throw new Error("Invalid authentication code")
+          }
         }
 
         // Successful login resets counters

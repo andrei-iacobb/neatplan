@@ -20,11 +20,11 @@ echo "Database is ready!"
 
 # Run database migrations
 echo "Running database migrations..."
-npx prisma migrate deploy
+pnpm exec prisma migrate deploy
 
 # Seed database if needed (optional, uncomment if you want initial data)
 # echo "Seeding database..."
 # npm run prisma:seed
 
 echo "Starting development server..."
-exec npm run start -- -H 0.0.0.0 -p 4040
+exec pnpm start -- -H 0.0.0.0 -p 4040

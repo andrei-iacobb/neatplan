@@ -14,6 +14,7 @@ import { Eye, EyeOff, Mail, Lock } from "lucide-react"
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
+  totpCode: z.string().optional(),
 })
 
 type LoginValues = z.infer<typeof loginSchema>
@@ -29,12 +30,14 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
+  const [needsTotp, setNeedsTotp] = useState(false)
   
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: prefillEmail || "",
       password: "",
+      totpCode: "",
     },
   })
 
@@ -53,9 +56,15 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
         redirect: false,
         email: data.email,
         password: data.password,
+        totpCode: data.totpCode || "",
       })
 
       if (result?.error) {
+        if (result.error === "TOTP_REQUIRED") {
+          setNeedsTotp(true)
+          setError("Enter the 6-digit code from your authenticator app")
+          return
+        }
         throw new Error(result.error)
       }
 
@@ -146,6 +155,27 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
             </motion.p>
           )}
         </motion.div>
+
+        {needsTotp && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-2"
+          >
+            <label htmlFor="totpCode" className="text-sm text-gray-400">
+              Authenticator code
+            </label>
+            <Input
+              id="totpCode"
+              {...form.register("totpCode")}
+              placeholder="6-digit code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              disabled={isLoading}
+              className="h-14 bg-gray-800/50 border border-gray-700/50 text-gray-100 placeholder:text-gray-400 focus:border-blue-500/70 focus:ring-2 focus:ring-blue-500/20 rounded-xl"
+            />
+          </motion.div>
+        )}
 
         {/* Error Message */}
         {error && (

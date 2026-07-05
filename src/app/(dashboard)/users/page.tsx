@@ -328,7 +328,7 @@ export default function UsersPage() {
       <div className="max-w-[1100px] mx-auto relative z-10 pb-8">
         {/* Page Header */}
         <div className="mb-10">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="w-4 h-4" style={{ color: 'rgb(16,185,129)' }} />
@@ -352,7 +352,7 @@ export default function UsersPage() {
 
         {/* Users Table */}
         <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.08 }}>
-          <div className="rounded-xl overflow-hidden" style={{ background: tc.tableBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}>
+          <div className="rounded-xl overflow-x-auto" style={{ background: tc.tableBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}>
             <table className="min-w-full" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
               <thead>
                 <tr style={{ background: tc.tableHeaderBg }}>

@@ -136,8 +136,14 @@ export default function CleanLayout({
 
   return (
     <div className="min-h-screen">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-teal-600 focus:text-white focus:rounded-md"
+      >
+        Skip to main content
+      </a>
       {/* Simple header for cleaners */}
-      <header className="bg-gray-800/50 backdrop-blur-sm border-b border-gray-700">
+      <header className="bg-gray-800/50 backdrop-blur-sm border-b border-gray-700" role="banner">
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -150,7 +156,10 @@ export default function CleanLayout({
                 {/* Profile Button */}
                 <button
                   onClick={() => setShowDropdown(!showDropdown)}
-                  className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-gray-100 hover:bg-gray-700/50 rounded-lg transition-all duration-200 group"
+                  aria-expanded={showDropdown}
+                  aria-haspopup="menu"
+                  aria-label="Account menu"
+                  className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-gray-100 hover:bg-gray-700/50 rounded-lg transition-all duration-200 group min-h-[44px]"
                 >
                   <Avatar email={session.user.email || ''} size="sm" />
                   <span className="text-sm font-medium">{session.user.name || session.user.email}</span>
@@ -208,7 +217,7 @@ export default function CleanLayout({
       </header>
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      <main id="main-content" className="max-w-6xl mx-auto px-4 py-6 pb-24 sm:pb-6">
         {children}
       </main>
     </div>

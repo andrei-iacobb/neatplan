@@ -19,7 +19,13 @@ interface DashboardStats {
 interface ScheduleStatusCounts { pending: number; inProgress: number; completed: number; overdue: number }
 interface RoomTypeCounts { [key: string]: number }
 
-const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } }
+const fadeUp = { initial: false, animate: { opacity: 1, y: 0 } }
+
+const cardStyle = (tc: ReturnType<typeof useThemeColors>) => ({
+  background: tc.cardBg,
+  border: `1px solid ${tc.cardBorder}`,
+  boxShadow: tc.shadow,
+})
 
 export function DashboardOverview() {
   const { data: session } = useSession()
@@ -69,14 +75,14 @@ export function DashboardOverview() {
   }
 
   if (isLoading) return (
-    <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="flex items-center justify-center min-h-[50vh]">
       <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
         className="w-8 h-8 rounded-full border-2 border-transparent" style={{ borderTopColor: 'rgb(16,185,129)', borderRightColor: 'rgba(16,185,129,0.3)' }} />
     </div>
   )
 
   if (error) return (
-    <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="flex items-center justify-center min-h-[50vh]">
       <div className="text-center">
         <AlertTriangle className="w-12 h-12 mx-auto mb-3" style={{ color: 'rgb(239,68,68)' }} />
         <p className="text-sm mb-4" style={{ color: tc.textMuted }}>{error}</p>
@@ -103,97 +109,104 @@ export function DashboardOverview() {
   ]
 
   const quickActions = [
-    { name: 'Manage Rooms', href: '/rooms', icon: DoorOpen, desc: 'Add, edit, and organise cleaning locations', accent: '#10b981' },
-    { name: 'Equipment', href: '/equipment', icon: Wrench, desc: 'Track maintenance equipment and schedules', accent: '#f59e0b' },
-    { name: 'Schedules', href: '/schedule', icon: Calendar, desc: 'Create and manage cleaning schedules', accent: '#ec4899' },
-    { name: 'Users', href: '/users', icon: Users, desc: 'Manage team members and permissions', accent: '#6366f1' },
+    { name: 'Manage Rooms', href: '/rooms', icon: DoorOpen, accent: '#10b981' },
+    { name: 'Equipment', href: '/equipment', icon: Wrench, accent: '#f59e0b' },
+    { name: 'Schedules', href: '/schedule', icon: Calendar, accent: '#ec4899' },
+    { name: 'Users', href: '/users', icon: Users, accent: '#6366f1' },
   ]
 
   return (
-    <div className="max-w-[1100px] mx-auto relative z-10 pb-8">
-      {/* Greeting */}
-      <div className="mb-10">
-        <div className="flex items-center gap-2 mb-2">
-          <Sparkles className="w-4 h-4" style={{ color: 'rgb(16,185,129)' }} />
-          <p className="text-[13px] font-medium tracking-wide uppercase" style={{ color: tc.accentLabel }}>{dateStr}</p>
+    <div className="max-w-[1230px] mx-auto relative z-10 flex flex-col gap-[17px] lg:gap-[13px] pb-[17px]">
+      {/* Compact header */}
+      <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-1 sm:gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-0.5">
+            <Sparkles className="w-[15px] h-[15px] flex-shrink-0" style={{ color: 'rgb(16,185,129)' }} />
+            <p className="text-[14px] font-medium" style={{ color: tc.accentLabel }}>{dateStr}</p>
+          </div>
+          <h1 className="text-[23px] sm:text-[25px] font-semibold tracking-tight leading-tight" style={{ color: tc.textPrimary }}>
+            {greeting}, {userName}
+          </h1>
         </div>
-        <h1 className="text-[32px] font-bold tracking-tight mb-1" style={{ color: tc.textPrimary }}>{greeting}, {userName}</h1>
-        <p className="text-[15px]" style={{ color: tc.textMuted }}>
-          {weeklyTotal > 0 ? `${weeklyTotal} tasks completed this week across your facility.` : `Here's an overview of your cleaning management system.`}
+        <p className="text-[15px] leading-snug sm:text-right sm:max-w-xs" style={{ color: tc.textMuted }}>
+          {weeklyTotal > 0 ? `${weeklyTotal} tasks completed this week.` : `Overview of your cleaning management system.`}
         </p>
-      </div>
+      </header>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+      {/* KPI row — horizontal, compact */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-[11px]">
         {statCards.map((s, i) => (
-          <motion.div key={s.name} {...fadeUp} transition={{ duration: 0.35, delay: 0.05 + i * 0.06 }}>
-            <Link href={s.href} className="group block rounded-xl p-5 transition-all duration-200 relative overflow-hidden"
-              style={{ background: tc.cardBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}
+          <motion.div key={s.name} {...fadeUp} transition={{ duration: 0.3, delay: 0.04 + i * 0.04 }} className="h-full">
+            <Link href={s.href} className="group flex h-full w-full items-center gap-3 rounded-xl px-[15px] py-[13px] transition-all duration-200"
+              style={cardStyle(tc)}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = tc.cardHoverBorder(s.accent); e.currentTarget.style.background = tc.cardHoverBg }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = tc.cardBorder; e.currentTarget.style.background = tc.cardBg }}>
-              <div className="absolute top-0 right-0 w-24 h-24 rounded-full -translate-y-8 translate-x-8" style={{ background: s.accent, opacity: tc.glowOpacity }} />
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${s.accent}${tc.iconBgAlpha}` }}>
-                  <s.icon className="w-[18px] h-[18px]" style={{ color: s.accent }} strokeWidth={1.8} />
-                </div>
-                <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-60 -translate-x-1 group-hover:translate-x-0 transition-all duration-200" style={{ color: s.accent }} />
+              <div className="w-[37px] h-[37px] rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: `${s.accent}${tc.iconBgAlpha}` }}>
+                <s.icon className="w-[19px] h-[19px]" style={{ color: s.accent }} strokeWidth={1.8} />
               </div>
-              <p className="text-[28px] font-bold tabular-nums" style={{ color: tc.textPrimary }}>{s.value}</p>
-              <p className="text-[12px] font-medium mt-0.5" style={{ color: tc.textMuted }}>{s.name}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-[23px] sm:text-[25px] font-bold tabular-nums leading-none" style={{ color: tc.textPrimary }}>{s.value}</p>
+                <p className="text-[14px] font-medium mt-0.5 truncate" style={{ color: tc.textMuted }}>{s.name}</p>
+              </div>
+              <ArrowRight className="w-[17px] h-[17px] flex-shrink-0 opacity-0 group-hover:opacity-50 transition-opacity" style={{ color: s.accent }} />
             </Link>
           </motion.div>
         ))}
       </div>
 
-      {/* Chart + Status */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 mb-6">
-        <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.3 }} className="lg:col-span-3 rounded-xl p-5"
-          style={{ background: tc.cardBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}>
-          <div className="flex items-center justify-between mb-6">
+      {/* Main bento grid — fits one viewport on lg+ */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-[11px] lg:gap-[13px] auto-rows-auto">
+        {/* Weekly chart */}
+        <motion.div {...fadeUp} transition={{ duration: 0.3, delay: 0.2 }}
+          className="lg:col-span-7 rounded-xl p-[17px] flex flex-col"
+          style={cardStyle(tc)}>
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <h2 className="text-[15px] font-semibold" style={{ color: tc.textPrimary }}>Weekly Completions</h2>
-              <p className="text-[12px] mt-0.5" style={{ color: tc.textFaint }}>{weeklyTotal} total this week</p>
+              <h2 className="text-[17px] font-semibold" style={{ color: tc.textPrimary }}>Weekly Completions</h2>
+              <p className="text-[14px] mt-0.5" style={{ color: tc.textFaint }}>{weeklyTotal} total this week</p>
             </div>
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md" style={{ background: tc.chipBg(weeklyTotal > 0) }}>
-              <TrendingUp className="w-3.5 h-3.5" style={{ color: tc.chipColor(weeklyTotal > 0) }} />
-              <span className="text-[11px] font-semibold" style={{ color: tc.chipColor(weeklyTotal > 0) }}>{weeklyTotal}</span>
+              <TrendingUp className="w-[17px] h-[17px]" style={{ color: tc.chipColor(weeklyTotal > 0) }} />
+              <span className="text-[14px] font-semibold tabular-nums" style={{ color: tc.chipColor(weeklyTotal > 0) }}>{weeklyTotal}</span>
             </div>
           </div>
-          <div className="h-[160px] flex items-end gap-2">
+          <div className="h-[124px] sm:h-[134px] flex items-end gap-1.5 sm:gap-2 flex-1">
             {weeklyValues.map((v, i) => {
               const isToday = i === weeklyValues.length - 1
-              const pct = Math.max(6, Math.round((v / maxVal) * 100))
+              const pct = Math.max(8, Math.round((v / maxVal) * 100))
               return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                  <span className="text-[10px] font-medium tabular-nums" style={{ color: v > 0 ? tc.textMuted : 'transparent' }}>{v}</span>
-                  <motion.div initial={{ height: 0 }} animate={{ height: `${pct}%` }} transition={{ duration: 0.5, delay: 0.35 + i * 0.04 }}
-                    className="w-full rounded-md relative overflow-hidden" style={{ background: isToday ? tc.barToday : tc.barBg }}>
-                    {isToday && <div className="absolute inset-0" style={{ background: `linear-gradient(to top, transparent, ${tc.barShine})` }} />}
+                <div key={i} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
+                  <span className="text-[13px] font-semibold tabular-nums leading-none" style={{ color: v > 0 ? tc.textSecondary : 'transparent' }}>{v}</span>
+                  <motion.div initial={{ height: 0 }} animate={{ height: `${pct}%` }} transition={{ duration: 0.45, delay: 0.25 + i * 0.03 }}
+                    className="w-full rounded-md relative overflow-hidden min-h-[6px]" style={{ background: isToday ? tc.barToday : tc.barBg }}>
+                    {isToday && <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(to top, transparent, ${tc.barShine})` }} />}
                   </motion.div>
-                  <span className="text-[10px] font-medium" style={{ color: isToday ? tc.textSecondary : tc.textFaint }}>{dayLabels[i]}</span>
+                  <span className="text-[13px] font-medium" style={{ color: isToday ? tc.textSecondary : tc.textFaint }}>{dayLabels[i]}</span>
                 </div>
               )
             })}
           </div>
         </motion.div>
 
-        <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.36 }} className="lg:col-span-2 rounded-xl p-5"
-          style={{ background: tc.cardBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}>
-          <div className="flex items-center justify-between mb-5">
+        {/* Schedule status */}
+        <motion.div {...fadeUp} transition={{ duration: 0.3, delay: 0.24 }}
+          className="lg:col-span-5 rounded-xl p-[17px]"
+          style={cardStyle(tc)}>
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <h2 className="text-[15px] font-semibold" style={{ color: tc.textPrimary }}>Schedule Status</h2>
-              <p className="text-[12px] mt-0.5" style={{ color: tc.textFaint }}>{totalSch} room schedules</p>
+              <h2 className="text-[17px] font-semibold" style={{ color: tc.textPrimary }}>Schedule Status</h2>
+              <p className="text-[14px] mt-0.5" style={{ color: tc.textFaint }}>{totalSch} room schedules</p>
             </div>
-            {completionRate > 0 && <span className="text-[22px] font-bold" style={{ color: 'rgb(16,185,129)' }}>{completionRate}%</span>}
+            {completionRate > 0 && <span className="text-[21px] font-bold tabular-nums" style={{ color: 'rgb(16,185,129)' }}>{completionRate}%</span>}
           </div>
-          <div className="space-y-2.5">
-            <StatusRow icon={<Clock className="w-3.5 h-3.5" />} label="Pending" count={scheduleCounts.pending} color="#f59e0b" tc={tc} />
-            <StatusRow icon={<Loader2 className="w-3.5 h-3.5" />} label="In Progress" count={scheduleCounts.inProgress} color="#6366f1" tc={tc} />
-            <StatusRow icon={<CheckCircle2 className="w-3.5 h-3.5" />} label="Completed" count={scheduleCounts.completed} color="#10b981" tc={tc} />
-            <StatusRow icon={<AlertCircle className="w-3.5 h-3.5" />} label="Overdue" count={scheduleCounts.overdue} color="#ef4444" tc={tc} />
+          <div className="space-y-1.5">
+            <StatusRow icon={<Clock className="w-[17px] h-[17px]" />} label="Pending" count={scheduleCounts.pending} color="#f59e0b" tc={tc} />
+            <StatusRow icon={<Loader2 className="w-[17px] h-[17px]" />} label="In Progress" count={scheduleCounts.inProgress} color="#6366f1" tc={tc} />
+            <StatusRow icon={<CheckCircle2 className="w-[17px] h-[17px]" />} label="Completed" count={scheduleCounts.completed} color="#10b981" tc={tc} />
+            <StatusRow icon={<AlertCircle className="w-[17px] h-[17px]" />} label="Overdue" count={scheduleCounts.overdue} color="#ef4444" tc={tc} />
           </div>
           {totalSch > 0 && (
-            <div className="mt-4 h-1.5 rounded-full overflow-hidden flex" style={{ background: tc.progressBg }}>
+            <div className="mt-3 h-2 rounded-full overflow-hidden flex" style={{ background: tc.progressBg }}>
               {scheduleCounts.completed > 0 && <div className="h-full" style={{ width: `${(scheduleCounts.completed / totalSch) * 100}%`, background: '#10b981' }} />}
               {scheduleCounts.inProgress > 0 && <div className="h-full" style={{ width: `${(scheduleCounts.inProgress / totalSch) * 100}%`, background: '#6366f1' }} />}
               {scheduleCounts.pending > 0 && <div className="h-full" style={{ width: `${(scheduleCounts.pending / totalSch) * 100}%`, background: 'rgba(245,158,11,0.5)' }} />}
@@ -201,100 +214,102 @@ export function DashboardOverview() {
             </div>
           )}
         </motion.div>
-      </div>
 
-      {/* Rooms + Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 mb-6">
-        <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.42 }} className="lg:col-span-2 rounded-xl p-5"
-          style={{ background: tc.cardBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[15px] font-semibold" style={{ color: tc.textPrimary }}>Rooms by Type</h2>
-            <Link href="/rooms" className="text-[11px] font-medium transition-colors" style={{ color: tc.textFaint }}
+        {/* Rooms by type */}
+        <motion.div {...fadeUp} transition={{ duration: 0.3, delay: 0.28 }}
+          className="lg:col-span-4 rounded-xl p-[17px]"
+          style={cardStyle(tc)}>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-[17px] font-semibold" style={{ color: tc.textPrimary }}>Rooms by Type</h2>
+            <Link href="/rooms" className="text-[14px] font-medium transition-colors" style={{ color: tc.textFaint }}
               onMouseEnter={(e) => e.currentTarget.style.color = 'rgb(16,185,129)'}
               onMouseLeave={(e) => e.currentTarget.style.color = tc.textFaint}>View all &rarr;</Link>
           </div>
           <div className="space-y-2">
-            {Object.entries(roomTypes).sort(([,a],[,b]) => b - a).slice(0,6).map(([type, count]) => {
+            {Object.entries(roomTypes).sort(([,a],[,b]) => b - a).slice(0,5).map(([type, count]) => {
               const pct = Math.round((count / (stats.totalRooms || 1)) * 100)
               return (
                 <div key={type}>
                   <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <RoomTypeIcon type={type} tc={tc} />
-                      <span className="text-[12px] font-medium" style={{ color: tc.textSecondary }}>{formatRoomType(type)}</span>
+                      <span className="text-[14px] font-medium truncate" style={{ color: tc.textSecondary }}>{formatRoomType(type)}</span>
                     </div>
-                    <span className="text-[12px] font-semibold tabular-nums" style={{ color: tc.textMuted }}>{count}</span>
+                    <span className="text-[15px] font-semibold tabular-nums ml-2 flex-shrink-0" style={{ color: tc.textMuted }}>{count}</span>
                   </div>
-                  <div className="h-1 rounded-full overflow-hidden" style={{ background: tc.progressBg }}>
-                    <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.6, delay: 0.5 }} className="h-full rounded-full" style={{ background: 'rgba(16,185,129,0.4)' }} />
+                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: tc.progressBg }}>
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.5, delay: 0.35 }} className="h-full rounded-full" style={{ background: 'rgba(16,185,129,0.45)' }} />
                   </div>
                 </div>
               )
             })}
-            {Object.keys(roomTypes).length > 6 && (
-              <div className="flex items-center gap-2 pt-1">
-                <MoreHorizontal className="w-3.5 h-3.5" style={{ color: tc.textFaint }} />
-                <span className="text-[11px]" style={{ color: tc.textFaint }}>+{Object.keys(roomTypes).length - 6} more</span>
+            {Object.keys(roomTypes).length === 0 && (
+              <p className="text-[14px] py-4 text-center" style={{ color: tc.textFaint }}>No rooms yet</p>
+            )}
+            {Object.keys(roomTypes).length > 5 && (
+              <div className="flex items-center gap-2 pt-0.5">
+                <MoreHorizontal className="w-[17px] h-[17px]" style={{ color: tc.textFaint }} />
+                <span className="text-[14px]" style={{ color: tc.textFaint }}>+{Object.keys(roomTypes).length - 5} more</span>
               </div>
             )}
           </div>
         </motion.div>
 
-        <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.48 }} className="lg:col-span-3 rounded-xl p-5"
-          style={{ background: tc.cardBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}>
-          <h2 className="text-[15px] font-semibold mb-4" style={{ color: tc.textPrimary }}>Recent Activity</h2>
+        {/* Recent activity */}
+        <motion.div {...fadeUp} transition={{ duration: 0.3, delay: 0.32 }}
+          className="lg:col-span-5 rounded-xl p-[17px] flex flex-col min-h-0"
+          style={cardStyle(tc)}>
+          <h2 className="text-[17px] font-semibold mb-2" style={{ color: tc.textPrimary }}>Recent Activity</h2>
           {stats.recentActivity.length > 0 ? (
-            <div className="space-y-1">
-              {stats.recentActivity.slice(0, 6).map((item, index) => (
+            <div className="space-y-0.5 flex-1 min-h-0">
+              {stats.recentActivity.slice(0, 5).map((item, index) => (
                 <ActivityItem key={item.id || index} activity={item} tc={tc} />
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-10">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3" style={{ background: tc.emptyBg }}>
-                <Activity className="w-5 h-5" style={{ color: tc.textFaint }} />
+            <div className="flex flex-col items-center justify-center py-6 flex-1">
+              <div className="w-[41px] h-[41px] rounded-full flex items-center justify-center mb-2" style={{ background: tc.emptyBg }}>
+                <Activity className="w-[21px] h-[21px]" style={{ color: tc.textFaint }} />
               </div>
-              <p className="text-[13px] font-medium" style={{ color: tc.textMuted }}>No recent activity</p>
-              <p className="text-[11px] mt-1" style={{ color: tc.textFaint }}>Activity will appear as tasks are completed</p>
+              <p className="text-[15px] font-medium" style={{ color: tc.textMuted }}>No recent activity</p>
+              <p className="text-[14px] mt-0.5" style={{ color: tc.textFaint }}>Activity appears as tasks are completed</p>
             </div>
           )}
         </motion.div>
-      </div>
 
-      {/* Quick Actions */}
-      <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.54 }}>
-        <h2 className="text-[15px] font-semibold mb-3" style={{ color: tc.textPrimary }}>Quick Actions</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {quickActions.map((a) => (
-            <Link key={a.name} href={a.href}
-              className="group block rounded-xl p-4 transition-all duration-200 relative overflow-hidden"
-              style={{ background: tc.cardBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = tc.cardHoverBorder(a.accent) }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = tc.cardBorder }}>
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-3" style={{ background: `${a.accent}${tc.iconBgAlpha}` }}>
-                <a.icon className="w-4 h-4" style={{ color: a.accent }} strokeWidth={1.8} />
-              </div>
-              <div className="flex items-center justify-between">
-                <h3 className="text-[13px] font-semibold" style={{ color: tc.textPrimary }}>{a.name}</h3>
-                <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-60 -translate-x-1 group-hover:translate-x-0 transition-all duration-200" style={{ color: a.accent }} />
-              </div>
-              <p className="text-[11px] mt-1 leading-relaxed" style={{ color: tc.textMuted }}>{a.desc}</p>
-            </Link>
-          ))}
-        </div>
-      </motion.div>
+        {/* Quick actions — compact vertical list */}
+        <motion.div {...fadeUp} transition={{ duration: 0.3, delay: 0.36 }}
+          className="lg:col-span-3 rounded-xl p-[17px]"
+          style={cardStyle(tc)}>
+          <h2 className="text-[17px] font-semibold mb-2" style={{ color: tc.textPrimary }}>Quick Actions</h2>
+          <nav className="space-y-1">
+            {quickActions.map((a) => (
+              <Link key={a.name} href={a.href}
+                className="group flex items-center gap-3 rounded-lg px-[11px] py-[11px] transition-all duration-150"
+                onMouseEnter={(e) => { e.currentTarget.style.background = tc.hoverRow; e.currentTarget.style.borderColor = tc.cardHoverBorder(a.accent) }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}>
+                <div className="w-[33px] h-[33px] rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: `${a.accent}${tc.iconBgAlpha}` }}>
+                  <a.icon className="w-[17px] h-[17px]" style={{ color: a.accent }} strokeWidth={1.8} />
+                </div>
+                <span className="text-[15px] font-medium flex-1 min-w-0" style={{ color: tc.textPrimary }}>{a.name}</span>
+                <ArrowRight className="w-[17px] h-[17px] flex-shrink-0 opacity-30 group-hover:opacity-70 group-hover:translate-x-0.5 transition-all" style={{ color: a.accent }} />
+              </Link>
+            ))}
+          </nav>
+        </motion.div>
+      </div>
     </div>
   )
 }
 
 function StatusRow({ icon, label, count, color, tc }: { icon: React.ReactNode; label: string; count: number; color: string; tc: ReturnType<typeof useThemeColors> }) {
   return (
-    <div className="flex items-center justify-between py-1.5">
+    <div className="flex items-center justify-between py-1">
       <div className="flex items-center gap-2.5">
-        <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: `${color}${tc.iconBgAlpha}`, color }}>{icon}</div>
-        <span className="text-[12px] font-medium" style={{ color: tc.textSecondary }}>{label}</span>
+        <div className="w-[29px] h-[29px] rounded-md flex items-center justify-center flex-shrink-0" style={{ background: `${color}${tc.iconBgAlpha}`, color }}>{icon}</div>
+        <span className="text-[15px] font-medium" style={{ color: tc.textSecondary }}>{label}</span>
       </div>
-      <span className="text-[13px] font-bold tabular-nums" style={{ color: count > 0 ? color : tc.textFaint }}>{count}</span>
+      <span className="text-[16px] font-bold tabular-nums" style={{ color: count > 0 ? color : tc.textFaint }}>{count}</span>
     </div>
   )
 }
@@ -306,18 +321,18 @@ function ActivityItem({ activity, tc }: { activity: any; tc: ReturnType<typeof u
   else if (activity.type === 'equipment_completion') dotColor = '#f59e0b'
   else if (activity.type === 'user_activity') dotColor = '#6366f1'
   return (
-    <div className="flex items-center gap-3 py-2 rounded-lg px-2 transition-colors duration-100"
+    <div className="flex items-center gap-2.5 py-2 rounded-lg px-2 transition-colors duration-100"
       onMouseEnter={(e) => e.currentTarget.style.background = tc.hoverRow}
       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: dotColor }} />
-      <p className="text-[12px] font-medium flex-1 min-w-0 truncate" style={{ color: tc.textSecondary }}>{activity.description || activity.title || 'Unknown activity'}</p>
-      <span className="text-[10px] font-medium flex-shrink-0 tabular-nums" style={{ color: tc.textFaint }}>{timeAgo}</span>
+      <div className="w-[9px] h-[9px] rounded-full flex-shrink-0" style={{ background: dotColor }} />
+      <p className="text-[15px] font-medium flex-1 min-w-0 truncate" style={{ color: tc.textSecondary }}>{activity.description || activity.title || 'Unknown activity'}</p>
+      <span className="text-[13px] font-medium flex-shrink-0 tabular-nums" style={{ color: tc.textFaint }}>{timeAgo}</span>
     </div>
   )
 }
 
 function RoomTypeIcon({ type, tc }: { type: string; tc: ReturnType<typeof useThemeColors> }) {
-  const s = { color: tc.textMuted }; const c = "w-3.5 h-3.5"
+  const s = { color: tc.textMuted }; const c = "w-[17px] h-[17px] flex-shrink-0"
   switch (type) {
     case 'BEDROOM': return <BedDouble className={c} style={s} />
     case 'OFFICE': return <Building2 className={c} style={s} />

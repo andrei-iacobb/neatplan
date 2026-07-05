@@ -6,114 +6,134 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { apiRequest } from "@/lib/url-utils"
 
 const taskSchema = z.object({
-  roomNumber: z.string().min(1, "Room number is required"),
-  floor: z.string().min(1, "Floor is required"),
-  description: z.string().optional(),
-  priority: z.enum(["low", "medium", "high"]),
-  dueDate: z.string().min(1, "Due date is required"),
+  taskDescription: z.string().min(1, "Task description is required"),
+  frequency: z.string().min(1, "Frequency is required"),
+  estimatedDuration: z.string().min(1, "Estimated duration is required"),
+  roomId: z.string().optional(),
 })
 
 type TaskValues = z.infer<typeof taskSchema>
 
-export function CleaningTaskForm() {
+interface Room {
+  id: string
+  name: string
+}
+
+interface CleaningTaskFormProps {
+  rooms: Room[]
+  onCreated?: () => void
+}
+
+export function CleaningTaskForm({ rooms, onCreated }: CleaningTaskFormProps) {
   const [isLoading, setIsLoading] = useState(false)
-  
+  const [error, setError] = useState<string | null>(null)
+
   const form = useForm<TaskValues>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
-      roomNumber: "",
-      floor: "",
-      description: "",
-      priority: "medium",
-      dueDate: new Date().toISOString().split("T")[0],
+      taskDescription: "",
+      frequency: "Weekly",
+      estimatedDuration: "30 min",
+      roomId: "",
     },
   })
 
   async function onSubmit(data: TaskValues) {
     setIsLoading(true)
-    // TODO: Implement task creation logic
-    console.log(data)
-    setIsLoading(false)
+    setError(null)
+
+    try {
+      const response = await apiRequest("/api/cleaning-tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          taskDescription: data.taskDescription,
+          frequency: data.frequency,
+          estimatedDuration: data.estimatedDuration,
+          roomId: data.roomId || undefined,
+        }),
+      })
+
+      const result = await response.json()
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to create task")
+      }
+
+      form.reset()
+      onCreated?.()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create task")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
-    <div className="grid gap-6 p-6 bg-white rounded-lg shadow-sm">
-      <h2 className="text-2xl font-semibold tracking-tight">Create Cleaning Task</h2>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid gap-2">
-          <label className="text-sm font-medium">Room Number</label>
+    <div className="grid gap-4 p-4 rounded-lg bg-black/20 backdrop-blur-sm border border-white/5">
+      <h2 className="text-lg font-medium text-gray-100">Create Cleaning Task</h2>
+      {error && (
+        <p className="text-sm text-red-300">{error}</p>
+      )}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+        <div className="grid gap-1">
+          <label className="text-sm font-medium text-gray-300">Task Description</label>
           <Input
-            {...form.register("roomNumber")}
-            placeholder="e.g., 101"
+            {...form.register("taskDescription")}
+            placeholder="e.g., Deep clean carpets"
             disabled={isLoading}
+            className="bg-gray-800/50 border-gray-700 text-gray-100"
           />
-          {form.formState.errors.roomNumber && (
-            <p className="text-sm text-red-500">
-              {form.formState.errors.roomNumber.message}
+          {form.formState.errors.taskDescription && (
+            <p className="text-sm text-red-400">
+              {form.formState.errors.taskDescription.message}
             </p>
           )}
         </div>
 
-        <div className="grid gap-2">
-          <label className="text-sm font-medium">Floor</label>
-          <Input
-            {...form.register("floor")}
-            placeholder="e.g., 1st Floor"
-            disabled={isLoading}
-          />
-          {form.formState.errors.floor && (
-            <p className="text-sm text-red-500">
-              {form.formState.errors.floor.message}
-            </p>
-          )}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-1">
+            <label className="text-sm font-medium text-gray-300">Frequency</label>
+            <Input
+              {...form.register("frequency")}
+              placeholder="e.g., Weekly"
+              disabled={isLoading}
+              className="bg-gray-800/50 border-gray-700 text-gray-100"
+            />
+          </div>
+          <div className="grid gap-1">
+            <label className="text-sm font-medium text-gray-300">Duration</label>
+            <Input
+              {...form.register("estimatedDuration")}
+              placeholder="e.g., 30 min"
+              disabled={isLoading}
+              className="bg-gray-800/50 border-gray-700 text-gray-100"
+            />
+          </div>
         </div>
 
-        <div className="grid gap-2">
-          <label className="text-sm font-medium">Description (Optional)</label>
-          <textarea
-            {...form.register("description")}
-            className="min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm"
-            placeholder="Add any special instructions or notes..."
-            disabled={isLoading}
-          />
-        </div>
-
-        <div className="grid gap-2">
-          <label className="text-sm font-medium">Priority</label>
+        <div className="grid gap-1">
+          <label className="text-sm font-medium text-gray-300">Room (optional)</label>
           <select
-            {...form.register("priority")}
-            className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm"
+            {...form.register("roomId")}
+            className="w-full rounded-md border border-gray-700 bg-gray-800/50 px-3 py-2 text-sm text-gray-100"
             disabled={isLoading}
           >
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
+            <option value="">Unassigned</option>
+            {rooms.map((room) => (
+              <option key={room.id} value={room.id}>
+                {room.name}
+              </option>
+            ))}
           </select>
         </div>
 
-        <div className="grid gap-2">
-          <label className="text-sm font-medium">Due Date</label>
-          <Input
-            {...form.register("dueDate")}
-            type="date"
-            disabled={isLoading}
-          />
-          {form.formState.errors.dueDate && (
-            <p className="text-sm text-red-500">
-              {form.formState.errors.dueDate.message}
-            </p>
-          )}
-        </div>
-
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading && (
-            <div className="mr-2 h-4 w-4 animate-spin" />
-          )}
-          Create Task
+        <Button type="submit" disabled={isLoading} className="w-full">
+          {isLoading ? "Creating..." : "Create Task"}
         </Button>
       </form>
     </div>
   )
-} 
+}

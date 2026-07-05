@@ -4,12 +4,16 @@
   "private": true,
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 4040",
+    "dev:3030": "next dev -H 0.0.0.0 -p 3030",
     "build": "next build",
     "build:no-lint": "cross-env NEXT_DISABLE_ESLINT_PLUGIN=1 next build",
     "build:static": "NEXT_OUTPUT=export next build",
     "start": "next start",
     "start:prod": "NODE_ENV=production next start",
     "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "prisma:seed": "ts-node prisma/seed.ts",
     "validate-env": "node scripts/validate-env.js",
     "deploy:static": "npm run validate-env && npm run build:static && echo 'Static files built in ./out directory'",
@@ -63,9 +67,20 @@
     "eslint-config-next": "15.3.2",
     "prisma": "^6.8.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4",
+    "@playwright/test": "^1.52.0"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma",
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }

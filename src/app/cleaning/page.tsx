@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { apiRequest } from '@/lib/url-utils'
+import { CleaningTaskForm } from '@/components/tasks/cleaning-task-form'
 
 interface CleaningTask {
   id: string
@@ -29,6 +30,8 @@ export default function CleaningPage() {
   const [rooms, setRooms] = useState<Room[]>([])
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [selectedRoomForTask, setSelectedRoomForTask] = useState<string>("")
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const isAdmin = Boolean((session?.user as { isAdmin?: boolean } | undefined)?.isAdmin)
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -76,9 +79,9 @@ export default function CleaningPage() {
     setError(null)
 
     try {
-      const response = await apiRequest('/api/process-document', {
+      const response = await apiRequest('/api/process-document?async=true', {
         method: 'POST',
-        body: formData
+        body: formData,
       })
 
       const data = await response.json()
@@ -87,8 +90,31 @@ export default function CleaningPage() {
         throw new Error(data.error || 'Failed to process document')
       }
 
-      // Refresh tasks list
-      fetchTasks()
+      if (data.jobId) {
+        await pollDocumentJob(data.jobId)
+      } else {
+        fetchTasks()
+      }
+
+  async function pollDocumentJob(jobId: string) {
+    const maxAttempts = 120
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const response = await apiRequest(`/api/process-document/jobs/${jobId}`)
+      const job = await response.json()
+      if (!response.ok) {
+        throw new Error(job.error || 'Failed to check job status')
+      }
+      if (job.status === 'COMPLETED') {
+        fetchTasks()
+        return
+      }
+      if (job.status === 'FAILED') {
+        throw new Error(job.error || 'Document processing failed')
+      }
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+    }
+    throw new Error('Document processing timed out')
+  }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to process document')
     } finally {
@@ -156,6 +182,14 @@ export default function CleaningPage() {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-semibold text-gray-100">Cleaning Schedule</h1>
           <div className="flex space-x-3">
+            {isAdmin && (
+              <button
+                onClick={() => setShowCreateForm((prev) => !prev)}
+                className="px-4 py-2 bg-white/5 text-gray-300 rounded-md border border-white/10 hover:bg-white/10 transition-colors"
+              >
+                {showCreateForm ? 'Hide Form' : 'Create Task'}
+              </button>
+            )}
             <label className="px-4 py-2 bg-teal-500/10 text-teal-300 rounded-md border border-teal-500/30 hover:bg-teal-500/20 transition-colors cursor-pointer">
               Upload Schedule
               <input
@@ -172,6 +206,12 @@ export default function CleaningPage() {
         {error && (
           <div className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
             <p className="text-red-300">{error}</p>
+          </div>
+        )}
+
+        {showCreateForm && isAdmin && (
+          <div className="mb-6">
+            <CleaningTaskForm rooms={rooms} onCreated={fetchTasks} />
           </div>
         )}
 

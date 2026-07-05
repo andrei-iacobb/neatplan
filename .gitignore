@@ -20,8 +20,8 @@
 # production
 /build
 
-# misc
-.DS_Store
+# document job uploads (temporary files)
+/data/document-jobs/
 *.pem
 *.bak
 *.fix
@@ -54,3 +54,7 @@ src/generated/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# test artifacts
+test-results/
+playwright-report/

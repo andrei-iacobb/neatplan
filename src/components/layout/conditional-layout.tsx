@@ -26,8 +26,8 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
     return (
       <div className="flex h-full">
         <Sidebar />
-        <div className="flex-1 flex flex-col ml-[60px] min-h-0">
-          <main className="flex-1 overflow-auto p-6">
+        <div className="flex-1 flex flex-col md:ml-[60px] min-h-0 relative z-10">
+          <main className="flex-1 overflow-auto p-4 sm:p-6 pt-16 md:pt-6 relative">
             {children}
           </main>
           <Footer />

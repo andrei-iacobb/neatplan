@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { emailService } from '@/lib/email'
+import { cleanupStaleSessions } from '@/lib/session-cleanup'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: Request) {
   try {
@@ -47,6 +49,7 @@ export async function GET(request: Request) {
     const roomCount = overdueRoomSchedules.count
     const equipmentCount = overdueEquipmentSchedules.count
     const totalOverdue = roomCount + equipmentCount
+    const sessionsCleaned = await cleanupStaleSessions()
 
     // Send email alerts to admins if any items were newly marked overdue
     if (totalOverdue > 0) {
@@ -69,10 +72,11 @@ export async function GET(request: Request) {
       message: `Updated ${roomCount} overdue room schedules and ${equipmentCount} overdue equipment schedules`,
       roomCount,
       equipmentCount,
-      totalOverdue
+      totalOverdue,
+      sessionsCleaned,
     })
   } catch (error) {
-    console.error('Error checking schedules:', error)
+    logger.error('Error checking schedules', error)
     return NextResponse.json(
       { error: 'Failed to check schedules' },
       { status: 500 }

@@ -4,74 +4,68 @@ echo NeatPlan Windows Installation Script
 echo ========================================
 echo.
 
-:: Check if Node.js is installed
 node --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ERROR: Node.js is not installed!
-    echo Please install Node.js 18+ from https://nodejs.org/
+    echo ERROR: Node.js 18+ is required. Install from https://nodejs.org/
     pause
     exit /b 1
 )
 
-echo Node.js found: 
+where pnpm >nul 2>&1
+if %errorlevel% neq 0 (
+    echo Installing pnpm...
+    call npm install -g pnpm
+)
+
+echo Node.js:
 node --version
+echo.
+
+echo Installing dependencies...
+call pnpm install
+if %errorlevel% neq 0 exit /b 1
 
 echo.
-echo Installing npm dependencies...
-call npm install
+echo Validating environment...
+call pnpm run validate-env
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to install dependencies
+    echo Fix .env before continuing. See env.example.
     pause
     exit /b 1
 )
 
 echo.
 echo Generating Prisma client...
-call npx prisma generate
+call pnpm exec prisma generate
+if %errorlevel% neq 0 exit /b 1
+
+echo.
+echo Applying database schema...
+call pnpm exec prisma migrate deploy
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to generate Prisma client
-    pause
-    exit /b 1
+    call pnpm exec prisma db push
 )
 
 echo.
-echo Setting up database schema...
-call npx prisma db push
+echo Seeding database (optional)...
+call pnpm run prisma:seed
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to setup database schema
-    echo Please check your DATABASE_URL in .env file
-    pause
-    exit /b 1
-)
-
-echo.
-echo Seeding database with sample data...
-call npx prisma db seed
-if %errorlevel% neq 0 (
-    echo WARNING: Failed to seed database (this might be okay if data already exists)
+    echo WARNING: Seed skipped or failed — may already exist.
 )
 
 echo.
 echo Building application...
-call npm run build
-if %errorlevel% neq 0 (
-    echo ERROR: Failed to build application
-    pause
-    exit /b 1
-)
+call pnpm run build:no-lint
+if %errorlevel% neq 0 exit /b 1
 
 echo.
 echo ========================================
-echo Installation completed successfully!
+echo Installation complete
 echo ========================================
 echo.
-echo Next steps:
-echo 1. Make sure your .env file is configured correctly
-echo 2. Run 'start.bat' to start the application
-echo 3. Access the application at http://localhost:3000
+echo 1. Confirm .env is configured
+echo 2. Run start.bat
+echo 3. Open http://localhost:4040
+echo 4. Use credentials from prisma/seed.ts and change passwords immediately
 echo.
-echo Default login credentials:
-echo Admin: admin@neatplan.com / admin123
-echo Cleaner: cleaner@neatplan.com / cleaner123
-echo.
-pause 
+pause

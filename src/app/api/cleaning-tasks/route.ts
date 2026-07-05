@@ -25,3 +25,50 @@ export async function GET() {
     )
   }
 }
+
+export async function POST(request: Request) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    if (!(session.user as { isAdmin?: boolean }).isAdmin) {
+      return NextResponse.json({ error: 'Forbidden: admin access required' }, { status: 403 })
+    }
+
+    const body = await request.json()
+    const { taskDescription, frequency, estimatedDuration, roomId } = body
+
+    if (!taskDescription?.trim() || !frequency?.trim() || !estimatedDuration?.trim()) {
+      return NextResponse.json(
+        { error: 'taskDescription, frequency, and estimatedDuration are required' },
+        { status: 400 }
+      )
+    }
+
+    if (roomId) {
+      const room = await prisma.room.findUnique({ where: { id: roomId } })
+      if (!room) {
+        return NextResponse.json({ error: 'Room not found' }, { status: 404 })
+      }
+    }
+
+    const task = await prisma.cleaningTask.create({
+      data: {
+        taskDescription: taskDescription.trim(),
+        frequency: frequency.trim(),
+        estimatedDuration: estimatedDuration.trim(),
+        roomId: roomId || null,
+      },
+    })
+
+    return NextResponse.json(task, { status: 201 })
+  } catch (error) {
+    console.error('Error creating cleaning task:', error)
+    return NextResponse.json(
+      { error: 'Error creating cleaning task' },
+      { status: 500 }
+    )
+  }
+}

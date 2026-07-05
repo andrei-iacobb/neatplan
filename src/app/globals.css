@@ -112,7 +112,7 @@
     --vignette-opacity: 0.08;
   }
 
-  html { scroll-behavior: smooth; }
+  html { scroll-behavior: smooth; scrollbar-gutter: stable; }
 
   body {
     background-color: rgb(var(--background));
@@ -139,6 +139,34 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* Honor the OS reduced-motion preference, not just the in-app toggle */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Accessible keyboard focus ring on every interactive element */
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  summary:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid rgb(16 185 129 / 0.6);
+    outline-offset: 2px;
+  }
+
+  /* Brand-tinted text selection */
+  ::selection {
+    background: rgb(16 185 129 / 0.22);
   }
 }
 

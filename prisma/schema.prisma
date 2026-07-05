@@ -28,6 +28,8 @@ model User {
   failedLoginCount        Int          @default(0)
   lastFailedLoginAt       DateTime?
   settings                Json?
+  totpSecret              String?
+  totpEnabled             Boolean      @default(false)
 
   @@map("users")
 }
@@ -253,4 +255,29 @@ model UserSession {
 enum UserRole {
   ADMIN
   CLEANER
+}
+
+enum DocumentJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model DocumentJob {
+  id          String            @id @default(cuid())
+  userId      String
+  fileName    String
+  fileType    String
+  filePath    String
+  status      DocumentJobStatus @default(PENDING)
+  result      Json?
+  error       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  completedAt DateTime?
+
+  @@index([userId, status])
+  @@index([createdAt])
+  @@map("document_jobs")
 }

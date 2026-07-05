@@ -24,7 +24,7 @@ if %errorLevel% neq 0 (
 echo Node.js: OK
 
 echo [2/6] Installing dependencies...
-npm install
+pnpm install
 if %errorLevel% neq 0 (
     echo Failed to install dependencies!
     pause
@@ -32,10 +32,10 @@ if %errorLevel% neq 0 (
 )
 
 echo [3/6] Building application...
-npm run build:no-lint
+pnpm runbuild:no-lint
 if %errorLevel% neq 0 (
     echo Build failed! Trying alternative build...
-    npm run build
+    pnpm runbuild
     if %errorLevel% neq 0 (
         echo All build attempts failed!
         pause
@@ -47,8 +47,8 @@ echo [4/6] Creating logs directory...
 if not exist "logs" mkdir logs
 
 echo [5/6] Installing PM2 globally...
-npm install -g pm2
-npm install -g pm2-windows-service
+pnpm install -g pm2
+pnpm install -g pm2-windows-service
 
 echo [6/6] Setting up environment...
 if not exist ".env.production" (
@@ -82,8 +82,8 @@ echo ===============================================
 echo.
 echo Next steps:
 echo 1. Edit .env.production with your configuration
-echo 2. Run database migrations: npx prisma migrate deploy
-echo 3. Start the application: pm2 start ecosystem.config.js --env production
+echo 2. Run database migrations: pnpm exec prisma migrate deploy
+echo 3. Start the application: pm2 start ecosystem.config.js
 echo 4. Save PM2 config: pm2 save
 echo 5. Install as Windows service: pm2-service-install
 echo.

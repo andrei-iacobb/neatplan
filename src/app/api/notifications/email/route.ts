@@ -14,6 +14,41 @@ interface EmailRequest {
   data: any
 }
 
+interface UserNotificationSettings {
+  notifications?: {
+    email?: boolean
+    taskReminders?: boolean
+    scheduleUpdates?: boolean
+    systemAlerts?: boolean
+  }
+}
+
+function isNotificationEnabled(
+  settings: unknown,
+  type: EmailRequest['type']
+): boolean {
+  const prefs = (settings ?? {}) as UserNotificationSettings
+  const notifications = prefs.notifications
+
+  if (notifications?.email === false) {
+    return false
+  }
+
+  switch (type) {
+    case 'task_reminder':
+      return notifications?.taskReminders !== false
+    case 'schedule_update':
+      return notifications?.scheduleUpdates !== false
+    case 'system_alert':
+      return notifications?.systemAlerts !== false
+    case 'completion_notice':
+      // The master `email === false` switch is handled above; if we reach here it's enabled.
+      return true
+    default:
+      return true
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Rate limit per user: 20 notifications per hour
@@ -46,13 +81,19 @@ export async function POST(request: NextRequest) {
 
     if (recipientId) {
       targetUser = await prisma.user.findUnique({
-        where: { id: recipientId }
+        where: { id: recipientId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          notificationEmail: true,
+          settings: true,
+        },
       })
       if (!targetUser) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 })
       }
-      // Use notification email if set, otherwise fallback to login email
-      targetEmail = targetUser.email
+      targetEmail = targetUser.notificationEmail || targetUser.email
     }
 
     if (!targetEmail) {
@@ -68,15 +109,29 @@ export async function POST(request: NextRequest) {
       }, { status: 200 })
     }
 
-    // TODO: Check user notification preferences from database
-    // For now, assume notifications are enabled
-    const notificationsEnabled = true
-
-    if (!notificationsEnabled) {
-      return NextResponse.json({ 
-        message: 'Email notifications disabled for user',
-        sent: false 
-      }, { status: 200 })
+    if (recipientId && targetUser) {
+      if (!isNotificationEnabled(targetUser.settings, type)) {
+        return NextResponse.json({
+          message: 'Email notifications disabled for user',
+          sent: false,
+        }, { status: 200 })
+      }
+    } else if (recipientEmail) {
+      const userByEmail = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { email: recipientEmail },
+            { notificationEmail: recipientEmail },
+          ],
+        },
+        select: { settings: true },
+      })
+      if (userByEmail && !isNotificationEnabled(userByEmail.settings, type)) {
+        return NextResponse.json({
+          message: 'Email notifications disabled for user',
+          sent: false,
+        }, { status: 200 })
+      }
     }
 
     // Send notification based on type

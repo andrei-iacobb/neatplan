@@ -23,6 +23,7 @@ import { useSettings } from '@/contexts/settings-context'
 import { useSoundEffects } from '@/hooks/useSoundEffects'
 import { useThemeColors } from '@/hooks/useThemeColors'
 import { SMTPConfiguration } from '@/components/admin/smtp-configuration'
+import { TotpSettings } from '@/components/admin/totp-settings'
 
 const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } }
 
@@ -162,9 +163,9 @@ export default function SettingsPage() {
         <p className="text-[15px]" style={{ color: tc.textMuted }}>Manage your preferences and account settings</p>
       </div>
 
-      <div className="flex gap-6">
+      <div className="flex flex-col md:flex-row gap-6">
         {/* Sidebar Navigation */}
-        <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.05 }} className="w-56 flex-shrink-0">
+        <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.05 }} className="w-full md:w-56 flex-shrink-0">
           <div className="rounded-xl p-3 sticky top-6" style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}>
             <nav className="space-y-1">
               {tabs.map((tab) => (
@@ -482,6 +483,13 @@ export default function SettingsPage() {
                 className="space-y-6"
               >
                 <h2 className="text-[17px] font-semibold mb-4" style={{ color: tc.textPrimary }}>Privacy & Security</h2>
+
+                {session?.user?.isAdmin && (
+                  <div className="p-4 rounded-lg mb-6" style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder }}>
+                    <h3 className="text-[14px] font-medium mb-3" style={{ color: tc.textPrimary }}>Admin two-factor authentication</h3>
+                    <TotpSettings />
+                  </div>
+                )}
 
                 <div className="space-y-6">
                   <div>

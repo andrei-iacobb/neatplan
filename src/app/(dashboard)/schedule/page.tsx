@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useThemeColors } from '@/hooks/useThemeColors'
-import { ScheduleUploader } from '@/components/ScheduleUploader'
+import { ScheduleImport } from '@/components/ScheduleImport'
 import { ScheduleDialog } from '@/components/ScheduleDialog'
 import { ScheduleList } from '@/components/ScheduleList'
 import { Settings2, Sparkles } from 'lucide-react'
@@ -41,10 +41,6 @@ function SchedulePageContent() {
   useEffect(() => {
     fetchSchedules()
   }, [])
-
-  const handleScheduleGenerated = (schedule: Schedule & { tasks: ScheduleTask[] }) => {
-    setSchedules(prev => [...prev, schedule])
-  }
 
   return (
     <div className="max-w-[1100px] mx-auto relative z-10 pb-8">
@@ -84,22 +80,34 @@ function SchedulePageContent() {
 
       {/* Actions - Only visible in edit mode */}
       {isEditMode && (
-        <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.06 }} className="grid sm:grid-cols-2 gap-3 mb-6">
+        <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.06 }} className="space-y-3 mb-6">
           <div
             className="rounded-xl p-5"
             style={{ background: tc.cardBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}
           >
-            <h2 className="text-[15px] font-semibold mb-4" style={{ color: tc.textPrimary }}>Upload Schedule</h2>
-            <ScheduleUploader onScheduleGenerated={handleScheduleGenerated} />
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[15px] font-semibold" style={{ color: tc.textPrimary }}>Import from a document</h2>
+              <span
+                className="text-[11px] font-medium px-2 py-0.5 rounded-full"
+                style={{ background: tc.chipBg(true), color: tc.accentGreen }}
+              >
+                AI
+              </span>
+            </div>
+            <ScheduleImport onSaved={fetchSchedules} />
           </div>
 
           <div
             className="rounded-xl p-5"
             style={{ background: tc.cardBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}
           >
-            <h2 className="text-[15px] font-semibold mb-4" style={{ color: tc.textPrimary }}>Create Schedule</h2>
-            <p className="text-[13px] mb-4" style={{ color: tc.textSecondary }}>Create a new cleaning schedule manually with custom tasks and frequencies.</p>
-            <ScheduleDialog onScheduleCreated={fetchSchedules} />
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <h2 className="text-[15px] font-semibold mb-1" style={{ color: tc.textPrimary }}>Create manually</h2>
+                <p className="text-[13px]" style={{ color: tc.textSecondary }}>Build a schedule from scratch with custom tasks and frequencies.</p>
+              </div>
+              <ScheduleDialog onScheduleCreated={fetchSchedules} />
+            </div>
           </div>
         </motion.div>
       )}
