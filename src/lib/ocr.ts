@@ -62,11 +62,16 @@ export async function ocrImageToText(buffer: Buffer): Promise<string> {
 }
 
 async function runOcr(buffer: Buffer): Promise<string> {
-  // Preprocess for OCR: grayscale, normalized contrast, upscaled-capped PNG.
+  // Preprocess for OCR: grayscale, normalized contrast, size-capped PNG.
+  // Cap at 2000px, not higher: Tesseract's line finder is tuned for ~20-40px
+  // cap-height text and silently drops whole blocks when text is very large.
+  // Modern phones shoot 3000-4000px, so a photo of a sparse schedule lands
+  // exactly in that failure zone; downscaling to <=2000px keeps text in range.
+  // (Measured: this document OCRs 0/11 rows at 3000px, 11/11 at <=2400px.)
   const preprocessed = await sharp(buffer)
     .grayscale()
     .normalize()
-    .resize(3000, 3000, { fit: 'inside', withoutEnlargement: true })
+    .resize(2000, 2000, { fit: 'inside', withoutEnlargement: true })
     .png()
     .toBuffer()
 

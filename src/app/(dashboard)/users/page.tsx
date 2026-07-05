@@ -328,18 +328,18 @@ export default function UsersPage() {
       <div className="max-w-[1100px] mx-auto relative z-10 pb-8">
         {/* Page Header */}
         <div className="mb-10">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="min-w-0">
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="w-4 h-4" style={{ color: 'rgb(16,185,129)' }} />
                 <p className="text-[13px] font-medium tracking-wide uppercase" style={{ color: tc.accentLabel }}>Team Management</p>
               </div>
-              <h1 className="text-[32px] font-bold tracking-tight mb-1" style={{ color: tc.textPrimary }}>User Management</h1>
+              <h1 className="text-[26px] sm:text-[32px] font-bold tracking-tight mb-1" style={{ color: tc.textPrimary }}>User Management</h1>
               <p className="text-[15px]" style={{ color: tc.textMuted }}>Add, edit, or remove users.</p>
             </div>
             <button
               onClick={() => { setEditingUser({}); setIsModalOpen(true); }}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors"
+              className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors w-full sm:w-auto flex-shrink-0"
               style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: '1px solid ' + tc.btnPrimaryBorder }}
               onMouseEnter={(e) => e.currentTarget.style.background = tc.btnPrimaryHoverBg}
               onMouseLeave={(e) => e.currentTarget.style.background = tc.btnPrimaryBg}
@@ -353,7 +353,7 @@ export default function UsersPage() {
         {/* Users Table */}
         <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.08 }}>
           <div className="rounded-xl overflow-x-auto" style={{ background: tc.tableBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}>
-            <table className="min-w-full" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+            <table className="min-w-[640px] sm:min-w-full" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
               <thead>
                 <tr style={{ background: tc.tableHeaderBg }}>
                   <th scope="col" className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider" style={{ color: tc.textMuted, borderBottom: '1px solid ' + tc.tableDivider }}>Name</th>

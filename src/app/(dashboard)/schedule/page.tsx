@@ -55,7 +55,7 @@ function SchedulePageContent() {
           <p className="text-[15px]" style={{ color: tc.textMuted }}>Manage and organize your cleaning tasks efficiently</p>
         </div>
         <button
-          className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-200"
+          className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0"
           style={{
             background: isEditMode ? tc.tabActiveBg : tc.btnSecondaryBg,
             color: isEditMode ? tc.tabActiveText : tc.btnSecondaryText,

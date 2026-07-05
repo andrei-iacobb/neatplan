@@ -146,9 +146,9 @@ export function DashboardOverview() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[23px] sm:text-[25px] font-bold tabular-nums leading-none" style={{ color: tc.textPrimary }}>{s.value}</p>
-                <p className="text-[14px] font-medium mt-0.5 truncate" style={{ color: tc.textMuted }}>{s.name}</p>
+                <p className="text-[13px] sm:text-[14px] font-medium mt-0.5 leading-tight" style={{ color: tc.textMuted }}>{s.name}</p>
               </div>
-              <ArrowRight className="w-[17px] h-[17px] flex-shrink-0 opacity-0 group-hover:opacity-50 transition-opacity" style={{ color: s.accent }} />
+              <ArrowRight className="w-[17px] h-[17px] flex-shrink-0 opacity-0 group-hover:opacity-50 transition-opacity hidden sm:block" style={{ color: s.accent }} />
             </Link>
           </motion.div>
         ))}

@@ -378,21 +378,21 @@ export default function CleanRoomPage() {
           >
             <ArrowLeft className="w-6 h-6" />
           </Link>
-          <div className="flex items-center gap-4">
-            <span className="text-3xl">{getRoomTypeIcon(room.type)}</span>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-100">{room.name}</h1>
-              <div className="flex items-center gap-4 text-gray-400 text-sm">
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4" />
-                  <span>{room.floor}</span>
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-3xl flex-shrink-0">{getRoomTypeIcon(room.type)}</span>
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-100 break-words">{room.name}</h1>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-gray-400 text-sm">
+                <div className="flex items-center gap-1 min-w-0">
+                  <MapPin className="w-4 h-4 flex-shrink-0" />
+                  <span className="truncate">{room.floor}</span>
                 </div>
-                <span>•</span>
-                <span>{room.type.replace('_', ' ')}</span>
-                <span>•</span>
-                <div className="flex items-center gap-1">
-                  <User className="w-4 h-4" />
-                  <span>{session?.user?.name}</span>
+                <span aria-hidden="true">•</span>
+                <span className="truncate">{room.type.replace('_', ' ')}</span>
+                <span aria-hidden="true">•</span>
+                <div className="flex items-center gap-1 min-w-0">
+                  <User className="w-4 h-4 flex-shrink-0" />
+                  <span className="truncate">{session?.user?.name}</span>
                 </div>
               </div>
             </div>
