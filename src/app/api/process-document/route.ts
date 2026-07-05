@@ -1,25 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
 import { prisma } from '@/lib/db'
 import { checkRateLimitByUserOrIp } from '@/lib/rate-limit'
 import sharp from 'sharp'
-
-// Lazy OpenAI client
-let openaiClient: OpenAI | null = null
-function getOpenAI(): OpenAI {
-  const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) {
-    throw new Error('OpenAI API key not configured')
-  }
-  if (!openaiClient) {
-    openaiClient = new OpenAI({
-      apiKey,
-      timeout: 60_000, // 60s for vision/document processing
-      maxRetries: 2,
-    })
-  }
-  return openaiClient
-}
+import { getAIClient } from '@/lib/ai-provider'
+import { ocrImageToText, OcrBusyError, OcrUnavailableError } from '@/lib/ocr'
 
 // Force dynamic behavior for the API route
 export const dynamic = 'force-dynamic'
@@ -226,40 +210,51 @@ export async function POST(request: NextRequest) {
       console.log('Raw text length:', rawText.length)
       console.log('Processed content length:', content.length)
     } else if (file.type.startsWith('image/')) {
-      console.log('Processing image with Vision API...')
-      processingMethod = 'Vision API'
-      
-      // Process image
-      const imageBuffer = await sharp(buffer)
-        .resize(1024, 1024, { fit: 'inside' })
-        .toBuffer()
-      
-      const base64Image = imageBuffer.toString('base64')
-      
-      // Use Vision API for image
-      const visionResponse = await getOpenAI().chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Extract cleaning tasks from this image. Format each task with its description, frequency, and estimated duration."
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:${file.type};base64,${base64Image}`
+      const { client, model, supportsVision } = getAIClient()
+
+      if (!supportsVision) {
+        console.log('Processing image with Tesseract OCR...')
+        processingMethod = 'OCR (Tesseract)'
+
+        // Local provider: OCR the image and feed the text through the existing
+        // text prompt path. Empty OCR text fails via the "no content" check below.
+        content = (await ocrImageToText(buffer)).trim()
+      } else {
+        console.log('Processing image with Vision API...')
+        processingMethod = 'Vision API'
+
+        // Process image
+        const imageBuffer = await sharp(buffer)
+          .resize(1024, 1024, { fit: 'inside' })
+          .toBuffer()
+
+        const base64Image = imageBuffer.toString('base64')
+
+        // Use Vision API for image
+        const visionResponse = await client.chat.completions.create({
+          model,
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: "Extract cleaning tasks from this image. Format each task with its description, frequency, and estimated duration."
+                },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: `data:${file.type};base64,${base64Image}`
+                  }
                 }
-              }
-            ]
-          }
-        ],
-        max_tokens: 1500
-      })
-      
-      content = visionResponse.choices[0]?.message?.content || ''
+              ]
+            }
+          ],
+          max_tokens: 1500
+        })
+
+        content = visionResponse.choices[0]?.message?.content || ''
+      }
     } else {
       return NextResponse.json({ 
         error: 'Unsupported file type. Please upload PDF, DOCX, or image files.' 
@@ -309,6 +304,12 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
+    if (error instanceof OcrBusyError) {
+      return NextResponse.json({ error: error.message }, { status: 429, headers: { 'Retry-After': '15' } })
+    }
+    if (error instanceof OcrUnavailableError) {
+      return NextResponse.json({ error: error.message }, { status: 422 })
+    }
     console.error('Error processing document:', error)
     return NextResponse.json({
       error: 'Failed to process document'

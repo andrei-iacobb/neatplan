@@ -1,8 +1,9 @@
-import OpenAI from 'openai'
 import sharp from 'sharp'
 import * as z from 'zod'
 import type { ScheduleFrequency } from '@prisma/client'
 import { getSchedulePrimaryFrequency, inferFrequencyFromTasks } from './frequency-mapping'
+import { getAIClient } from './ai-provider'
+import { ocrImageToText, OcrBusyError, OcrUnavailableError } from './ocr'
 
 export interface ExtractedScheduleTask {
   description: string
@@ -18,7 +19,7 @@ export interface ExtractedSchedule {
   tasks: ExtractedScheduleTask[]
 }
 
-export type ScheduleExtractionCode = 'SCANNED_PDF' | 'EMPTY' | 'NO_TASKS' | 'OPENAI' | 'UNSUPPORTED'
+export type ScheduleExtractionCode = 'SCANNED_PDF' | 'EMPTY' | 'NO_TASKS' | 'OPENAI' | 'UNSUPPORTED' | 'OCR' | 'BUSY'
 
 export class ScheduleExtractionError extends Error {
   code: ScheduleExtractionCode
@@ -31,26 +32,15 @@ export class ScheduleExtractionError extends Error {
   }
 }
 
-const SCHEDULE_EXTRACTION_MODEL = 'gpt-4o' as const
 const SCHEDULE_EXTRACTION_JSON_SCHEMA_NAME = 'schedule_extraction_result' as const
 
-let openaiClient: OpenAI | null = null
-
-function getOpenAI(): OpenAI {
-  const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) {
-    throw new ScheduleExtractionError('OPENAI', 'OpenAI API key not configured')
+function getConfiguredAIClient(): ReturnType<typeof getAIClient> {
+  try {
+    return getAIClient()
+  } catch {
+    // Missing OPENAI_API_KEY when the resolved provider is 'openai'.
+    throw new ScheduleExtractionError('OPENAI', 'AI provider not configured')
   }
-
-  if (!openaiClient) {
-    openaiClient = new OpenAI({
-      apiKey,
-      timeout: 60_000,
-      maxRetries: 2,
-    })
-  }
-
-  return openaiClient
 }
 
 const modelTaskSchema = z
@@ -248,15 +238,42 @@ async function prepareDocumentText(params: {
   mimeType: string
 }): Promise<{ mode: 'text' | 'vision'; content: string; imageBase64?: string }> {
   const { buffer, mimeType } = params
+  const { supportsVision } = getConfiguredAIClient()
 
   if (mimeType.startsWith('image/')) {
-    const imageBuffer = await sharp(buffer)
-      .resize(2000, 2000, { fit: 'inside', withoutEnlargement: true })
-      .toBuffer()
+    if (supportsVision) {
+      const imageBuffer = await sharp(buffer)
+        .resize(2000, 2000, { fit: 'inside', withoutEnlargement: true })
+        .toBuffer()
 
-    return {
-      mode: 'vision',
-      content: `data:${mimeType};base64,${imageBuffer.toString('base64')}`,
+      return {
+        mode: 'vision',
+        content: `data:${mimeType};base64,${imageBuffer.toString('base64')}`,
+      }
+    } else {
+      // Use OCR for non-vision providers
+      try {
+        const ocrText = await ocrImageToText(buffer)
+        const trimmed = ocrText.trim()
+        if (trimmed.length < 20) {
+          throw new ScheduleExtractionError(
+            'OCR',
+            'Could not read any text from this image. Try a clearer, higher-contrast photo of the schedule.'
+          )
+        }
+        return { mode: 'text', content: trimmed }
+      } catch (error) {
+        if (error instanceof ScheduleExtractionError) {
+          throw error
+        }
+        if (error instanceof OcrBusyError) {
+          throw new ScheduleExtractionError('BUSY', error.message)
+        }
+        if (error instanceof OcrUnavailableError) {
+          throw new ScheduleExtractionError('OCR', error.message)
+        }
+        throw new ScheduleExtractionError('OCR', `OCR failed: ${error instanceof Error ? error.message : String(error)}`)
+      }
     }
   }
 
@@ -314,13 +331,13 @@ function buildUserTextPrompt(text: string, fileName?: string): string {
     .join('\n\n')
 }
 
-async function runExtractionWithOpenAI(params: {
+async function runExtractionWithModel(params: {
   mode: 'text' | 'vision'
   content: string
   mimeType: string
   fileName?: string
 }): Promise<ModelExtraction> {
-  const client = getOpenAI()
+  const { client, model } = getConfiguredAIClient()
 
   const messages =
     params.mode === 'vision'
@@ -359,9 +376,12 @@ async function runExtractionWithOpenAI(params: {
 
   try {
     const completion = await client.chat.completions.create({
-      model: SCHEDULE_EXTRACTION_MODEL,
+      model,
       temperature: 0.1,
       messages,
+      // Works on both providers: OpenAI structured outputs natively, and Ollama's
+      // OpenAI-compatible endpoint (verified 2026-07-05 against Ollama 0.30 +
+      // qwen2.5:7b - returns schema-conforming JSON with strict json_schema).
       response_format: {
         type: 'json_schema',
         json_schema: {
@@ -396,7 +416,7 @@ async function runExtractionWithOpenAI(params: {
       throw error
     }
 
-    console.error('OpenAI schedule extraction failed', error)
+    console.error('AI schedule extraction failed', error)
     throw new ScheduleExtractionError('OPENAI', 'Failed to extract schedule from document')
   }
 }
@@ -408,7 +428,7 @@ export async function extractScheduleFromDocument(params: {
 }): Promise<ExtractedSchedule> {
   try {
     const prepared = await prepareDocumentText({ buffer: params.buffer, mimeType: params.mimeType })
-    const modelResult = await runExtractionWithOpenAI({
+    const modelResult = await runExtractionWithModel({
       mode: prepared.mode,
       content: prepared.content,
       mimeType: params.mimeType,

@@ -1,22 +1,13 @@
 import fs from 'fs/promises'
 import path from 'path'
-import OpenAI from 'openai'
 import sharp from 'sharp'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { logger } from '@/lib/logger'
+import { getAIClient } from './ai-provider'
+import { ocrImageToText } from './ocr'
 
 const JOBS_DIR = path.join(process.cwd(), 'data', 'document-jobs')
-
-let openaiClient: OpenAI | null = null
-function getOpenAI(): OpenAI {
-  const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) throw new Error('OpenAI API key not configured')
-  if (!openaiClient) {
-    openaiClient = new OpenAI({ apiKey, timeout: 60_000, maxRetries: 2 })
-  }
-  return openaiClient
-}
 
 const CLEANING_KEYWORDS = [
   'clean', 'wipe', 'dust', 'vacuum', 'mop', 'wash', 'shampoo', 'polish',
@@ -68,10 +59,21 @@ export async function extractContentFromFile(
   }
 
   if (fileType.startsWith('image/')) {
+    const { client, model, supportsVision } = getAIClient()
+
+    if (!supportsVision) {
+      // Local provider: OCR the image and feed the text through the same
+      // downstream text pipeline. OcrUnavailableError propagates and fails the
+      // job with its message; empty OCR text fails via the existing
+      // "no content" check in runDocumentJob.
+      const ocrText = (await ocrImageToText(buffer)).trim()
+      return { content: ocrText, processingMethod: 'OCR (Tesseract)' }
+    }
+
     const imageBuffer = await sharp(buffer).resize(1024, 1024, { fit: 'inside' }).toBuffer()
     const base64Image = imageBuffer.toString('base64')
-    const visionResponse = await getOpenAI().chat.completions.create({
-      model: 'gpt-4o',
+    const visionResponse = await client.chat.completions.create({
+      model,
       messages: [
         {
           role: 'user',

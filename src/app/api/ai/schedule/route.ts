@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/db'
 import { getSchedulePrimaryFrequency, inferFrequencyFromTasks } from '@/lib/frequency-mapping'
@@ -7,22 +6,7 @@ import { checkRateLimitByUserOrIp } from '@/lib/rate-limit'
 
 export const maxDuration = 120 // 2 minutes timeout for the route
 
-// Lazy OpenAI client to avoid build-time env errors
-let openaiClient: OpenAI | null = null
-function getOpenAI(): OpenAI {
-  const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) {
-    throw new Error('OpenAI API key not configured')
-  }
-  if (!openaiClient) {
-    openaiClient = new OpenAI({
-      apiKey,
-      timeout: 30_000, // 30s per request
-      maxRetries: 2,   // retry up to 2 times with exponential backoff
-    })
-  }
-  return openaiClient
-}
+import { getAIClient, resolveAIProvider } from '@/lib/ai-provider'
 
 // Rough token estimation (1 token ≈ 4 characters)
 const MAX_TOKENS_PER_REQUEST = 6000 // Leave room for system prompt and response
@@ -234,8 +218,9 @@ function cleanJsonResponse(response: string): string {
 async function extractTasksFromChunk(chunk: string): Promise<any[]> {
   try {
 
-    const completion = await getOpenAI().chat.completions.create({
-      model: "gpt-4o",
+    const { client, model } = getAIClient()
+    const completion = await client.chat.completions.create({
+      model,
       messages: [
         { role: "system", content: TASK_EXTRACTION_PROMPT },
         { role: "user", content: chunk }
@@ -268,8 +253,9 @@ async function analyzeDocumentMetadata(content: string): Promise<any> {
     // Use only the first part of the document for metadata (titles, headers, etc.)
     const metadataContent = content.substring(0, MAX_TOKENS_PER_REQUEST * CHARS_PER_TOKEN / 2)
     
-    const completion = await getOpenAI().chat.completions.create({
-      model: "gpt-4o",
+    const { client, model } = getAIClient()
+    const completion = await client.chat.completions.create({
+      model,
       messages: [
         { role: "system", content: ANALYSIS_PROMPT },
         { role: "user", content: metadataContent }
@@ -320,9 +306,9 @@ export async function POST(req: Request) {
       )
     }
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (resolveAIProvider() === 'openai' && !process.env.OPENAI_API_KEY) {
       return NextResponse.json(
-        { error: 'OpenAI API key not configured' },
+        { error: 'AI provider not configured' },
         { status: 500 }
       )
     }

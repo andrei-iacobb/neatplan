@@ -49,13 +49,20 @@ export function createApiUrl(path: string): string {
  */
 export async function apiRequest(path: string, options?: RequestInit) {
   const url = createApiUrl(path);
-  
+
+  // For FormData bodies the browser must set Content-Type itself so it can
+  // include the multipart boundary. Forcing application/json here breaks
+  // multipart uploads (the server's req.formData() then rejects with 400),
+  // so only default the JSON content-type for non-FormData requests.
+  const isFormData =
+    typeof FormData !== 'undefined' && options?.body instanceof FormData;
+
   return fetch(url, {
+    ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...options?.headers,
     },
-    ...options,
   });
 }
 

@@ -26,7 +26,9 @@ const STATUS_BY_CODE: Record<string, number> = {
   NO_TASKS: 422,
   EMPTY: 422,
   UNSUPPORTED: 415,
+  OCR: 422,
   OPENAI: 502,
+  BUSY: 429,
 }
 
 /**
@@ -41,7 +43,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     // Only admins can create schedules (POST /api/schedules is admin-only), so gate the
-    // expensive AI extraction to admins too — protects OpenAI quota from any authed user.
+    // expensive AI extraction to admins too — protects AI provider quota from any authed user.
     if (!(session.user as { isAdmin?: boolean }).isAdmin) {
       return NextResponse.json({ error: 'Forbidden: admin access required' }, { status: 403 })
     }
