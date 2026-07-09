@@ -1,12 +1,12 @@
 import { PrismaClient } from '@prisma/client'
 
 const prismaClientSingleton = () => {
+  // The datasource URL is resolved from env("DATABASE_URL") declared in schema.prisma,
+  // lazily at connect/query time. Do NOT pass an explicit datasources.db.url here: when
+  // DATABASE_URL is unset (e.g. Next's build-time page-data collection, which has no .env),
+  // passing url: undefined makes the PrismaClient constructor throw
+  // (PrismaClientConstructorValidationError) and fails the production build.
   return new PrismaClient({
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
-      },
-    },
     log: process.env.NODE_ENV === 'production'
       ? ['error']
       : ['query', 'error', 'warn'],
