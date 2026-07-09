@@ -36,11 +36,11 @@
     "framer-motion": "^12.12.1",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.511.0",
-    "mammoth": "^1.9.1",
+    "mammoth": "^1.12.0",
     "natural": "^8.1.0",
-    "next": "^14.2.30",
+    "next": "^15.5.20",
     "next-auth": "^4.24.11",
-    "nodemailer": "^7.0.5",
+    "nodemailer": "^9.0.3",
     "openai": "^4.103.0",
     "pdf-parse": "^1.1.1",
     "react": "^18.3.1",
@@ -55,21 +55,21 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.52.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.9",
-    "@types/nodemailer": "^6.4.17",
     "@types/node": "^20",
+    "@types/nodemailer": "^6.4.17",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.21",
     "cross-env": "^7.0.3",
     "eslint": "^9",
-    "eslint-config-next": "15.3.2",
+    "eslint-config-next": "15.5.20",
     "prisma": "^6.8.2",
     "ts-node": "^10.9.2",
     "typescript": "^5",
-    "vitest": "^3.2.4",
-    "@playwright/test": "^1.52.0"
+    "vitest": "^3.2.4"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
@@ -81,6 +81,11 @@
       "prisma",
       "sharp",
       "unrs-resolver"
-    ]
+    ],
+    "overrides": {
+      "form-data": ">=4.0.6",
+      "postcss": ">=8.5.10",
+      "uuid": ">=13.0.1"
+    }
   }
 }
