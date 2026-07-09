@@ -90,36 +90,45 @@ export async function GET() {
     // Combine and format all activities
     const activities = [
       // Room completions
-      ...recentRoomCompletions.map(log => ({
-        id: log.id,
-        type: 'room_completion',
-        title: `${log.completedBy?.name || log.completedBy?.email || 'Cleaner'} completed "${log.roomSchedule.schedule.title}"`,
-        description: `Room "${log.roomSchedule.room.name}" cleaned`,
-        timestamp: log.completedAt,
-        userEmail: log.completedBy?.email || null,
-        metadata: {
-          roomName: log.roomSchedule.room.name,
-          roomType: log.roomSchedule.room.type,
-          scheduleTitle: log.roomSchedule.schedule.title,
-          completedTasks: log.completedTasks
+      ...recentRoomCompletions.map(log => {
+        // Relations are nullable (SetNull on delete); fall back to snapshot columns.
+        const roomName = log.roomSchedule?.room?.name ?? log.roomName ?? 'Deleted room'
+        const scheduleTitle = log.roomSchedule?.schedule?.title ?? log.scheduleTitle ?? 'Deleted schedule'
+        return {
+          id: log.id,
+          type: 'room_completion',
+          title: `${log.completedBy?.name || log.completedBy?.email || 'Cleaner'} completed "${scheduleTitle}"`,
+          description: `Room "${roomName}" cleaned`,
+          timestamp: log.completedAt,
+          userEmail: log.completedBy?.email || null,
+          metadata: {
+            roomName,
+            roomType: log.roomSchedule?.room?.type ?? null,
+            scheduleTitle,
+            completedTasks: log.completedTasks
+          }
         }
-      })),
-      
+      }),
+
       // Equipment completions
-      ...recentEquipmentCompletions.map(log => ({
-        id: log.id,
-        type: 'equipment_completion',
-        title: `Equipment "${log.equipmentSchedule.equipment.name}" serviced`,
-        description: `${log.equipmentSchedule.schedule.title} completed`,
-        timestamp: log.completedAt,
-        userEmail: null, // Not tracked in completion logs currently
-        metadata: {
-          equipmentName: log.equipmentSchedule.equipment.name,
-          equipmentType: log.equipmentSchedule.equipment.type,
-          scheduleTitle: log.equipmentSchedule.schedule.title,
-          completedTasks: log.completedTasks
+      ...recentEquipmentCompletions.map(log => {
+        const equipmentName = log.equipmentSchedule?.equipment?.name ?? log.equipmentName ?? 'Deleted equipment'
+        const scheduleTitle = log.equipmentSchedule?.schedule?.title ?? log.scheduleTitle ?? 'Deleted schedule'
+        return {
+          id: log.id,
+          type: 'equipment_completion',
+          title: `Equipment "${equipmentName}" serviced`,
+          description: `${scheduleTitle} completed`,
+          timestamp: log.completedAt,
+          userEmail: null, // Not tracked in completion logs currently
+          metadata: {
+            equipmentName,
+            equipmentType: log.equipmentSchedule?.equipment?.type ?? null,
+            scheduleTitle,
+            completedTasks: log.completedTasks
+          }
         }
-      })),
+      }),
       
       // User sessions
       ...recentSessions.map(session => ({

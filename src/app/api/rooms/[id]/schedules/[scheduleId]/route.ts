@@ -29,7 +29,13 @@ export async function PATCH(
     const now = new Date()
 
     const result = await prisma.$transaction(async (tx) => {
-      const current = await tx.roomSchedule.findUnique({ where: { id: roomScheduleId } })
+      const current = await tx.roomSchedule.findUnique({
+        where: { id: roomScheduleId },
+        include: {
+          room: { select: { name: true } },
+          schedule: { select: { title: true } },
+        },
+      })
       if (!current || current.roomId !== roomId) {
         return { notFound: true as const }
       }
@@ -56,6 +62,9 @@ export async function PATCH(
           completedAt: now,
           notes: notes || null,
           completedByUserId: auth.user.id,
+          // Snapshot identifying info so the record survives room/schedule deletion.
+          roomName: current.room?.name ?? null,
+          scheduleTitle: current.schedule?.title ?? null,
         },
       })
 

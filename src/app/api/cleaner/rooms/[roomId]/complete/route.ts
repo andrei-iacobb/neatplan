@@ -53,6 +53,7 @@ export async function POST(
         id: scheduleId
       },
       include: {
+        room: { select: { name: true } },
         schedule: {
           include: {
             tasks: true
@@ -104,6 +105,9 @@ export async function POST(
           notes: notes || null,
           completedAt: now,
           completedByUserId: session.user.id,
+          // Snapshot identifying info so the record survives room/schedule deletion.
+          roomName: roomSchedule.room?.name ?? null,
+          scheduleTitle: roomSchedule.schedule?.title ?? null,
         },
       })
 

@@ -80,11 +80,12 @@ export async function GET(request: NextRequest) {
     // Build CSV rows
     const header = 'Date,Time,Room/Equipment,Floor,Type,Schedule,Frequency,Completed By,Tasks Done,Total Tasks,Completion %,Notes'
 
+    // Schedule relations are nullable (SetNull on delete); fall back to snapshot columns.
     const roomRows = roomLogs.map((log) => {
       const dt = new Date(log.completedAt)
       const tasks = Array.isArray(log.completedTasks) ? log.completedTasks : []
       const tasksDone = tasks.length
-      const totalTasks = log.roomSchedule.schedule.tasks.length
+      const totalTasks = log.roomSchedule?.schedule?.tasks.length ?? 0
       const pct = totalTasks > 0 ? Math.round((tasksDone / totalTasks) * 100) : 0
       const completedBy = log.completedBy
         ? `${log.completedBy.name || ''} (${log.completedBy.email})`
@@ -92,11 +93,11 @@ export async function GET(request: NextRequest) {
       return [
         dt.toISOString().split('T')[0],
         dt.toTimeString().split(' ')[0],
-        log.roomSchedule.room.name,
-        log.roomSchedule.room.floor || '',
-        log.roomSchedule.room.type,
-        log.roomSchedule.schedule.title,
-        log.roomSchedule.frequency,
+        log.roomSchedule?.room?.name ?? log.roomName ?? 'Deleted room',
+        log.roomSchedule?.room?.floor || '',
+        log.roomSchedule?.room?.type ?? '',
+        log.roomSchedule?.schedule?.title ?? log.scheduleTitle ?? 'Deleted schedule',
+        log.roomSchedule?.frequency ?? '',
         completedBy,
         String(tasksDone),
         String(totalTasks),
@@ -109,16 +110,16 @@ export async function GET(request: NextRequest) {
       const dt = new Date(log.completedAt)
       const tasks = Array.isArray(log.completedTasks) ? log.completedTasks : []
       const tasksDone = tasks.length
-      const totalTasks = log.equipmentSchedule.schedule.tasks.length
+      const totalTasks = log.equipmentSchedule?.schedule?.tasks.length ?? 0
       const pct = totalTasks > 0 ? Math.round((tasksDone / totalTasks) * 100) : 0
       return [
         dt.toISOString().split('T')[0],
         dt.toTimeString().split(' ')[0],
-        log.equipmentSchedule.equipment.name,
+        log.equipmentSchedule?.equipment?.name ?? log.equipmentName ?? 'Deleted equipment',
         '',
-        log.equipmentSchedule.equipment.type,
-        log.equipmentSchedule.schedule.title,
-        log.equipmentSchedule.frequency,
+        log.equipmentSchedule?.equipment?.type ?? '',
+        log.equipmentSchedule?.schedule?.title ?? log.scheduleTitle ?? 'Deleted schedule',
+        log.equipmentSchedule?.frequency ?? '',
         '',
         String(tasksDone),
         String(totalTasks),

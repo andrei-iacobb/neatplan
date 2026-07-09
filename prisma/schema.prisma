@@ -161,14 +161,18 @@ model EquipmentSchedule {
 }
 
 model RoomScheduleCompletionLog {
-  id             String       @id @default(cuid())
-  roomScheduleId String
-  completedAt    DateTime     @default(now())
+  id             String        @id @default(cuid())
+  roomScheduleId String?
+  completedAt    DateTime      @default(now())
   notes          String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  completedTasks Json         @default("[]")
-  roomSchedule   RoomSchedule @relation(fields: [roomScheduleId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  completedTasks Json          @default("[]")
+  // Snapshots captured at completion time so the compliance record stays readable even
+  // after the room/schedule is deleted (FK is SetNull, not Cascade).
+  roomName       String?
+  scheduleTitle  String?
+  roomSchedule   RoomSchedule? @relation(fields: [roomScheduleId], references: [id], onDelete: SetNull)
   completedByUserId String?
   completedBy       User?       @relation(fields: [completedByUserId], references: [id])
 
@@ -179,14 +183,17 @@ model RoomScheduleCompletionLog {
 }
 
 model EquipmentScheduleCompletionLog {
-  id                  String            @id @default(cuid())
-  equipmentScheduleId String
-  completedAt         DateTime          @default(now())
+  id                  String             @id @default(cuid())
+  equipmentScheduleId String?
+  completedAt         DateTime           @default(now())
   notes               String?
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
-  completedTasks      Json              @default("[]")
-  equipmentSchedule   EquipmentSchedule @relation(fields: [equipmentScheduleId], references: [id], onDelete: Cascade)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  completedTasks      Json               @default("[]")
+  // Snapshots so the compliance record survives deletion of the equipment/schedule.
+  equipmentName       String?
+  scheduleTitle       String?
+  equipmentSchedule   EquipmentSchedule? @relation(fields: [equipmentScheduleId], references: [id], onDelete: SetNull)
 
   @@index([equipmentScheduleId])
   @@index([completedAt])

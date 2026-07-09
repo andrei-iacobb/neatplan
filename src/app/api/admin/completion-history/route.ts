@@ -87,21 +87,23 @@ export async function GET(request: NextRequest) {
         ])
 
     // Map and combine
+    // The schedule relation is nullable (SetNull on delete); fall back to the snapshot
+    // columns so completions for since-deleted rooms/schedules still render.
     const roomItems = roomLogs.map((log) => ({
       id: log.id,
       type: 'room' as const,
       completedAt: log.completedAt.toISOString(),
-      itemName: log.roomSchedule.room.name,
-      itemId: log.roomSchedule.room.id,
-      floor: log.roomSchedule.room.floor,
-      itemType: log.roomSchedule.room.type,
-      scheduleName: log.roomSchedule.schedule.title,
-      frequency: log.roomSchedule.frequency,
+      itemName: log.roomSchedule?.room?.name ?? log.roomName ?? 'Deleted room',
+      itemId: log.roomSchedule?.room?.id ?? null,
+      floor: log.roomSchedule?.room?.floor ?? null,
+      itemType: log.roomSchedule?.room?.type ?? null,
+      scheduleName: log.roomSchedule?.schedule?.title ?? log.scheduleTitle ?? 'Deleted schedule',
+      frequency: log.roomSchedule?.frequency ?? null,
       completedBy: log.completedBy
         ? { name: log.completedBy.name, email: log.completedBy.email }
         : null,
       completedTasks: log.completedTasks,
-      totalTasks: log.roomSchedule.schedule.tasks.length,
+      totalTasks: log.roomSchedule?.schedule?.tasks.length ?? null,
       notes: log.notes,
     }))
 
@@ -109,15 +111,15 @@ export async function GET(request: NextRequest) {
       id: log.id,
       type: 'equipment' as const,
       completedAt: log.completedAt.toISOString(),
-      itemName: log.equipmentSchedule.equipment.name,
-      itemId: log.equipmentSchedule.equipment.id,
+      itemName: log.equipmentSchedule?.equipment?.name ?? log.equipmentName ?? 'Deleted equipment',
+      itemId: log.equipmentSchedule?.equipment?.id ?? null,
       floor: null,
-      itemType: log.equipmentSchedule.equipment.type,
-      scheduleName: log.equipmentSchedule.schedule.title,
-      frequency: log.equipmentSchedule.frequency,
+      itemType: log.equipmentSchedule?.equipment?.type ?? null,
+      scheduleName: log.equipmentSchedule?.schedule?.title ?? log.scheduleTitle ?? 'Deleted schedule',
+      frequency: log.equipmentSchedule?.frequency ?? null,
       completedBy: null,
       completedTasks: log.completedTasks,
-      totalTasks: log.equipmentSchedule.schedule.tasks.length,
+      totalTasks: log.equipmentSchedule?.schedule?.tasks.length ?? null,
       notes: log.notes,
     }))
 
