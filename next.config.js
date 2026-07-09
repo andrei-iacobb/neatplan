@@ -7,7 +7,13 @@ const nextConfig = {
   
   // Configure output for deployment
   output: 'standalone',
-  
+
+  // Enable the instrumentation hook so the in-process scheduler (src/instrumentation.ts)
+  // starts on server boot for self-hosted deployments.
+  experimental: {
+    instrumentationHook: true,
+  },
+
 
   
   // Configure images

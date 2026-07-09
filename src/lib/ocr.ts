@@ -29,10 +29,10 @@ const MAX_QUEUED_OCR = 8
 let runningOcr = 0
 const ocrWaiters: Array<() => void> = []
 
-async function acquireOcrSlot(): Promise<void> {
+async function acquireOcrSlot(): Promise<() => void> {
   if (runningOcr < MAX_CONCURRENT_OCR) {
     runningOcr += 1
-    return
+    return createOcrSlotRelease()
   }
   if (ocrWaiters.length >= MAX_QUEUED_OCR) {
     throw new OcrBusyError()
@@ -40,6 +40,18 @@ async function acquireOcrSlot(): Promise<void> {
   await new Promise<void>((resolve) => {
     ocrWaiters.push(resolve)
   })
+  return createOcrSlotRelease()
+}
+
+function createOcrSlotRelease(): () => void {
+  let released = false
+  return () => {
+    if (released) {
+      return
+    }
+    released = true
+    releaseOcrSlot()
+  }
 }
 
 function releaseOcrSlot(): void {
@@ -53,11 +65,11 @@ function releaseOcrSlot(): void {
 }
 
 export async function ocrImageToText(buffer: Buffer): Promise<string> {
-  await acquireOcrSlot()
+  const releaseSlot = await acquireOcrSlot()
   try {
     return await runOcr(buffer)
   } finally {
-    releaseOcrSlot()
+    releaseSlot()
   }
 }
 

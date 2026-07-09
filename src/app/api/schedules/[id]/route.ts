@@ -1,20 +1,17 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { requireAdmin } from '@/lib/authz'
 
 // Update a schedule
 export async function PUT(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
 
     const params = await context.params
     const { id } = params
     const { title } = await req.json()
-    
+
     const schedule = await prisma.schedule.update({
       where: { id },
       data: { title },
@@ -33,11 +30,8 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
 // Partial update a schedule (PATCH method)
 export async function PATCH(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
 
     const params = await context.params
     const { id } = params
@@ -71,10 +65,8 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
 // Delete a schedule
 export async function DELETE(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
 
     const params = await context.params
     const { id } = params
@@ -101,4 +93,4 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
       { status: 500 }
     )
   }
-} 
+}

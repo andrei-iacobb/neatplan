@@ -4,6 +4,10 @@ import { compare } from "bcryptjs"
 import { prisma } from "@/lib/db"
 import { randomBytes } from "crypto"
 
+// Precomputed bcrypt hash used to equalize response timing when an account does not exist,
+// so an attacker cannot distinguish "no such user" from "wrong password" by response time.
+const DUMMY_PASSWORD_HASH = "$2b$12$6DaBpEkN94lWEll0A5lJ5.DT6SmfXqHsu3A6zDqshZrzW5ECsOhXy"
+
 export const authOptions: AuthOptions = {
   session: {
     strategy: "jwt",
@@ -32,6 +36,9 @@ export const authOptions: AuthOptions = {
         })
 
         if (!user || !user.password) {
+          // Run a dummy compare so the unknown-account path takes about as long as a real
+          // password check, preventing username enumeration via timing.
+          await compare(credentials.password, DUMMY_PASSWORD_HASH)
           throw new Error("Invalid credentials")
         }
 
@@ -74,6 +81,26 @@ export const authOptions: AuthOptions = {
           }
           const { verifyTotp } = await import('@/lib/totp')
           if (!verifyTotp(user.totpSecret, totpCode)) {
+            // Count TOTP failures toward the same lockout as password failures, so the
+            // second factor cannot be brute-forced without tripping the account lock.
+            try {
+              const updated = await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                  failedLoginCount: { increment: 1 },
+                  lastFailedLoginAt: new Date(),
+                },
+                select: { failedLoginCount: true }
+              })
+              if ((updated.failedLoginCount ?? 0) >= 5) {
+                await prisma.user.update({
+                  where: { id: user.id },
+                  data: { isBlocked: true }
+                })
+              }
+            } catch (error) {
+              console.error('Failed to update TOTP failure counter:', error)
+            }
             throw new Error("Invalid authentication code")
           }
         }

@@ -6,23 +6,19 @@ import { prisma } from '@/lib/db'
  * Use for Kubernetes readinessProbe or load-balancer health checks.
  */
 export async function GET() {
-  const checks: Record<string, { ready: boolean; error?: string }> = {}
+  const checks: Record<string, { ready: boolean }> = {}
 
-  // Database: must respond within 3 seconds
+  // Database is the only hard dependency for serving traffic. The AI provider is optional
+  // (self-hosted deployments run local Ollama with no OpenAI key), so it must NOT gate
+  // readiness - previously a missing OPENAI_API_KEY returned 503 and took the app out of
+  // rotation even though it was fully functional. We also avoid echoing which providers or
+  // keys are configured, to not disclose configuration to unauthenticated probes.
   try {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 3000)
     await prisma.$queryRaw`SELECT 1`
-    clearTimeout(timeout)
     checks.database = { ready: true }
   } catch (error) {
-    checks.database = { ready: false, error: 'Database unreachable or slow' }
+    checks.database = { ready: false }
   }
-
-  // OpenAI: only check if key is configured (non-blocking)
-  checks.openai = process.env.OPENAI_API_KEY
-    ? { ready: true }
-    : { ready: false, error: 'OPENAI_API_KEY not set' }
 
   const allReady = Object.values(checks).every(c => c.ready)
 

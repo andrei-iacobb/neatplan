@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { checkRateLimitByUserOrIp } from '@/lib/rate-limit'
+import { requireAdmin } from '@/lib/authz'
 import {
   extractScheduleFromDocument,
   ScheduleExtractionError,
@@ -28,7 +27,9 @@ const STATUS_BY_CODE: Record<string, number> = {
   UNSUPPORTED: 415,
   OCR: 422,
   OPENAI: 502,
+  AI_PROVIDER: 502,
   BUSY: 429,
+  TOO_LARGE: 413,
 }
 
 /**
@@ -38,15 +39,8 @@ const STATUS_BY_CODE: Record<string, number> = {
  */
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    // Only admins can create schedules (POST /api/schedules is admin-only), so gate the
-    // expensive AI extraction to admins too — protects AI provider quota from any authed user.
-    if (!(session.user as { isAdmin?: boolean }).isAdmin) {
-      return NextResponse.json({ error: 'Forbidden: admin access required' }, { status: 403 })
-    }
+    const auth = await requireAdmin()
+    if ("error" in auth) return auth.error
 
     // Reject oversized uploads by declared length before buffering the body into memory.
     const contentLength = Number(req.headers.get('content-length') || 0)
@@ -60,7 +54,7 @@ export async function POST(req: NextRequest) {
       'ai_schedule_extract',
       5,
       60 * 1000,
-      session.user.email,
+      auth.user.email,
     )
     if (!rate.allowed) {
       return NextResponse.json(

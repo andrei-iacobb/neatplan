@@ -86,7 +86,7 @@ export function ScheduleImport({ onSaved }: ScheduleImportProps) {
         })),
       })
       setMode('preview')
-      toast.success(`Found ${data.tasks.length} task${data.tasks.length === 1 ? '' : 's'} — review and save.`)
+      toast.success(`Found ${data.tasks.length} task${data.tasks.length === 1 ? '' : 's'} - review and save.`)
     } catch (err: any) {
       setMode('idle')
       setFileName(null)
@@ -178,7 +178,7 @@ export function ScheduleImport({ onSaved }: ScheduleImportProps) {
           <div className="flex items-center gap-2 min-w-0">
             <Sparkles className="w-4 h-4 shrink-0" style={{ color: tc.accentGreen }} />
             <p className="text-[13px] truncate" style={{ color: tc.textMuted }}>
-              Extracted from <span style={{ color: tc.textSecondary }}>{fileName}</span> — edit anything before saving.
+              Extracted from <span style={{ color: tc.textSecondary }}>{fileName}</span> - edit anything before saving.
             </p>
           </div>
         </div>
@@ -282,7 +282,7 @@ export function ScheduleImport({ onSaved }: ScheduleImportProps) {
     <div className="space-y-3">
       <p className="text-[13px]" style={{ color: tc.textMuted }}>
         Upload a photo, scan, or PDF of any cleaning schedule. It reads the layout and builds an editable schedule for
-        you — no fixed format required.
+        you - no fixed format required.
       </p>
       <button
         type="button"

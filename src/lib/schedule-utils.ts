@@ -1,5 +1,18 @@
 import { ScheduleFrequency } from '@prisma/client'
 
+/**
+ * Add whole months to a date, clamping the day to the last valid day of the target month.
+ * Plain Date.setMonth overflows (e.g. Jan 31 + 1 month -> Mar 3), which would silently skip
+ * a cycle for month-end schedules; this keeps Jan 31 -> Feb 28/29.
+ */
+function addMonthsClamped(date: Date, months: number): void {
+  const day = date.getDate()
+  date.setDate(1)
+  date.setMonth(date.getMonth() + months)
+  const lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+  date.setDate(Math.min(day, lastDayOfMonth))
+}
+
 export function calculateNextDueDate(
   frequency: ScheduleFrequency,
   baseDate: Date = new Date()
@@ -17,18 +30,15 @@ export function calculateNextDueDate(
       date.setDate(date.getDate() + 14)
       break
     case 'MONTHLY':
-      date.setMonth(date.getMonth() + 1)
+      addMonthsClamped(date, 1)
       break
     case 'QUARTERLY':
-      date.setMonth(date.getMonth() + 3)
+      addMonthsClamped(date, 3)
       break
     case 'YEARLY':
-      date.setFullYear(date.getFullYear() + 1)
+      // Clamp Feb 29 -> Feb 28 in a non-leap target year.
+      addMonthsClamped(date, 12)
       break
-    // case 'CUSTOM':
-    //   // For custom frequency, default to weekly
-    //   date.setDate(date.getDate() + 7)
-    //   break
     default:
       throw new Error(`Unsupported frequency: ${frequency}`)
   }

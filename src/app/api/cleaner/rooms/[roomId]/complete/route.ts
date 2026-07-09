@@ -76,48 +76,56 @@ export async function POST(
     }
 
     // Calculate next due date based on frequency
-    const nextDue = calculateNextDueDate(roomSchedule.frequency as any)
+    const now = new Date()
+    const nextDue = calculateNextDueDate(roomSchedule.frequency as any, now)
 
-    // Start a transaction to update schedule and create completion log
+    // Complete inside a transaction, guarding against double submits (double-tap on a
+    // tablet, network retry): only one concurrent completion advances the cycle. The
+    // optimistic match on lastCompleted means the loser writes nothing and is reported
+    // as an idempotent duplicate instead of creating a second log / skipping a cycle.
     const result = await prisma.$transaction(async (tx) => {
-      // Create completion log
+      const advanced = await tx.roomSchedule.updateMany({
+        where: { id: scheduleId, lastCompleted: roomSchedule.lastCompleted },
+        data: {
+          status: ScheduleStatus.PENDING,
+          lastCompleted: now,
+          nextDue,
+        },
+      })
+
+      if (advanced.count === 0) {
+        return { duplicate: true as const }
+      }
+
       const completionLog = await tx.roomScheduleCompletionLog.create({
         data: {
           roomScheduleId: scheduleId,
           completedTasks: completedTasks as any,
           notes: notes || null,
-          completedAt: new Date(),
-          completedByUserId: session.user.id
-        }
-      })
-
-      // Update the existing room schedule for the next cleaning cycle
-      const updatedSchedule = await tx.roomSchedule.update({
-        where: {
-          id: scheduleId
+          completedAt: now,
+          completedByUserId: session.user.id,
         },
-        data: {
-          status: ScheduleStatus.PENDING,
-          lastCompleted: new Date(),
-          nextDue: nextDue
-        }
       })
 
-      return {
-        completionLog,
-        updatedSchedule
-      }
+      return { completionLog }
     })
+
+    if ('duplicate' in result) {
+      return NextResponse.json(
+        { error: 'This schedule was just completed', duplicate: true },
+        { status: 409 }
+      )
+    }
 
     return NextResponse.json({
       success: true,
       message: 'Schedule completed successfully',
       completionId: result.completionLog.id,
-      nextDue: result.updatedSchedule.nextDue.toISOString(),
+      nextDue: nextDue.toISOString(),
       data: {
         completedTasks: completedTasks.length,
         duration: duration || null,
-        scheduleId: result.updatedSchedule.id
+        scheduleId
       }
     })
 

@@ -31,48 +31,60 @@ export async function GET(request: NextRequest) {
 
     const completedAtFilter = Object.keys(dateFilter).length > 0 ? dateFilter : undefined
 
+    // The two log sources are merged and sorted by completedAt, then paginated. To avoid
+    // loading the ENTIRE history into memory on every request, cap each source query to the
+    // top `page * limit` rows: the merged page [skip, skip+limit) can only draw from the top
+    // (skip+limit) rows of either source, so this bound is exact while keeping memory small.
+    const skip = (page - 1) * limit
+    const take = page * limit
+
     // Room completion logs
     const roomWhere: any = {}
     if (completedAtFilter) roomWhere.completedAt = completedAtFilter
     if (roomId) roomWhere.roomSchedule = { roomId }
     if (userId) roomWhere.completedByUserId = userId
 
-    const roomLogs = await prisma.roomScheduleCompletionLog.findMany({
-      where: roomWhere,
-      include: {
-        roomSchedule: {
-          include: {
-            room: { select: { id: true, name: true, floor: true, type: true } },
-            schedule: { select: { title: true, tasks: true } },
-          },
-        },
-        completedBy: { select: { id: true, name: true, email: true } },
-      },
-      orderBy: { completedAt: 'desc' },
-    })
-
-    // Equipment completion logs
-    const equipWhere: any = {}
-    if (completedAtFilter) equipWhere.completedAt = completedAtFilter
-    if (roomId) {
-      // If filtering by roomId, no equipment logs match
-      // skip equipment query
-    }
-
-    const equipLogs = roomId
-      ? []
-      : await prisma.equipmentScheduleCompletionLog.findMany({
-          where: equipWhere,
-          include: {
-            equipmentSchedule: {
-              include: {
-                equipment: { select: { id: true, name: true, type: true } },
-                schedule: { select: { title: true, tasks: true } },
-              },
+    const [roomLogs, roomTotal] = await Promise.all([
+      prisma.roomScheduleCompletionLog.findMany({
+        where: roomWhere,
+        include: {
+          roomSchedule: {
+            include: {
+              room: { select: { id: true, name: true, floor: true, type: true } },
+              schedule: { select: { title: true, tasks: true } },
             },
           },
-          orderBy: { completedAt: 'desc' },
-        })
+          completedBy: { select: { id: true, name: true, email: true } },
+        },
+        orderBy: { completedAt: 'desc' },
+        take,
+      }),
+      prisma.roomScheduleCompletionLog.count({ where: roomWhere }),
+    ])
+
+    // Equipment completion logs (excluded when filtering by room or user - no such linkage)
+    const equipWhere: any = {}
+    if (completedAtFilter) equipWhere.completedAt = completedAtFilter
+
+    const skipEquip = Boolean(roomId) || Boolean(userId)
+    const [equipLogs, equipTotal] = skipEquip
+      ? [[] as any[], 0]
+      : await Promise.all([
+          prisma.equipmentScheduleCompletionLog.findMany({
+            where: equipWhere,
+            include: {
+              equipmentSchedule: {
+                include: {
+                  equipment: { select: { id: true, name: true, type: true } },
+                  schedule: { select: { title: true, tasks: true } },
+                },
+              },
+            },
+            orderBy: { completedAt: 'desc' },
+            take,
+          }),
+          prisma.equipmentScheduleCompletionLog.count({ where: equipWhere }),
+        ])
 
     // Map and combine
     const roomItems = roomLogs.map((log) => ({
@@ -109,18 +121,17 @@ export async function GET(request: NextRequest) {
       notes: log.notes,
     }))
 
-    // If filtering by userId, exclude equipment items (no user tracking)
-    const allItems = userId
+    // Merge the (already per-source capped) items, sort by completedAt desc, and slice the
+    // requested page. total comes from DB counts, not the truncated arrays.
+    const allItems = skipEquip
       ? roomItems
       : [...roomItems, ...equipItems]
 
-    // Sort by completedAt desc
     allItems.sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
 
-    const total = allItems.length
-    const totalPages = Math.ceil(total / limit)
-    const start = (page - 1) * limit
-    const items = allItems.slice(start, start + limit)
+    const total = roomTotal + (skipEquip ? 0 : equipTotal)
+    const totalPages = Math.max(1, Math.ceil(total / limit))
+    const items = allItems.slice(skip, skip + limit)
 
     return NextResponse.json({ items, total, page, limit, totalPages })
   } catch (error) {

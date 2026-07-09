@@ -259,7 +259,9 @@ export default function SettingsPage() {
                       Role
                     </label>
                     <div className="w-full px-3 py-2 rounded-lg text-[13px] opacity-60" style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}>
-                      {(session?.user as any)?.role || 'User'}
+                      {(session?.user as any)?.isAdmin
+                        ? 'Administrator'
+                        : (session?.user as any)?.role || 'User'}
                     </div>
                   </div>
 

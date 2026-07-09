@@ -1,24 +1,16 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { requireAdmin, requireAuth } from '@/lib/authz'
 import { calculateNextDueDate } from '@/lib/schedule-utils'
-import { Prisma } from '@prisma/client'
 
-// POST /api/rooms/[id]/schedules - Assign a schedule to a room
+// POST /api/rooms/[id]/schedules - Assign a schedule to a room (admin only)
 export async function POST(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
 
     const { scheduleId, frequency } = await request.json()
     const params = await context.params
@@ -44,7 +36,6 @@ export async function POST(
     }
 
     // Use provided frequency, or fall back to suggested frequency from AI detection
-    // For now, we'll access the new fields using bracket notation to avoid TypeScript errors
     const suggestedFrequency = (schedule as any).suggestedFrequency
     const assignedFrequency = frequency || suggestedFrequency
 
@@ -103,20 +94,14 @@ export async function POST(
   }
 }
 
-// GET /api/rooms/[id]/schedules - Get all schedules for a room
+// GET /api/rooms/[id]/schedules - Get all schedules for a room (any authenticated user)
 export async function GET(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
+    const auth = await requireAuth()
+    if ('error' in auth) return auth.error
 
     const params = await context.params
     const roomId = params.id
@@ -146,83 +131,7 @@ export async function GET(
   }
 }
 
-// PATCH /api/rooms/[id]/schedules/[scheduleId] - Mark a room schedule as completed
-export async function PATCH(
-  request: Request,
-  context: { params: Promise<{ id: string; scheduleId: string }> }
-) {
-  try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const { notes } = await request.json()
-    const params = await context.params
-    const { id: roomId, scheduleId } = params
-    const now = new Date()
-
-    // Find the room schedule
-    const roomSchedule = await prisma.roomSchedule.findUnique({
-      where: {
-        roomId_scheduleId: {
-          roomId,
-          scheduleId
-        }
-      }
-    })
-
-    if (!roomSchedule) {
-      return NextResponse.json(
-        { error: 'Room schedule not found' },
-        { status: 404 }
-      )
-    }
-
-    // Calculate the next due date based on frequency
-    const nextDue = calculateNextDueDate(roomSchedule.frequency as any, now)
-
-    // Update the room schedule and create a completion log
-    const [updated] = await prisma.$transaction([
-      prisma.roomSchedule.update({
-        where: {
-          roomId_scheduleId: {
-            roomId,
-            scheduleId
-          }
-        },
-        data: {
-          lastCompleted: now,
-          nextDue,
-          status: 'PENDING',
-          completionLogs: {
-            create: {
-              notes,
-              completedAt: now
-            }
-          }
-        },
-        include: {
-          room: true,
-          schedule: {
-            include: {
-              tasks: true
-            }
-          }
-        }
-      })
-    ])
-
-    return NextResponse.json(updated)
-  } catch (error) {
-    console.error('Error completing room schedule:', error)
-    return NextResponse.json(
-      { error: 'Failed to complete schedule' },
-      { status: 500 }
-    )
-  }
-} 
+// The former PATCH handler that lived here responded to `/api/rooms/[id]/schedules`
+// (with no [scheduleId] segment), so it could never resolve a specific schedule and
+// always 404'd. The working, admin-guarded completion handler now lives at
+// `/api/rooms/[id]/schedules/[scheduleId]/route.ts`.

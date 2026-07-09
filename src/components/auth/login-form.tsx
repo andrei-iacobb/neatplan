@@ -31,7 +31,15 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [needsTotp, setNeedsTotp] = useState(false)
-  
+  // Guard against a native GET submit firing before hydration attaches the
+  // JS submit handler (fast typist / password-manager auto-submit) which would
+  // otherwise leak the password into the URL query string.
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    setReady(true)
+  }, [])
+
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -82,7 +90,18 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
 
   return (
     <div className="space-y-6">
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+      <form
+        method="post"
+        noValidate
+        onSubmit={(e) => {
+          // Always stop the browser's native submit so credentials can never
+          // fall through to a GET request with the password in the URL.
+          e.preventDefault()
+          if (!ready) return
+          form.handleSubmit(onSubmit)(e)
+        }}
+        className="space-y-5"
+      >
         {/* Email Field */}
         <motion.div 
           initial={{ opacity: 0, x: -20 }}
@@ -135,6 +154,8 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-pressed={showPassword}
               className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
               disabled={isLoading}
             >
@@ -194,9 +215,9 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.3 }}
         >
-          <Button 
-            type="submit" 
-            disabled={isLoading}
+          <Button
+            type="submit"
+            disabled={isLoading || !ready}
             className="w-full h-14 font-semibold bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white disabled:from-gray-600 disabled:to-gray-700 disabled:text-gray-400 rounded-xl transition-all duration-200 border-0 shadow-lg hover:shadow-blue-500/25 hover:scale-[1.02] active:scale-[0.98]"
           >
             {isLoading ? (

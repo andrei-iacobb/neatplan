@@ -5,6 +5,10 @@ import { prisma } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
+// Hard cap on rows pulled per source so an export can never try to materialise years of
+// completion history into memory at once. Each source is bounded independently.
+const MAX_EXPORT_ROWS = 50_000
+
 function escapeCSV(value: string): string {
   if (value.includes(',') || value.includes('"') || value.includes('\n')) {
     return `"${value.replace(/"/g, '""')}"`
@@ -54,6 +58,7 @@ export async function GET(request: NextRequest) {
         completedBy: { select: { name: true, email: true } },
       },
       orderBy: { completedAt: 'desc' },
+      take: MAX_EXPORT_ROWS,
     })
 
     const equipLogs = roomId || userId
@@ -69,6 +74,7 @@ export async function GET(request: NextRequest) {
             },
           },
           orderBy: { completedAt: 'desc' },
+          take: MAX_EXPORT_ROWS,
         })
 
     // Build CSV rows

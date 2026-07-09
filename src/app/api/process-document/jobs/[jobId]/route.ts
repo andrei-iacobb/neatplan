@@ -1,22 +1,21 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { requireAuth } from '@/lib/authz'
 
 export async function GET(
   _request: Request,
   context: { params: Promise<{ jobId: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await requireAuth()
+    if ("error" in auth) return auth.error
 
     const { jobId } = await context.params
-    const job = await prisma.documentJob.findUnique({ where: { id: jobId } })
+    const job = await prisma.documentJob.findFirst({
+      where: { id: jobId, userId: auth.user.id },
+    })
 
-    if (!job || job.userId !== session.user.id) {
+    if (!job) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 })
     }
 

@@ -38,13 +38,24 @@ function cleanupStaleEntries() {
 
 function getClientIp(request: RequestLike): string {
   const headers = request.headers
-  // Use x-forwarded-for first entry (should be set by reverse proxy)
+
+  // Trust the hop set by our own reverse proxy, never the client-controlled first
+  // X-Forwarded-For entry (which lets an attacker rotate the rate-limit key and bypass
+  // the limit). Prefer Cloudflare's CF-Connecting-IP (cloudflared tunnel), else the
+  // Nth-from-last XFF entry where N = TRUSTED_PROXY_COUNT (default 1).
+  const cf = headers.get('cf-connecting-ip')?.trim()
+  if (cf) return cf
+
+  const trusted = Math.max(1, Number(process.env.TRUSTED_PROXY_COUNT) || 1)
   const xff = headers.get('x-forwarded-for') || ''
-  if (xff) {
-    const first = xff.split(',')[0]?.trim()
-    if (first) return first
+  const chain = xff.split(',').map(x => x.trim()).filter(Boolean)
+  if (chain.length > 0) {
+    const idx = Math.max(0, chain.length - trusted)
+    const candidate = chain[idx]
+    if (candidate) return candidate
   }
-  const realIp = headers.get('x-real-ip')
+
+  const realIp = headers.get('x-real-ip')?.trim()
   if (realIp) return realIp
   return '127.0.0.1'
 }

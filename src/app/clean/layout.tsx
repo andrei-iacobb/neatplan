@@ -143,7 +143,7 @@ export default function CleanLayout({
         Skip to main content
       </a>
       {/* Simple header for cleaners */}
-      <header className="bg-gray-800/50 backdrop-blur-sm border-b border-gray-700" role="banner">
+      <header className="relative z-50 bg-gray-800/50 backdrop-blur-sm border-b border-gray-700" role="banner">
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

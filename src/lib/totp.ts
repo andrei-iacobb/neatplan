@@ -1,4 +1,13 @@
-import { createHmac, randomBytes } from 'crypto'
+import { createHmac, randomBytes, timingSafeEqual } from 'crypto'
+
+// Constant-time string compare to avoid leaking how many leading digits of a TOTP code
+// matched via response timing.
+function safeEqual(a: string, b: string): boolean {
+  const ab = Buffer.from(a)
+  const bb = Buffer.from(b)
+  if (ab.length !== bb.length) return false
+  return timingSafeEqual(ab, bb)
+}
 
 const BASE32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
 
@@ -75,7 +84,7 @@ export function verifyTotp(secret: string, token: string, window = 1): boolean {
 
   const counter = Math.floor(Date.now() / 1000 / 30)
   for (let i = -window; i <= window; i++) {
-    if (generateTotp(secret, counter + i) === normalized) {
+    if (safeEqual(generateTotp(secret, counter + i), normalized)) {
       return true
     }
   }

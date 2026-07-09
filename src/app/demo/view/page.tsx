@@ -20,7 +20,7 @@ export default function DemoFullView() {
   const [scenario, setScenario] = useState<'normal' | 'overdue' | 'equipment'>('normal')
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950 text-gray-100">
+    <main className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-gray-100">
       <div className="max-w-7xl mx-auto px-4 pt-10 pb-6">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold">Demo View</h1>
@@ -100,7 +100,7 @@ function AdminMock({ scenario }: { scenario: 'normal' | 'overdue' | 'equipment' 
         </div>
         <div className="p-4 rounded-xl bg-gray-900/40 border border-gray-700/60">
           <h5 className="text-sm font-medium mb-2">Recent Activity</h5>
-          <ul className="space-y-2 text-sm text-gray-300">
+          <ul className="space-y-2 text-sm text-gray-200">
             {['Room 12 cleaned • Sarah J', 'Room 7 cleaned • Mark L', 'Filter replaced • Boiler A'].map((item, i) => (
               <li key={i} className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> {item}</li>
             ))}

@@ -2,17 +2,40 @@ import fs from 'fs/promises'
 import path from 'path'
 import sharp from 'sharp'
 import { Prisma } from '@prisma/client'
+import type { DocumentJob } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { getAIClient } from './ai-provider'
 import { ocrImageToText } from './ocr'
 
 const JOBS_DIR = path.join(process.cwd(), 'data', 'document-jobs')
+const DOCUMENT_JOB_TIMEOUT_MS = 10 * 60 * 1000
+const STUCK_PROCESSING_TIMEOUT_MS = 15 * 60 * 1000
 
 const CLEANING_KEYWORDS = [
   'clean', 'wipe', 'dust', 'vacuum', 'mop', 'wash', 'shampoo', 'polish',
   'sanitize', 'disinfect', 'remove', 'hoover', 'deep clean', 'room', 'frequency',
 ]
+
+class DocumentJobTimeoutError extends Error {
+  constructor() {
+    super('timeout')
+    this.name = 'DocumentJobTimeoutError'
+  }
+}
+
+async function withDocumentJobTimeout<T>(work: Promise<T>): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeout = setTimeout(() => reject(new DocumentJobTimeoutError()), DOCUMENT_JOB_TIMEOUT_MS)
+  })
+
+  try {
+    return await Promise.race([work, timeoutPromise])
+  } finally {
+    if (timeout) clearTimeout(timeout)
+  }
+}
 
 function extractRelevantContent(content: string): string {
   const sentences = content.split(/[.!?]+/).map((s) => s.trim()).filter((s) => s.length > 10)
@@ -100,13 +123,13 @@ export async function extractContentFromFile(
   throw new Error('Unsupported file type')
 }
 
-export async function runAiSchedule(content: string): Promise<unknown> {
+export async function runAiSchedule(content: string, cookie?: string): Promise<unknown> {
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:4040'
   const response = await fetch(`${baseUrl}/api/ai/schedule`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-internal-job': process.env.CRON_SECRET || '',
+      ...(cookie ? { Cookie: cookie } : {}),
     },
     body: JSON.stringify({ content }),
   })
@@ -155,67 +178,119 @@ export async function createDocumentJob(params: {
   return job.id
 }
 
-export async function runDocumentJob(jobId: string): Promise<void> {
+async function processClaimedDocumentJob(job: DocumentJob, cookie?: string): Promise<void> {
+  const buffer = await fs.readFile(job.filePath)
+  const { content, processingMethod } = await extractContentFromFile(buffer, job.fileType)
+
+  if (!content.trim()) {
+    throw new Error('No content could be extracted from the file')
+  }
+
+  const aiResult = (await runAiSchedule(content, cookie)) as {
+    schedule: unknown
+    processingInfo?: unknown
+  }
+
+  await prisma.documentJob.updateMany({
+    where: { id: job.id, status: 'PROCESSING' },
+    data: {
+      status: 'COMPLETED',
+      result: {
+        success: true,
+        processingMethod,
+        schedule: aiResult.schedule,
+        processingInfo: aiResult.processingInfo,
+        metadata: {
+          filename: job.fileName,
+          fileType: job.fileType,
+        },
+      } as unknown as Prisma.InputJsonValue,
+      error: null,
+      completedAt: new Date(),
+    },
+  })
+}
+
+async function failProcessingDocumentJob(jobId: string, message: string): Promise<void> {
+  await prisma.documentJob.updateMany({
+    where: { id: jobId, status: 'PROCESSING' },
+    data: {
+      status: 'FAILED',
+      error: message,
+      completedAt: new Date(),
+    },
+  })
+}
+
+export async function reapStuckDocumentJobs(): Promise<number> {
+  const now = new Date()
+  const cutoff = new Date(now.getTime() - STUCK_PROCESSING_TIMEOUT_MS)
+  const result = await prisma.documentJob.updateMany({
+    where: {
+      status: 'PROCESSING',
+      updatedAt: { lt: cutoff },
+    },
+    data: {
+      status: 'FAILED',
+      error: 'timeout',
+      completedAt: now,
+    },
+  })
+
+  return result.count
+}
+
+let startupReaperStarted = false
+
+export function reapStuckDocumentJobsOnStartup(): void {
+  if (startupReaperStarted) return
+  startupReaperStarted = true
+
+  reapStuckDocumentJobs()
+    .then((count) => {
+      if (count > 0) {
+        logger.warn('Reaped stuck document jobs', { count })
+      }
+    })
+    .catch((error) => logger.error('Document job startup reaper failed', error))
+}
+
+export async function runDocumentJob(jobId: string, cookie?: string): Promise<void> {
   const job = await prisma.documentJob.findUnique({ where: { id: jobId } })
   if (!job || job.status !== 'PENDING') return
 
-  await prisma.documentJob.update({
-    where: { id: jobId },
-    data: { status: 'PROCESSING' },
+  const claimed = await prisma.documentJob.updateMany({
+    where: { id: jobId, status: 'PENDING' },
+    data: { status: 'PROCESSING', error: null, completedAt: null },
   })
+  if (claimed.count !== 1) return
 
   try {
-    const buffer = await fs.readFile(job.filePath)
-    const { content, processingMethod } = await extractContentFromFile(buffer, job.fileType)
-
-    if (!content.trim()) {
-      throw new Error('No content could be extracted from the file')
-    }
-
-    const aiResult = (await runAiSchedule(content)) as {
-      schedule: unknown
-      processingInfo?: unknown
-    }
-
-    await prisma.documentJob.update({
-      where: { id: jobId },
-      data: {
-        status: 'COMPLETED',
-        result: {
-          success: true,
-          processingMethod,
-          schedule: aiResult.schedule,
-          processingInfo: aiResult.processingInfo,
-          metadata: {
-            filename: job.fileName,
-            fileType: job.fileType,
-          },
-        } as unknown as Prisma.InputJsonValue,
-        completedAt: new Date(),
-      },
-    })
+    await withDocumentJobTimeout(processClaimedDocumentJob(job, cookie))
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Processing failed'
+    const message = error instanceof DocumentJobTimeoutError
+      ? 'timeout'
+      : error instanceof Error
+        ? error.message
+        : 'Processing failed'
     logger.error('Document job failed', error)
-    await prisma.documentJob.update({
-      where: { id: jobId },
-      data: {
-        status: 'FAILED',
-        error: message,
-        completedAt: new Date(),
-      },
-    })
+    await failProcessingDocumentJob(jobId, message)
   } finally {
     try {
-      await fs.rm(path.dirname(job.filePath), { recursive: true, force: true })
+      // Always remove the deterministic per-job directory rather than
+      // path.dirname(job.filePath): an empty filePath would make dirname resolve to '.'
+      // and recursively delete the working directory.
+      await fs.rm(path.join(JOBS_DIR, job.id), { recursive: true, force: true })
     } catch {
       // ignore cleanup errors
     }
   }
 }
 
-export function queueDocumentJob(jobId: string): void {
+export function queueDocumentJob(jobId: string, cookie?: string): void {
   setImmediate(() => {
-    runDocumentJob(jobId).catch((error) => logger.error('Background document job error', error))
+    runDocumentJob(jobId, cookie).catch((error) => logger.error('Background document job error', error))
   })
 }
+
+reapStuckDocumentJobsOnStartup()

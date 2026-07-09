@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { requireAdmin } from '@/lib/authz'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
+
     const [users, rooms, activeSessions, pendingJobs] = await Promise.all([
       prisma.user.count(),
       prisma.room.count(),

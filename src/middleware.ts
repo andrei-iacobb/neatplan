@@ -25,6 +25,14 @@ const cleanerRoutes = [
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
+  // 0) Let public static assets and PWA files through without auth so logged-out pages
+  // (login, demo) render their logo/manifest/service worker. Fixes the broken-image and
+  // "script behind a redirect" errors that disabled the PWA for not-yet-logged-in users.
+  // API routes are never treated as static.
+  if (!path.startsWith('/api') && isStaticAsset(path)) {
+    return NextResponse.next()
+  }
+
   // 1) IP whitelist enforcement
   // Set ALLOWED_IPS in env as comma-separated list of exact IPv4 addresses or CIDR ranges (e.g.,
   // "203.0.113.10,198.51.100.0/24"). If empty or unset, no IP restriction is applied.
@@ -53,12 +61,15 @@ export async function middleware(request: NextRequest) {
 
   // Allow scheduled cron route with shared secret only
   if (path.startsWith('/api/cron')) {
-    // SECURITY: Only accept secret via header, not query parameter to prevent logging
-    // Note: x-vercel-cron header alone is not sufficient as it can be spoofed
+    // SECURITY: Only accept secret via header, not query parameter to prevent logging.
+    // Note: x-vercel-cron header alone is not sufficient as it can be spoofed.
+    // Middleware runs before the route handler, so this comparison is the effective gate -
+    // it must be constant-time. The Edge runtime has no node crypto.timingSafeEqual, so we
+    // use a pure-JS constant-time compare.
     const providedSecret = request.headers.get('x-cron-secret')
     const expectedSecret = process.env.CRON_SECRET
 
-    if (expectedSecret && providedSecret === expectedSecret) {
+    if (expectedSecret && constantTimeEqual(providedSecret, expectedSecret)) {
       return NextResponse.next()
     }
 
@@ -143,16 +154,55 @@ export const config = {
 } 
 
 // Helpers
+// Edge-runtime-safe constant-time string comparison (node's crypto.timingSafeEqual is not
+// available in middleware). Returns false for a missing/wrong-length secret without an
+// early length-dependent branch on the compare itself.
+function constantTimeEqual(a: string | null | undefined, b: string | null | undefined): boolean {
+  if (!a || !b) return false
+  if (a.length !== b.length) return false
+  let mismatch = 0
+  for (let i = 0; i < a.length; i++) {
+    mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  }
+  return mismatch === 0
+}
+
+function isStaticAsset(path: string): boolean {
+  if (
+    path.startsWith('/assets') ||
+    path.startsWith('/icons') ||
+    path.startsWith('/images') ||
+    path === '/manifest.json' ||
+    path === '/manifest.webmanifest' ||
+    path === '/sw.js' ||
+    path === '/robots.txt' ||
+    path === '/sitemap.xml'
+  ) {
+    return true
+  }
+  return /\.(?:png|jpe?g|gif|svg|ico|webp|avif|css|js|mjs|map|json|txt|woff2?|ttf|otf|eot|webmanifest)$/i.test(path)
+}
+
+// Resolve the real client IP for the allowlist decision. The previous implementation
+// trusted the FIRST X-Forwarded-For entry, which is fully client-controlled and lets an
+// attacker spoof an allowlisted address. Instead we trust the hop appended by our own
+// reverse proxy: Cloudflare's CF-Connecting-IP when present (cloudflared tunnel), otherwise
+// the Nth-from-last XFF entry where N = TRUSTED_PROXY_COUNT (default 1).
 function getClientIp(request: NextRequest): string {
+  const cf = normalizeIp(request.headers.get('cf-connecting-ip') || '')
+  if (cf) return cf
+
+  const trusted = Math.max(1, Number(process.env.TRUSTED_PROXY_COUNT) || 1)
   const xff = request.headers.get('x-forwarded-for') || ''
   const chain = xff.split(',').map(x => normalizeIp(x.trim())).filter(Boolean)
-  // Prefer first public IPv4 from XFF chain
-  for (const hop of chain) {
-    if (isPublicIpv4(hop)) return hop
+  if (chain.length > 0) {
+    const idx = Math.max(0, chain.length - trusted)
+    const candidate = chain[idx]
+    if (candidate) return candidate
   }
-  // Fallbacks
+
   const xri = normalizeIp(request.headers.get('x-real-ip') || '')
-  if (isPublicIpv4(xri)) return xri
+  if (xri) return xri
   const reqIp = normalizeIp((request as any).ip || '')
   if (reqIp) return reqIp
   return '0.0.0.0'
@@ -180,27 +230,6 @@ function normalizeIp(ip: string): string {
   const mapped = ip.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/)
   if (mapped) return mapped[1]
   return ip
-}
-
-function isPublicIpv4(ip: string): boolean {
-  const n = ipv4ToLong(ip)
-  if (n < 0) return false
-  // Private/reserved ranges
-  const ranges: Array<[string, number]> = [
-    ['10.0.0.0', 8],
-    ['172.16.0.0', 12],
-    ['192.168.0.0', 16],
-    ['127.0.0.0', 8], // loopback
-    ['169.254.0.0', 16], // link-local
-    ['100.64.0.0', 10], // CGNAT
-    ['192.0.2.0', 24], // TEST-NET-1
-    ['198.51.100.0', 24], // TEST-NET-2
-    ['203.0.113.0', 24], // TEST-NET-3
-  ]
-  for (const [base, maskBits] of ranges) {
-    if (ipv4CidrMatch(ip, `${base}/${maskBits}`)) return false
-  }
-  return true
 }
 
 function ipv4ToLong(ip: string): number {

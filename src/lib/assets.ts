@@ -6,7 +6,7 @@
 export const ASSETS = {
   // Logos
   logos: {
-    main: '/assets/logos/logo.png',
+    main: '/assets/logos/logo.svg',
     // Add more logo variants here as needed
     // light: '/assets/logos/neatplan-logo-light.svg',
     // dark: '/assets/logos/neatplan-logo-dark.svg',

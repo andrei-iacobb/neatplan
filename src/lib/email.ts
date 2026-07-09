@@ -110,18 +110,35 @@ class EmailService {
   private async initializeTransporter() {
     try {
       // Try to use environment variables for email configuration
-      const emailConfig: EmailConfig = {
+      const emailConfig: EmailConfig & {
+        connectionTimeout: number
+        greetingTimeout: number
+        socketTimeout: number
+      } = {
         host: process.env.SMTP_HOST || 'localhost',
         port: parseInt(process.env.SMTP_PORT || '587'),
         secure: process.env.SMTP_SECURE === 'true',
         auth: {
           user: process.env.SMTP_USER || '',
           pass: process.env.SMTP_PASS || ''
-        }
+        },
+        // Bound every network phase so a dead/slow SMTP server can never hang the request
+        // path or the in-process scheduler (nodemailer defaults are effectively unbounded).
+        connectionTimeout: 10_000,
+        greetingTimeout: 10_000,
+        socketTimeout: 20_000,
       }
 
-      // If no SMTP config, use Ethereal for testing
+      // If no SMTP host is configured, only fall back to the Ethereal test service in
+      // non-production. In production (self-hosted) we leave the service unconfigured so
+      // overdue alerts are skipped with a warning rather than silently routed to a throwaway
+      // test inbox or making an external network call on boot.
       if (!process.env.SMTP_HOST) {
+        if (process.env.NODE_ENV === 'production') {
+          console.warn('SMTP_HOST not set; email notifications are disabled.')
+          this.isConfigured = false
+          return
+        }
         const testAccount = await nodemailer.createTestAccount()
         emailConfig.host = 'smtp.ethereal.email'
         emailConfig.port = 587

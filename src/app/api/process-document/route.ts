@@ -4,6 +4,7 @@ import { checkRateLimitByUserOrIp } from '@/lib/rate-limit'
 import sharp from 'sharp'
 import { getAIClient } from '@/lib/ai-provider'
 import { ocrImageToText, OcrBusyError, OcrUnavailableError } from '@/lib/ocr'
+import { requireAdmin } from '@/lib/authz'
 
 // Force dynamic behavior for the API route
 export const dynamic = 'force-dynamic'
@@ -113,15 +114,11 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
 export async function POST(request: NextRequest) {
   try {
-    const { getServerSession } = await import('next-auth')
-    const { authOptions } = await import('@/lib/auth')
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await requireAdmin()
+    if ("error" in auth) return auth.error
 
     // Rate limit per user: 3 requests per minute
-    const rate = checkRateLimitByUserOrIp(request as any, 'process_document', 3, 60 * 1000, session.user.email)
+    const rate = checkRateLimitByUserOrIp(request as any, 'process_document', 3, 60 * 1000, auth.user.email)
     if (!rate.allowed) {
       return NextResponse.json(
         { error: 'Rate limit exceeded. Please try again shortly.' },
@@ -180,12 +177,12 @@ export async function POST(request: NextRequest) {
     if (asyncMode) {
       const { createDocumentJob, queueDocumentJob } = await import('@/lib/document-jobs')
       const jobId = await createDocumentJob({
-        userId: session.user.id,
+        userId: auth.user.id,
         fileName: file.name,
         fileType: file.type,
         buffer,
       })
-      queueDocumentJob(jobId)
+      queueDocumentJob(jobId, request.headers.get('Cookie') || undefined)
       return NextResponse.json({ jobId, status: 'PENDING' }, { status: 202 })
     }
 

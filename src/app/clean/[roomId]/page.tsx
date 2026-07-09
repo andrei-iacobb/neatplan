@@ -474,13 +474,13 @@ export default function CleanRoomPage() {
                         <span className={dueDateInfo.color}>
                           {schedule.completedToday ? 'Completed today' : dueDateInfo.text}
                         </span>
-                        <span className="text-gray-500">•</span>
-                        <div className="flex items-center gap-1 text-gray-400">
+                        <span className="text-gray-400">•</span>
+                        <div className="flex items-center gap-1 text-gray-300">
                           <Calendar className="w-3 h-3" />
                           <span>{schedule.frequency}</span>
                         </div>
-                        <span className="text-gray-500">•</span>
-                        <span className="text-gray-400">Est. {schedule.estimatedDuration}</span>
+                        <span className="text-gray-400">•</span>
+                        <span className="text-gray-300">Est. {schedule.estimatedDuration}</span>
                       </div>
                     </div>
                     

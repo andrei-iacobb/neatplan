@@ -1,16 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/db'
 import { getSchedulePrimaryFrequency, inferFrequencyFromTasks } from '@/lib/frequency-mapping'
 import { checkRateLimitByUserOrIp } from '@/lib/rate-limit'
+import { requireAdmin } from '@/lib/authz'
 
 export const maxDuration = 120 // 2 minutes timeout for the route
 
-import { getAIClient, resolveAIProvider } from '@/lib/ai-provider'
+import { AIProviderUnavailableError, ensureAIProviderReady, getAIClient, resolveAIProvider } from '@/lib/ai-provider'
 
 // Rough token estimation (1 token ≈ 4 characters)
 const MAX_TOKENS_PER_REQUEST = 6000 // Leave room for system prompt and response
 const CHARS_PER_TOKEN = 4
+const DEFAULT_MAX_CHUNKS = 20
+const AI_EXTRACTION_ATTEMPTS = 3
+
+function getMaxChunks(): number {
+  const configuredMaxChunks = Number(process.env.AI_SCHEDULE_MAX_CHUNKS)
+  return Number.isInteger(configuredMaxChunks) && configuredMaxChunks > 0
+    ? configuredMaxChunks
+    : DEFAULT_MAX_CHUNKS
+}
 
 const TASK_EXTRACTION_PROMPT = `You are an expert at extracting cleaning tasks from documents. Extract ALL cleaning tasks from the provided content.
 
@@ -240,12 +249,37 @@ async function extractTasksFromChunk(chunk: string): Promise<any[]> {
       return Array.isArray(tasks) ? tasks : []
     } catch (parseError) {
       console.error('Failed to parse AI response as JSON')
-      return []
+      throw new Error('Failed to parse AI response as JSON')
     }
   } catch (error) {
     console.error('Error extracting tasks from chunk:', error)
-    return []
+    throw error
   }
+}
+
+async function extractTasksFromChunkWithRetry(chunk: string, chunkNumber: number): Promise<any[]> {
+  let lastError: unknown
+
+  for (let attempt = 0; attempt < AI_EXTRACTION_ATTEMPTS; attempt++) {
+    try {
+      return await extractTasksFromChunk(chunk)
+    } catch (error) {
+      lastError = error
+      console.error(
+        `AI extraction failed for chunk ${chunkNumber} on attempt ${attempt + 1}/${AI_EXTRACTION_ATTEMPTS}:`,
+        error
+      )
+
+      if (attempt === AI_EXTRACTION_ATTEMPTS - 1) {
+        break
+      }
+
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000))
+    }
+  }
+
+  const reason = lastError instanceof Error ? lastError.message : 'Unknown error'
+  throw new Error(`AI extraction failed for chunk ${chunkNumber} after ${AI_EXTRACTION_ATTEMPTS} attempts: ${reason}`)
 }
 
 async function analyzeDocumentMetadata(content: string): Promise<any> {
@@ -281,28 +315,15 @@ async function analyzeDocumentMetadata(content: string): Promise<any> {
 
 export async function POST(req: Request) {
   try {
-    // Rate limit per user (or IP if not authed): 5 requests per minute
-    const { authOptions } = await import('@/lib/auth')
-    const preSession = await getServerSession(authOptions)
-    const preIdentifier = preSession?.user?.email || null
-    const internalJobSecret = req.headers.get('x-internal-job')
-    const isInternalJob =
-      Boolean(process.env.CRON_SECRET) &&
-      internalJobSecret === process.env.CRON_SECRET
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
 
-    const rate = checkRateLimitByUserOrIp(req as any, 'ai_schedule', 5, 60 * 1000, preIdentifier)
+    // Rate limit per user (or IP if not authed): 5 requests per minute
+    const rate = checkRateLimitByUserOrIp(req as any, 'ai_schedule', 5, 60 * 1000, auth.user.email)
     if (!rate.allowed) {
       return NextResponse.json(
         { error: 'Rate limit exceeded. Please try again shortly.' },
         { status: 429, headers: { 'Retry-After': String(rate.retryAfterSeconds) } }
-      )
-    }
-
-    const session = preSession
-    if (!session && !isInternalJob) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
       )
     }
 
@@ -311,6 +332,18 @@ export async function POST(req: Request) {
         { error: 'AI provider not configured' },
         { status: 500 }
       )
+    }
+
+    try {
+      await ensureAIProviderReady()
+    } catch (error) {
+      if (error instanceof AIProviderUnavailableError) {
+        return NextResponse.json(
+          { error: error.message, code: 'AI_PROVIDER' },
+          { status: 502 }
+        )
+      }
+      throw error
     }
 
     const { content } = await req.json()
@@ -338,30 +371,42 @@ export async function POST(req: Request) {
     
     // Check if we need to chunk the content
     const maxCharsPerChunk = MAX_TOKENS_PER_REQUEST * CHARS_PER_TOKEN
+    const maxChunkLimit = getMaxChunks()
     const needsChunking = processedContent.length > maxCharsPerChunk
     
     let allTasks: any[] = []
+    let totalChunks = 1
+    let chunksUsed = 1
+    let truncated = false
     
     if (needsChunking) {
       console.log('Content is large, processing in chunks...')
       const chunks = smartChunkContent(processedContent, maxCharsPerChunk)
+      totalChunks = chunks.length
       console.log(`Split into ${chunks.length} chunks`)
       
-      // Process each chunk (limit to 10 chunks max to prevent excessive API calls)
-      const maxChunks = Math.min(chunks.length, 10)
+      // Process each chunk up to the configured cap to prevent excessive API calls.
+      const maxChunks = Math.min(chunks.length, maxChunkLimit)
+      chunksUsed = maxChunks
+      truncated = chunks.length > maxChunks
+
+      if (truncated) {
+        console.warn(`Document chunk processing truncated: using ${maxChunks}/${chunks.length} chunks`)
+      }
+
       for (let i = 0; i < maxChunks; i++) {
         console.log(`Processing chunk ${i + 1}/${chunks.length}...`)
-        const chunkTasks = await extractTasksFromChunk(chunks[i])
+        const chunkTasks = await extractTasksFromChunkWithRetry(chunks[i], i + 1)
         allTasks.push(...chunkTasks)
         
         // Small delay to avoid rate limiting
-        if (i < chunks.length - 1) {
+        if (i < maxChunks - 1) {
           await new Promise(resolve => setTimeout(resolve, 500))
         }
       }
     } else {
       console.log('Content fits in single request, processing normally...')
-      allTasks = await extractTasksFromChunk(processedContent)
+      allTasks = await extractTasksFromChunkWithRetry(processedContent, 1)
     }
 
     console.log(`Extracted ${allTasks.length} tasks total`)
@@ -430,22 +475,34 @@ export async function POST(req: Request) {
 
     console.log('Schedule created successfully:', schedule.id)
 
+    const truncationWarning = truncated
+      ? `Warning: document was truncated during AI processing. Processed ${chunksUsed} of ${totalChunks} chunks; some tasks may be missing.`
+      : null
+
     return NextResponse.json({ 
-      result: `Successfully extracted ${tasks.length} cleaning tasks using ${needsChunking ? 'multi-chunk' : 'single'} processing`,
+      result: `Successfully extracted ${tasks.length} cleaning tasks using ${needsChunking ? 'multi-chunk' : 'single'} processing${truncationWarning ? `. ${truncationWarning}` : ''}`,
+      warning: truncationWarning,
       schedule,
       processingInfo: {
         originalLength: content.length,
         processedLength: processedContent.length,
-        chunksUsed: needsChunking ? smartChunkContent(processedContent, maxCharsPerChunk).length : 1,
+        chunksUsed,
+        totalChunks,
+        truncated,
+        maxChunks: maxChunkLimit,
         tasksExtracted: tasks.length
       },
       metadata
     })
   } catch (error: any) {
     console.error('Error processing schedule:', error)
+    const message = error instanceof Error && error.message.startsWith('AI extraction failed')
+      ? error.message
+      : 'Failed to process request'
+
     return NextResponse.json(
-      { error: 'Failed to process request' },
+      { error: message },
       { status: 500 }
     )
   }
-} 
+}

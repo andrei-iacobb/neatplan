@@ -2,7 +2,7 @@ import sharp from 'sharp'
 import * as z from 'zod'
 import type { ScheduleFrequency } from '@prisma/client'
 import { getSchedulePrimaryFrequency, inferFrequencyFromTasks } from './frequency-mapping'
-import { getAIClient } from './ai-provider'
+import { AIProviderUnavailableError, ensureAIProviderReady, getAIClient } from './ai-provider'
 import { ocrImageToText, OcrBusyError, OcrUnavailableError } from './ocr'
 
 export interface ExtractedScheduleTask {
@@ -19,7 +19,16 @@ export interface ExtractedSchedule {
   tasks: ExtractedScheduleTask[]
 }
 
-export type ScheduleExtractionCode = 'SCANNED_PDF' | 'EMPTY' | 'NO_TASKS' | 'OPENAI' | 'UNSUPPORTED' | 'OCR' | 'BUSY'
+export type ScheduleExtractionCode =
+  | 'SCANNED_PDF'
+  | 'EMPTY'
+  | 'NO_TASKS'
+  | 'OPENAI'
+  | 'AI_PROVIDER'
+  | 'UNSUPPORTED'
+  | 'OCR'
+  | 'BUSY'
+  | 'TOO_LARGE'
 
 export class ScheduleExtractionError extends Error {
   code: ScheduleExtractionCode
@@ -33,13 +42,71 @@ export class ScheduleExtractionError extends Error {
 }
 
 const SCHEDULE_EXTRACTION_JSON_SCHEMA_NAME = 'schedule_extraction_result' as const
+const MAX_DOCUMENT_BYTES = 50 * 1024 * 1024
+const MAX_CONCURRENT_PARSES = 3
 
-function getConfiguredAIClient(): ReturnType<typeof getAIClient> {
+type ConfiguredAIClient = ReturnType<typeof getAIClient>
+
+async function getConfiguredAIClientReady(): Promise<ConfiguredAIClient> {
   try {
+    await ensureAIProviderReady()
     return getAIClient()
-  } catch {
+  } catch (error) {
+    if (error instanceof AIProviderUnavailableError) {
+      throw new ScheduleExtractionError('AI_PROVIDER', error.message)
+    }
     // Missing OPENAI_API_KEY when the resolved provider is 'openai'.
     throw new ScheduleExtractionError('OPENAI', 'AI provider not configured')
+  }
+}
+
+let runningParses = 0
+const parseWaiters: Array<() => void> = []
+
+async function acquireParseSlot(): Promise<() => void> {
+  if (runningParses < MAX_CONCURRENT_PARSES) {
+    runningParses += 1
+    return createParseSlotRelease()
+  }
+
+  await new Promise<void>((resolve) => {
+    parseWaiters.push(resolve)
+  })
+  return createParseSlotRelease()
+}
+
+function createParseSlotRelease(): () => void {
+  let released = false
+  return () => {
+    if (released) {
+      return
+    }
+    released = true
+    releaseParseSlot()
+  }
+}
+
+function releaseParseSlot(): void {
+  const next = parseWaiters.shift()
+  if (next) {
+    next()
+  } else {
+    runningParses -= 1
+  }
+}
+
+async function withParseSlot<T>(work: () => Promise<T>): Promise<T> {
+  const releaseSlot = await acquireParseSlot()
+  try {
+    return await work()
+  } finally {
+    releaseSlot()
+  }
+}
+
+function assertDocumentSize(buffer: Buffer): void {
+  if (buffer.length > MAX_DOCUMENT_BYTES) {
+    throw new ScheduleExtractionError('TOO_LARGE', 'Document too large')
   }
 }
 
@@ -236,15 +303,24 @@ async function extractDocxText(buffer: Buffer): Promise<string> {
 async function prepareDocumentText(params: {
   buffer: Buffer
   mimeType: string
+  supportsVision: boolean
 }): Promise<{ mode: 'text' | 'vision'; content: string; imageBase64?: string }> {
-  const { buffer, mimeType } = params
-  const { supportsVision } = getConfiguredAIClient()
+  const { buffer, mimeType, supportsVision } = params
 
   if (mimeType.startsWith('image/')) {
     if (supportsVision) {
-      const imageBuffer = await sharp(buffer)
-        .resize(2000, 2000, { fit: 'inside', withoutEnlargement: true })
-        .toBuffer()
+      let imageBuffer: Buffer
+      try {
+        imageBuffer = await sharp(buffer)
+          .resize(2000, 2000, { fit: 'inside', withoutEnlargement: true })
+          .toBuffer()
+      } catch (error) {
+        console.error('Image preprocessing failed', error)
+        throw new ScheduleExtractionError(
+          'EMPTY',
+          'Could not process this image. Upload a supported image that is not corrupted.'
+        )
+      }
 
       return {
         mode: 'vision',
@@ -336,8 +412,9 @@ async function runExtractionWithModel(params: {
   content: string
   mimeType: string
   fileName?: string
+  aiClient: ConfiguredAIClient
 }): Promise<ModelExtraction> {
-  const { client, model } = getConfiguredAIClient()
+  const { client, model } = params.aiClient
 
   const messages =
     params.mode === 'vision'
@@ -427,12 +504,22 @@ export async function extractScheduleFromDocument(params: {
   fileName?: string
 }): Promise<ExtractedSchedule> {
   try {
-    const prepared = await prepareDocumentText({ buffer: params.buffer, mimeType: params.mimeType })
+    assertDocumentSize(params.buffer)
+
+    const aiClient = await getConfiguredAIClientReady()
+    const prepared = await withParseSlot(() =>
+      prepareDocumentText({
+        buffer: params.buffer,
+        mimeType: params.mimeType,
+        supportsVision: aiClient.supportsVision,
+      })
+    )
     const modelResult = await runExtractionWithModel({
       mode: prepared.mode,
       content: prepared.content,
       mimeType: params.mimeType,
       fileName: params.fileName,
+      aiClient,
     })
 
     const tasks = dedupeTasks(modelResult.tasks)
