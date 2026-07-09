@@ -26,5 +26,7 @@ pnpm exec prisma migrate deploy
 # echo "Seeding database..."
 # npm run prisma:seed
 
-echo "Starting development server..."
-exec pnpm start -- -H 0.0.0.0 -p 4040
+echo "Starting production server..."
+# Call `next start` directly rather than `pnpm start -- ...`: under Next 15 the forwarded
+# `--` makes next mis-parse `-H` as the project directory ("no such directory: /app/-H").
+exec pnpm exec next start -H 0.0.0.0 -p 4040
