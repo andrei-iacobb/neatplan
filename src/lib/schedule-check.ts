@@ -24,7 +24,10 @@ export async function runScheduleCheck(): Promise<ScheduleCheckResult> {
   const overdueRoomSchedules = await prisma.roomSchedule.updateMany({
     where: {
       nextDue: { lt: now },
-      status: { not: 'COMPLETED' },
+      // Only transition schedules that are not already OVERDUE (or COMPLETED). This means
+      // `count` reflects schedules that JUST became overdue, so admins are alerted once on
+      // the transition rather than re-alerted on every scheduler tick while items stay overdue.
+      status: { notIn: ['COMPLETED', 'OVERDUE'] },
     },
     data: { status: 'OVERDUE' },
   })
@@ -32,7 +35,10 @@ export async function runScheduleCheck(): Promise<ScheduleCheckResult> {
   const overdueEquipmentSchedules = await prisma.equipmentSchedule.updateMany({
     where: {
       nextDue: { lt: now },
-      status: { not: 'COMPLETED' },
+      // Only transition schedules that are not already OVERDUE (or COMPLETED). This means
+      // `count` reflects schedules that JUST became overdue, so admins are alerted once on
+      // the transition rather than re-alerted on every scheduler tick while items stay overdue.
+      status: { notIn: ['COMPLETED', 'OVERDUE'] },
     },
     data: { status: 'OVERDUE' },
   })
