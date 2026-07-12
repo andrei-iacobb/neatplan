@@ -14,7 +14,7 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "NeatPlan",
+  title: { default: "NeatPlan", template: "%s | NeatPlan" },
   description: "Track your cleaning tasks and schedule",
   manifest: "/manifest.json",
   appleWebApp: {

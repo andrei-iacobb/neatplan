@@ -1,4 +1,9 @@
+import type { Metadata } from 'next'
 import { type ReactNode } from 'react'
+
+export const metadata: Metadata = {
+  title: 'Demo',
+}
 
 // The /demo pages are hardcoded dark. This pre-paint script flips the theme
 // class before first paint so direct loads don't flash the .light overrides
