@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { calculateNextDueDate } from '@/lib/schedule-utils'
+import { Prisma } from '@prisma/client'
 
 // GET /api/admin/equipment/[id]/schedules - Get schedules for equipment
 export async function GET(
@@ -91,23 +92,6 @@ export async function POST(
       )
     }
 
-    // Check if the schedule is already assigned to the equipment
-    const existingSchedule = await prisma.equipmentSchedule.findUnique({
-      where: {
-        equipmentId_scheduleId: {
-          equipmentId,
-          scheduleId
-        }
-      }
-    })
-
-    if (existingSchedule) {
-      return NextResponse.json(
-        { error: 'This schedule is already assigned to this equipment' },
-        { status: 400 }
-      )
-    }
-
     const nextDueDate = calculateNextDueDate(assignedFrequency)
 
     const equipmentSchedule = await prisma.equipmentSchedule.create({
@@ -132,6 +116,20 @@ export async function POST(
     return NextResponse.json(equipmentSchedule)
   } catch (error) {
     console.error('Error assigning schedule to equipment:', error)
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        return NextResponse.json(
+          { error: 'Schedule already assigned to this equipment' },
+          { status: 409 }
+        )
+      }
+      if (error.code === 'P2003') {
+        return NextResponse.json(
+          { error: 'Equipment or schedule not found' },
+          { status: 404 }
+        )
+      }
+    }
     return NextResponse.json(
       { error: 'Failed to assign schedule to equipment' },
       { status: 500 }
@@ -165,22 +163,6 @@ export async function DELETE(
       )
     }
 
-    const equipmentSchedule = await prisma.equipmentSchedule.findUnique({
-      where: {
-        equipmentId_scheduleId: {
-          equipmentId,
-          scheduleId
-        }
-      }
-    })
-
-    if (!equipmentSchedule) {
-      return NextResponse.json(
-        { error: 'Equipment schedule not found' },
-        { status: 404 }
-      )
-    }
-
     await prisma.equipmentSchedule.delete({
       where: {
         equipmentId_scheduleId: {
@@ -194,9 +176,18 @@ export async function DELETE(
 
   } catch (error) {
     console.error('Error removing schedule from equipment:', error)
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2025'
+    ) {
+      return NextResponse.json(
+        { error: 'Equipment schedule not found' },
+        { status: 404 }
+      )
+    }
     return NextResponse.json(
       { error: 'Failed to remove schedule from equipment' },
       { status: 500 }
     )
   }
-} 
+}

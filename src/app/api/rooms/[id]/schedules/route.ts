@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAdmin, requireAuth } from '@/lib/authz'
 import { calculateNextDueDate } from '@/lib/schedule-utils'
+import { Prisma } from '@prisma/client'
 
 // POST /api/rooms/[id]/schedules - Assign a schedule to a room (admin only)
 export async function POST(
@@ -46,23 +47,6 @@ export async function POST(
       )
     }
 
-    // Check if the schedule is already assigned to the room
-    const existingSchedule = await prisma.roomSchedule.findUnique({
-      where: {
-        roomId_scheduleId: {
-          roomId,
-          scheduleId
-        }
-      }
-    })
-
-    if (existingSchedule) {
-      return NextResponse.json(
-        { error: 'This schedule is already assigned to this room' },
-        { status: 400 }
-      )
-    }
-
     const nextDueDate = calculateNextDueDate(assignedFrequency)
 
     const roomSchedule = await prisma.roomSchedule.create({
@@ -87,6 +71,20 @@ export async function POST(
     return NextResponse.json(roomSchedule)
   } catch (error) {
     console.error('Error assigning schedule to room:', error)
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        return NextResponse.json(
+          { error: 'Schedule already assigned to this room' },
+          { status: 409 }
+        )
+      }
+      if (error.code === 'P2003') {
+        return NextResponse.json(
+          { error: 'Room or schedule not found' },
+          { status: 404 }
+        )
+      }
+    }
     return NextResponse.json(
       { error: 'Failed to assign schedule to room' },
       { status: 500 }

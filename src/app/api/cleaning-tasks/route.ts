@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 
 export async function GET() {
   try {
@@ -47,13 +48,6 @@ export async function POST(request: Request) {
       )
     }
 
-    if (roomId) {
-      const room = await prisma.room.findUnique({ where: { id: roomId } })
-      if (!room) {
-        return NextResponse.json({ error: 'Room not found' }, { status: 404 })
-      }
-    }
-
     const task = await prisma.cleaningTask.create({
       data: {
         taskDescription: taskDescription.trim(),
@@ -66,6 +60,12 @@ export async function POST(request: Request) {
     return NextResponse.json(task, { status: 201 })
   } catch (error) {
     console.error('Error creating cleaning task:', error)
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2003'
+    ) {
+      return NextResponse.json({ error: 'Room not found' }, { status: 404 })
+    }
     return NextResponse.json(
       { error: 'Error creating cleaning task' },
       { status: 500 }

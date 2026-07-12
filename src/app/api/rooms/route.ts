@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { RoomType } from '@prisma/client'
+import { Prisma, RoomType } from '@prisma/client'
 import * as z from 'zod'
 
 const roomSchema = z.object({
@@ -74,9 +74,18 @@ export async function POST(req: Request) {
         { status: 400 }
       )
     }
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      return NextResponse.json(
+        { error: 'A room with this name already exists' },
+        { status: 409 }
+      )
+    }
     return NextResponse.json(
       { error: 'Something went wrong' },
       { status: 500 }
     )
   }
-} 
+}

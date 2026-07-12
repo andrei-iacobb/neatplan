@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAdmin } from '@/lib/authz'
+import { Prisma } from '@prisma/client'
 
 // Update a schedule
 export async function PUT(req: Request, context: { params: Promise<{ id: string }> }) {
@@ -71,15 +72,6 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
     const params = await context.params
     const { id } = params
 
-    // First check if the schedule exists
-    const schedule = await prisma.schedule.findUnique({
-      where: { id }
-    })
-
-    if (!schedule) {
-      return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })
-    }
-
     // Delete the schedule and its tasks
     await prisma.schedule.delete({
       where: { id }
@@ -88,6 +80,12 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error('Error deleting schedule:', error)
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2025'
+    ) {
+      return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })
+    }
     return NextResponse.json(
       { error: 'Failed to delete schedule' },
       { status: 500 }
