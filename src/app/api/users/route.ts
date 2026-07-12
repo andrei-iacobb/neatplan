@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
+import { UserRole } from '@prisma/client'
 import { prisma } from '@/lib/db'
 
 export async function GET(request: Request) {
@@ -96,6 +97,7 @@ export async function POST(request: Request) {
         email,
         password: hashedPassword,
         isAdmin,
+        role: isAdmin ? UserRole.ADMIN : UserRole.CLEANER,
       }
     })
 

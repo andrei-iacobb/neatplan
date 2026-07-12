@@ -1,4 +1,4 @@
-import { PrismaClient, RoomType, ScheduleFrequency, ScheduleStatus } from '@prisma/client'
+import { PrismaClient, RoomType, ScheduleFrequency, ScheduleStatus, UserRole } from '@prisma/client'
 import { hash } from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -10,12 +10,14 @@ async function main() {
     where: { email: 'admin@neatplan.com' },
     update: {
       isAdmin: true,
+      role: UserRole.ADMIN,
     },
     create: {
       email: 'admin@neatplan.com',
       password: adminPassword,
       name: 'System Administrator',
       isAdmin: true,
+      role: UserRole.ADMIN,
     },
   })
   console.log('Admin user:', admin)

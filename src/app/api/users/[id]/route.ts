@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
+import { UserRole } from '@prisma/client'
 
 export async function PUT(
   request: Request,
@@ -52,7 +53,10 @@ export async function PUT(
     const dataToUpdate: Record<string, unknown> = {}
     if (name !== undefined) dataToUpdate.name = name
     if (email !== undefined) dataToUpdate.email = email
-    if (isAdmin !== undefined) dataToUpdate.isAdmin = Boolean(isAdmin)
+    if (isAdmin !== undefined) {
+      dataToUpdate.isAdmin = Boolean(isAdmin)
+      dataToUpdate.role = Boolean(isAdmin) ? UserRole.ADMIN : UserRole.CLEANER
+    }
     if (isBlocked !== undefined) dataToUpdate.isBlocked = Boolean(isBlocked)
     if (forcePasswordChange !== undefined) dataToUpdate.forcePasswordChange = Boolean(forcePasswordChange)
 
