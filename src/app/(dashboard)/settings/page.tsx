@@ -15,7 +15,6 @@ import {
   RefreshCw,
   Settings as SettingsIcon,
   Download,
-  Trash2,
   Volume2,
   Sparkles
 } from 'lucide-react'
@@ -60,6 +59,7 @@ export default function SettingsPage() {
   const [saveHovered, setSaveHovered] = useState(false)
   const [profileSaveHovered, setProfileSaveHovered] = useState(false)
   const [exportHovered, setExportHovered] = useState(false)
+  const [exportLoading, setExportLoading] = useState(false)
   const [hoveredTestBtn, setHoveredTestBtn] = useState<string | null>(null)
 
   // Load user profile data
@@ -135,6 +135,18 @@ export default function SettingsPage() {
     if (settings.system.autoSave) {
       playSound('click')
     }
+  }
+
+  const handleExportData = () => {
+    if (exportLoading) return
+
+    setExportLoading(true)
+    const link = document.createElement('a')
+    link.href = '/api/admin/export-report'
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    setTimeout(() => setExportLoading(false), 1000)
   }
 
   const tabs = [
@@ -530,8 +542,10 @@ export default function SettingsPage() {
 
                   <div className="pt-4" style={{ borderTop: '1px solid ' + tc.divider }}>
                     <h3 className="text-[15px] font-medium mb-4" style={{ color: tc.textPrimary }}>Data Management</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
                       <button
+                        onClick={handleExportData}
+                        disabled={exportLoading}
                         onMouseEnter={() => setExportHovered(true)}
                         onMouseLeave={() => setExportHovered(false)}
                         className="flex items-center justify-center px-4 py-2 rounded-lg text-[13px] font-medium transition-colors"
@@ -541,17 +555,12 @@ export default function SettingsPage() {
                           border: '1px solid ' + tc.btnSecondaryBorder
                         }}
                       >
-                        <Download className="w-4 h-4 mr-2" />
-                        Export Data
-                      </button>
-                      <button
-                        className="flex items-center justify-center px-4 py-2 rounded-lg text-[13px] font-medium transition-colors"
-                        style={{ background: tc.btnDangerBg, color: tc.btnDangerText, border: '1px solid ' + tc.btnDangerBorder }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = tc.btnDangerHoverBg}
-                        onMouseLeave={(e) => e.currentTarget.style.background = tc.btnDangerBg}
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete Account
+                        {exportLoading ? (
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Download className="w-4 h-4 mr-2" />
+                        )}
+                        {exportLoading ? 'Exporting...' : 'Export Data'}
                       </button>
                     </div>
                   </div>
