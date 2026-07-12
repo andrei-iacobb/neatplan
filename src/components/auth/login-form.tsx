@@ -156,7 +156,7 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? "Hide password" : "Show password"}
               aria-pressed={showPassword}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
+              className="absolute right-1.5 top-1/2 flex h-10 w-10 transform items-center justify-center -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
               disabled={isLoading}
             >
               {showPassword ? (

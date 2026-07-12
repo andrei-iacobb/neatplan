@@ -787,7 +787,7 @@ function RoomCard({ room, tc, delay, onEdit }: RoomCardProps) {
             <p className="text-[11px]" style={{ color: tc.textMuted }}>{room.floor}</p>
           </div>
         </div>
-        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(room) }} className="p-1 rounded transition-colors flex-shrink-0"
+        <button type="button" aria-label="Edit room" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(room) }} className="w-10 h-10 -m-[9px] rounded transition-colors flex-shrink-0 flex items-center justify-center"
           style={{ color: tc.textMuted }}
           onMouseEnter={(e) => { e.currentTarget.style.color = tc.accentGreen }}
           onMouseLeave={(e) => { e.currentTarget.style.color = tc.textMuted }}>
