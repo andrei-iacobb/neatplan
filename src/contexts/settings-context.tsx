@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { usePathname } from 'next/navigation'
 
 export interface SettingsState {
   theme: 'light' | 'dark' | 'system'
@@ -68,6 +69,7 @@ interface SettingsContextType {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined)
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname()
   const [settings, setSettings] = useState<SettingsState>(defaultSettings)
   const [isLoading, setIsLoading] = useState(false)
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light')
@@ -124,7 +126,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   // Apply theme to document
   useEffect(() => {
     const root = document.documentElement
-    
+
+    // The standalone /demo pages are hardcoded dark and must not receive the
+    // .light overrides from globals.css - force dark while on them.
+    if (pathname === '/demo' || pathname?.startsWith('/demo/')) {
+      root.classList.remove('light')
+      root.classList.add('dark')
+      return
+    }
+
     if (resolvedTheme === 'light') {
       root.classList.remove('dark')
       root.classList.add('light')
@@ -132,7 +142,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       root.classList.remove('light')
       root.classList.add('dark')
     }
-  }, [resolvedTheme])
+  }, [resolvedTheme, pathname])
 
   // Apply compact mode
   useEffect(() => {
