@@ -6,7 +6,7 @@ import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { usePathname } from "next/navigation"
 import {
-  Home, Calendar, Settings, DoorOpen, LogOut, User, Wrench, ClipboardCheck, Menu, X
+  Home, Calendar, Settings, DoorOpen, LogOut, User, Wrench, ClipboardCheck, Menu, X, ChevronsRight, ChevronsLeft
 } from "lucide-react"
 import { Logo } from "@/components/ui/logo"
 import { useSettings } from "@/contexts/settings-context"
@@ -30,6 +30,8 @@ const ease: [number, number, number, number] = [0.25, 0.1, 0.25, 1]
 
 export function Sidebar() {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [pinned, setPinned] = useState(false)
+  const [hasLoadedPinned, setHasLoadedPinned] = useState(false)
   const pathname = usePathname()
   const { data: session } = useSession()
   const { resolvedTheme } = useSettings()
@@ -37,6 +39,16 @@ export function Sidebar() {
   const expandRef = useRef<NodeJS.Timeout | null>(null)
   const collapseRef = useRef<NodeJS.Timeout | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const expanded = pinned || isExpanded
+
+  useEffect(() => {
+    setPinned(localStorage.getItem('neatplan-sidebar-pinned') === 'true')
+    setHasLoadedPinned(true)
+  }, [])
+
+  useEffect(() => {
+    if (hasLoadedPinned) localStorage.setItem('neatplan-sidebar-pinned', String(pinned))
+  }, [pinned, hasLoadedPinned])
 
   // Close the mobile drawer whenever the route changes or viewport becomes desktop-sized.
   useEffect(() => { setMobileOpen(false) }, [pathname])
@@ -54,7 +66,21 @@ export function Sidebar() {
 
   const handleMouseLeave = () => {
     if (expandRef.current) { clearTimeout(expandRef.current); expandRef.current = null }
-    collapseRef.current = setTimeout(() => setIsExpanded(false), 120)
+    if (!pinned) collapseRef.current = setTimeout(() => setIsExpanded(false), 120)
+  }
+
+  const togglePinned = () => {
+    setPinned((wasPinned) => {
+      // Always collapse on unpin: touch taps fire compatibility mouseenter
+      // (which schedules the hover-expand timer) with no matching mouseleave,
+      // so both the flag and the pending timer must be cleared or the sidebar
+      // re-latches open on tablets. Mouse users just re-hover to expand.
+      if (wasPinned) {
+        if (expandRef.current) { clearTimeout(expandRef.current); expandRef.current = null }
+        setIsExpanded(false)
+      }
+      return !wasPinned
+    })
   }
 
   useEffect(() => {
@@ -80,7 +106,7 @@ export function Sidebar() {
     <>
     <motion.aside
       initial={false}
-      animate={{ width: isExpanded ? 220 : 60 }}
+      animate={{ width: expanded ? 220 : 60 }}
       transition={{ duration: 0.25, ease }}
       className="hidden md:flex fixed left-0 top-0 h-full z-40 overflow-hidden flex-col transition-colors duration-300"
       style={{ background: t.bg, backdropFilter: 'blur(20px)', borderRight: `1px solid ${t.border}` }}
@@ -91,15 +117,15 @@ export function Sidebar() {
       <div className="h-[60px] flex items-center px-[14px] flex-shrink-0">
         <div className="flex items-center min-w-0">
           <motion.div
-            animate={{ scale: isExpanded ? 1.05 : 0.85 }}
+            animate={{ scale: expanded ? 1.05 : 0.85 }}
             transition={{ duration: 0.25, ease }}
             className="flex-shrink-0"
           >
             <Logo size="sm" />
           </motion.div>
           <motion.span
-            animate={{ opacity: isExpanded ? 1 : 0, x: isExpanded ? 0 : -6 }}
-            transition={{ duration: 0.2, ease, delay: isExpanded ? 0.08 : 0 }}
+            animate={{ opacity: expanded ? 1 : 0, x: expanded ? 0 : -6 }}
+            transition={{ duration: 0.2, ease, delay: expanded ? 0.08 : 0 }}
             className="ml-2.5 font-bold text-[15px] tracking-tight whitespace-nowrap"
             style={{ color: t.title }}
           >
@@ -110,6 +136,16 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 flex flex-col gap-0.5 px-[10px] pt-1">
+        <button
+          onClick={togglePinned}
+          aria-label={pinned ? 'Collapse navigation' : 'Expand navigation'}
+          className="w-full min-h-10 flex-shrink-0 flex items-center justify-center rounded-lg transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-95"
+          style={{ color: t.navDefault }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = t.navHoverBg; e.currentTarget.style.color = t.navHover }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = t.navDefault }}
+        >
+          {pinned ? <ChevronsLeft className="w-[18px] h-[18px]" /> : <ChevronsRight className="w-[18px] h-[18px]" />}
+        </button>
         {navigation.map((item) => {
           const active = isActiveRoute(pathname, item.href)
           return (
@@ -121,7 +157,7 @@ export function Sidebar() {
                 color: active ? 'rgb(16, 185, 129)' : t.navDefault,
                 background: active ? t.activeBg : 'transparent',
               }}
-              title={!isExpanded ? item.name : undefined}
+              title={!expanded ? item.name : undefined}
               onMouseEnter={(e) => { if (!active) { e.currentTarget.style.background = t.navHoverBg; e.currentTarget.style.color = t.navHover }}}
               onMouseLeave={(e) => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = t.navDefault }}}
             >
@@ -137,8 +173,8 @@ export function Sidebar() {
                 <item.icon className="w-[18px] h-[18px]" strokeWidth={active ? 2.2 : 1.8} />
               </div>
               <motion.span
-                animate={{ opacity: isExpanded ? 1 : 0, x: isExpanded ? 0 : -6 }}
-                transition={{ duration: 0.2, ease, delay: isExpanded ? 0.06 : 0 }}
+                animate={{ opacity: expanded ? 1 : 0, x: expanded ? 0 : -6 }}
+                transition={{ duration: 0.2, ease, delay: expanded ? 0.06 : 0 }}
                 className="ml-3 text-[13px] font-medium whitespace-nowrap"
               >
                 {item.name}
@@ -158,14 +194,14 @@ export function Sidebar() {
             style={{ color: t.signoutDefault }}
             onMouseEnter={(e) => { e.currentTarget.style.color = 'rgb(239, 68, 68)'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)' }}
             onMouseLeave={(e) => { e.currentTarget.style.color = t.signoutDefault; e.currentTarget.style.background = 'transparent' }}
-            title={!isExpanded ? "Sign Out" : undefined}
+            title={!expanded ? "Sign Out" : undefined}
           >
             <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
               <LogOut className="w-[18px] h-[18px]" strokeWidth={1.8} />
             </div>
             <motion.span
-              animate={{ opacity: isExpanded ? 1 : 0, x: isExpanded ? 0 : -6 }}
-              transition={{ duration: 0.2, ease, delay: isExpanded ? 0.08 : 0 }}
+              animate={{ opacity: expanded ? 1 : 0, x: expanded ? 0 : -6 }}
+              transition={{ duration: 0.2, ease, delay: expanded ? 0.08 : 0 }}
               className="ml-3 text-[13px] font-medium whitespace-nowrap"
             >
               Sign Out
