@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
 
 // Handle OPTIONS preflight request
 export async function OPTIONS() {
-  const allowedOrigin = process.env.CORS_ALLOWED_ORIGIN || process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  const allowedOrigin = process.env.CORS_ALLOWED_ORIGIN || process.env.NEXTAUTH_URL || 'http://localhost:4040'
   return new NextResponse(null, {
     status: 200,
     headers: {
