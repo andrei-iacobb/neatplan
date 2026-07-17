@@ -5,14 +5,15 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { User, Lock, Palette, ArrowLeft, Sun, Moon, Monitor, Check, AlertCircle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useSettings } from '@/contexts/settings-context'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 export default function CleanerSettingsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const { settings, updateSetting } = useSettings()
+  const { settings, setTheme } = useSettings()
+  const tc = useThemeColors()
 
   // Profile state
   const [name, setName] = useState('')
@@ -103,7 +104,7 @@ export default function CleanerSettingsPage() {
   if (status === 'loading') {
     return (
       <div className="min-h-[400px] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: tc.accentGreen }}></div>
       </div>
     )
   }
@@ -114,23 +115,29 @@ export default function CleanerSettingsPage() {
     { value: 'system', label: 'System', icon: Monitor },
   ]
 
+  const inputStyle = { background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }
+  const readOnlyStyle = { background: tc.emptyBg, border: `1px solid ${tc.inputBorder}`, color: tc.textMuted }
+  const cardStyle = { background: tc.cardBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }
+
   return (
-    <div className="min-h-screen text-gray-300">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen" style={{ color: tc.textSecondary }}>
+      <div className="max-w-4xl mx-auto px-4">
         {/* Back Button */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           className="mb-6"
         >
-          <Button
-            variant="ghost"
+          <button
             onClick={() => router.push('/clean')}
-            className="flex items-center gap-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700/50 px-0"
+            className="flex items-center gap-2 text-[13px] font-medium transition-colors px-0"
+            style={{ color: tc.textMuted }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = tc.textPrimary }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = tc.textMuted }}
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
-          </Button>
+          </button>
         </motion.div>
 
         {/* Header */}
@@ -140,8 +147,8 @@ export default function CleanerSettingsPage() {
           transition={{ delay: 0.1 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
-          <p className="text-gray-400">Manage your preferences and account settings</p>
+          <h1 className="text-3xl font-bold mb-2" style={{ color: tc.textPrimary }}>Settings</h1>
+          <p style={{ color: tc.textMuted }}>Manage your preferences and account settings</p>
         </motion.div>
 
         {/* Settings Sections */}
@@ -151,59 +158,65 @@ export default function CleanerSettingsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-gray-800/50 rounded-lg border border-gray-700 p-6"
+            className="rounded-xl p-6"
+            style={cardStyle}
           >
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                <User className="w-5 h-5 text-blue-400" />
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.12)' }}>
+                <User className="w-5 h-5" style={{ color: tc.accentGreen }} />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-100">Profile</h3>
-                <p className="text-sm text-gray-400">Update your personal information</p>
+                <h3 className="text-lg font-semibold" style={{ color: tc.textPrimary }}>Profile</h3>
+                <p className="text-sm" style={{ color: tc.textMuted }}>Update your personal information</p>
               </div>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Name</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: tc.textSecondary }}>Name</label>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Your name"
-                  className="bg-gray-700/50 border-gray-600 text-gray-100 placeholder-gray-500"
+                  style={inputStyle}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: tc.textSecondary }}>Email</label>
                 <Input
                   value={session?.user?.email || ''}
                   readOnly
-                  className="bg-gray-700/30 border-gray-600 text-gray-400 cursor-not-allowed"
+                  className="cursor-not-allowed"
+                  style={readOnlyStyle}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Role</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: tc.textSecondary }}>Role</label>
                 <Input
                   value="Cleaner"
                   readOnly
-                  className="bg-gray-700/30 border-gray-600 text-gray-400 cursor-not-allowed"
+                  className="cursor-not-allowed"
+                  style={readOnlyStyle}
                 />
               </div>
 
               {profileMessage && (
-                <div className={`flex items-center gap-2 text-sm ${profileMessage.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                <div className="flex items-center gap-2 text-sm" style={{ color: profileMessage.type === 'success' ? tc.statusCompleted.text : tc.statusOverdue.text }}>
                   {profileMessage.type === 'success' ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                   {profileMessage.text}
                 </div>
               )}
 
-              <Button
+              <button
                 onClick={handleProfileSave}
                 disabled={profileSaving}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="px-4 py-2 rounded-lg text-[13px] font-medium transition-colors disabled:opacity-50"
+                style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: `1px solid ${tc.btnPrimaryBorder}` }}
+                onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}
               >
                 {profileSaving ? 'Saving...' : 'Save Profile'}
-              </Button>
+              </button>
             </div>
           </motion.div>
 
@@ -212,64 +225,68 @@ export default function CleanerSettingsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-gray-800/50 rounded-lg border border-gray-700 p-6"
+            className="rounded-xl p-6"
+            style={cardStyle}
           >
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
-                <Lock className="w-5 h-5 text-red-400" />
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: tc.statusOverdue.bg }}>
+                <Lock className="w-5 h-5" style={{ color: tc.statusOverdue.text }} />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-100">Security</h3>
-                <p className="text-sm text-gray-400">Change your password</p>
+                <h3 className="text-lg font-semibold" style={{ color: tc.textPrimary }}>Security</h3>
+                <p className="text-sm" style={{ color: tc.textMuted }}>Change your password</p>
               </div>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Current Password</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: tc.textSecondary }}>Current Password</label>
                 <Input
                   type="password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="Enter current password"
-                  className="bg-gray-700/50 border-gray-600 text-gray-100 placeholder-gray-500"
+                  style={inputStyle}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">New Password</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: tc.textSecondary }}>New Password</label>
                 <Input
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Enter new password (min 8 characters)"
-                  className="bg-gray-700/50 border-gray-600 text-gray-100 placeholder-gray-500"
+                  style={inputStyle}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Confirm New Password</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: tc.textSecondary }}>Confirm New Password</label>
                 <Input
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm new password"
-                  className="bg-gray-700/50 border-gray-600 text-gray-100 placeholder-gray-500"
+                  style={inputStyle}
                 />
               </div>
 
               {securityMessage && (
-                <div className={`flex items-center gap-2 text-sm ${securityMessage.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                <div className="flex items-center gap-2 text-sm" style={{ color: securityMessage.type === 'success' ? tc.statusCompleted.text : tc.statusOverdue.text }}>
                   {securityMessage.type === 'success' ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                   {securityMessage.text}
                 </div>
               )}
 
-              <Button
+              <button
                 onClick={handleChangePassword}
                 disabled={securitySaving || !currentPassword || !newPassword || !confirmPassword}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                className="px-4 py-2 rounded-lg text-[13px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ background: tc.btnDangerBg, color: tc.btnDangerText, border: `1px solid ${tc.btnDangerBorder}` }}
+                onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = tc.btnDangerHoverBg }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnDangerBg }}
               >
                 {securitySaving ? 'Changing...' : 'Change Password'}
-              </Button>
+              </button>
             </div>
           </motion.div>
 
@@ -278,20 +295,21 @@ export default function CleanerSettingsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="bg-gray-800/50 rounded-lg border border-gray-700 p-6"
+            className="rounded-xl p-6"
+            style={cardStyle}
           >
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                <Palette className="w-5 h-5 text-purple-400" />
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.12)' }}>
+                <Palette className="w-5 h-5" style={{ color: tc.accentIndigo }} />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-100">Appearance</h3>
-                <p className="text-sm text-gray-400">Customize your interface theme</p>
+                <h3 className="text-lg font-semibold" style={{ color: tc.textPrimary }}>Appearance</h3>
+                <p className="text-sm" style={{ color: tc.textMuted }}>Customize your interface theme</p>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-3">Theme</label>
+              <label className="block text-sm font-medium mb-3" style={{ color: tc.textSecondary }}>Theme</label>
               <div className="flex gap-3">
                 {themeOptions.map((option) => {
                   const Icon = option.icon
@@ -299,12 +317,13 @@ export default function CleanerSettingsPage() {
                   return (
                     <button
                       key={option.value}
-                      onClick={() => updateSetting('theme' as keyof typeof settings, 'theme', option.value)}
-                      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border transition-colors ${
-                        isActive
-                          ? 'bg-purple-600/20 border-purple-500 text-purple-300'
-                          : 'bg-gray-700/30 border-gray-600 text-gray-400 hover:bg-gray-700/50 hover:text-gray-300'
-                      }`}
+                      onClick={() => setTheme(option.value)}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[13px] font-medium transition-colors"
+                      style={isActive
+                        ? { background: tc.tabActiveBg, color: tc.tabActiveText, border: `1px solid ${tc.tabActiveBorder}` }
+                        : { background: tc.tabInactiveBg, color: tc.tabInactiveText, border: '1px solid transparent' }}
+                      onMouseEnter={(e) => { if (!isActive) { e.currentTarget.style.background = tc.tabInactiveHoverBg; e.currentTarget.style.color = tc.tabInactiveHoverText } }}
+                      onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.background = tc.tabInactiveBg; e.currentTarget.style.color = tc.tabInactiveText } }}
                     >
                       <Icon className="w-4 h-4" />
                       {option.label}

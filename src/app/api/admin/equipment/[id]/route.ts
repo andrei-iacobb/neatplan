@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getSessionUser, canAccessSite } from '@/lib/authz'
 import { prisma } from '@/lib/db'
 
 export async function GET(
@@ -8,10 +7,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const user = await getSessionUser()
     const { id } = await params
-    
-    if (!session?.user?.isAdmin) {
+
+    if (!user?.isAdmin) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
         { status: 401 }
@@ -33,7 +32,7 @@ export async function GET(
       }
     })
 
-    if (!equipment) {
+    if (!equipment || !canAccessSite(user, equipment.siteId)) {
       return NextResponse.json(
         { error: 'Equipment not found' },
         { status: 404 }
@@ -56,21 +55,30 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const user = await getSessionUser()
     const { id } = await params
-    
-    if (!session?.user?.isAdmin) {
+
+    if (!user?.isAdmin) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
         { status: 401 }
       )
     }
 
+    const existing = await prisma.equipment.findUnique({ where: { id }, select: { siteId: true } })
+    if (!existing || !canAccessSite(user, existing.siteId)) {
+      return NextResponse.json(
+        { error: 'Equipment not found' },
+        { status: 404 }
+      )
+    }
+
     const body = await request.json()
-    const { 
-      name, 
-      description, 
+    const {
+      name,
+      description,
       type,
+      siteId,
     } = body
 
     if (!name) {
@@ -80,12 +88,18 @@ export async function PUT(
       )
     }
 
+    // Moving equipment to another site is only allowed if the actor can reach it.
+    if (siteId !== undefined && siteId !== existing.siteId && !canAccessSite(user, siteId)) {
+      return NextResponse.json({ error: 'You cannot move equipment to that site' }, { status: 403 })
+    }
+
     const equipment = await prisma.equipment.update({
       where: { id },
       data: {
         name,
         description,
         type: type || 'OTHER',
+        ...(siteId !== undefined ? { siteId } : {}),
       }
     })
 
@@ -120,10 +134,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const user = await getSessionUser()
     const { id } = await params
-    
-    if (!session?.user?.isAdmin) {
+
+    if (!user?.isAdmin) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
         { status: 401 }
@@ -138,7 +152,7 @@ export async function DELETE(
       }
     })
 
-    if (!equipment) {
+    if (!equipment || !canAccessSite(user, equipment.siteId)) {
       return NextResponse.json(
         { error: 'Equipment not found' },
         { status: 404 }

@@ -15,16 +15,11 @@ interface SMTPConfig {
   enabled: boolean
 }
 
-// Helper to check if user is admin
-async function isAdmin(request: NextRequest) {
-  const session = await getServerSession(authOptions)
-  return session?.user && (session.user as any).isAdmin
-}
-
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.isAdmin) {
+    // SMTP test is system-level and OP-only (matches the OP-only Settings System tab).
+    if (!session?.user || (session.user as any).role !== 'OP') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

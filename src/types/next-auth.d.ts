@@ -1,7 +1,9 @@
 import 'next-auth'
 
 export enum UserRole {
-  ADMIN = 'ADMIN',
+  OP = 'OP',
+  DIRECTOR = 'DIRECTOR',
+  MANAGER = 'MANAGER',
   CLEANER = 'CLEANER'
 }
 
@@ -12,6 +14,7 @@ declare module 'next-auth' {
     name?: string | null
     role: UserRole
     isAdmin: boolean
+    siteId?: string | null
   }
 
   interface Session {
@@ -21,6 +24,7 @@ declare module 'next-auth' {
       name?: string | null
       role: UserRole
       isAdmin: boolean
+      siteId?: string | null
     }
   }
 }
@@ -32,5 +36,6 @@ declare module 'next-auth/jwt' {
     name?: string | null
     role: UserRole
     isAdmin: boolean
+    siteId?: string | null
   }
-} 
+}

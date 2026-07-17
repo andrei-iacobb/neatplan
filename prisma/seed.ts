@@ -4,86 +4,129 @@ import { hash } from 'bcryptjs'
 const prisma = new PrismaClient()
 
 async function main() {
-  // Create or update admin user
+  // Create the primary site all seeded rooms/schedules/users belong to.
+  const site = await prisma.site.upsert({
+    where: { name: 'Maple Care Home' },
+    update: {},
+    create: {
+      name: 'Maple Care Home',
+      address: '1 Maple Avenue',
+      description: 'Primary care home site',
+    },
+  })
+  console.log('Site:', site)
+
+  // Owner (OP): spans every site, so siteId stays null. isAdmin = management role.
   const adminPassword = await hash('admin123', 12)
   const admin = await prisma.user.upsert({
     where: { email: 'admin@neatplan.com' },
     update: {
       isAdmin: true,
-      role: UserRole.ADMIN,
+      role: UserRole.OP,
+      siteId: null,
     },
     create: {
       email: 'admin@neatplan.com',
       password: adminPassword,
       name: 'System Administrator',
       isAdmin: true,
-      role: UserRole.ADMIN,
+      role: UserRole.OP,
     },
   })
-  console.log('Admin user:', admin)
+  console.log('Owner (OP) user:', admin)
 
-  // Create or update cleaner user
+  // Director: management across every site, no site pin.
+  const directorPassword = await hash('director123', 12)
+  const director = await prisma.user.upsert({
+    where: { email: 'director@neatplan.com' },
+    update: {
+      isAdmin: true,
+      role: UserRole.DIRECTOR,
+      siteId: null,
+    },
+    create: {
+      email: 'director@neatplan.com',
+      password: directorPassword,
+      name: 'Diana Director',
+      isAdmin: true,
+      role: UserRole.DIRECTOR,
+    },
+  })
+  console.log('Director user:', director)
+
+  // Manager: management pinned to a single site.
+  const managerPassword = await hash('manager123', 12)
+  const manager = await prisma.user.upsert({
+    where: { email: 'manager@neatplan.com' },
+    update: {
+      isAdmin: true,
+      role: UserRole.MANAGER,
+      siteId: site.id,
+    },
+    create: {
+      email: 'manager@neatplan.com',
+      password: managerPassword,
+      name: 'Mark Manager',
+      isAdmin: true,
+      role: UserRole.MANAGER,
+      siteId: site.id,
+    },
+  })
+  console.log('Manager user:', manager)
+
+  // Cleaner: /clean only, pinned to a single site.
   const cleanerPassword = await hash('cleaner123', 12)
   const cleaner = await prisma.user.upsert({
     where: { email: 'cleaner@neatplan.com' },
     update: {
       isAdmin: false,
+      role: UserRole.CLEANER,
+      siteId: site.id,
     },
     create: {
       email: 'cleaner@neatplan.com',
       password: cleanerPassword,
       name: 'Sarah Johnson',
       isAdmin: false,
+      role: UserRole.CLEANER,
+      siteId: site.id,
     },
   })
   console.log('Cleaner user:', cleaner)
 
-  // Create or update regular user
-  const userPassword = await hash('user123', 12)
-  const user = await prisma.user.upsert({
-    where: { email: 'user@neatplan.com' },
-    update: {
-      isAdmin: false,
-    },
-    create: {
-      email: 'user@neatplan.com',
-      password: userPassword,
-      name: 'Michael Chen',
-      isAdmin: false,
-    },
-  })
-  console.log('Regular user:', user)
-
-  // Create rooms if they don't exist
+  // Create rooms if they don't exist (scoped to the site via the composite unique).
   const rooms = await Promise.all([
     prisma.room.upsert({
-      where: { name: 'Main Office' },
+      where: { siteId_name: { siteId: site.id, name: 'Main Office' } },
       update: {},
       create: {
         name: 'Main Office',
         description: 'Primary office space on ground floor',
         floor: 'Ground Floor',
         type: RoomType.OFFICE,
+        siteId: site.id,
       },
     }),
     prisma.room.upsert({
-      where: { name: 'Conference Room A' },
+      where: { siteId_name: { siteId: site.id, name: 'Conference Room A' } },
       update: {},
       create: {
         name: 'Conference Room A',
         description: 'Large meeting room with projector',
         floor: 'First Floor',
         type: RoomType.MEETING_ROOM,
+        siteId: site.id,
       },
     }),
     prisma.room.upsert({
-      where: { name: 'Kitchen' },
+      where: { siteId_name: { siteId: site.id, name: 'Kitchen' } },
       update: {},
       create: {
         name: 'Kitchen',
         description: 'Staff kitchen and break room',
         floor: 'Ground Floor',
         type: RoomType.KITCHEN,
+        siteId: site.id,
       },
     }),
   ])
@@ -94,58 +137,38 @@ async function main() {
   for (let i = 1; i <= 51; i++) {
     const roomName = `Room ${i}`
     let floor: string
-    
+
     // Determine floor based on room number
     if ((i >= 1 && i <= 9) || (i >= 20 && i <= 32)) {
       floor = 'Ground Floor'
     } else {
       floor = 'Upstairs'
     }
-    
+
     const room = await prisma.room.upsert({
-      where: { name: roomName },
+      where: { siteId_name: { siteId: site.id, name: roomName } },
       update: {},
       create: {
         name: roomName,
         description: `Bedroom ${i}`,
         floor: floor,
         type: RoomType.BEDROOM,
+        siteId: site.id,
       },
     })
     bedroomRooms.push(room)
   }
   console.log(`Created ${bedroomRooms.length} bedroom rooms`)
 
-  // Create cleaning tasks if they don't exist - COMMENTED OUT FOR NOW
-  // const allRooms = [...rooms, ...bedroomRooms]
-  // const cleaningTasks = await Promise.all(
-  //   allRooms.map(room =>
-  //     prisma.cleaningTask.upsert({
-  //       where: {
-  //         roomId_taskDescription: {
-  //           roomId: room.id,
-  //           taskDescription: `Default cleaning for ${room.name}`,
-  //         },
-  //       },
-  //       update: {},
-  //       create: {
-  //         taskDescription: `Default cleaning for ${room.name}`,
-  //         frequency: 'Daily',
-  //         estimatedDuration: '30 minutes',
-  //         status: 'pending',
-  //         roomId: room.id,
-  //       },
-  //     })
-  //   )
-  // )
-  // console.log('Cleaning tasks:', cleaningTasks)
-
-  // Create schedule if it doesn't exist
-  const schedule = await prisma.schedule.upsert({
-    where: { title: 'Standard Cleaning Schedule' },
-    update: {},
-    create: {
+  // Create the schedule if one with this title isn't already linked to the site.
+  // Schedule is now many-to-many with Site (no composite unique), so find-or-create.
+  const existingSchedule = await prisma.schedule.findFirst({
+    where: { title: 'Standard Cleaning Schedule', sites: { some: { id: site.id } } },
+  })
+  const schedule = existingSchedule ?? await prisma.schedule.create({
+    data: {
       title: 'Standard Cleaning Schedule',
+      sites: { connect: { id: site.id } },
       tasks: {
         create: [
           {
@@ -195,4 +218,4 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect()
-  }) 
+  })

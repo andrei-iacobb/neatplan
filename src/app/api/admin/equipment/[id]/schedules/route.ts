@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getSessionUser, canAccessSite, canAccessAnySite } from '@/lib/authz'
 import { prisma } from '@/lib/db'
 import { calculateNextDueDate } from '@/lib/schedule-utils'
 import { Prisma } from '@prisma/client'
@@ -11,13 +10,25 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const user = await getSessionUser()
     const { id } = await params
-    
-    if (!session?.user?.isAdmin) {
+
+    if (!user?.isAdmin) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
         { status: 401 }
+      )
+    }
+
+    // The parent equipment must belong to a site this user can access.
+    const equipment = await prisma.equipment.findUnique({
+      where: { id },
+      select: { siteId: true }
+    })
+    if (!equipment || !canAccessSite(user, equipment.siteId)) {
+      return NextResponse.json(
+        { error: 'Equipment not found' },
+        { status: 404 }
       )
     }
 
@@ -50,13 +61,25 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const user = await getSessionUser()
     const { id: equipmentId } = await params
-    
-    if (!session?.user?.isAdmin) {
+
+    if (!user?.isAdmin) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
         { status: 401 }
+      )
+    }
+
+    // The parent equipment must belong to a site this user can access.
+    const equipment = await prisma.equipment.findUnique({
+      where: { id: equipmentId },
+      select: { siteId: true }
+    })
+    if (!equipment || !canAccessSite(user, equipment.siteId)) {
+      return NextResponse.json(
+        { error: 'Equipment not found' },
+        { status: 404 }
       )
     }
 
@@ -69,15 +92,24 @@ export async function POST(
       )
     }
 
-    // Get the schedule to check for suggested frequency
+    // Get the schedule (with its sites) to check access and suggested frequency
     const schedule = await prisma.schedule.findUnique({
-      where: { id: scheduleId }
+      where: { id: scheduleId },
+      include: { sites: { select: { id: true } } }
     })
 
-    if (!schedule) {
+    if (!schedule || !canAccessAnySite(user, schedule.sites.map((s) => s.id))) {
       return NextResponse.json(
         { error: 'Schedule not found' },
         { status: 404 }
+      )
+    }
+
+    // The schedule must be linked to this equipment's site to be assignable here.
+    if (!schedule.sites.some((s) => s.id === equipment.siteId)) {
+      return NextResponse.json(
+        { error: "This schedule is not available at this equipment's site" },
+        { status: 400 }
       )
     }
 
@@ -143,13 +175,25 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const user = await getSessionUser()
     const { id: equipmentId } = await params
-    
-    if (!session?.user?.isAdmin) {
+
+    if (!user?.isAdmin) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
         { status: 401 }
+      )
+    }
+
+    // The parent equipment must belong to a site this user can access.
+    const equipment = await prisma.equipment.findUnique({
+      where: { id: equipmentId },
+      select: { siteId: true }
+    })
+    if (!equipment || !canAccessSite(user, equipment.siteId)) {
+      return NextResponse.json(
+        { error: 'Equipment not found' },
+        { status: 404 }
       )
     }
 

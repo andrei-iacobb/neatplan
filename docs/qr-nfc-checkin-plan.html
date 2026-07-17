@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NeatPlan - QR/NFC Room Check-in Plan</title>
+<style>
+:root { color-scheme: dark; }
+body { background:#0d1117; color:#d5dbe3; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  max-width:760px; margin:0 auto; padding:2rem 1.2rem 4rem; line-height:1.65; }
+h1 { font-size:1.6rem; border-bottom:1px solid #2a3038; padding-bottom:.6rem; }
+h2 { font-size:1.2rem; margin-top:2.2rem; color:#e8edf3; }
+table { width:100%; border-collapse:collapse; font-size:.9rem; margin:1rem 0; }
+td,th { padding:.5rem .6rem; border-bottom:1px solid #21262e; vertical-align:top; text-align:left; }
+code { background:#161b22; padding:.1rem .35rem; border-radius:4px; font-size:.85em; }
+pre { background:#161b22; padding:.8rem 1rem; border-radius:8px; overflow-x:auto; font-size:.85rem; }
+.note { background:#161b22; border:1px solid #2a3038; border-radius:8px; padding:.9rem 1.1rem; font-size:.9rem; }
+details { margin:.5rem 0; } summary { cursor:pointer; color:#8ab4f8; }
+.tag { padding:.05rem .5rem; border-radius:99px; font-size:.75rem; border:1px solid #444; }
+.g { color:#6cd28c; border-color:#2c5c3c; } .y { color:#d2b96c; border-color:#5c542c; }
+</style></head><body>
+<h1>QR/NFC Room Check-in - Build Plan</h1>
+<p class="note"><strong>Goal:</strong> location-verified cleaning. Each room gets a printable QR label (primary,
+works on every device) and optionally an NFC sticker carrying the same link. A cleaner scans at the room door;
+completions record <code>QR / NFC / MANUAL</code> with a check-in timestamp - proof-of-presence evidence for CQC.
+<br><strong>Method:</strong> architecture by codex, UX analysis by gemini, third-vote review by cursor
+(27 issues triaged - amendments folded into the queue), synthesis by Claude.
+Raw inputs: <code>/home/andrei/x/neatplan-audit-loop/qr-feature/</code>. Branch: <code>feature/qr-nfc-checkin</code>.</p>
+
+<h2>Architecture decisions</h2>
+<table>
+<tr><th>Decision</th><th>Choice</th></tr>
+<tr><td>Token</td><td>Stable per-room signed token: <code>base64url({v:1, roomId, tokenVersion}) + "." + HMAC-SHA256</code>
+with dedicated <code>LOCATION_TOKEN_SECRET</code> (+ <code>_PREVIOUS</code> rotation window). DB stores only an integer
+version - a leak exposes no usable tokens. Regenerate = increment <code>Room.locationTokenVersion</code>; old labels die instantly.</td></tr>
+<tr><td>Deep link</td><td><code>/clean/scan?t=&lt;token&gt;&amp;m=qr|nfc</code> - same signed token on both carriers;
+<code>m</code> is a hint, never authorization. Works from native camera apps and native NFC tag opening (iOS included);
+login redirect preserves the full query.</td></tr>
+<tr><td>Check-in</td><td><code>POST /api/cleaner/check-ins</code> exchanges token for a single-use 5-minute
+<code>RoomCheckIn</code> (user + room + version bound, idempotent while valid). Completion consumes it inside the
+existing transaction; <code>verificationMethod</code> is derived server-side from the consumed row only - the client
+can never claim QR. No check-in = <code>MANUAL</code>, always allowed in v1, visibly flagged.</td></tr>
+<tr><td>Audit copy</td><td>Method + check-in time are snapshotted onto the completion log (same pattern as
+roomName/scheduleTitle) so purging operational check-ins never damages the compliance record.</td></tr>
+<tr><td>Labels</td><td>Client-side SVG QR (qrcode lib) + A4 print CSS - no PDF infrastructure. Label anatomy per gemini:
+room name, &ge;50mm QR, "Scan to log cleaning", version tag; laminate matte, mount ~1.2m.</td></tr>
+<tr><td>NFC</td><td>Sticker holds the same URL as NDEF record. In-browser write/read only on Android Chrome
+(<code>NDEFReader</code>); iOS opens tags natively. QR-only rollout is first-class - NFC is an optional extra.</td></tr>
+<tr><td>Libraries</td><td>Only <code>qrcode</code> + <code>jsqr</code> (lazy fallback when <code>BarcodeDetector</code>
+is missing, which includes iOS Safari - fallback is first-class). HMAC via node crypto.</td></tr>
+</table>
+
+<h2>Honest threat model</h2>
+<p>This proves a cleaner held a room-specific link moments before completing - it stops casual sofa-completion,
+wrong-room mistakes, and fabricated client verification. It does <em>not</em> stop a shared photo of the label or a
+cloned NFC tag; static carriers cannot. Mitigations: single-use short-lived check-ins, version revocation, token
+redaction from logs/history, rate-limited exchange, <code>Referrer-Policy: no-referrer</code>. Stronger presence
+proof (rotating displays, BLE) is a possible v3.</p>
+
+<h2>Build queue (10 items, ralph-loop driven)</h2>
+<table>
+<tr><th>#</th><th>Item</th><th>Verifies via</th></tr>
+<tr><td>1</td><td>Schema: enum + <code>RoomCheckIn</code> + log fields + room version</td><td>migration + psql + tsc</td></tr>
+<tr><td>2</td><td>Token lib + rotation + boot validation</td><td>vitest unit tests</td></tr>
+<tr><td>3</td><td>Admin label APIs + audited regeneration</td><td>curl authz matrix</td></tr>
+<tr><td>4</td><td>Check-in exchange API + status endpoint</td><td>curl matrix incl 410-after-regenerate</td></tr>
+<tr><td>5</td><td>Completion binding + races + TTL cleanup in cron</td><td>concurrent curl + psql</td></tr>
+<tr><td>6</td><td>Deep-link auth (callbackUrl preservation - currently broken wiring)</td><td>Playwright logged-out flow</td></tr>
+<tr><td>7</td><td>Scanner UI (priming, torch, jsQR fallback, Web NFC read, error copy)</td><td>Playwright mocked camera</td></tr>
+<tr><td>8</td><td>Room page badge + countdown + checkInId in POST (equipment stays MANUAL v1)</td><td>Playwright + psql</td></tr>
+<tr><td>9</td><td>Admin label UI + A4 batch print + NFC writer (Android-only labeled)</td><td>Playwright + QR decode round-trip</td></tr>
+<tr><td>10</td><td>Audit page badges/filter + CSV columns + legacy legend</td><td>Playwright + CSV diff</td></tr>
+</table>
+
+<h2>Deferred to v2</h2>
+<ul>
+<li>Offline scan queue (optimistic check-in + background sync) - biggest UX win for patchy Wi-Fi, big surface.</li>
+<li>Short manual room codes (A8K2-style) with per-shift rate limits + geofence flagging.</li>
+<li>Scan-failure instrumentation feeding an admin "scan health" panel.</li>
+<li>Facility policy toggle: require verified check-in for completion.</li>
+<li>Equipment tag support.</li>
+</ul>
+
+<p class="note">Working agreement: one queue item per loop iteration; codex implements against tight specs,
+cross-vendor review on every diff, Playwright/curl verification against the live dev server, atomic
+<code>feat(qr):</code> commits. Push to GitHub blocked until <code>gh auth refresh</code> is run - commits stay local
+until then.</p>
+</body></html>

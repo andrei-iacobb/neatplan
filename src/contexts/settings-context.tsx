@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
+import { MotionConfig } from 'framer-motion'
 
 export interface SettingsState {
   theme: 'light' | 'dark' | 'system'
@@ -21,7 +22,6 @@ export interface SettingsState {
     sidebarCollapsed: boolean
     compactMode: boolean
     animationsEnabled: boolean
-    soundEnabled: boolean
   }
   system: {
     autoSave: boolean
@@ -47,8 +47,7 @@ const defaultSettings: SettingsState = {
   display: {
     sidebarCollapsed: false,
     compactMode: false,
-    animationsEnabled: true,
-    soundEnabled: true
+    animationsEnabled: true
   },
   system: {
     autoSave: true,
@@ -60,6 +59,7 @@ const defaultSettings: SettingsState = {
 interface SettingsContextType {
   settings: SettingsState
   updateSetting: (section: keyof SettingsState, key: string, value: any) => void
+  setTheme: (theme: 'light' | 'dark' | 'system') => void
   resetSettings: () => void
   saveSettings: () => Promise<void>
   isLoading: boolean
@@ -105,11 +105,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   // Handle system theme detection and theme resolution
   useEffect(() => {
     const updateResolvedTheme = () => {
-      if (settings.theme === 'system') {
+      // Coerce anything that isn't a valid theme string (e.g. a value corrupted by
+      // an older bug that stored { theme: 'dark' }) back to a safe default.
+      const t = settings.theme === 'dark' || settings.theme === 'system' ? settings.theme : 'light'
+      if (t === 'system') {
         const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
         setResolvedTheme(systemPrefersDark ? 'dark' : 'light')
       } else {
-        setResolvedTheme(settings.theme)
+        setResolvedTheme(t)
       }
     }
 
@@ -176,6 +179,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }))
   }
 
+  // `theme` is a top-level string setting, not a nested section, so it needs its
+  // own setter (updateSetting would wrap it into an object and break resolvedTheme).
+  const setTheme = (theme: 'light' | 'dark' | 'system') => {
+    setSettings(prev => ({ ...prev, theme }))
+  }
+
   const saveSettings = async () => {
     setIsLoading(true)
     try {
@@ -215,6 +224,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const value: SettingsContextType = {
     settings,
     updateSetting,
+    setTheme,
     resetSettings,
     saveSettings,
     isLoading,
@@ -223,7 +233,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   return (
     <SettingsContext.Provider value={value}>
-      {children}
+      {/* When animations are disabled, MotionConfig forces framer-motion to skip
+          animations (JS-driven, so the .reduce-motion CSS class alone can't stop them).
+          reducedMotion stops transform/layout motion; the 0-duration transition also
+          collapses opacity fades so elements just snap to their final state. */}
+      <MotionConfig
+        reducedMotion={settings.display.animationsEnabled ? 'never' : 'always'}
+        transition={settings.display.animationsEnabled ? undefined : { duration: 0 }}
+      >
+        {children}
+      </MotionConfig>
     </SettingsContext.Provider>
   )
 }

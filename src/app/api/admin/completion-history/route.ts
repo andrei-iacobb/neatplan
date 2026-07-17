@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { canAccessAllSites } from '@/lib/roles'
+import { siteScopeWhere } from '@/lib/authz'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,6 +13,9 @@ export async function GET(request: NextRequest) {
     if (!session?.user?.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    // MANAGERs only see completions for their own site; OP/DIRECTOR see all sites.
+    const scoped = !canAccessAllSites(session.user.role)
 
     const { searchParams } = new URL(request.url)
     const roomId = searchParams.get('roomId')
@@ -43,6 +48,9 @@ export async function GET(request: NextRequest) {
     if (completedAtFilter) roomWhere.completedAt = completedAtFilter
     if (roomId) roomWhere.roomSchedule = { roomId }
     if (userId) roomWhere.completedByUserId = userId
+    if (scoped) {
+      roomWhere.roomSchedule = { ...(roomWhere.roomSchedule ?? {}), room: siteScopeWhere(session.user) }
+    }
 
     const [roomLogs, roomTotal] = await Promise.all([
       prisma.roomScheduleCompletionLog.findMany({
@@ -65,6 +73,7 @@ export async function GET(request: NextRequest) {
     // Equipment completion logs (excluded when filtering by room or user - no such linkage)
     const equipWhere: any = {}
     if (completedAtFilter) equipWhere.completedAt = completedAtFilter
+    if (scoped) equipWhere.equipmentSchedule = { equipment: siteScopeWhere(session.user) }
 
     const skipEquip = Boolean(roomId) || Boolean(userId)
     const [equipLogs, equipTotal] = skipEquip

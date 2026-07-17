@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireAdmin } from '@/lib/authz'
+import { requireAdmin, canAccessSite } from '@/lib/authz'
 
 export async function PATCH(
   request: Request,
@@ -19,6 +19,14 @@ export async function PATCH(
         { error: 'Invalid status. Must be pending, in_progress, or completed' },
         { status: 400 }
       )
+    }
+
+    const existing = await prisma.cleaningTask.findUnique({
+      where: { id: taskId },
+      select: { siteId: true }
+    })
+    if (!existing || !canAccessSite(auth.user, existing.siteId)) {
+      return NextResponse.json({ error: 'Cleaning task not found' }, { status: 404 })
     }
 
     const updatedTask = await prisma.cleaningTask.update({

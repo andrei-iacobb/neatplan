@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { nestedSiteScopeWhere } from '@/lib/authz'
 import { ScheduleFrequency } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
@@ -37,10 +38,12 @@ export async function GET(request: NextRequest) {
     from.setDate(from.getDate() - periodDays)
     from.setHours(0, 0, 0, 0)
 
-    // Get all active room schedules
+    // Get all active room schedules. MANAGERs are limited to their own site (reached via
+    // the room relation); OP/DIRECTOR see every site.
     const roomSchedules = await prisma.roomSchedule.findMany({
       where: {
         status: { not: 'COMPLETED' as any },
+        ...nestedSiteScopeWhere(session.user, 'room'),
       },
       include: {
         room: { select: { id: true, name: true } },

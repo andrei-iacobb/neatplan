@@ -207,6 +207,38 @@ function normalizeFreeText(value: string | null | undefined): string | null {
   return (value as string).trim()
 }
 
+const JUNK_NOTE_RESIDUE = /^(room|week of|date|name)$/i
+// Underscores, hyphens, dots, en/em dashes, and ellipses used as fill-in-the-blank lines.
+const FILL_CHARS = /[_\-.\u2013\u2014\u2026]/g
+
+// Scanned templates leak fill-in-the-blank fragments such as
+// "_______________ Room" or "Week of: ____" into notes and area fields.
+// Treat a string as junk when it is mostly fill characters, or when stripping
+// fill characters and punctuation leaves (almost) nothing behind.
+function isJunkFillText(value: string): boolean {
+  const fillCount = (value.match(FILL_CHARS) ?? []).length
+  if (fillCount > value.length / 2) {
+    return true
+  }
+
+  const residue = value
+    .replace(FILL_CHARS, ' ')
+    .replace(/[:;,|/\\()[\]{}'"`~*]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  return residue.replace(/\s+/g, '').length <= 4 || JUNK_NOTE_RESIDUE.test(residue)
+}
+
+function normalizeNoteText(value: string | null | undefined): string | null {
+  const normalized = normalizeFreeText(value)
+  if (!normalized || isJunkFillText(normalized)) {
+    return null
+  }
+
+  return normalized
+}
+
 function normalizeDetectedFrequency(value: string | null | undefined): string | null {
   const normalized = normalizeFreeText(value)
   if (!normalized) {
@@ -221,7 +253,7 @@ function normalizeDetectedFrequency(value: string | null | undefined): string | 
 }
 
 function normalizeArea(value: string | null | undefined): string | null {
-  const normalized = normalizeFreeText(value)
+  const normalized = normalizeNoteText(value)
   if (!normalized) {
     return null
   }
@@ -256,7 +288,7 @@ function normalizeTaskFrequency(value: string | null | undefined): string | null
 
 function buildAdditionalNotes(task: ModelExtraction['tasks'][number]): string | null {
   const parts = [task.notes, task.estimatedDuration, task.area]
-    .map((part) => normalizeFreeText(part))
+    .map((part) => normalizeNoteText(part))
     .filter((part): part is string => Boolean(part))
 
   return parts.length > 0 ? parts.join(' | ') : null

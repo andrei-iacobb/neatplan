@@ -6,12 +6,12 @@ import type { Schedule, ScheduleTask } from '@/types/schedule'
 import { apiRequest } from '@/lib/url-utils'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
-import { Pencil, Plus, Save, Trash, X } from 'lucide-react'
+import { ChevronDown, Pencil, Plus, Save, Trash, X } from 'lucide-react'
 import { useToast } from './ui/toast-context'
 import { useThemeColors } from '@/hooks/useThemeColors'
 
 interface ScheduleListProps {
-  schedules: (Schedule & { tasks: ScheduleTask[] })[]
+  schedules: (Schedule & { tasks: ScheduleTask[]; sites?: { id: string; name: string }[] })[]
   onUpdate: () => void
   isEditMode: boolean
 }
@@ -28,7 +28,14 @@ export function ScheduleList({ schedules, onUpdate, isEditMode }: ScheduleListPr
     additionalNotes: ''
   })
   const [deletedScheduleIds, setDeletedScheduleIds] = useState<Set<string>>(new Set())
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
   const isDeleting = useRef<Set<string>>(new Set())
+
+  const toggleExpanded = (id: string) => setExpandedIds(prev => {
+    const next = new Set(prev)
+    next.has(id) ? next.delete(id) : next.add(id)
+    return next
+  })
 
   const updateSchedule = async (scheduleId: string) => {
     try {
@@ -141,61 +148,79 @@ export function ScheduleList({ schedules, onUpdate, isEditMode }: ScheduleListPr
   const visibleSchedules = schedules.filter(schedule => !deletedScheduleIds.has(schedule.id))
 
   return (
-    <div className="space-y-6">
-      {visibleSchedules.map(schedule => (
+    <div className="space-y-3">
+      {visibleSchedules.map(schedule => {
+        const isExpanded = expandedIds.has(schedule.id)
+        const isEditingThis = editingSchedule === schedule.id
+        return (
         <div
           key={schedule.id}
-          className="rounded-lg p-6"
-          style={isEditMode ? { background: tc.cardBg, borderColor: tc.cardBorder, border: `1px solid ${tc.cardBorder}` } : undefined}
+          className="rounded-xl overflow-hidden"
+          style={{ background: tc.cardBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}
         >
-          <div className="flex items-center justify-between mb-4">
-            {editingSchedule === schedule.id ? (
-              <div className="flex items-center gap-2 flex-1">
-                <div className="flex-1 space-y-2">
-                  <Input
-                    value={newTitle}
-                    onChange={e => setNewTitle(e.target.value)}
-                    placeholder="Schedule title"
-                    style={{ background: tc.inputBg, borderColor: tc.inputBorder, color: tc.inputText }}
-                  />
-                  <select
-                    value={newSuggestedFrequency}
-                    onChange={e => setNewSuggestedFrequency(e.target.value as ScheduleFrequency)}
-                    className="w-full rounded-md px-3 py-2"
-                    style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
-                  >
-                    <option value="">No frequency suggested</option>
-                    {Object.values(ScheduleFrequency).map((freq) => (
-                      <option key={freq} value={freq}>
-                        {freq}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs" style={{ color: tc.textMuted }}>
-                    💡 This overrides the AI suggestion and becomes the default for room assignments
-                  </p>
-                </div>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => updateSchedule(schedule.id)}
-                  style={{ color: tc.textMuted }}
+          {isEditingThis ? (
+            <div className="flex items-start gap-2 p-5">
+              <div className="flex-1 space-y-2">
+                <Input
+                  value={newTitle}
+                  onChange={e => setNewTitle(e.target.value)}
+                  placeholder="Schedule title"
+                  style={{ background: tc.inputBg, borderColor: tc.inputBorder, color: tc.inputText }}
+                />
+                <select
+                  value={newSuggestedFrequency}
+                  onChange={e => setNewSuggestedFrequency(e.target.value as ScheduleFrequency)}
+                  className="w-full rounded-md px-3 py-2"
+                  style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
                 >
-                  <Save className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => setEditingSchedule(null)}
-                  style={{ color: tc.textMuted }}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                  <option value="">No frequency suggested</option>
+                  {Object.values(ScheduleFrequency).map((freq) => (
+                    <option key={freq} value={freq}>
+                      {freq}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs" style={{ color: tc.textMuted }}>
+                  💡 This overrides the AI suggestion and becomes the default for room assignments
+                </p>
               </div>
-            ) : (
-              <div className="flex items-center gap-4">
-                <div>
-                  <h3 className="text-xl font-medium" style={{ color: tc.textPrimary }}>{schedule.title}</h3>
+              <Button size="icon" variant="ghost" onClick={() => updateSchedule(schedule.id)} style={{ color: tc.textMuted }}>
+                <Save className="h-4 w-4" />
+              </Button>
+              <Button size="icon" variant="ghost" onClick={() => setEditingSchedule(null)} style={{ color: tc.textMuted }}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3 p-5">
+              <button
+                type="button"
+                onClick={() => toggleExpanded(schedule.id)}
+                aria-expanded={isExpanded}
+                className="flex items-start gap-3 flex-1 text-left min-w-0"
+              >
+                <ChevronDown
+                  className="h-5 w-5 mt-0.5 flex-shrink-0 transition-transform duration-200"
+                  style={{ color: tc.textMuted, transform: isExpanded ? 'none' : 'rotate(-90deg)' }}
+                />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-[17px] font-medium" style={{ color: tc.textPrimary }}>{schedule.title}</h3>
+                    <span className="text-[12px]" style={{ color: tc.textMuted }}>· {schedule.tasks.length} {schedule.tasks.length === 1 ? 'task' : 'tasks'}</span>
+                  </div>
+                  {schedule.sites && schedule.sites.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {schedule.sites.map(site => (
+                        <span
+                          key={site.id}
+                          className="text-[11px] font-medium px-2 py-0.5 rounded-full"
+                          style={{ background: tc.surfaceBg, border: `1px solid ${tc.divider}`, color: tc.textSecondary }}
+                        >
+                          {site.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {schedule.detectedFrequency && (
                     <div className="mt-2 space-y-1">
                       <p className="text-sm flex items-center" style={{ color: tc.accentLabel }}>
@@ -212,36 +237,40 @@ export function ScheduleList({ schedules, onUpdate, isEditMode }: ScheduleListPr
                     </div>
                   )}
                 </div>
-                {isEditMode && (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => {
-                        setEditingSchedule(schedule.id)
-                        setNewTitle(schedule.title)
-                        setNewSuggestedFrequency(schedule.suggestedFrequency || '')
-                      }}
-                      style={{ color: tc.textMuted }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => deleteSchedule(schedule.id)}
-                      style={{ color: tc.btnDangerText }}
-                      disabled={isDeleting.current.has(schedule.id)}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+              </button>
+              {isEditMode && (
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => {
+                      setEditingSchedule(schedule.id)
+                      setNewTitle(schedule.title)
+                      setNewSuggestedFrequency(schedule.suggestedFrequency || '')
+                    }}
+                    style={{ color: tc.textMuted }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => deleteSchedule(schedule.id)}
+                    style={{ color: tc.btnDangerText }}
+                    disabled={isDeleting.current.has(schedule.id)}
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
 
-          <div className="space-y-3">
+          {isExpanded && !isEditingThis && (
+          <div className="px-5 pb-5 space-y-3">
+            {schedule.tasks.length === 0 && (
+              <p className="text-[13px]" style={{ color: tc.textMuted }}>No tasks in this schedule yet.</p>
+            )}
             {schedule.tasks.map(task => (
               <div
                 key={task.id}
@@ -309,28 +338,30 @@ export function ScheduleList({ schedules, onUpdate, isEditMode }: ScheduleListPr
                 )}
               </div>
             ))}
-          </div>
 
-          {isEditMode && (
-            <div className="flex items-center gap-2 mt-4">
-              <Input
-                value={newTask.description}
-                onChange={e => setNewTask({ ...newTask, description: e.target.value })}
-                placeholder="New task description"
-                className="flex-1"
-                style={{ background: tc.inputBg, borderColor: tc.inputBorder, color: tc.inputText }}
-              />
-              <Button
-                onClick={() => addTask(schedule.id)}
-                style={{ background: tc.btnSecondaryBg, borderColor: tc.btnSecondaryBorder, color: tc.btnSecondaryText }}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Task
-              </Button>
-            </div>
+            {isEditMode && (
+              <div className="flex items-center gap-2 mt-4">
+                <Input
+                  value={newTask.description}
+                  onChange={e => setNewTask({ ...newTask, description: e.target.value })}
+                  placeholder="New task description"
+                  className="flex-1"
+                  style={{ background: tc.inputBg, borderColor: tc.inputBorder, color: tc.inputText }}
+                />
+                <Button
+                  onClick={() => addTask(schedule.id)}
+                  style={{ background: tc.btnSecondaryBg, borderColor: tc.btnSecondaryBorder, color: tc.btnSecondaryText }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Task
+                </Button>
+              </div>
+            )}
+          </div>
           )}
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

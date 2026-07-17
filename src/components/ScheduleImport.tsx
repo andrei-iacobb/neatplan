@@ -1,10 +1,12 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useSession } from 'next-auth/react'
 import { toast } from 'sonner'
 import { Loader2, UploadCloud, Sparkles, Trash2, Plus, FileText } from 'lucide-react'
 import { useThemeColors } from '@/hooks/useThemeColors'
 import { apiRequest } from '@/lib/url-utils'
+import { canAccessAllSites } from '@/lib/roles'
 
 interface DraftTask {
   description: string
@@ -15,8 +17,14 @@ interface DraftTask {
 interface DraftSchedule {
   title: string
   detectedFrequency: string | null
+  suggestedFrequency: string | null
   area: string | null
   tasks: DraftTask[]
+}
+
+interface SiteOption {
+  id: string
+  name: string
 }
 
 interface ScheduleImportProps {
@@ -49,12 +57,42 @@ async function safeJson(res: Response): Promise<any> {
 
 export function ScheduleImport({ onSaved }: ScheduleImportProps) {
   const tc = useThemeColors()
+  const { data: session } = useSession()
+  // OP/DIRECTOR choose which sites the imported schedule applies to;
+  // MANAGER/CLEANER are pinned, so the server forces their own site.
+  const canPickSite = canAccessAllSites((session?.user as any)?.role)
   const inputRef = useRef<HTMLInputElement>(null)
   const busyRef = useRef(false)
   const [mode, setMode] = useState<Mode>('idle')
   const [dragging, setDragging] = useState(false)
   const [fileName, setFileName] = useState<string | null>(null)
   const [draft, setDraft] = useState<DraftSchedule | null>(null)
+  const [sites, setSites] = useState<SiteOption[]>([])
+  const [selectedSiteIds, setSelectedSiteIds] = useState<string[]>([])
+
+  useEffect(() => {
+    if (!canPickSite) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await apiRequest('/api/sites')
+        if (!res.ok) return
+        const data = await res.json()
+        if (!cancelled) {
+          setSites(Array.isArray(data) ? data.map((s: any) => ({ id: s.id, name: s.name })) : [])
+        }
+      } catch {
+        /* non-fatal: save still validates that a site was chosen */
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [canPickSite])
+
+  const toggleSite = (id: string) => {
+    setSelectedSiteIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]))
+  }
 
   const extract = async (file: File) => {
     if (busyRef.current) return
@@ -78,6 +116,7 @@ export function ScheduleImport({ onSaved }: ScheduleImportProps) {
       setDraft({
         title: data.title || 'Cleaning Schedule',
         detectedFrequency: data.detectedFrequency ?? null,
+        suggestedFrequency: data.suggestedFrequency ?? null,
         area: data.area ?? null,
         tasks: data.tasks.map((t: any) => ({
           description: String(t.description ?? ''),
@@ -123,6 +162,7 @@ export function ScheduleImport({ onSaved }: ScheduleImportProps) {
   const reset = () => {
     setDraft(null)
     setFileName(null)
+    setSelectedSiteIds([])
     setMode('idle')
   }
 
@@ -144,13 +184,25 @@ export function ScheduleImport({ onSaved }: ScheduleImportProps) {
       toast.error('Add at least one task before saving.')
       return
     }
+    if (canPickSite && selectedSiteIds.length === 0) {
+      toast.error('Select at least one site for this schedule.')
+      return
+    }
     busyRef.current = true
     setMode('saving')
     try {
       const res = await apiRequest('/api/schedules', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: cleanTitle, tasks }),
+        body: JSON.stringify({
+          title: cleanTitle,
+          tasks,
+          siteIds: selectedSiteIds,
+          // Persist the AI-detected frequency so assigning the schedule to a
+          // room can prefill it instead of forcing manual entry.
+          detectedFrequency: draft?.detectedFrequency ?? null,
+          suggestedFrequency: draft?.suggestedFrequency ?? null,
+        }),
       })
       const data = await safeJson(res)
       if (!res.ok) {
@@ -196,6 +248,42 @@ export function ScheduleImport({ onSaved }: ScheduleImportProps) {
             placeholder="e.g. Bedroom Deep Clean"
           />
         </div>
+
+        {canPickSite && (
+          <div>
+            <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>
+              Sites
+            </label>
+            <div
+              className="max-h-36 overflow-y-auto rounded-lg p-2 space-y-1"
+              style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}` }}
+            >
+              {sites.length === 0 ? (
+                <p className="text-[12px] px-1 py-0.5" style={{ color: tc.textMuted }}>No sites available.</p>
+              ) : (
+                sites.map((s) => (
+                  <label
+                    key={s.id}
+                    className="flex items-center gap-2 px-1 py-1 cursor-pointer text-[13px]"
+                    style={{ color: tc.inputText }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedSiteIds.includes(s.id)}
+                      onChange={() => toggleSite(s.id)}
+                      disabled={saving}
+                      className="h-3.5 w-3.5 rounded"
+                    />
+                    {s.name}
+                  </label>
+                ))
+              )}
+            </div>
+            <p className="text-[11px] mt-1" style={{ color: tc.textFaint }}>
+              Choose one or more sites this schedule applies to.
+            </p>
+          </div>
+        )}
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">

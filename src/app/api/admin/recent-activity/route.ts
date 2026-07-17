@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { canAccessAllSites } from '@/lib/roles'
+import { siteScopeWhere } from '@/lib/authz'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -9,7 +11,7 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user?.isAdmin) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
@@ -17,8 +19,19 @@ export async function GET() {
       )
     }
 
+    // MANAGERs see only their own site; OP/DIRECTOR span every site. The completion logs
+    // reach their site through roomSchedule.room / equipmentSchedule.equipment, and user
+    // activity through the session's user. Left empty for site-spanning roles so the
+    // existing behaviour (including orphaned "Deleted" logs) is preserved.
+    const user = session.user
+    const scoped = !canAccessAllSites(user.role)
+    const roomLogSiteWhere = scoped ? { roomSchedule: { room: siteScopeWhere(user) } } : {}
+    const equipLogSiteWhere = scoped ? { equipmentSchedule: { equipment: siteScopeWhere(user) } } : {}
+    const sessionSiteWhere = scoped ? { user: siteScopeWhere(user) } : {}
+
     // Get recent room schedule completions
     const recentRoomCompletions = await prisma.roomScheduleCompletionLog.findMany({
+      where: roomLogSiteWhere,
       include: {
         roomSchedule: {
           include: {
@@ -47,6 +60,7 @@ export async function GET() {
 
     // Get recent equipment schedule completions
     const recentEquipmentCompletions = await prisma.equipmentScheduleCompletionLog.findMany({
+      where: equipLogSiteWhere,
       include: {
         equipmentSchedule: {
           include: {
@@ -72,6 +86,7 @@ export async function GET() {
 
     // Get recent user sessions
     const recentSessions = await prisma.userSession.findMany({
+      where: sessionSiteWhere,
       include: {
         user: {
           select: {

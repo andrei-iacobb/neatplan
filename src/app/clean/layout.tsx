@@ -1,101 +1,28 @@
 "use client"
 
-import { useSession, signOut, signIn } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { 
-  LogOut, Settings, ChevronDown,
-  Crown, Zap, Star, Heart, Sparkles, Coffee, Gamepad2, Music, 
-  Camera, Palette, Rocket, Shield, Trophy, Flame, Diamond,
-  Gem, Wand2, Target, Compass, Lightbulb, Flower, Headphones,
-  Fingerprint, Eye, Brain, Atom, Codesandbox, Hexagon
-} from 'lucide-react'
+import Link from 'next/link'
+import { LogOut, Settings, ChevronDown, Sparkles } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
-// Clean collection of high-quality Lucide icons only
-const profileIcons = [
-  Crown, Zap, Star, Heart, Sparkles, Coffee, Gamepad2, Music,
-  Camera, Palette, Rocket, Shield, Trophy, Flame, Diamond,
-  Gem, Wand2, Target, Compass, Lightbulb, Flower, Headphones,
-  Fingerprint, Eye, Brain, Atom, Codesandbox, Hexagon
-]
-
-// Gradient color schemes for icons
-const colorSchemes = [
-  'from-blue-400 to-purple-500',
-  'from-green-400 to-blue-500', 
-  'from-pink-400 to-rose-500',
-  'from-orange-400 to-red-500',
-  'from-indigo-400 to-blue-500',
-  'from-blue-400 to-cyan-500',
-  'from-purple-400 to-pink-500',
-  'from-yellow-400 to-orange-500',
-  'from-emerald-400 to-green-500',
-  'from-violet-400 to-purple-500'
-]
-
-// Function to consistently assign an icon and color based on user email
-function getUserProfile(email: string) {
-  if (!email) return { icon: Crown, gradient: 'from-gray-400 to-gray-500' }
-  
-  // Create a simple hash from the email
-  let hash = 0
-  for (let i = 0; i < email.length; i++) {
-    const char = email.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash = hash & hash // Convert to 32-bit integer
-  }
-  
-  // Get consistent indices based on the hash
-  const iconIndex = Math.abs(hash) % profileIcons.length
-  const colorIndex = Math.abs(hash >> 8) % colorSchemes.length
-  
-  return {
-    icon: profileIcons[iconIndex],
-    gradient: colorSchemes[colorIndex]
-  }
-}
-
-// Clean avatar component with high-quality rendering
-function Avatar({ email, size = 'sm' }: { email: string, size?: 'sm' | 'md' }) {
-  const { icon: IconComponent, gradient } = getUserProfile(email)
-  
+// Simple initial-in-circle avatar using the emerald brand accent
+function Avatar({ name, size = 'sm' }: { name: string, size?: 'sm' | 'md' }) {
   const sizeClasses = {
-    sm: 'w-9 h-9',
-    md: 'w-11 h-11'
+    sm: 'w-9 h-9 text-sm',
+    md: 'w-11 h-11 text-base'
   }
-  
-  const iconSizes = {
-    sm: 'w-[18px] h-[18px]',
-    md: 'w-[22px] h-[22px]'
-  }
-  
+
+  const initial = (name.trim().charAt(0) || '?').toUpperCase()
+
   return (
-    <div 
-      className={`${sizeClasses[size]} bg-gradient-to-br ${gradient} rounded-full flex items-center justify-center relative overflow-hidden`}
-      style={{
-        WebkitFontSmoothing: 'antialiased',
-        transform: 'translateZ(0)', // Force hardware acceleration
-        backfaceVisibility: 'hidden', // Smooth rendering
-        background: `linear-gradient(135deg, var(--tw-gradient-stops))`,
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-        border: '1px solid rgba(255, 255, 255, 0.15)'
-      }}
+    <div
+      className={`${sizeClasses[size]} rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-white select-none`}
+      style={{ background: 'rgb(16,185,129)' }}
+      aria-hidden="true"
     >
-      {/* Inner glow effect */}
-      <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent to-white/10" />
-      
-      {/* Icon with perfect centering */}
-      <div className="relative z-10 flex items-center justify-center">
-        <IconComponent 
-          className={`${iconSizes[size]} text-white`} 
-          strokeWidth={2.5}
-          style={{
-            filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))',
-            strokeLinecap: 'round',
-            strokeLinejoin: 'round'
-          }}
-        />
-      </div>
+      {initial}
     </div>
   )
 }
@@ -107,6 +34,7 @@ export default function CleanLayout({
 }) {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const tc = useThemeColors()
   const [showDropdown, setShowDropdown] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -134,6 +62,8 @@ export default function CleanLayout({
     return null
   }
 
+  const displayName = session?.user?.name || session?.user?.email || ''
+
   return (
     <div className="min-h-screen">
       <a
@@ -143,14 +73,21 @@ export default function CleanLayout({
         Skip to main content
       </a>
       {/* Simple header for cleaners */}
-      <header className="relative z-50 bg-gray-800/50 backdrop-blur-sm border-b border-gray-700" role="banner">
-        <div className="max-w-6xl mx-auto px-4 py-3">
+      <header
+        className="relative z-50"
+        style={{ background: tc.surfaceBg, borderBottom: `1px solid ${tc.cardBorder}` }}
+        role="banner"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="text-blue-400 font-bold text-xl">NeatPlan</div>
-              <span className="text-gray-400 text-sm">Cleaner Portal</span>
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4" style={{ color: 'rgb(16,185,129)' }} />
+                <span className="font-bold text-xl tracking-tight" style={{ color: tc.textPrimary }}>NeatPlan</span>
+              </div>
+              <span className="text-sm" style={{ color: tc.textMuted }}>Cleaner Portal</span>
             </div>
-            
+
             {session?.user && (
               <div className="relative" ref={dropdownRef}>
                 {/* Profile Button */}
@@ -159,49 +96,59 @@ export default function CleanLayout({
                   aria-expanded={showDropdown}
                   aria-haspopup="menu"
                   aria-label="Account menu"
-                  className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-gray-100 hover:bg-gray-700/50 rounded-lg transition-all duration-200 group min-h-[44px]"
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-200 min-h-[44px]"
+                  style={{ color: tc.textSecondary }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = tc.hoverRow; e.currentTarget.style.color = tc.textPrimary }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = tc.textSecondary }}
                 >
-                  <Avatar email={session.user.email || ''} size="sm" />
-                  <span className="text-sm font-medium">{session.user.name || session.user.email}</span>
+                  <Avatar name={displayName} size="sm" />
+                  <span className="text-sm font-medium">{displayName}</span>
                   <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Dropdown Menu */}
                 {showDropdown && (
-                  <div className="absolute right-0 mt-2 w-64 bg-gray-800/95 backdrop-blur-md border border-gray-700/50 rounded-xl shadow-xl z-50 overflow-hidden">
+                  <div
+                    className="absolute right-0 mt-2 w-64 rounded-xl shadow-xl z-50 overflow-hidden"
+                    style={{ background: tc.modalBg, border: `1px solid ${tc.cardBorder}` }}
+                  >
                     <div className="py-2">
                       {/* User Info */}
-                      <div className="px-4 py-3 border-b border-gray-700/50 bg-gray-750/30">
+                      <div className="px-4 py-3" style={{ borderBottom: `1px solid ${tc.cardBorder}` }}>
                         <div className="flex items-center gap-3">
-                          <Avatar email={session.user.email || ''} size="md" />
+                          <Avatar name={displayName} size="md" />
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium text-gray-100 truncate">{session.user.name}</div>
-                            <div className="text-xs text-gray-400 truncate">{session.user.email}</div>
+                            <div className="text-sm font-medium truncate" style={{ color: tc.textPrimary }}>{session.user.name}</div>
+                            <div className="text-xs truncate" style={{ color: tc.textMuted }}>{session.user.email}</div>
                           </div>
                         </div>
                       </div>
-                      
+
                       {/* Menu Items */}
                       <div className="py-1">
-                        <button
-                          onClick={() => {
-                            setShowDropdown(false)
-                            router.push('/clean/settings')
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-gray-100 hover:bg-gray-700/50 transition-colors"
+                        <Link
+                          href="/clean/settings"
+                          onClick={() => setShowDropdown(false)}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
+                          style={{ color: tc.textSecondary }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = tc.hoverRow; e.currentTarget.style.color = tc.textPrimary }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = tc.textSecondary }}
                         >
                           <Settings className="w-4 h-4" strokeWidth={1.5} />
                           Settings
-                        </button>
+                        </Link>
                       </div>
-                      
-                      <div className="border-t border-gray-700/50 mt-1">
+
+                      <div className="mt-1" style={{ borderTop: `1px solid ${tc.cardBorder}` }}>
                         <button
                           onClick={() => {
                             setShowDropdown(false)
                             handleSignOut()
                           }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
+                          style={{ color: tc.btnDangerText }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = tc.btnDangerBg }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
                         >
                           <LogOut className="w-4 h-4" strokeWidth={1.5} />
                           Sign Out
@@ -217,9 +164,11 @@ export default function CleanLayout({
       </header>
 
       {/* Main Content */}
-      <main id="main-content" className="max-w-6xl mx-auto px-4 py-6 pb-24 sm:pb-6">
+      {/* Each page provides its own max-width container, so the shell stays full-width
+          and the header (max-w-7xl) lines up with the dashboard content. */}
+      <main id="main-content" className="py-6 pb-24 sm:pb-6">
         {children}
       </main>
     </div>
   )
-} 
+}

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireAdmin } from '@/lib/authz'
+import { requireAdmin, canAccessSite } from '@/lib/authz'
 
 export async function PUT(
   request: Request,
@@ -21,12 +21,25 @@ export async function PUT(
       )
     }
 
-    // Verify room exists
+    // The task must belong to a site this user can access.
+    const task = await prisma.cleaningTask.findUnique({
+      where: { id: taskId },
+      select: { siteId: true }
+    })
+
+    if (!task || !canAccessSite(auth.user, task.siteId)) {
+      return NextResponse.json(
+        { error: 'Cleaning task not found' },
+        { status: 404 }
+      )
+    }
+
+    // Verify room exists and is accessible to this user
     const room = await prisma.room.findUnique({
       where: { id: roomId }
     })
 
-    if (!room) {
+    if (!room || !canAccessSite(auth.user, room.siteId)) {
       return NextResponse.json(
         { error: 'Room not found' },
         { status: 404 }

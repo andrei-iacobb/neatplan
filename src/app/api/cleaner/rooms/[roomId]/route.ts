@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { canAccessSite } from '@/lib/authz'
 
 export async function GET(
   request: Request,
@@ -58,6 +59,15 @@ export async function GET(
     })
 
     if (!room) {
+      return NextResponse.json(
+        { error: 'Room not found' },
+        { status: 404 }
+      )
+    }
+
+    // A CLEANER may only open rooms in their own site. Return 404 (not 403) so we don't
+    // leak the existence of rooms belonging to other sites.
+    if (!canAccessSite(session.user, room.siteId)) {
       return NextResponse.json(
         { error: 'Room not found' },
         { status: 404 }

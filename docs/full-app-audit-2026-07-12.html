@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NeatPlan Full App Audit - 2026-07-12</title>
+<style>
+:root { color-scheme: dark; }
+body { background:#0d1117; color:#d5dbe3; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  max-width:860px; margin:0 auto; padding:2rem 1.2rem 4rem; line-height:1.65; }
+h1 { font-size:1.7rem; border-bottom:1px solid #2a3038; padding-bottom:.6rem; }
+h2 { font-size:1.25rem; margin-top:2.4rem; color:#e8edf3; }
+h3 { font-size:1.02rem; color:#aab3bf; }
+table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:.92rem; }
+td, th { padding:.55rem .6rem; border-bottom:1px solid #21262e; vertical-align:top; text-align:left; }
+.sev { padding:.1rem .5rem; border-radius:99px; font-size:.75rem; white-space:nowrap; }
+.v { font-size:.72rem; padding:.05rem .45rem; border-radius:4px; margin-left:.4rem; }
+.v.ok { background:#1f3a2a; color:#6cd28c; } .v.un { background:#3a331f; color:#d2b96c; } .v.bad { background:#3a1f1f; color:#d26c6c; }
+.area { color:#7d8590; font-size:.82rem; font-family:ui-monospace,monospace; }
+.src { color:#7d8590; font-size:.8rem; white-space:nowrap; }
+details { margin:.35rem 0; } summary { cursor:pointer; color:#8ab4f8; font-size:.85rem; }
+.rec { color:#6cd28c; } .stat { display:inline-block; margin-right:1.4rem; }
+.stat b { font-size:1.5rem; display:block; }
+.note { background:#161b22; border:1px solid #2a3038; border-radius:8px; padding:.9rem 1.1rem; font-size:.9rem; }
+code { background:#161b22; padding:.1rem .35rem; border-radius:4px; font-size:.85em; }
+.good li { color:#9fb8a8; }
+</style></head><body>
+<h1>NeatPlan - Full App Audit</h1>
+<p class="note"><strong>Scope:</strong> mobile viewports (6 devices x 16 pages = 96 combos), desktop page walk, SEO/Lighthouse,
+backend concurrency (static review + live load bursts), UI consistency, competitor feature-gap research.
+<strong>Method:</strong> independent agents across three vendors (Codex, Cursor, Gemini) plus Claude; every substantive
+finding adversarially verified by a different vendor than its author. <strong>Verdicts: 35/37 confirmed, 2 uncertain
+(dev-server Lighthouse artifacts), 0 refuted.</strong><br><br>
+<strong>Run timeline:</strong> audit ran 2026-07-11 22:43-23:35 UTC (session terminated mid-wave-2; desktop walk
+partially complete - 4 salvaged findings), resumed and synthesized 07:37-08:00 UTC.</p>
+
+<h2>Summary</h2>
+<p><span class="stat"><b>1</b>critical</span><span class="stat"><b>18</b>high</span>
+<span class="stat"><b>30</b>medium</span><span class="stat"><b>17</b>low</span>
+<span class="stat"><b>14</b>feature gaps</span></p>
+<p>The backend core is solid: task completion is transactional with optimistic locking, the cron scheduler is protected
+against double-fire, admin endpoints paginate, and the app survived every concurrent burst (50 parallel logins,
+100 parallel reads, 20-way double-completion of the same task) without data corruption. The problems cluster in four
+places: (1) a critical mobile layout bug that clips dashboard content on every phone, (2) the admin/cleaner UIs are
+two different design systems with duplicated logic, (3) SEO/PWA basics are absent (one shared title for every route,
+no robots/sitemap/apple-touch-icon, base URL hardcoded to the wrong port), and (4) several check-then-act races that
+surface as 500s instead of 409s under concurrency.</p>
+
+<h2>Priority fixes</h2>
+<ol>
+<li><strong>P0</strong> - Add <code>min-w-0</code> to the dashboard content column (clips, not scrolls, on every phone viewport).</li>
+<li><strong>P0</strong> - Fix global light-theme CSS override breaking the dark /demo pages.</li>
+<li><strong>P0</strong> - Fix <code>NEXTAUTH_URL</code> / <code>NEXT_PUBLIC_APP_BASE_URL</code> hardcoded to port 3030.</li>
+<li><strong>P1</strong> - Sync <code>role</code> with <code>isAdmin</code> in user create/update (root cause of admin sessions reporting role CLEANER).</li>
+<li><strong>P1</strong> - Wire up or remove dead Settings buttons (Export Data, Delete Account).</li>
+<li><strong>P1</strong> - Per-page metadata (titles/descriptions), robots.txt, sitemap.xml, apple-touch-icon.</li>
+<li><strong>P1</strong> - Tablet sidebar: hover-only collapse leaves touch users without nav labels.</li>
+<li><strong>P2</strong> - Replace find-then-create/delete with direct writes + P2002/P2025 handling (409 instead of 500).</li>
+<li><strong>P2</strong> - Unify admin and cleaner design systems; dedupe the duplicated schedule-assignment and settings UIs.</li>
+<li><strong>P2</strong> - Move state mutations out of GET /api/room-schedules.</li>
+</ol>
+
+<h2>Backend - concurrency and correctness <span class="src">(author: Codex - verified by Cursor, 11/11)</span></h2>
+<table><tbody><tr>
+<td><span class="sev" style="background:#ff9f4322;color:#ff9f43;border:1px solid #ff9f4355">high</span></td>
+<td><strong>Check-then-act race in room schedule assignment</strong> <span class="v ok">verified</span><br>
+<span class="area">room-schedules</span>
+<details><summary>evidence + fix</summary>
+<p>src/app/api/rooms/[id]/schedules/route.ts:42-72. Lines 42-54 check if roomSchedule exists via findUnique, then lines 63-72 create it. Unique constraint on schema line 68 prevents data corruption, but race condition exists: two concurrent POSTs both see no existing record, second fails with P2002 but returns generic 500 instead of 409 Conflict.</p>
+<p class="rec">Remove lines 42-54 check entirely. Attempt create directly and catch P2002 (duplicate key) error, return 409 Conflict. Unique constraint will prevent races.</p></details></td>
+<td class="src">codex</td></tr>
+<tr>
+<td><span class="sev" style="background:#ff9f4322;color:#ff9f43;border:1px solid #ff9f4355">high</span></td>
+<td><strong>Equipment schedule check-then-act race in assignment</strong> <br>
+<span class="area">equipment-schedules</span>
+<details><summary>evidence + fix</summary>
+<p>src/app/api/admin/equipment/[id]/schedules/route.ts:99-131. Lines 99-107 check if equipmentSchedule exists via findUnique, then lines 113-131 create it. Unique constraint on schema (@@unique([equipmentId, scheduleId])) prevents data corruption but race condition exists: two concurrent POSTs both see no existing record, second fails with P2002 but returns generic 500 instead of 409 Conflict.</p>
+<p class="rec">Remove lines 99-107 check. Attempt create directly and catch P2002 error, return 409 Conflict. Same pattern as room schedules.</p></details></td>
+<td class="src">codex</td></tr>
+<tr>
+<td><span class="sev" style="background:#ff9f4322;color:#ff9f43;border:1px solid #ff9f4355">high</span></td>
+<td><strong>TOCTOU on admin permission check in TOTP endpoint</strong> <span class="v ok">verified</span><br>
+<span class="area">auth-totp</span>
+<details><summary>evidence + fix</summary>
+<p>src/app/api/auth/totp/route.ts:38-89. Lines 38-42 check if user.isAdmin, then lines 48-89 perform operations (setup, enable, disable) via separate update calls. Between permission check and update, user&#x27;s isAdmin status could be changed by another admin, allowing non-admins to modify TOTP settings. No re-validation of permission before update.</p>
+<p class="rec">Re-validate user.isAdmin right before each update call, or wrap the entire operation in $transaction with a fresh read before modify.</p></details></td>
+<td class="src">codex</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>User role inconsistency when creating admin user</strong> <span class="v ok">verified</span><br>
+<span class="area">user-management</span>
+<details><summary>evidence + fix</summary>
+<p>src/app/api/users/route.ts:90. POST handler creates user with isAdmin field but does not set role field. User.role defaults to CLEANER in schema (prisma/schema.prisma:32), creating admin users with role:&#x27;CLEANER&#x27; + isAdmin:true. This explains the session anomaly reported.</p>
+<p class="rec">When creating user with isAdmin:true, also set role:&#x27;ADMIN&#x27;. When isAdmin:false, set role:&#x27;CLEANER&#x27;. Fix at lines 96-98 in data object.</p></details></td>
+<td class="src">codex</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>User role inconsistency when updating admin flag</strong> <span class="v ok">verified</span><br>
+<span class="area">user-management</span>
+<details><summary>evidence + fix</summary>
+<p>src/app/api/users/[id]/route.ts:55-61. PUT handler updates isAdmin field but does not update role field to match. dataToUpdate only sets isAdmin on line 55, leaving role unchanged/defaulted. Affects the admin session role anomaly.</p>
+<p class="rec">When updating isAdmin, also update role: if (isAdmin !== undefined) { dataToUpdate.isAdmin = Boolean(isAdmin); dataToUpdate.role = isAdmin ? &#x27;ADMIN&#x27; : &#x27;CLEANER&#x27;; }</p></details></td>
+<td class="src">codex</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>GET endpoint modifies database state</strong> <span class="v ok">verified</span><br>
+<span class="area">room-schedules</span>
+<details><summary>evidence + fix</summary>
+<p>src/app/api/room-schedules/route.ts:14-32. GET /api/room-schedules performs side effects: updateMany on lines 14-21 (COMPLETED to PENDING) and lines 24-32 (PENDING to OVERDUE). Violates HTTP semantics - GET should be read-only and idempotent. While conditions are mutually exclusive, GET with mutations is unpredictable.</p>
+<p class="rec">Move updateMany operations to background job or separate POST/cron endpoint. Keep GET read-only. Use existing /api/cron/check-schedules pattern for state transitions.</p></details></td>
+<td class="src">codex</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>TOCTOU in cleaning task creation with room FK check</strong> <br>
+<span class="area">cleaning-tasks</span>
+<details><summary>evidence + fix</summary>
+<p>src/app/api/cleaning-tasks/route.ts:56-63. Lines 56-58 verify room exists via findUnique, then line 63 creates task with that roomId. Between check and create, room could be deleted by admin. FK constraint will catch, but check is unnecessary antipattern.</p>
+<p class="rec">Remove lines 56-58 FK check. Attempt create directly and handle P2023 (FK violation) error. Let database enforce referential integrity.</p></details></td>
+<td class="src">codex</td></tr>
+<tr>
+<td><span class="sev" style="background:#8a8f9822;color:#8a8f98;border:1px solid #8a8f9855">low</span></td>
+<td><strong>Check-then-act race in schedule DELETE operation</strong> <br>
+<span class="area">schedules</span>
+<details><summary>evidence + fix</summary>
+<p>src/app/api/schedules/[id]/route.ts:72-80. Lines 72-77 check if schedule exists via findUnique, then line 80 deletes it without transaction. Race condition: two concurrent DELETEs could both see the record exists, second one gets 404. However, idempotent - worst case is error response.</p>
+<p class="rec">Remove the check (lines 72-77). Attempt delete directly and handle P2025 (record not found) error gracefully. Let DB enforce referential integrity.</p></details></td>
+<td class="src">codex</td></tr>
+<tr>
+<td><span class="sev" style="background:#8a8f9822;color:#8a8f98;border:1px solid #8a8f9855">low</span></td>
+<td><strong>Equipment schedule delete without transaction</strong> <span class="v ok">verified</span><br>
+<span class="area">equipment-schedules</span>
+<details><summary>evidence + fix</summary>
+<p>src/app/api/admin/equipment/[id]/schedules/route.ts:158-169. Lines 158-166 find equipmentSchedule to check existence, then line 169 deletes it. Between find and delete, record could be deleted by concurrent request, second gets 404. Idempotent worst-case.</p>
+<p class="rec">Remove find check (lines 158-166). Attempt delete directly and handle P2025 error. Same pattern as schedules delete.</p></details></td>
+<td class="src">codex</td></tr></tbody></table>
+<h3>Live load test <span class="src">(author: Claude - verified by Codex)</span></h3>
+<table><tbody><tr>
+<td><span class="sev" style="background:#8a8f9822;color:#8a8f98;border:1px solid #8a8f9855">low</span></td>
+<td><strong>POST /api/rooms returns 500 instead of 409 on concurrent unique-name conflict</strong> <span class="v ok">verified</span><br>
+<span class="area">backend-concurrency: /api/rooms POST</span>
+<details><summary>evidence + fix</summary>
+<p>20 parallel POST /api/rooms with identical name -&gt; 1x200 + 19x500 (not 19x409). DB confirms correctness (rooms.name is @unique in prisma/schema.prisma:55, only 1 row created, verified via psql count). But the Prisma P2002 unique-constraint error from src/app/api/rooms/route.ts:59 (prisma.room.create) is not caught explicitly, falls through to the generic catch (lines 69-81), and returns HTTP 500 {&quot;error&quot;:&quot;Something went wrong&quot;}. Confirmed via /tmp/neatplan-dev.log stack traces: &#x27;Unique constraint failed on the fields: (`name`)&#x27; code P2002, each followed by &#x27;POST /api/rooms 500&#x27;.</p>
+<p class="rec">Catch PrismaClientKnownRequestError with code P2002 in the POST handler and return 409 Conflict with a clear message, matching the pattern already used correctly in src/app/api/cleaner/rooms/[roomId]/complete/route.ts (optimistic-concurrency 409). Low severity: no data integrity issue, just wrong HTTP semantics and noisy error logs.</p></details></td>
+<td class="src">load test</td></tr></tbody></table>
+<h3>What held up under load</h3>
+<ul class="good">
+<li>50 parallel logins, 100 parallel GETs: no failures.</li>
+<li>20x concurrent completion of the same task: no double-completion (transaction + optimistic lock on lastCompleted).</li>
+<li>Cron endpoint protected; no double-fired side effects across 20 concurrent hits.</li>
+<li>No connection pool exhaustion patterns; admin bulk endpoints paginated.</li>
+</ul>
+
+<h2>Mobile viewports <span class="src">(author: Claude - verified by Codex; screenshots: /tmp/neatplan-audit/mobile/shots, 96 files)</span></h2>
+<table><tbody><tr>
+<td><span class="sev" style="background:#ff5f5622;color:#ff5f56;border:1px solid #ff5f5655">critical</span></td>
+<td><strong>Missing min-w-0 on the dashboard content column clips (not scrolls) wide content on every phone viewport</strong> <span class="v ok">verified</span><br>
+<span class="area">src/components/layout/page-wrapper.tsx:7, src/components/layout/conditional-layout.tsx:29</span>
+<details><summary>evidence + fix</summary>
+<p>PageWrapper wraps the app in &lt;div className=&quot;h-[100dvh] flex flex-col overflow-hidden&quot;&gt; (page-wrapper.tsx:7). ConditionalLayout&#x27;s content column &lt;div className=&quot;flex-1 flex flex-col md:ml-[60px] min-h-0 relative z-10&quot;&gt; (conditional-layout.tsx:29) sets min-h-0 but not min-w-0, so per flexbox&#x27;s default min-width:auto it can&#x27;t shrink below its content&#x27;s intrinsic width. Measured via main.scrollWidth vs window.innerWidth and confirmed visually: on iPhone SE (375), iPhone 15 Pro Max (430) and Galaxy S24 (360), /audit renders at a fixed 719px (up to 359px / ~50% of screen clipped with no scrollbar - subtitle, filters, stat values, and most table columns invisible), /users at 674px (299-314px clipped - &#x27;Add User&#x27; label and entire Role column gone), /equipment marginally over (397px). All three tablet viewports (768/800/1024px) are unaffected since flex-1 gives the column enough room there. Screenshot: /tmp/neatplan-audit/mobile/shots/galaxy-s24_audit.png.</p>
+<p class="rec">Add min-w-0 to the flex-1 content column in conditional-layout.tsx:29 so its own overflow-x-auto descendants (e.g. the Users table wrapper) can do their job instead of blowing out the whole page.</p></details></td>
+<td class="src">mobile</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>All tested tablet viewports get the hover-only collapsed sidebar with no way to see nav labels on touch</strong> <span class="v ok">verified</span><br>
+<span class="area">src/components/ui/sidebar.tsx:44,50-58,85,180</span>
+<details><summary>evidence + fix</summary>
+<p>iPad portrait (768x1024), iPad landscape (1024x768) and Galaxy Tab (800x1280) all render the collapsed 60px icon-only &lt;aside&gt; (hidden md:flex) instead of the md:hidden hamburger drawer used on phones, confirmed via DOM audit and screenshot (ipad-portrait_rooms.png shows icon-only rail, no labels). The aside expands only via onMouseEnter/onMouseLeave (sidebar.tsx:50-58) with no tap/focus handler, and the resize listener (sidebar.tsx:44) actively force-closes the mobile drawer once matchMedia(&#x27;(min-width:768px)&#x27;) matches. Links remain individually tappable and route correctly, but each is a 39x38px icon-only target (just under 40x40) with the label never visible on a touchscreen.</p>
+<p class="rec">Raise the breakpoint that switches hamburger-drawer vs hover-sidebar above common tablet widths (e.g. lg: 1024px) or detect pointer type via matchMedia(&#x27;(hover: hover) and (pointer: fine)&#x27;) instead of a fixed width, or add a tap-to-pin affordance.</p></details></td>
+<td class="src">mobile</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Room card icon-only edit button is a 22x22px tap target with no accessible name</strong> <span class="v ok">verified</span><br>
+<span class="area">src/app/(dashboard)/rooms/page.tsx:790-795</span>
+<details><summary>evidence + fix</summary>
+<p>Every room card renders &lt;button onClick={onEdit}&gt;&lt;Layers className=&quot;w-3.5 h-3.5&quot;/&gt;&lt;/button&gt; styled p-1 (~22x22px effective hit area) with no aria-label. Flagged 60 times across room-grid/viewport combinations in the DOM audit, all below the 40x40px minimum.</p>
+<p class="rec">Increase hit area to &gt;=40x40px (e.g. p-2.5 or min-w-10 min-h-10) and add aria-label=&quot;Edit schedule&quot;.</p></details></td>
+<td class="src">mobile</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Login page show/hide-password toggle is a 20x20px tap target on the highest-traffic mobile page</strong> <span class="v ok">verified</span><br>
+<span class="area">src/components/auth/login-form.tsx:150-160</span>
+<details><summary>evidence + fix</summary>
+<p>The eye-icon button has no padding classes, so its clickable area equals the icon&#x27;s 20x20px box. Flagged on /auth across all 6 tested viewports - this is the single page every user, admin or cleaner, must use on every login.</p>
+<p class="rec">Wrap the icon in p-2.5 (or similar) so the hit area is &gt;=40x40px while keeping the visible icon at w-5 h-5; existing aria-label/aria-pressed are already correct.</p></details></td>
+<td class="src">mobile</td></tr>
+<tr>
+<td><span class="sev" style="background:#8a8f9822;color:#8a8f98;border:1px solid #8a8f9855">low</span></td>
+<td><strong>Footer &#x27;Developed by&#x27; credit link is 11px text and a 66x13px tap target on every page</strong> <span class="v ok">verified</span><br>
+<span class="area">src/components/ui/footer.tsx:14-26</span>
+<details><summary>evidence + fix</summary>
+<p>The shared Footer&#x27;s credit link has no size/padding classes. Flagged on every one of the 16 tested pages across all 6 viewports as both sub-12px font and sub-40px target - the single most repeated violation in the audit, but low real-world impact as decorative chrome, not a primary action.</p>
+<p class="rec">Low priority: bump to text-xs and add padding if it&#x27;s meant to be tappable on mobile; otherwise leave as-is.</p></details></td>
+<td class="src">mobile</td></tr></tbody></table>
+
+<h2>Desktop walk <span class="src">(partial - session cut off mid-run; salvaged findings, unverified)</span></h2>
+<table><tbody><tr>
+<td><span class="sev" style="background:#ff9f4322;color:#ff9f43;border:1px solid #ff9f4355">high</span></td>
+<td><strong>Global light-theme CSS override breaks the standalone dark /demo and /demo/view pages (text nearly invisible, contrast ~1.1:1)</strong> <br>
+<span class="area">src/app/globals.css:227-289 (LIGHT THEME OVERRIDES block) vs src/app/demo/view/page.tsx:68-74, src/app/demo/page.tsx</span>
+<details><summary>evidence + fix</summary>
+<p>html carries class=&quot;light&quot; by default (even for anonymous/logged-out visitors). globals.css:236-260 blanket-overrides literal Tailwind gray-900/800/700/100 utility classes app-wide whenever .light is present. /demo/view and /demo hardcode a dark theme via literal classes (bg-gray-900/40, text-gray-400, from-gray-900 to-gray-800, text-gray-100) assuming Tailwind defaults, not the app theme system. Result: stat card labels (Total Users/Rooms/Equipment/Active Schedules) render at rgb(100,100,120) text on an effectively rgb(103,109,119) background -- measured contrast ratio ~1.13:1 (WCAG AA requires &gt;=4.5:1), i.e. functionally invisible. Screenshot: /tmp/neatplan-audit/desktop/shots/public_demo-view.png, zoomed crop /tmp/neatplan-audit/desktop/shots/_crop_label_zoom.png. Page background also inverts from the intended near-black gray-900/800 gradient to rgb(250,250,252) (near white).</p>
+<p class="rec">Scope the LIGHT THEME OVERRIDES block so it never touches the standalone marketing/demo pages (e.g. wrap demo pages in a class that opts out, like .theme-fixed-dark, or force html to not carry .light on /demo routes), or migrate /demo and /demo/view off literal dark Tailwind gray classes onto the same tc.* theme tokens the rest of the app uses.</p></details></td>
+<td class="src">desktop</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Orphaned /cleaning route renders a blank page with no empty-state message when task list is empty</strong> <br>
+<span class="area">src/app/cleaning/page.tsx:179-230</span>
+<details><summary>evidence + fix</summary>
+<p>Navigated to /cleaning as cleaner (Sarah Johnson). Page renders just the header (&quot;Cleaning Schedule&quot;) and an &quot;Upload Schedule&quot; button; the tasks.map() list (line 219) has zero items and there is no fallback/empty-state branch, so the entire content area below the header is blank whitespace. No console errors or failed requests (api/cleaning-tasks and api/rooms both returned 200 with empty data). This route is not linked from any sidebar/nav (grep for &quot;/cleaning&quot; in src turns up no Link/href reference outside the page itself), so it is an orphaned legacy prototype (separate from the real /clean cleaner portal) still reachable by direct URL, and looks broken to anyone who lands on it. Screenshot: /tmp/neatplan-audit/desktop/shots/cleaner_cleaning.png</p>
+<p class="rec">Either remove the orphaned /cleaning route (the product has since moved to /clean + room schedules) or add a proper empty state (&quot;No cleaning tasks yet&quot;) consistent with the rest of the app.</p></details></td>
+<td class="src">desktop</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Sidebar navigation gives zero loading feedback; a nav click can be silently dropped if the user clicks elsewhere before the route resolves</strong> <br>
+<span class="area">src/components/ui/sidebar.tsx:116-146 (Link items) -- no loading.tsx anywhere in src/app</span>
+<details><summary>evidence + fix</summary>
+<p>Repro script clicked sidebar links Dashboard-&gt;Rooms-&gt;Equipment-&gt;Schedule-&gt;Audit Log in quick succession (500ms settle + networkidle wait between each). Equipment, Schedule and Audit Log clicks produced a `_rsc` fetch request that never resolved within the wait window and the page URL stayed on /rooms after each of those three clicks (network trace: REQ /equipment?_rsc=... fires, no RES/REQFAIL logged before the next click; only 2 clicks later does the /equipment RSC fetch show up as net::ERR_ABORTED, i.e. Next silently cancelled it once a newer navigation superseded it). `find src/app -iname loading.tsx` returns nothing, so no route in the app has a pending/loading UI -- a slow or in-flight RSC navigation gives the user zero visual feedback, so an impatient click on a second nav item silently drops the first, leaving the sidebar looking unresponsive/dead. Isolated single clicks (with idle time beforehand for Next to prefetch) resolve in under 1s, so this specifically bites quick sequential navigation.</p>
+<p class="rec">Add a loading.tsx (or a client-side pending indicator via useLinkStatus/useTransition) for the (dashboard) route group so in-flight navigations are visible, and/or eagerly prefetch all sidebar routes on sidebar mount rather than relying on viewport-triggered prefetch.</p></details></td>
+<td class="src">desktop</td></tr>
+<tr>
+<td><span class="sev" style="background:#8a8f9822;color:#8a8f98;border:1px solid #8a8f9855">low</span></td>
+<td><strong>Missing pluralization on &quot;schedule types&quot; count in cleaner dashboard room/equipment cards</strong> <br>
+<span class="area">src/app/clean/page.tsx:958,1132</span>
+<details><summary>evidence + fix</summary>
+<p>Cleaner dashboard (/clean) room card for LoadTestOverdueRoom shows &quot;1 schedule types&quot; (should read &quot;1 schedule type&quot;). Code is  with no singular/plural branching. Screenshot: /tmp/neatplan-audit/desktop/shots/cleaner_clean.png</p>
+<p class="rec">Pluralize conditionally, e.g. .</p></details></td>
+<td class="src">desktop</td></tr></tbody></table>
+
+<h2>SEO / meta / PWA <span class="src">(author: Claude - verified by Codex, 13 confirmed / 2 uncertain)</span></h2>
+<table><tbody><tr>
+<td><span class="sev" style="background:#ff9f4322;color:#ff9f43;border:1px solid #ff9f4355">high</span></td>
+<td><strong>Every route shares one generic title/description - zero per-page metadata in the app</strong> <span class="v ok">verified</span><br>
+<span class="area">seo-meta</span>
+<details><summary>evidence + fix</summary>
+<p>Only one metadata export exists in the whole src/app tree: /home/andrei/x/neatplan/src/app/layout.tsx:16-25 (title: &#x27;NeatPlan&#x27;, description: &#x27;Track your cleaning tasks and schedule&#x27;). grep for &#x27;export const metadata|generateMetadata&#x27; across src/app returns only that one file. Verified live: /demo and /demo/view render byte-identical &lt;title&gt; and &lt;meta description&gt;; every dashboard/cleaner route (/audit, /rooms, /schedule, /users, /clean/[roomId], /auth, etc.) inherits the same root strings.</p>
+<p class="rec">Add per-route metadata/generateMetadata (e.g. &#x27;Sign In - NeatPlan&#x27;, &#x27;Rooms - NeatPlan&#x27;, &#x27;Audit Log - NeatPlan&#x27;) so tabs/bookmarks/history are distinguishable.</p></details></td>
+<td class="src">seo</td></tr>
+<tr>
+<td><span class="sev" style="background:#ff9f4322;color:#ff9f43;border:1px solid #ff9f4355">high</span></td>
+<td><strong>NEXTAUTH_URL / NEXT_PUBLIC_APP_BASE_URL hardcoded to port 3030 while the app runs on 4040</strong> <span class="v ok">verified</span><br>
+<span class="area">config-bug</span>
+<details><summary>evidence + fix</summary>
+<p>/home/andrei/x/neatplan/.env lines 5,10,11 all point at http://localhost:3030. Live-verified: curl -D- http://localhost:4040/ returns 307 to &#x27;location: /auth?callbackUrl=http%3A%2F%2Flocalhost%3A3030%2F&#x27; - the post-login redirect target is a dead port. Discovered incidentally while checking canonical/head URLs.</p>
+<p class="rec">Fix NEXTAUTH_URL/NEXT_PUBLIC_APP_BASE_URL to match the actual serving port so post-login callbackUrl and any absolute-URL construction is correct.</p></details></td>
+<td class="src">seo</td></tr>
+<tr>
+<td><span class="sev" style="background:#ff9f4322;color:#ff9f43;border:1px solid #ff9f4355">high</span></td>
+<td><strong>No apple-touch-icon - iOS &#x27;Add to Home Screen&#x27; falls back to a page-screenshot thumbnail</strong> <span class="v ok">verified</span><br>
+<span class="area">pwa-icons</span>
+<details><summary>evidence + fix</summary>
+<p>curl http://localhost:4040/apple-touch-icon.png -&gt; 404; no &lt;link rel=&quot;apple-touch-icon&quot;&gt; in rendered head; no icon.png/apple-icon.png convention file under src/app. layout.tsx metadata (lines 16-25) sets appleWebApp.capable=true but has no `icons` field, so Next never emits the apple touch icon link despite declaring the app installable on iOS.</p>
+<p class="rec">Add icons.apple (e.g. &#x27;/assets/logos/logo-192.png&#x27; or a dedicated 180x180 asset) to the root metadata export - directly relevant since cleaners install this to iPad/iPhone home screens.</p></details></td>
+<td class="src">seo</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Lighthouse fails &#x27;meta-description&#x27; on all 4 runs despite the tag existing in source (likely dev-stream timing artifact)</strong> <span class="v un">uncertain</span><br>
+<span class="area">seo-meta</span>
+<details><summary>evidence + fix</summary>
+<p>seo category capped at 0.91 on all runs (home/auth x mobile/desktop) via meta-description score=0. Raw HTML inspection shows &lt;title&gt;/&lt;meta description&gt; are injected via a deferred React 18 streaming script (up to ~2300ms timeout: $RC/$RB pattern) rather than present synchronously in &lt;head&gt;, which can make Lighthouse&#x27;s snapshot miss it in dev mode.</p>
+<p class="rec">Re-run Lighthouse against `next build &amp;&amp; next start` to confirm this is real vs. a dev-server-only streaming artifact before prioritizing.</p></details></td>
+<td class="src">seo</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>No canonical URL and no Open Graph/Twitter tags on any page</strong> <span class="v ok">verified</span><br>
+<span class="area">seo-meta</span>
+<details><summary>evidence + fix</summary>
+<p>No &lt;link rel=&quot;canonical&quot;&gt;, no og:* or twitter:* meta on /, /auth, /demo, /demo/view. layout.tsx metadata has no openGraph/twitter/alternates.canonical, and no OG image exists under /home/andrei/x/neatplan/public.</p>
+<p class="rec">Low priority for an auth-gated internal tool, but add openGraph + a 1200x630 image if /demo or /demo/view are ever shared as marketing links (previews in Slack/Teams/email would otherwise render blank).</p></details></td>
+<td class="src">seo</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Password-visibility toggle on the sign-in form fails WCAG touch-target size (20x20px vs 24x24px minimum)</strong> <span class="v ok">verified</span><br>
+<span class="area">accessibility</span>
+<details><summary>evidence + fix</summary>
+<p>Lighthouse target-size audit score=0 on every run - the sole reason accessibility caps at 0.96 instead of 1.0. Node: &#x27;form.space-y-5 &gt; div.space-y-2 &gt; div.relative &gt; button.absolute&#x27; aria-label &#x27;Show password&#x27;, boundingRect 20x20 at (815,525)-(835,545).</p>
+<p class="rec">Increase the show/hide-password button hit area to &gt;=24x24px - it&#x27;s the login form, the highest-traffic touch target in the app for phone-using cleaners.</p></details></td>
+<td class="src">seo</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>No robots.txt or sitemap.xml</strong> <span class="v ok">verified</span><br>
+<span class="area">seo-crawl</span>
+<details><summary>evidence + fix</summary>
+<p>curl http://localhost:4040/robots.txt and /sitemap.xml both -&gt; 404. No src/app/robots.ts or sitemap.ts convention files exist.</p>
+<p class="rec">Low priority since every dashboard/cleaner route 307-redirects unauthenticated requests to /auth - almost nothing is crawlable. Add a minimal robots.ts if /demo should be indexable; otherwise cosmetic.</p></details></td>
+<td class="src">seo</td></tr>
+<tr>
+<td><span class="sev" style="background:#8a8f9822;color:#8a8f98;border:1px solid #8a8f9855">low</span></td>
+<td><strong>manifest.json reuses the same bitmap for &#x27;any&#x27; and &#x27;maskable&#x27; icon purposes</strong> <span class="v ok">verified</span><br>
+<span class="area">pwa-icons</span>
+<details><summary>evidence + fix</summary>
+<p>GET /manifest.json: logo-192.png and logo-512.png both declared purpose &#x27;any maskable&#x27; with no safe-zone padding - risks the logo being cropped by Android&#x27;s maskable mask (must fit inner 80% circle).</p>
+<p class="rec">Provide a dedicated padded maskable icon, or split &#x27;any&#x27; and &#x27;maskable&#x27; into separate entries.</p></details></td>
+<td class="src">seo</td></tr>
+<tr>
+<td><span class="sev" style="background:#8a8f9822;color:#8a8f98;border:1px solid #8a8f9855">low</span></td>
+<td><strong>Performance scores (0.47-0.61) and &#x27;valid-source-maps&#x27; failures are dev-server artifacts, not production signal</strong> <span class="v un">uncertain</span><br>
+<span class="area">perf-discounted</span>
+<details><summary>evidence + fix</summary>
+<p>LCP 19.7s / TBT 2160ms on home-mobile; valid-source-maps fails because main-app.js/webpack.js ship without physical .map files in dev mode (normal Next dev behavior). All best-practices/accessibility/seo scores otherwise clean (best-practices=1.0 on every run; solid CSP/HSTS/X-Frame-Options headers already present).</p>
+<p class="rec">Discounted per audit scope - re-measure against a production build (`next build &amp;&amp; next start`) before drawing performance conclusions.</p></details></td>
+<td class="src">seo</td></tr></tbody></table>
+
+<h2>UI consistency <span class="src">(author: Cursor - 12 high-severity findings verified by Codex, 11/11 checked confirmed)</span></h2>
+<table><tbody><tr>
+<td><span class="sev" style="background:#ff9f4322;color:#ff9f43;border:1px solid #ff9f4355">high</span></td>
+<td><strong>Admin and cleaner UIs use different design systems</strong> <span class="v ok">verified</span><br>
+<span class="area">src/app/clean/page.tsx:476-580</span>
+<details><summary>evidence + fix</summary>
+<p>Cleaner pages use hardcoded Tailwind classes (bg-gray-800/50, border-gray-700, text-gray-300) while admin pages (audit, rooms, schedule, users) use useThemeColors() with inline style tokens and emerald accent rgb(16,185,129).</p>
+<p class="rec">Extend useThemeColors (or a shared layout primitive) to cleaner routes so both surfaces share typography, spacing, card styles, and accent colors.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#ff9f4322;color:#ff9f43;border:1px solid #ff9f4355">high</span></td>
+<td><strong>Primary accent color differs between admin and cleaner</strong> <span class="v ok">verified</span><br>
+<span class="area">src/app/(dashboard)/audit/page.tsx:229</span>
+<details><summary>evidence + fix</summary>
+<p>Admin pages consistently use emerald Sparkles/icon color rgb(16,185,129); cleaner layout and actions use blue-400/teal-600 (src/app/clean/layout.tsx:150, src/app/clean/settings/page.tsx:203, src/app/clean/[roomId]/page.tsx:634).</p>
+<p class="rec">Pick one brand accent (emerald or teal) and apply it across admin and cleaner portals via design tokens.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#ff9f4322;color:#ff9f43;border:1px solid #ff9f4355">high</span></td>
+<td><strong>Schedule assignment UI duplicated between Rooms and Equipment</strong> <span class="v ok">verified</span><br>
+<span class="area">src/app/(dashboard)/rooms/page.tsx:387-541</span>
+<details><summary>evidence + fix</summary>
+<p>Nearly identical Quick Assign / Manual Assign flows (mode toggle, 3-column selects, assign button) are copy-pasted in equipment/page.tsx:523-705 with only entity labels changed (room vs equipment).</p>
+<p class="rec">Extract a shared ScheduleAssignmentPanel component parameterized by entity type, API endpoint, and filter options.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#ff9f4322;color:#ff9f43;border:1px solid #ff9f4355">high</span></td>
+<td><strong>Duplicate settings implementations for admin and cleaner</strong> <span class="v ok">verified</span><br>
+<span class="area">src/app/(dashboard)/settings/page.tsx:45-334</span>
+<details><summary>evidence + fix</summary>
+<p>Admin settings (profile, appearance, notifications, privacy, system tabs) overlaps heavily with cleaner settings at src/app/clean/settings/page.tsx:12-316 but implemented separately with different APIs and UI.</p>
+<p class="rec">Share profile/theme form sections; route-gate admin-only tabs (SMTP, TOTP, notifications) from a single settings shell.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#ff9f4322;color:#ff9f43;border:1px solid #ff9f4355">high</span></td>
+<td><strong>Export Data button has no handler</strong> <span class="v ok">verified</span><br>
+<span class="area">src/app/(dashboard)/settings/page.tsx:534-546</span>
+<details><summary>evidence + fix</summary>
+<p>&lt;button&gt;Export Data&lt;/button&gt; has hover styles but no onClick or href — clicking does nothing.</p>
+<p class="rec">Wire to a data-export API endpoint or remove/disable the button until implemented.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#ff9f4322;color:#ff9f43;border:1px solid #ff9f4355">high</span></td>
+<td><strong>Delete Account button has no handler</strong> <span class="v ok">verified</span><br>
+<span class="area">src/app/(dashboard)/settings/page.tsx:547-555</span>
+<details><summary>evidence + fix</summary>
+<p>&lt;button&gt;Delete Account&lt;/button&gt; has danger styling but no onClick, confirmation flow, or API call.</p>
+<p class="rec">Implement account deletion with confirmation modal and API, or remove the button.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#ff9f4322;color:#ff9f43;border:1px solid #ff9f4355">high</span></td>
+<td><strong>Cleaner equipment cards are not actionable</strong> <span class="v ok">verified</span><br>
+<span class="area">src/app/clean/page.tsx:1083-1105</span>
+<details><summary>evidence + fix</summary>
+<p>RoomCard wraps content in &lt;Link href={`/clean/${room.id}`}&gt;, but EquipmentCard renders a plain &lt;div&gt; with no link, onClick, or completion flow despite showing schedules and overdue counts.</p>
+<p class="rec">Add equipment detail/completion route (e.g. /clean/equipment/[id]) or hide equipment from cleaner dashboard until actionable.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#ff9f4322;color:#ff9f43;border:1px solid #ff9f4355">high</span></td>
+<td><strong>/cleaning page lacks loading and empty states for tasks</strong> <span class="v ok">verified</span><br>
+<span class="area">src/app/cleaning/page.tsx:28-68</span>
+<details><summary>evidence + fix</summary>
+<p>isLoading initializes to false and fetchTasks/fetchRooms never set it true before fetching; tasks list (line 218) maps over tasks with no empty-state message when tasks.length === 0.</p>
+<p class="rec">Set isLoading true during fetches, show a spinner/skeleton, and render an empty state when the task list is empty.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#ff9f4322;color:#ff9f43;border:1px solid #ff9f4355">high</span></td>
+<td><strong>User management icon buttons lack accessible names</strong> <span class="v ok">verified</span><br>
+<span class="area">src/app/(dashboard)/users/page.tsx:416-476</span>
+<details><summary>evidence + fix</summary>
+<p>Edit and Delete buttons contain only &lt;Edit&gt; and &lt;Trash2&gt; icons with no aria-label; screen readers announce unlabeled buttons.</p>
+<p class="rec">Add aria-label=&quot;Edit user&quot; / aria-label=&quot;Delete user&quot; (include user name where helpful).</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#ff9f4322;color:#ff9f43;border:1px solid #ff9f4355">high</span></td>
+<td><strong>User form modal inputs lack proper labels</strong> <span class="v ok">verified</span><br>
+<span class="area">src/app/(dashboard)/users/page.tsx:88-122</span>
+<details><summary>evidence + fix</summary>
+<p>Name, Email, and Password fields use placeholder text only with no &lt;label&gt; or aria-label; placeholders disappear once typed.</p>
+<p class="rec">Add visible &lt;label htmlFor=...&gt; elements matching the pattern used in settings and cleaner settings forms.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#ff9f4322;color:#ff9f43;border:1px solid #ff9f4355">high</span></td>
+<td><strong>Equipment shown to cleaners without completion workflow</strong> <span class="v ok">verified</span><br>
+<span class="area">src/app/clean/page.tsx:149-213</span>
+<details><summary>evidence + fix</summary>
+<p>Cleaner dashboard fetches and displays equipment alongside rooms (displayMode toggle, equipment stats) but only RoomCard links to a workflow (/clean/[roomId]); no equivalent equipment completion path exists.</p>
+<p class="rec">Either implement cleaner equipment task completion or restrict cleaner dashboard to rooms-only until equipment workflow exists.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Mixed button implementations across pages</strong> <br>
+<span class="area">src/app/(dashboard)/audit/page.tsx:247-264</span>
+<details><summary>evidence + fix</summary>
+<p>Admin pages mostly use raw &lt;button&gt; with inline tc.btnPrimaryBg styles; cleaner /clean uses shadcn &lt;Button variant=&quot;default|ghost&quot;&gt;; ScheduleDialog uses shadcn Button variant=&quot;outline&quot;.</p>
+<p class="rec">Standardize on one button component (shadcn Button + variants, or a themed wrapper) and replace ad-hoc inline-style buttons.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Equipment page typography diverges from admin standard</strong> <br>
+<span class="area">src/app/(dashboard)/equipment/page.tsx:525-552</span>
+<details><summary>evidence + fix</summary>
+<p>Equipment page uses text-xl/text-lg/text-sm for section headings and labels, while rooms/audit/schedule use text-[15px]/text-[13px]/text-[12px] scale.</p>
+<p class="rec">Match equipment page text scale to the established admin typographic system.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Room type and status helpers duplicated in cleaner pages</strong> <br>
+<span class="area">src/app/clean/page.tsx:884-903</span>
+<details><summary>evidence + fix</summary>
+<p>getRoomTypeIcon and getStatusColor are reimplemented in clean/[roomId]/page.tsx:337-357 with emoji icons in one file and overlapping status color maps in both.</p>
+<p class="rec">Move shared room/status display helpers to src/lib/ or src/components/cleaner/ and reuse across cleaner routes.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Unused RoomScheduleManager duplicates room schedule logic</strong> <br>
+<span class="area">src/components/RoomScheduleManager.tsx:35-217</span>
+<details><summary>evidence + fix</summary>
+<p>Component implements schedule assign/list with date-fns formatting but is not imported anywhere in the app; similar logic exists in rooms/[id]/page.tsx and rooms/page.tsx SCHEDULES view.</p>
+<p class="rec">Either wire RoomScheduleManager into room detail pages or delete it and consolidate on one schedule-management component.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Hardcoded placeholder system metrics in Settings</strong> <br>
+<span class="area">src/app/(dashboard)/settings/page.tsx:626-640</span>
+<details><summary>evidence + fix</summary>
+<p>System Information shows static values: Version 1.0.0, Last Update Jan 15, 2025, Uptime 99.9% — not loaded from any API.</p>
+<p class="rec">Fetch real build/version/health data from an API or remove the section until it reflects live values.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Legacy /cleaning route is orphaned from navigation</strong> <br>
+<span class="area">src/app/cleaning/page.tsx:179-204</span>
+<details><summary>evidence + fix</summary>
+<p>Standalone Cleaning Schedule page at /cleaning uses a different UI paradigm (cleaning-tasks API, upload flow) and is not linked from Sidebar or cleaner layout; admin schedule management lives at /schedule.</p>
+<p class="rec">Redirect /cleaning to /schedule or /clean, or remove the page if superseded by the schedule system.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Audit page silently swallows fetch errors</strong> <br>
+<span class="area">src/app/(dashboard)/audit/page.tsx:128-130</span>
+<details><summary>evidence + fix</summary>
+<p>fetchHistory catch block is empty (// ignore); on API failure the table shows empty state with no error message or retry. Summary fetch (lines 151-152) also ignores errors.</p>
+<p class="rec">Surface error state with retry button, matching users/page.tsx:310-323 and equipment/page.tsx:379-399 patterns.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Rooms page has no dedicated error UI on fetch failure</strong> <br>
+<span class="area">src/app/(dashboard)/rooms/page.tsx:96-100</span>
+<details><summary>evidence + fix</summary>
+<p>On fetch error, only showToast(&#x27;Failed to load data&#x27;) is called; page proceeds to render with empty rooms array and no inline error/retry.</p>
+<p class="rec">Add error state with retry, consistent with equipment and users pages.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Inconsistent date locales across admin pages</strong> <br>
+<span class="area">src/app/(dashboard)/audit/page.tsx:196-203</span>
+<details><summary>evidence + fix</summary>
+<p>Audit uses toLocaleDateString(&#x27;en-US&#x27;) and toLocaleTimeString(&#x27;en-US&#x27;); dashboard uses en-GB long format; equipment and room detail use default toLocaleDateString().</p>
+<p class="rec">Create a shared formatDate/formatTime utility with a single locale (en-GB recommended for UK nursing homes) and use everywhere.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Schedule page title singular/plural mismatch</strong> <br>
+<span class="area">src/app/(dashboard)/schedule/page.tsx:52-54</span>
+<details><summary>evidence + fix</summary>
+<p>Eyebrow label reads &#x27;Cleaning Schedules&#x27; (plural) but h1 reads &#x27;Cleaning Schedule&#x27; (singular); /cleaning page also uses &#x27;Cleaning Schedule&#x27;.</p>
+<p class="rec">Standardize on one term — e.g. &#x27;Cleaning Schedules&#x27; for the management page title.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Maintenance vs cleaning terminology split</strong> <br>
+<span class="area">src/app/(dashboard)/equipment/page.tsx:444</span>
+<details><summary>evidence + fix</summary>
+<p>Equipment subtitle says &#x27;Manage maintenance equipment and schedules&#x27;; cleaner empty state says &#x27;equipment needs maintenance&#x27; while the rest of the app uses &#x27;cleaning&#x27;.</p>
+<p class="rec">Align IPC terminology — use &#x27;cleaning&#x27; for infection-prevention tasks and reserve &#x27;maintenance&#x27; only for equipment servicing if intentional.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Status label inconsistency for PENDING schedules</strong> <br>
+<span class="area">src/app/clean/page.tsx:942-944</span>
+<details><summary>evidence + fix</summary>
+<p>Cleaner dashboard cards display raw enum schedule.status (e.g. &#x27;PENDING&#x27;, &#x27;OVERDUE&#x27;); clean/[roomId]/page.tsx maps PENDING to &#x27;Due Soon&#x27;; rooms/page.tsx uses getStatusLabel returning &#x27;Due Soon&#x27;.</p>
+<p class="rec">Use a shared getStatusLabel() everywhere user-facing status text is shown.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Settings password fields lack visible labels</strong> <br>
+<span class="area">src/app/(dashboard)/settings/page.tsx:289-308</span>
+<details><summary>evidence + fix</summary>
+<p>Change Password inputs use placeholder=&#x27;Current password&#x27; / &#x27;New password&#x27; only, no associated &lt;label&gt; elements.</p>
+<p class="rec">Add labels for current and new password fields; keep placeholders as hints only.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Settings toggle is not keyboard-accessible</strong> <br>
+<span class="area">src/app/(dashboard)/settings/page.tsx:30-42</span>
+<details><summary>evidence + fix</summary>
+<p>Toggle component is a &lt;div onClick&gt; with no role=&quot;switch&quot;, tabIndex, aria-checked, or keyboard handler — used for all boolean settings toggles.</p>
+<p class="rec">Replace with a proper button or switch component (shadcn Switch) supporting keyboard and screen-reader semantics.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Cleaner room back navigation is icon-only</strong> <br>
+<span class="area">src/app/clean/[roomId]/page.tsx:375-379</span>
+<details><summary>evidence + fix</summary>
+<p>&lt;Link href=&quot;/clean&quot;&gt; contains only &lt;ArrowLeft&gt; icon with no aria-label or visible text.</p>
+<p class="rec">Add aria-label=&quot;Back to dashboard&quot; or visible &#x27;Back&#x27; text.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Password change flows differ between admin and cleaner settings</strong> <br>
+<span class="area">src/app/clean/settings/page.tsx:68-100</span>
+<details><summary>evidence + fix</summary>
+<p>Cleaner settings calls /api/auth/change-password with confirm-password validation; admin settings embeds password in profile PUT via /api/users/profile with no confirm field and different validation rules.</p>
+<p class="rec">Unify on one password-change API and form (current, new, confirm) shared by both settings pages.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#f7d35422;color:#f7d354;border:1px solid #f7d35455">medium</span></td>
+<td><strong>Cleaner settings save buttons use different color semantics</strong> <br>
+<span class="area">src/app/clean/settings/page.tsx:200-272</span>
+<details><summary>evidence + fix</summary>
+<p>Profile save uses bg-blue-600; password change uses bg-red-600; admin settings uses tc.btnPrimaryBg (emerald) for all saves.</p>
+<p class="rec">Use consistent primary/danger button colors aligned with the shared design system.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#8a8f9822;color:#8a8f98;border:1px solid #8a8f9855">low</span></td>
+<td><strong>Inconsistent admin page heading sizes</strong> <br>
+<span class="area">src/app/(dashboard)/users/page.tsx:337</span>
+<details><summary>evidence + fix</summary>
+<p>Users page h1 uses text-[26px] sm:text-[32px]; other admin pages (audit, rooms, schedule, equipment) use text-[32px] uniformly.</p>
+<p class="rec">Align page title typography across all admin dashboard routes.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#8a8f9822;color:#8a8f98;border:1px solid #8a8f9855">low</span></td>
+<td><strong>Dead Navigation component superseded by Sidebar</strong> <br>
+<span class="area">src/components/navigation.tsx:5-35</span>
+<details><summary>evidence + fix</summary>
+<p>navigation.tsx defines a 2-link teal nav (Dashboard, Rooms) but is never imported; src/components/ui/sidebar.tsx:14-22 provides the full admin nav.</p>
+<p class="rec">Remove navigation.tsx or merge any unique styling into Sidebar to avoid drift.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#8a8f9822;color:#8a8f98;border:1px solid #8a8f9855">low</span></td>
+<td><strong>Time zone selector is non-functional decoration</strong> <br>
+<span class="area">src/app/(dashboard)/settings/page.tsx:272-282</span>
+<details><summary>evidence + fix</summary>
+<p>Time Zone &lt;select&gt; has no value, onChange, or connection to settings context — options are static labels only.</p>
+<p class="rec">Bind to user settings state and persist via API, or remove the control until implemented.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#8a8f9822;color:#8a8f98;border:1px solid #8a8f9855">low</span></td>
+<td><strong>Demo page fallback copy for missing descriptions</strong> <br>
+<span class="area">src/app/demo/page.tsx:315</span>
+<details><summary>evidence + fix</summary>
+<p>Tooltip fallback renders &#x27;Details coming soon.&#x27; when desc is empty.</p>
+<p class="rec">Provide real descriptions for all demo items or hide tooltips when description is absent.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#8a8f9822;color:#8a8f98;border:1px solid #8a8f9855">low</span></td>
+<td><strong>Users page missing empty state when no users exist</strong> <br>
+<span class="area">src/app/(dashboard)/users/page.tsx:364-481</span>
+<details><summary>evidence + fix</summary>
+<p>Table body only maps users; when users array is empty after successful load, an empty table renders with no guidance to add the first user.</p>
+<p class="rec">Add empty-state row or card prompting &#x27;Add User&#x27; when users.length === 0.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#8a8f9822;color:#8a8f98;border:1px solid #8a8f9855">low</span></td>
+<td><strong>date-fns PPP used only in unused component</strong> <br>
+<span class="area">src/components/RoomScheduleManager.tsx:215-217</span>
+<details><summary>evidence + fix</summary>
+<p>format(new Date(roomSchedule.nextDue), &#x27;PPP&#x27;) produces a third date style (e.g. &#x27;April 29th, 2026&#x27;) not used elsewhere.</p>
+<p class="rec">If RoomScheduleManager is kept, align its date output with the shared formatter; otherwise remove.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#8a8f9822;color:#8a8f98;border:1px solid #8a8f9855">low</span></td>
+<td><strong>Cleaner room page uses locale-default time format</strong> <br>
+<span class="area">src/app/clean/[roomId]/page.tsx:408</span>
+<details><summary>evidence + fix</summary>
+<p>Started at {startTime.toLocaleTimeString()} uses browser default locale with no options, unlike audit page&#x27;s explicit hour/minute formatting.</p>
+<p class="rec">Use the shared time formatter with consistent 24h or 12h preference from user settings.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#8a8f9822;color:#8a8f98;border:1px solid #8a8f9855">low</span></td>
+<td><strong>Inconsistent role naming across settings and users</strong> <br>
+<span class="area">src/app/(dashboard)/settings/page.tsx:262-264</span>
+<details><summary>evidence + fix</summary>
+<p>Admin settings shows &#x27;Administrator&#x27; or session role string &#x27;User&#x27;; users table badge shows &#x27;Admin&#x27;/&#x27;Cleaner&#x27;; cleaner settings hardcodes value=&#x27;Cleaner&#x27;.</p>
+<p class="rec">Define a single role label map (Administrator, Cleaner, etc.) used in all profile displays.</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#8a8f9822;color:#8a8f98;border:1px solid #8a8f9855">low</span></td>
+<td><strong>Emoji room type icons lack text alternatives</strong> <br>
+<span class="area">src/app/clean/[roomId]/page.tsx:337-346</span>
+<details><summary>evidence + fix</summary>
+<p>getRoomTypeIcon returns emoji strings (🛏️, 🚿, etc.) rendered in &lt;span className=&quot;text-3xl&quot;&gt; without aria-hidden or sr-only room-type label.</p>
+<p class="rec">Add aria-hidden on decorative emoji and expose room.type as readable text (already partially present — ensure icon is not the only type indicator for AT).</p></details></td>
+<td class="src">cursor</td></tr>
+<tr>
+<td><span class="sev" style="background:#8a8f9822;color:#8a8f98;border:1px solid #8a8f9855">low</span></td>
+<td><strong>Dashboard retry button uses global class while peers use theme tokens</strong> <br>
+<span class="area">src/components/dashboard/dashboard-overview.tsx:89</span>
+<details><summary>evidence + fix</summary>
+<p>Error retry uses className=&quot;btn-primary px-5 py-2&quot; (globals.css utility) instead of tc.btnPrimaryBg inline style used on other admin pages.</p>
+<p class="rec">Use useThemeColors button tokens for consistency with users/audit retry buttons.</p></details></td>
+<td class="src">cursor</td></tr></tbody></table>
+
+<h2>Feature gaps vs competitors <span class="src">(author: Gemini - market research, ranked by value)</span></h2>
+<p>Top themes: audit-proof verification (QR/NFC room check-in, photo evidence), offline-first resilience for poor
+care-home Wi-Fi, objective cleanliness measurement (ATP integration), and one-click CQC evidence packs.</p>
+<table><tbody><tr><td><span class="sev" style="background:#6caa7122;color:#6caa71;border:1px solid #6caa7155">high value</span></td>
+<td><strong>NFC/QR Code Room Check-ins (Location-Verified Cleaning)</strong><details><summary>detail</summary><p>Competitors AssureWorks, SmartTask, Radar Healthcare offer location-verified check-ins via QR/NFC tags. CQC inspectors frequently identify pencil-whipping (falsifying records). Scanning a physical tag inside the room provides indisputable proof of presence, directly addressing CQC Safe KLOE on Infection Control.</p><p class="rec">Implement QR/NFC scanner in mobile app (small effort: standard barcode plugin). Print tags for each room. Eliminates most critical audit vulnerability. High commercial value; care homes will pay premium for absolute certainty during CQC inspections.</p></details></td></tr><tr><td><span class="sev" style="background:#6caa7122;color:#6caa71;border:1px solid #6caa7155">high value</span></td>
+<td><strong>Photographic Evidence / Image Capture at Task Completion</strong><details><summary>detail</summary><p>SafetyHub, QCS, ZenMed all embed image capture in completion logs. Protects against negligence claims and provides immediate visual proof of deep-cleaning standards post-outbreak, especially critical for isolation rooms. Now expected in care home compliance audits.</p><p class="rec">Add camera permissions and image compression to mobile app; store images in S3 attached to completion logs (small-medium effort). High commercial value and regulatory validation. Direct mitigation of liability claims.</p></details></td></tr><tr><td><span class="sev" style="background:#6caa7122;color:#6caa71;border:1px solid #6caa7155">high value</span></td>
+<td><strong>Offline-First Mobile Mode with Sync Queue</strong><details><summary>detail</summary><p>Radar Healthcare, SmartTask provide offline mode. UK care homes have notoriously poor Wi-Fi coverage on residential floors. Staff cannot clock tasks if connection drops mid-shift, creating audit gaps and user frustration. Represents operational risk.</p><p class="rec">Implement service worker caching and IndexedDB queue for task completions (medium effort). Queue actions for sync when network returns. High commercial value for any care home with unreliable connectivity (majority of UK market).</p></details></td></tr><tr><td><span class="sev" style="background:#6caa7122;color:#6caa71;border:1px solid #6caa7155">high value</span></td>
+<td><strong>ATP (Adenosine Triphosphate) Testing Integration</strong><details><summary>detail</summary><p>Competitors QCS, Infection Prevention Connect, SmartTask integrate with ATP meters (Hygiena, 3M). ATP swabs provide objective proof of microbial contamination levels. Direct evidence for CQC inspectors and infection control teams. NHS infection prevention guidance increasingly mandates ATP validation.</p><p class="rec">API integration with ATP meter manufacturers (medium effort). Allow staff to log ATP readings directly in app, flagging fail thresholds. Add dashboard heatmaps of highest-risk areas. High commercial value; objective measurement replaces subjective task completion and becomes gold-standard audit evidence.</p></details></td></tr><tr><td><span class="sev" style="background:#6caa7122;color:#6caa71;border:1px solid #6caa7155">high value</span></td>
+<td><strong>Staff Competency &amp; Training Records Audit Trail</strong><details><summary>detail</summary><p>QCS, Radar Healthcare, RLDatix all track staff training compliance. CQC Safe KLOE explicitly requires proof that cleaning staff have received infection control training and competency assessments. Currently NeatPlan has no training module or competency tracking.</p><p class="rec">Add Staff Training module: track mandatory training dates, record competency sign-offs, flag overdue refreshers (medium effort). Link training status to task assignment eligibility. High commercial value; directly addresses CQC inspection question on staff training records.</p></details></td></tr><tr><td><span class="sev" style="background:#6caa7122;color:#6caa71;border:1px solid #6caa7155">high value</span></td>
+<td><strong>Audit Report Export &amp; CQC Evidence Packs</strong><details><summary>detail</summary><p>QCS, Radar Healthcare, RLDatix generate branded compliance reports and pre-formatted CQC evidence packs in seconds. Care home managers currently must manually collate data for inspectors. Audit readiness is a major sales driver.</p><p class="rec">Build templated audit report generator: select date range, room/department, include completion logs, photos, ATP results, training records, incident logs (medium effort). Export as PDF with care home branding. High commercial value; makes audit preparation 80-90% faster, positioning NeatPlan as audit-ready infrastructure.</p></details></td></tr><tr><td><span class="sev" style="background:#6caa7122;color:#6caa71;border:1px solid #6caa7155">medium</span></td>
+<td><strong>Consumables &amp; Stock Level Management</strong><details><summary>detail</summary><p>Healthcheck360, CleanTelligent track PPE and disinfectant stock. Running out of gloves, aprons, or specific disinfectants compromises infection control protocol compliance. Creates operational risk and audit findings.</p><p class="rec">Add inventory module: track par levels for consumables (PPE, disinfectants, mop heads), allow cleaners to request stock via app, alert managers when levels drop below threshold (medium effort). Medium commercial value; improves budget control and prevents operational halts.</p></details></td></tr><tr><td><span class="sev" style="background:#6caa7122;color:#6caa71;border:1px solid #6caa7155">medium</span></td>
+<td><strong>UV-C / UVC Equipment Disinfection Scheduling &amp; Validation</strong><details><summary>detail</summary><p>ZenMed, Infection Prevention Connect, SmartTask support UV-C equipment scheduling. Many modern care homes now deploy UV-C trolleys for terminal disinfection of high-risk areas. Lack of scheduling integration creates gaps in usage logging.</p><p class="rec">Add UV-C equipment as a distinct schedule type with run-time logging (small-medium effort). Track exposure duration, areas treated, maintenance cycles. Medium commercial value; enables care homes to demonstrate terminal disinfection compliance.</p></details></td></tr><tr><td><span class="sev" style="background:#6caa7122;color:#6caa71;border:1px solid #6caa7155">medium</span></td>
+<td><strong>Outbreak Mode with Enhanced Protocols</strong><details><summary>detail</summary><p>QCS, Radar Healthcare, Infection Prevention Connect all offer outbreak mode that auto-triggers heightened cleaning frequencies, enhanced PPE requirements, and staff isolation protocols. COVID-era lesson: care homes need rapid protocol escalation.</p><p class="rec">Add outbreak management mode: when activated, flag isolation rooms, auto-escalate cleaning frequencies, require photo evidence, enforce enhanced PPE logging (medium effort). Integrates with training records and inventory alerts. Medium commercial value; dramatically improves response speed during infection outbreaks.</p></details></td></tr><tr><td><span class="sev" style="background:#6caa7122;color:#6caa71;border:1px solid #6caa7155">medium</span></td>
+<td><strong>Room Risk Categorization &amp; Dynamic Schedule Weighting</strong><details><summary>detail</summary><p>QCS, Radar Healthcare assign risk ratings to rooms (isolation, high-touch, immunocompromised units). Cleaning frequency and disinfectant type should vary by risk. NeatPlan currently treats all rooms equally.</p><p class="rec">Add room risk tiers (isolation, high-touch areas, standard) with linked disinfectant requirements and escalated frequencies for high-risk (small-medium effort). Display on cleaner dashboard with visual flags. Medium commercial value; ensures resources are allocated proportionally to actual risk.</p></details></td></tr><tr><td><span class="sev" style="background:#6caa7122;color:#6caa71;border:1px solid #6caa7155">medium</span></td>
+<td><strong>COSHH (Control of Substances Hazardous to Health) Compliance Logging</strong><details><summary>detail</summary><p>AssureWorks, SafetyHub require COSHH data sheets linked to each cleaning task. UK law (Health and Safety at Work Act) mandates COSHH assessments for all hazardous substances. NeatPlan does not track chemical usage or exposure data.</p><p class="rec">Add COSHH module: upload Safety Data Sheets per disinfectant, log chemical usage per room, track exposure incidents (medium effort). Integrates with consumables tracking. Medium commercial value; closes legal compliance gap and protects against HSE enforcement actions.</p></details></td></tr><tr><td><span class="sev" style="background:#6caa7122;color:#6caa71;border:1px solid #6caa7155">medium</span></td>
+<td><strong>Multilingual Cleaner Interface</strong><details><summary>detail</summary><p>Radar Healthcare, SmartTask offer multilingual UIs. Significant UK care home housekeeping workforce are non-native English speakers. Low task completion and user frustration stem from language barriers.</p><p class="rec">Implement i18n on cleaner-facing pages (small-medium effort). Prioritize Polish, Romanian, Portuguese (largest care home cleaner populations in UK). Medium commercial value; dramatically improves user adoption and reduces training overhead.</p></details></td></tr><tr><td><span class="sev" style="background:#6caa7122;color:#6caa71;border:1px solid #6caa7155">low</span></td>
+<td><strong>Voice-to-Text Task Completion Notes</strong><details><summary>detail</summary><p>ZenMed offers voice dictation for task notes. Cleaners wearing gloves do not enjoy typing on touchscreens. Voice input improves note quality and speed.</p><p class="rec">Add native OS voice dictation API to note fields (small effort: leverage browser SpeechRecognition API or native OS capabilities). Low-medium commercial value; highly appreciated delighter feature that demos well to buyers.</p></details></td></tr><tr><td><span class="sev" style="background:#6caa7122;color:#6caa71;border:1px solid #6caa7155">low</span></td>
+<td><strong>Infection Risk Heatmapping on Floorplan View</strong><details><summary>detail</summary><p>Infection Prevention Connect offers floorplan overlay with missed-cleaning and active-infection heatmaps. Visually striking but underutilized in daily practice compared to list views.</p><p class="rec">Build custom floorplan uploader and room-position mapping, overlay missed-task and ATP-failure heatmaps (large effort). Low commercial value for MVP; useful for enterprise sales demos but not core to daily workflow.</p></details></td></tr></tbody></table>
+
+<p class="note">Artifacts: findings JSON in /tmp/neatplan-audit/results/, mobile screenshots in
+/tmp/neatplan-audit/mobile/shots/, desktop screenshots in /tmp/neatplan-audit/desktop/shots/, load-test scripts in
+/tmp/neatplan-audit/load/, Lighthouse JSON in /tmp/neatplan-audit/seo/.</p>
+</body></html>

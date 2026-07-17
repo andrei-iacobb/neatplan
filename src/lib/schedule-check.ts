@@ -36,6 +36,26 @@ export async function runScheduleCheck(): Promise<ScheduleCheckResult> {
     `
     if (!locked) return null
 
+    // Capture the sites of schedules that are ABOUT to transition to OVERDUE (before the
+    // updateMany flips their status out of the notIn filter below), so overdue alerts can be
+    // routed to that site's manager(s) in addition to the OP/DIRECTOR roles that span every
+    // site. Runs inside the advisory-lock transaction, so the set is stable against a
+    // concurrent tick.
+    const roomsGoingOverdue = await tx.roomSchedule.findMany({
+      where: {
+        nextDue: { lt: now },
+        status: { notIn: ['COMPLETED', 'OVERDUE'] },
+      },
+      select: { room: { select: { siteId: true } } },
+    })
+    const equipmentGoingOverdue = await tx.equipmentSchedule.findMany({
+      where: {
+        nextDue: { lt: now },
+        status: { notIn: ['COMPLETED', 'OVERDUE'] },
+      },
+      select: { equipment: { select: { siteId: true } } },
+    })
+
     const overdueRoomSchedules = await tx.roomSchedule.updateMany({
       where: {
         nextDue: { lt: now },
@@ -70,10 +90,19 @@ export async function runScheduleCheck(): Promise<ScheduleCheckResult> {
       data: { status: 'PENDING' },
     })
 
+    const overdueSiteIds = new Set<string>()
+    for (const rs of roomsGoingOverdue) {
+      if (rs.room?.siteId) overdueSiteIds.add(rs.room.siteId)
+    }
+    for (const es of equipmentGoingOverdue) {
+      if (es.equipment?.siteId) overdueSiteIds.add(es.equipment.siteId)
+    }
+
     return {
       roomCount: overdueRoomSchedules.count,
       equipmentCount: overdueEquipmentSchedules.count,
       rearmedRoomSchedules: rearmedRoom.count,
+      overdueSiteIds: Array.from(overdueSiteIds),
     }
   })
 
@@ -81,21 +110,32 @@ export async function runScheduleCheck(): Promise<ScheduleCheckResult> {
   const equipmentCount = transitions?.equipmentCount ?? 0
   const totalOverdue = roomCount + equipmentCount
   const rearmedRoomSchedules = transitions?.rearmedRoomSchedules ?? 0
+  const overdueSiteIds = transitions?.overdueSiteIds ?? []
   const sessionsCleaned = transitions ? await cleanupStaleSessions() : 0
 
   let emailsSent = 0
   let emailsFailed = 0
 
-  // Send email alerts to admins if any items were newly marked overdue. A single failed
-  // send must not abort the whole run or the other admins' alerts, so each is isolated.
+  // Send email alerts if any items were newly marked overdue. Route to everyone who can act
+  // on the affected site(s): all OP and DIRECTOR users span every site, plus the MANAGER(s)
+  // pinned to a site that just went overdue. Overdue items with no site (legacy/unassigned)
+  // reach only OP/DIRECTOR, since no manager owns them. A single failed send must not abort
+  // the whole run or the other recipients' alerts, so each is isolated.
   if (totalOverdue > 0) {
-    const adminUsers = await prisma.user.findMany({ where: { isAdmin: true } })
+    const recipients = await prisma.user.findMany({
+      where: {
+        OR: [
+          { role: { in: ['OP', 'DIRECTOR'] } },
+          { role: 'MANAGER', siteId: { in: overdueSiteIds } },
+        ],
+      },
+    })
     const message = `${roomCount} room schedule(s) and ${equipmentCount} equipment schedule(s) are now overdue. Please check the dashboard.`
 
-    for (const admin of adminUsers) {
+    for (const recipient of recipients) {
       try {
-        await emailService.sendSystemAlert(admin.email, {
-          userName: admin.name || 'Admin',
+        await emailService.sendSystemAlert(recipient.email, {
+          userName: recipient.name || 'Admin',
           alertType: 'Overdue Schedules',
           message,
         })

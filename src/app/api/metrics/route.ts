@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireAdmin } from '@/lib/authz'
+import { requireAdmin, siteScopeWhere } from '@/lib/authz'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,9 +9,12 @@ export async function GET() {
     const auth = await requireAdmin()
     if ('error' in auth) return auth.error
 
+    // Tenant counts are scoped to the viewer's site (managers see their own);
+    // OP/DIRECTOR get {} from siteScopeWhere and thus the global totals.
+    const scope = siteScopeWhere(auth.user)
     const [users, rooms, activeSessions, pendingJobs] = await Promise.all([
-      prisma.user.count(),
-      prisma.room.count(),
+      prisma.user.count({ where: scope }),
+      prisma.room.count({ where: scope }),
       prisma.userSession.count({ where: { isActive: true } }),
       prisma.documentJob.count({ where: { status: { in: ['PENDING', 'PROCESSING'] } } }),
     ])

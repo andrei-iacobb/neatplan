@@ -9,29 +9,51 @@ datasource db {
 }
 
 model User {
-  id                String        @id @default(cuid())
-  email             String        @unique
-  notificationEmail String?       // Optional separate email for notifications
-  password          String
-  name              String?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  isAdmin           Boolean       @default(false)
-  role              UserRole      @default(CLEANER)
-  tasks             Task[]        @relation("UserTasks")
-  sessions          UserSession[]
+  id                         String                      @id @default(cuid())
+  email                      String                      @unique
+  notificationEmail          String? // Optional separate email for notifications
+  password                   String
+  name                       String?
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  isAdmin                    Boolean                     @default(false)
+  role                       UserRole                    @default(CLEANER)
+  // Site membership. OP and DIRECTOR span every site (siteId null = all sites);
+  // MANAGER and CLEANER are pinned to exactly one site.
+  siteId                     String?
+  site                       Site?                       @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  tasks                      Task[]                      @relation("UserTasks")
+  sessions                   UserSession[]
   roomScheduleCompletionLogs RoomScheduleCompletionLog[]
+  roomCheckIns               RoomCheckIn[]
   // Account security fields
-  isBlocked               Boolean      @default(false)
-  forcePasswordChange     Boolean      @default(false)
-  temporaryUnblockUntil   DateTime?
-  failedLoginCount        Int          @default(0)
-  lastFailedLoginAt       DateTime?
-  settings                Json?
-  totpSecret              String?
-  totpEnabled             Boolean      @default(false)
+  isBlocked                  Boolean                     @default(false)
+  forcePasswordChange        Boolean                     @default(false)
+  temporaryUnblockUntil      DateTime?
+  failedLoginCount           Int                         @default(0)
+  lastFailedLoginAt          DateTime?
+  settings                   Json?
+  totpSecret                 String?
+  totpEnabled                Boolean                     @default(false)
 
+  @@index([siteId])
   @@map("users")
+}
+
+model Site {
+  id            String         @id @default(cuid())
+  name          String         @unique
+  address       String?
+  description   String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  users         User[]
+  rooms         Room[]
+  equipment     Equipment[]
+  cleaningTasks CleaningTask[]
+  schedules     Schedule[]
+
+  @@map("sites")
 }
 
 model Task {
@@ -51,28 +73,56 @@ model Task {
 }
 
 model Room {
-  id          String         @id @default(cuid())
-  name        String         @unique
-  description String?
-  floor       String?
-  type        RoomType       @default(OTHER)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  tasks       CleaningTask[]
-  schedules   RoomSchedule[]
+  id                   String         @id @default(cuid())
+  name                 String
+  description          String?
+  floor                String?
+  type                 RoomType       @default(OTHER)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  locationTokenVersion Int            @default(1)
+  siteId               String?
+  site                 Site?          @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  tasks                CleaningTask[]
+  schedules            RoomSchedule[]
+  checkIns             RoomCheckIn[]
 
+  @@unique([siteId, name])
+  @@index([siteId])
   @@map("rooms")
 }
 
-model Equipment {
-  id            String              @id @default(cuid())
-  name          String              @unique
-  description   String?
-  type          String              @default("OTHER")
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  schedules     EquipmentSchedule[]
+model RoomCheckIn {
+  id                   String                     @id @default(cuid())
+  roomId               String
+  userId               String
+  method               VerificationMethod
+  checkedInAt          DateTime                   @default(now())
+  expiresAt            DateTime
+  consumedAt           DateTime?
+  locationTokenVersion Int
+  room                 Room                       @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user                 User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  completionLog        RoomScheduleCompletionLog?
 
+  @@index([userId, roomId, expiresAt])
+  @@index([expiresAt])
+  @@map("room_check_ins")
+}
+
+model Equipment {
+  id          String              @id @default(cuid())
+  name        String
+  description String?
+  type        String              @default("OTHER")
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  siteId      String?
+  site        Site?               @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  schedules   EquipmentSchedule[]
+
+  @@unique([siteId, name])
+  @@index([siteId])
   @@map("equipment")
 }
 
@@ -86,18 +136,25 @@ model CleaningTask {
   updatedAt         DateTime @updatedAt
   roomId            String?
   room              Room?    @relation(fields: [roomId], references: [id])
+  siteId            String?
+  site              Site?    @relation(fields: [siteId], references: [id], onDelete: Cascade)
 
   @@unique([roomId, taskDescription])
+  @@index([siteId])
   @@map("cleaning_tasks")
 }
 
 model Schedule {
   id                 String              @id @default(cuid())
-  title              String              @unique
+  title              String
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   detectedFrequency  String?
   suggestedFrequency ScheduleFrequency?
+  // A schedule template can be shared across many sites (implicit m2m join
+  // table _ScheduleToSite). It can then be assigned to rooms/equipment in any
+  // of those sites.
+  sites              Site[]
   equipment          EquipmentSchedule[]
   rooms              RoomSchedule[]
   tasks              ScheduleTask[]
@@ -161,20 +218,24 @@ model EquipmentSchedule {
 }
 
 model RoomScheduleCompletionLog {
-  id             String        @id @default(cuid())
-  roomScheduleId String?
-  completedAt    DateTime      @default(now())
-  notes          String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  completedTasks Json          @default("[]")
+  id                 String             @id @default(cuid())
+  roomScheduleId     String?
+  completedAt        DateTime           @default(now())
+  notes              String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  completedTasks     Json               @default("[]")
   // Snapshots captured at completion time so the compliance record stays readable even
   // after the room/schedule is deleted (FK is SetNull, not Cascade).
-  roomName       String?
-  scheduleTitle  String?
-  roomSchedule   RoomSchedule? @relation(fields: [roomScheduleId], references: [id], onDelete: SetNull)
-  completedByUserId String?
-  completedBy       User?       @relation(fields: [completedByUserId], references: [id])
+  roomName           String?
+  scheduleTitle      String?
+  roomSchedule       RoomSchedule?      @relation(fields: [roomScheduleId], references: [id], onDelete: SetNull)
+  completedByUserId  String?
+  completedBy        User?              @relation(fields: [completedByUserId], references: [id])
+  verificationMethod VerificationMethod @default(MANUAL)
+  checkedInAt        DateTime?
+  checkInId          String?            @unique
+  checkIn            RoomCheckIn?       @relation(fields: [checkInId], references: [id], onDelete: SetNull)
 
   @@index([roomScheduleId])
   @@index([completedAt])
@@ -227,7 +288,7 @@ enum RoomType {
 
 enum ScheduleFrequency {
   DAILY
-  WEEKLY  
+  WEEKLY
   BIWEEKLY
   MONTHLY
   QUARTERLY
@@ -241,19 +302,25 @@ enum ScheduleStatus {
   OVERDUE
 }
 
+enum VerificationMethod {
+  QR
+  NFC
+  MANUAL
+}
+
 model UserSession {
-  id            String   @id @default(cuid())
-  userId        String
-  sessionToken  String   @unique
-  ipAddress     String?
-  userAgent     String?
-  loginAt       DateTime @default(now())
-  lastActivity  DateTime @default(now())
-  logoutAt      DateTime?
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String    @id @default(cuid())
+  userId       String
+  sessionToken String    @unique
+  ipAddress    String?
+  userAgent    String?
+  loginAt      DateTime  @default(now())
+  lastActivity DateTime  @default(now())
+  logoutAt     DateTime?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([isActive, lastActivity])
@@ -261,7 +328,9 @@ model UserSession {
 }
 
 enum UserRole {
-  ADMIN
+  OP
+  DIRECTOR
+  MANAGER
   CLEANER
 }
 

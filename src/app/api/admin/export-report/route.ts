@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { canAccessAllSites } from '@/lib/roles'
+import { siteScopeWhere } from '@/lib/authz'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,11 +42,17 @@ export async function GET(request: NextRequest) {
 
     const completedAtFilter = Object.keys(dateFilter).length > 0 ? dateFilter : undefined
 
+    // MANAGERs may only export their own site's completions; OP/DIRECTOR export all sites.
+    const scoped = !canAccessAllSites(session.user.role)
+
     // Room completion logs
     const roomWhere: any = {}
     if (completedAtFilter) roomWhere.completedAt = completedAtFilter
     if (roomId) roomWhere.roomSchedule = { roomId }
     if (userId) roomWhere.completedByUserId = userId
+    if (scoped) {
+      roomWhere.roomSchedule = { ...(roomWhere.roomSchedule ?? {}), room: siteScopeWhere(session.user) }
+    }
 
     const roomLogs = await prisma.roomScheduleCompletionLog.findMany({
       where: roomWhere,
@@ -61,10 +69,14 @@ export async function GET(request: NextRequest) {
       take: MAX_EXPORT_ROWS,
     })
 
+    const equipWhere: any = {}
+    if (completedAtFilter) equipWhere.completedAt = completedAtFilter
+    if (scoped) equipWhere.equipmentSchedule = { equipment: siteScopeWhere(session.user) }
+
     const equipLogs = roomId || userId
       ? []
       : await prisma.equipmentScheduleCompletionLog.findMany({
-          where: completedAtFilter ? { completedAt: completedAtFilter } : {},
+          where: equipWhere,
           include: {
             equipmentSchedule: {
               include: {

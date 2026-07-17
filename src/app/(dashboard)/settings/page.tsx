@@ -15,16 +15,25 @@ import {
   RefreshCw,
   Settings as SettingsIcon,
   Download,
-  Volume2,
   Sparkles
 } from 'lucide-react'
 import { useSettings } from '@/contexts/settings-context'
-import { useSoundEffects } from '@/hooks/useSoundEffects'
 import { useThemeColors } from '@/hooks/useThemeColors'
 import { SMTPConfiguration } from '@/components/admin/smtp-configuration'
 import { TotpSettings } from '@/components/admin/totp-settings'
+import { ROLE_LABELS, type Role } from '@/lib/roles'
 
 const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } }
+
+function formatUptime(seconds?: number): string {
+  if (!seconds || seconds < 0) return '-'
+  const d = Math.floor(seconds / 86400)
+  const h = Math.floor((seconds % 86400) / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  if (d > 0) return `${d}d ${h}h ${m}m`
+  if (h > 0) return `${h}h ${m}m`
+  return `${m}m`
+}
 
 function Toggle({ checked, onChange, tc }: { checked: boolean; onChange: (v: boolean) => void; tc: ReturnType<typeof useThemeColors> }) {
   return (
@@ -43,8 +52,7 @@ function Toggle({ checked, onChange, tc }: { checked: boolean; onChange: (v: boo
 
 export default function SettingsPage() {
   const { data: session } = useSession()
-  const { settings, updateSetting, saveSettings, isLoading, resolvedTheme } = useSettings()
-  const { playSound } = useSoundEffects()
+  const { settings, updateSetting, setTheme, saveSettings, isLoading, resolvedTheme } = useSettings()
   const tc = useThemeColors()
   const [activeTab, setActiveTab] = useState('profile')
   const [isSaved, setIsSaved] = useState(false)
@@ -61,6 +69,26 @@ export default function SettingsPage() {
   const [exportHovered, setExportHovered] = useState(false)
   const [exportLoading, setExportLoading] = useState(false)
   const [hoveredTestBtn, setHoveredTestBtn] = useState<string | null>(null)
+  const [sysInfo, setSysInfo] = useState<any>(null)
+  // System settings (SMTP, session timeout, system info) are OP-only -
+  // directors and managers never see the tab.
+  const isOp = (session?.user as any)?.role === 'OP'
+
+  // Safety net: if a non-OP ends up on the hidden System tab, bounce to Profile.
+  React.useEffect(() => {
+    if (activeTab === 'system' && !isOp) setActiveTab('profile')
+  }, [activeTab, isOp])
+
+  // Load live system info (OP only) when the System tab is opened
+  React.useEffect(() => {
+    if (activeTab !== 'system' || !isOp) return
+    let active = true
+    fetch('/api/admin/system-info')
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => { if (active) setSysInfo(data) })
+      .catch(() => {})
+    return () => { active = false }
+  }, [activeTab, session])
 
   // Load user profile data
   React.useEffect(() => {
@@ -97,7 +125,6 @@ export default function SettingsPage() {
 
       const data = await response.json()
       if (response.ok) {
-        playSound('success')
         setIsSaved(true)
         setTimeout(() => setIsSaved(false), 2000)
         // Clear password fields
@@ -107,11 +134,9 @@ export default function SettingsPage() {
           newPassword: ''
         }))
       } else {
-        playSound('error')
         console.error('Profile update failed:', data.error)
       }
     } catch (error) {
-      playSound('error')
       console.error('Profile update error:', error)
     } finally {
       setProfileLoading(false)
@@ -121,20 +146,15 @@ export default function SettingsPage() {
   const handleSaveSettings = async () => {
     try {
       await saveSettings()
-      playSound('success')
       setIsSaved(true)
       setTimeout(() => setIsSaved(false), 2000)
     } catch (error) {
-      playSound('error')
       console.error('Error saving settings:', error)
     }
   }
 
   const handleSettingChange = (section: keyof typeof settings, key: string, value: any) => {
     updateSetting(section, key, value)
-    if (settings.system.autoSave) {
-      playSound('click')
-    }
   }
 
   const handleExportData = () => {
@@ -154,7 +174,7 @@ export default function SettingsPage() {
     { id: 'appearance', name: 'Appearance', icon: Palette },
     { id: 'notifications', name: 'Notifications', icon: Bell },
     { id: 'privacy', name: 'Privacy & Security', icon: Shield },
-    { id: 'system', name: 'System', icon: SettingsIcon },
+    ...(isOp ? [{ id: 'system', name: 'System', icon: SettingsIcon }] : []),
   ]
 
   const themeOptions = [
@@ -271,9 +291,7 @@ export default function SettingsPage() {
                       Role
                     </label>
                     <div className="w-full px-3 py-2 rounded-lg text-[13px] opacity-60" style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}>
-                      {(session?.user as any)?.isAdmin
-                        ? 'Administrator'
-                        : (session?.user as any)?.role || 'User'}
+                      {ROLE_LABELS[(session?.user as any)?.role as Role] ?? 'User'}
                     </div>
                   </div>
 
@@ -365,10 +383,8 @@ export default function SettingsPage() {
                         <button
                           key={option.value}
                           onClick={() => {
-                            handleSettingChange('theme', 'theme', option.value)
-                            playSound('click')
+                            setTheme(option.value as 'light' | 'dark' | 'system')
                           }}
-                          onMouseEnter={() => playSound('hover')}
                           className="flex items-center justify-center p-4 rounded-lg text-[13px] font-medium transition-colors"
                           style={
                             settings.theme === option.value
@@ -386,27 +402,12 @@ export default function SettingsPage() {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <label className="text-[13px] font-medium" style={{ color: tc.textSecondary }}>Compact Mode</label>
-                        <p className="text-[11px]" style={{ color: tc.textFaint }}>Reduce spacing and padding</p>
-                      </div>
-                      <Toggle checked={settings.display.compactMode} onChange={(v) => handleSettingChange('display', 'compactMode', v)} tc={tc} />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
                         <label className="text-[13px] font-medium" style={{ color: tc.textSecondary }}>Animations</label>
                         <p className="text-[11px]" style={{ color: tc.textFaint }}>Enable smooth transitions and animations</p>
                       </div>
                       <Toggle checked={settings.display.animationsEnabled} onChange={(v) => handleSettingChange('display', 'animationsEnabled', v)} tc={tc} />
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="text-[13px] font-medium" style={{ color: tc.textSecondary }}>Sound Effects</label>
-                        <p className="text-[11px]" style={{ color: tc.textFaint }}>Play sounds for interactions</p>
-                      </div>
-                      <Toggle checked={settings.display.soundEnabled} onChange={(v) => handleSettingChange('display', 'soundEnabled', v)} tc={tc} />
-                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -454,17 +455,13 @@ export default function SettingsPage() {
                           key={test.type}
                           onClick={async () => {
                             try {
-                              playSound('click')
                               const response = await fetch(`/api/notifications/email?type=${test.type}&email=${session?.user?.email}`)
                               const result = await response.json()
                               if (result.sent) {
-                                playSound('success')
                               } else {
-                                playSound('error')
                               }
                               console.log('Test email result:', result)
                             } catch (error) {
-                              playSound('error')
                               console.error('Test email error:', error)
                             }
                           }}
@@ -568,8 +565,8 @@ export default function SettingsPage() {
               </motion.div>
             )}
 
-            {/* System Tab */}
-            {activeTab === 'system' && (
+            {/* System Tab - OP only */}
+            {activeTab === 'system' && isOp && (
               <motion.div
                 {...fadeUp}
                 transition={{ duration: 0.35 }}
@@ -631,22 +628,72 @@ export default function SettingsPage() {
 
                   <div className="pt-4" style={{ borderTop: '1px solid ' + tc.divider }}>
                     <h3 className="text-[15px] font-medium mb-4" style={{ color: tc.textPrimary }}>System Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[13px]">
-                      <div>
-                        <span style={{ color: tc.textMuted }}>Version:</span>
-                        <span className="ml-2" style={{ color: tc.textSecondary }}>1.0.0</span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {/* Version & build */}
+                      <div className="rounded-lg p-4" style={{ background: tc.surfaceBg, border: '1px solid ' + tc.cardBorder }}>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[12px] font-medium" style={{ color: tc.textMuted }}>Version &amp; Build</span>
+                          {sysInfo?.git?.current && sysInfo?.git?.latest && (
+                            sysInfo.git.upToDate
+                              ? <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(16,185,129,0.12)', color: 'rgb(16,185,129)' }}>Up to date</span>
+                              : <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,0.14)', color: '#d97706' }}>Update available</span>
+                          )}
+                        </div>
+                        <p className="text-[15px] font-semibold" style={{ color: tc.textPrimary }}>v{sysInfo?.version ?? '—'}</p>
+                        <div className="mt-2 space-y-1 text-[12px]">
+                          {sysInfo?.git?.branch && (
+                            <div className="flex items-center justify-between">
+                              <span style={{ color: tc.textMuted }}>branch</span>
+                              <span className="truncate ml-2" style={{ color: tc.textSecondary }}>{sysInfo.git.branch}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between font-mono">
+                            <span style={{ color: tc.textMuted }}>current</span>
+                            <span style={{ color: tc.textSecondary }}>{sysInfo?.git?.current ?? '—'}</span>
+                          </div>
+                          <div className="flex items-center justify-between font-mono">
+                            <span style={{ color: tc.textMuted }}>latest</span>
+                            <span style={{ color: tc.textSecondary }}>{sysInfo?.git?.latest ?? 'not pushed'}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <span style={{ color: tc.textMuted }}>Last Update:</span>
-                        <span className="ml-2" style={{ color: tc.textSecondary }}>Jan 15, 2025</span>
+
+                      {/* Uptime */}
+                      <div className="rounded-lg p-4" style={{ background: tc.surfaceBg, border: '1px solid ' + tc.cardBorder }}>
+                        <span className="text-[12px] font-medium" style={{ color: tc.textMuted }}>Uptime</span>
+                        <p className="text-[15px] font-semibold mt-2" style={{ color: tc.textPrimary }}>{formatUptime(sysInfo?.uptimeSeconds)}</p>
+                        <p className="text-[11px] mt-1" style={{ color: tc.textFaint }}>since last restart</p>
                       </div>
-                      <div>
-                        <span style={{ color: tc.textMuted }}>Database:</span>
-                        <span className="ml-2" style={{ color: tc.textSecondary }}>PostgreSQL</span>
+
+                      {/* Database */}
+                      <div className="rounded-lg p-4" style={{ background: tc.surfaceBg, border: '1px solid ' + tc.cardBorder }}>
+                        <span className="text-[12px] font-medium" style={{ color: tc.textMuted }}>Database</span>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="w-2 h-2 rounded-full" style={{ background: sysInfo?.db?.connected ? 'rgb(16,185,129)' : '#ef4444' }} />
+                          <p className="text-[15px] font-semibold" style={{ color: tc.textPrimary }}>{sysInfo?.db?.type ?? 'PostgreSQL'}</p>
+                        </div>
+                        <p className="text-[11px] mt-1" style={{ color: tc.textFaint }}>{sysInfo?.db ? (sysInfo.db.connected ? 'Connected' : 'Unreachable') : '…'}</p>
                       </div>
-                      <div>
-                        <span style={{ color: tc.textMuted }}>Uptime:</span>
-                        <span className="ml-2" style={{ color: tc.textSecondary }}>99.9%</span>
+
+                      {/* AI system */}
+                      <div className="rounded-lg p-4" style={{ background: tc.surfaceBg, border: '1px solid ' + tc.cardBorder }}>
+                        <span className="text-[12px] font-medium" style={{ color: tc.textMuted }}>AI System</span>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="w-2 h-2 rounded-full" style={{ background: sysInfo?.ai?.reachable ? 'rgb(16,185,129)' : '#ef4444' }} />
+                          <p className="text-[15px] font-semibold capitalize" style={{ color: tc.textPrimary }}>{sysInfo?.ai?.provider ?? '—'}</p>
+                        </div>
+                        <div className="mt-2 space-y-1 text-[12px]">
+                          <div className="flex items-center justify-between">
+                            <span style={{ color: tc.textMuted }}>Model</span>
+                            <span className="font-mono" style={{ color: sysInfo?.ai?.modelPresent ? tc.textSecondary : '#d97706' }}>{sysInfo?.ai?.model ?? '—'}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span style={{ color: tc.textMuted }}>Status</span>
+                            <span style={{ color: sysInfo?.ai?.reachable ? 'rgb(16,185,129)' : '#ef4444' }}>
+                              {sysInfo?.ai ? (sysInfo.ai.reachable ? (sysInfo.ai.modelPresent ? 'Ready' : 'Model missing') : 'Offline') : '…'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

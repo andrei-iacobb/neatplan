@@ -68,7 +68,7 @@ export function DashboardOverview() {
       if (Array.isArray(rooms)) rooms.forEach((r: any) => { const t = r.type || 'OTHER'; tp[t] = (tp[t] || 0) + 1 })
       setRoomTypes(tp)
 
-      setStats({ totalUsers: Array.isArray(users) ? users.length : 0, totalRooms: Array.isArray(rooms) ? rooms.length : 0, totalEquipment: Array.isArray(equipment.equipment) ? equipment.equipment.length : 0, totalSchedules: Array.isArray(schedules) ? schedules.length : 0, recentActivity: activity.activities || [] })
+      setStats({ totalUsers: Array.isArray(users) ? users.filter((u: any) => u.role !== 'OP').length : 0, totalRooms: Array.isArray(rooms) ? rooms.length : 0, totalEquipment: Array.isArray(equipment.equipment) ? equipment.equipment.length : 0, totalSchedules: Array.isArray(schedules) ? schedules.length : 0, recentActivity: activity.activities || [] })
       setWeekly(Array.isArray(weeklyJson.counts) ? weeklyJson.counts : [])
       setWeeklyDays(Array.isArray(weeklyJson.days) ? weeklyJson.days : [])
     } catch (e) { console.error(e); setError('Failed to load dashboard data') } finally { setIsLoading(false) }

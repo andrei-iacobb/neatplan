@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { ScheduleStatus } from '@prisma/client'
 import { calculateNextDueDate } from '@/lib/schedule-utils'
+import { canAccessSite } from '@/lib/authz'
 
 export async function POST(
   request: Request,
@@ -53,7 +54,7 @@ export async function POST(
         id: scheduleId
       },
       include: {
-        room: { select: { name: true } },
+        room: { select: { name: true, siteId: true } },
         schedule: {
           include: {
             tasks: true
@@ -63,6 +64,15 @@ export async function POST(
     })
 
     if (!roomSchedule) {
+      return NextResponse.json(
+        { error: 'Schedule not found' },
+        { status: 404 }
+      )
+    }
+
+    // A CLEANER may only complete schedules for rooms in their own site. Return 404
+    // (not 403) so we don't leak the existence of rooms belonging to other sites.
+    if (!canAccessSite(session.user, roomSchedule.room?.siteId)) {
       return NextResponse.json(
         { error: 'Schedule not found' },
         { status: 404 }

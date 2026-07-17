@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth/next'
 import { NextResponse } from 'next/server'
 import { authOptions } from '@/lib/auth'
+import { canAccessAllSites, hasMinRole, type Role } from '@/lib/roles'
 
 export type SessionUser = {
   id: string
@@ -8,6 +9,7 @@ export type SessionUser = {
   name?: string | null
   isAdmin?: boolean
   role?: string
+  siteId?: string | null
 }
 
 /**
@@ -47,4 +49,100 @@ export async function requireAdmin(): Promise<Guarded> {
     return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
   }
   return { user }
+}
+
+/**
+ * Require an authenticated user of at least `min` role in the hierarchy
+ * (OP > DIRECTOR > MANAGER > CLEANER). Use for actions that must be limited
+ * above the management line, e.g. site CRUD or assigning Director/OP.
+ */
+export async function requireRole(min: Role): Promise<Guarded> {
+  const user = await getSessionUser()
+  if (!user) {
+    return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+  }
+  if (!hasMinRole(user.role, min)) {
+    return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+  }
+  return { user }
+}
+
+// A siteId value that can never match a real cuid, used to force an empty result
+// set when a site-pinned user somehow has no site assigned (fail closed).
+const NO_SITE = '__no_site__'
+
+/**
+ * Prisma `where` fragment that limits a query on a model with a direct `siteId`
+ * column (Room, Equipment, Schedule, CleaningTask) to the sites this user may see.
+ *   - OP / DIRECTOR -> {} (all sites)
+ *   - MANAGER / CLEANER -> { siteId: <their site> } (fails closed if unassigned)
+ */
+export function siteScopeWhere(user: SessionUser): { siteId?: string } {
+  if (canAccessAllSites(user.role)) return {}
+  return { siteId: user.siteId ?? NO_SITE }
+}
+
+/**
+ * Like siteScopeWhere but for models that reach their site through a named
+ * relation (e.g. RoomSchedule -> room, RoomScheduleCompletionLog -> roomSchedule.room).
+ * Pass the relation path, e.g. nestedSiteScopeWhere(user, 'room') => { room: { siteId } }.
+ */
+export function nestedSiteScopeWhere(user: SessionUser, relation: string): Record<string, unknown> {
+  if (canAccessAllSites(user.role)) return {}
+  return { [relation]: { siteId: user.siteId ?? NO_SITE } }
+}
+
+/** Whether this user may read/write data belonging to `siteId`. */
+export function canAccessSite(user: SessionUser, siteId: string | null | undefined): boolean {
+  if (canAccessAllSites(user.role)) return true
+  return !!siteId && user.siteId === siteId
+}
+
+/**
+ * The siteId a create/write should be stamped with.
+ *   - MANAGER / CLEANER -> forced to their own site (request value ignored)
+ *   - OP / DIRECTOR -> the requested site (may be null; caller decides if required)
+ */
+export function resolveWriteSiteId(user: SessionUser, requestedSiteId?: string | null): string | null {
+  if (!canAccessAllSites(user.role)) return user.siteId ?? null
+  return requestedSiteId ?? null
+}
+
+// ---- Many-to-many site scoping (Schedule <-> Site) -------------------------
+
+/**
+ * Prisma `where` fragment for a model that reaches sites through a many-to-many
+ * relation (Schedule.sites). OP/DIRECTOR -> {} (all); MANAGER/CLEANER -> only
+ * rows linked to their own site. Fails closed when a pinned user has no site.
+ */
+export function m2mSiteScopeWhere(user: SessionUser, relation = 'sites'): Record<string, unknown> {
+  if (canAccessAllSites(user.role)) return {}
+  return { [relation]: { some: { id: user.siteId ?? NO_SITE } } }
+}
+
+/** Whether the user may access a record linked to this set of sites (m2m). */
+export function canAccessAnySite(user: SessionUser, siteIds: (string | null | undefined)[]): boolean {
+  if (canAccessAllSites(user.role)) return true
+  return !!user.siteId && siteIds.includes(user.siteId)
+}
+
+/**
+ * `where` filter for INCLUDING a record's m2m `sites` relation without leaking
+ * sites the caller can't see. A MANAGER/CLEANER who can reach a schedule shared
+ * across sites must not learn the other sites' names, so their view of the
+ * relation is narrowed to their own site. OP/DIRECTOR see all (undefined = no filter).
+ */
+export function visibleSiteRelationWhere(user: SessionUser): { id: string } | undefined {
+  if (canAccessAllSites(user.role)) return undefined
+  return { id: user.siteId ?? NO_SITE }
+}
+
+/**
+ * The set of siteIds a create/write should be linked to.
+ *   - MANAGER / CLEANER -> forced to exactly their own site (request ignored)
+ *   - OP / DIRECTOR -> the requested sites (deduped; may be empty - caller decides if required)
+ */
+export function resolveWriteSiteIds(user: SessionUser, requestedSiteIds?: string[] | null): string[] {
+  if (!canAccessAllSites(user.role)) return user.siteId ? [user.siteId] : []
+  return Array.from(new Set((requestedSiteIds ?? []).filter((id): id is string => typeof id === 'string' && id.length > 0)))
 }

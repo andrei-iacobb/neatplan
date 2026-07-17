@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAdmin, canAccessSite } from '@/lib/authz'
 import { prisma } from '@/lib/db'
 import { RoomType } from '@prisma/client'
 import * as z from 'zod'
@@ -10,7 +9,8 @@ const roomSchema = z.object({
   name: z.string().min(1, 'Room name is required'),
   description: z.string().optional(),
   floor: z.string().optional(),
-  type: z.enum(['OFFICE', 'MEETING_ROOM', 'BATHROOM', 'KITCHEN', 'LOBBY', 'STORAGE', 'BEDROOM', 'LOUNGE', 'OTHER'])
+  type: z.enum(['OFFICE', 'MEETING_ROOM', 'BATHROOM', 'KITCHEN', 'LOBBY', 'STORAGE', 'BEDROOM', 'LOUNGE', 'OTHER']),
+  siteId: z.string().optional()
 })
 
 export async function PUT(
@@ -18,18 +18,23 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
     const { id } = await params
 
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    if (!(session.user as any).isAdmin) {
-      return NextResponse.json({ error: 'Forbidden: admin access required' }, { status: 403 })
+    const existing = await prisma.room.findUnique({ where: { id }, select: { siteId: true } })
+    if (!existing || !canAccessSite(auth.user, existing.siteId)) {
+      return NextResponse.json({ error: 'Room not found' }, { status: 404 })
     }
 
     const body = await request.json()
-    const { name, description, floor, type } = roomSchema.parse(body)
+    const { name, description, floor, type, siteId } = roomSchema.parse(body)
+
+    // Moving a room to another site is only allowed if the actor can reach the
+    // target site (managers are pinned, so they can never move a room off-site).
+    if (siteId !== undefined && siteId !== existing.siteId && !canAccessSite(auth.user, siteId)) {
+      return NextResponse.json({ error: 'You cannot move a room to that site' }, { status: 403 })
+    }
 
     const updatedRoom = await prisma.room.update({
       where: {
@@ -40,6 +45,7 @@ export async function PUT(
         description,
         floor,
         type: type as RoomType,
+        ...(siteId !== undefined ? { siteId } : {}),
       },
     })
 
@@ -64,14 +70,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
     const { id } = await params
 
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    if (!(session.user as any).isAdmin) {
-      return NextResponse.json({ error: 'Forbidden: admin access required' }, { status: 403 })
+    const existing = await prisma.room.findUnique({ where: { id }, select: { siteId: true } })
+    if (!existing || !canAccessSite(auth.user, existing.siteId)) {
+      return NextResponse.json({ error: 'Room not found' }, { status: 404 })
     }
 
     await prisma.room.delete({
@@ -95,10 +100,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await requireAuth()
+    if ('error' in auth) return auth.error
 
     const { id } = await params
 
@@ -108,7 +111,7 @@ export async function GET(
       }
     })
 
-    if (!room) {
+    if (!room || !canAccessSite(auth.user, room.siteId)) {
       return NextResponse.json(
         { error: 'Room not found' },
         { status: 404 }

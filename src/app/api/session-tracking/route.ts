@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { siteScopeWhere } from '@/lib/authz'
+import { canAccessAllSites } from '@/lib/roles'
 
 export async function POST(request: Request) {
   try {
@@ -81,8 +83,10 @@ export async function GET() {
       )
     }
 
-    // Get recent sessions for admin dashboard
+    // Get recent sessions for admin dashboard, scoped to the viewer's site
+    // (OP/DIRECTOR see all; a MANAGER only sees staff activity at their site).
     const recentSessions = await prisma.userSession.findMany({
+      where: canAccessAllSites((session.user as any).role) ? {} : { user: siteScopeWhere(session.user as any) },
       include: {
         user: {
           select: {

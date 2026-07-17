@@ -13,7 +13,8 @@ const adminRoutes = [
   '/upload',
   '/users',
   '/audit',
-  '/equipment'
+  '/equipment',
+  '/sites'
 ]
 
 // Routes that cleaners can access

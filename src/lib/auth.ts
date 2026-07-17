@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { compare } from "bcryptjs"
 import { prisma } from "@/lib/db"
 import { randomBytes } from "crypto"
+import { isManagementRole } from "@/lib/roles"
 
 // Precomputed bcrypt hash used to equalize response timing when an account does not exist,
 // so an attacker cannot distinguish "no such user" from "wrong password" by response time.
@@ -122,7 +123,10 @@ export const authOptions: AuthOptions = {
           email: user.email,
           name: user.name,
           role: (user as any).role,
-          isAdmin: user.isAdmin,
+          // isAdmin is derived from the role hierarchy (management = anything but CLEANER)
+          // so authz never depends on a possibly-stale DB boolean.
+          isAdmin: isManagementRole((user as any).role),
+          siteId: (user as any).siteId ?? null,
           forcePasswordChange: (user as any).forcePasswordChange === true,
         }
       }
@@ -135,7 +139,8 @@ export const authOptions: AuthOptions = {
         session.user.name = token.name as string | null
         session.user.email = token.email as string
         session.user.role = token.role as any
-        session.user.isAdmin = token.isAdmin as boolean
+        session.user.isAdmin = isManagementRole(token.role as any)
+        ;(session.user as any).siteId = (token as any).siteId ?? null
         ;(session.user as any).forcePasswordChange = (token as any).forcePasswordChange === true
       }
       return session
@@ -146,7 +151,8 @@ export const authOptions: AuthOptions = {
         token.email = user.email
         token.name = user.name
         token.role = user.role
-        token.isAdmin = user.isAdmin
+        token.isAdmin = isManagementRole(user.role as any)
+        ;(token as any).siteId = (user as any).siteId ?? null
         ;(token as any).forcePasswordChange = (user as any).forcePasswordChange === true
         
         // Create session tracking entry when user signs in

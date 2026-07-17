@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getSessionUser, siteScopeWhere, resolveWriteSiteId } from '@/lib/authz'
 import { prisma } from '@/lib/db'
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.isAdmin) {
+    const user = await getSessionUser()
+
+    if (!user?.isAdmin) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
         { status: 401 }
@@ -15,7 +14,9 @@ export async function GET() {
     }
 
     const equipment = await prisma.equipment.findMany({
+      where: siteScopeWhere(user),
       include: {
+        site: { select: { id: true, name: true } },
         schedules: {
           include: {
             schedule: {
@@ -43,6 +44,8 @@ export async function GET() {
         name: equip.name,
         description: equip.description,
         type: equip.type,
+        siteId: equip.siteId,
+        site: equip.site,
         createdAt: equip.createdAt,
         updatedAt: equip.updatedAt,
         scheduleCount: activeSchedules.length,
@@ -74,9 +77,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.isAdmin) {
+    const user = await getSessionUser()
+
+    if (!user?.isAdmin) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
         { status: 401 }
@@ -84,9 +87,9 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { 
-      name, 
-      description, 
+    const {
+      name,
+      description,
       type
     } = body
 
@@ -97,11 +100,20 @@ export async function POST(request: Request) {
       )
     }
 
+    const siteId = resolveWriteSiteId(user, body.siteId)
+    if (!siteId) {
+      return NextResponse.json(
+        { error: 'A site is required to create equipment' },
+        { status: 400 }
+      )
+    }
+
     const equipment = await prisma.equipment.create({
       data: {
         name,
         description,
         type: type || 'OTHER',
+        siteId,
       }
     })
 

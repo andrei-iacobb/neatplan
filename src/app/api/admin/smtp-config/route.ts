@@ -21,10 +21,10 @@ interface SMTPConfig {
 // This file-based storage is provided for development convenience only.
 const CONFIG_FILE = path.join(process.cwd(), '.smtp-config.json')
 
-// Helper to check if user is admin
+// SMTP configuration is system-level and OP-only (matches the OP-only Settings System tab).
 async function isAdmin(request: NextRequest) {
   const session = await getServerSession(authOptions)
-  return session?.user && (session.user as any).isAdmin
+  return session?.user && (session.user as any).role === 'OP'
 }
 
 // GET - Load SMTP configuration

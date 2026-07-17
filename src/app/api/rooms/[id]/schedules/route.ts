@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireAdmin, requireAuth } from '@/lib/authz'
+import { requireAdmin, requireAuth, canAccessSite } from '@/lib/authz'
 import { calculateNextDueDate } from '@/lib/schedule-utils'
 import { Prisma } from '@prisma/client'
 
@@ -24,15 +24,37 @@ export async function POST(
       )
     }
 
-    // Get the schedule to check for suggested frequency
+    // The room must belong to a site this user can access.
+    const room = await prisma.room.findUnique({
+      where: { id: roomId },
+      select: { siteId: true }
+    })
+
+    if (!room || !canAccessSite(auth.user, room.siteId)) {
+      return NextResponse.json(
+        { error: 'Room not found' },
+        { status: 404 }
+      )
+    }
+
+    // Get the schedule to check for suggested frequency and its linked sites.
     const schedule = await prisma.schedule.findUnique({
-      where: { id: scheduleId }
+      where: { id: scheduleId },
+      include: { sites: { select: { id: true } } }
     })
 
     if (!schedule) {
       return NextResponse.json(
         { error: 'Schedule not found' },
         { status: 404 }
+      )
+    }
+
+    // A schedule can only be assigned to a room whose site it is linked to.
+    if (!schedule.sites.some((s) => s.id === room.siteId)) {
+      return NextResponse.json(
+        { error: "This schedule is not available at this room's site" },
+        { status: 400 }
       )
     }
 
@@ -103,6 +125,19 @@ export async function GET(
 
     const params = await context.params
     const roomId = params.id
+
+    // The room must belong to a site this user can access.
+    const room = await prisma.room.findUnique({
+      where: { id: roomId },
+      select: { siteId: true }
+    })
+
+    if (!room || !canAccessSite(auth.user, room.siteId)) {
+      return NextResponse.json(
+        { error: 'Room not found' },
+        { status: 404 }
+      )
+    }
 
     const roomSchedules = await prisma.roomSchedule.findMany({
       where: {

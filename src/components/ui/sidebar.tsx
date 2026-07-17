@@ -6,10 +6,11 @@ import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { usePathname } from "next/navigation"
 import {
-  Home, Calendar, Settings, DoorOpen, LogOut, User, Wrench, ClipboardCheck, Menu, X, ChevronsRight, ChevronsLeft
+  Home, Calendar, Settings, DoorOpen, LogOut, User, Wrench, ClipboardCheck, Menu, X, ChevronsRight, ChevronsLeft, Building2
 } from "lucide-react"
 import { Logo } from "@/components/ui/logo"
 import { useSettings } from "@/contexts/settings-context"
+import { canAccessAllSites } from "@/lib/roles"
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
@@ -17,6 +18,7 @@ const navigation = [
   { name: "Equipment", href: "/equipment", icon: Wrench },
   { name: "Schedule", href: "/schedule", icon: Calendar },
   { name: "Audit Log", href: "/audit", icon: ClipboardCheck },
+  { name: "Sites", href: "/sites", icon: Building2 },
   { name: "Users", href: "/users", icon: User },
   { name: "Settings", href: "/settings", icon: Settings },
 ]
@@ -40,6 +42,11 @@ export function Sidebar() {
   const collapseRef = useRef<NodeJS.Timeout | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
   const expanded = pinned || isExpanded
+  // MANAGER/CLEANER are pinned to a single site, so the multi-site "Sites"
+  // page is OP/DIRECTOR-only and hidden from their navigation.
+  const navItems = canAccessAllSites((session?.user as any)?.role)
+    ? navigation
+    : navigation.filter((item) => item.href !== '/sites')
 
   useEffect(() => {
     setPinned(localStorage.getItem('neatplan-sidebar-pinned') === 'true')
@@ -139,14 +146,16 @@ export function Sidebar() {
         <button
           onClick={togglePinned}
           aria-label={pinned ? 'Collapse navigation' : 'Expand navigation'}
-          className="w-full min-h-10 flex-shrink-0 flex items-center justify-center rounded-lg transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-95"
+          className="flex items-center rounded-lg px-[10px] py-[9px] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-95"
           style={{ color: t.navDefault }}
           onMouseEnter={(e) => { e.currentTarget.style.background = t.navHoverBg; e.currentTarget.style.color = t.navHover }}
           onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = t.navDefault }}
         >
-          {pinned ? <ChevronsLeft className="w-[18px] h-[18px]" /> : <ChevronsRight className="w-[18px] h-[18px]" />}
+          <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
+            {pinned ? <ChevronsLeft className="w-[18px] h-[18px]" /> : <ChevronsRight className="w-[18px] h-[18px]" />}
+          </div>
         </button>
-        {navigation.map((item) => {
+        {navItems.map((item) => {
           const active = isActiveRoute(pathname, item.href)
           return (
             <Link
@@ -189,7 +198,7 @@ export function Sidebar() {
         <div className="px-[10px] pb-4 flex-shrink-0">
           <div className="mb-2 border-t" style={{ borderColor: t.divider }} />
           <button
-            onClick={() => signOut({ callbackUrl: '/auth' })}
+            onClick={() => { signOut({ redirect: false }).then(() => { window.location.href = '/auth' }) }}
             className="w-full flex items-center rounded-lg px-[10px] py-[9px] transition-colors duration-150"
             style={{ color: t.signoutDefault }}
             onMouseEnter={(e) => { e.currentTarget.style.color = 'rgb(239, 68, 68)'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)' }}
@@ -270,7 +279,7 @@ export function Sidebar() {
                 </button>
               </div>
               <nav className="flex-1 flex flex-col gap-0.5 px-3 pt-2 overflow-y-auto">
-                {navigation.map((item) => {
+                {navItems.map((item) => {
                   const active = isActiveRoute(pathname, item.href)
                   return (
                     <Link
@@ -290,7 +299,7 @@ export function Sidebar() {
                 <div className="px-3 pt-2 flex-shrink-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
                   <div className="mb-2 border-t" style={{ borderColor: t.divider }} />
                   <button
-                    onClick={() => signOut({ callbackUrl: '/auth' })}
+                    onClick={() => { signOut({ redirect: false }).then(() => { window.location.href = '/auth' }) }}
                     className="w-full flex items-center gap-3 rounded-lg px-3 py-3 text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50"
                     style={{ color: t.signoutDefault }}
                   >

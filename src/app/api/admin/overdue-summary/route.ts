@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { nestedSiteScopeWhere } from '@/lib/authz'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,11 +15,13 @@ export async function GET() {
 
     const now = new Date()
 
-    // Get overdue room schedules
+    // Get overdue room schedules. MANAGERs only see their own site (via the room relation);
+    // OP/DIRECTOR see every site.
     const overdueRoomSchedules = await prisma.roomSchedule.findMany({
       where: {
         nextDue: { lt: now },
         status: { in: ['OVERDUE', 'PENDING'] },
+        ...nestedSiteScopeWhere(session.user, 'room'),
       },
       include: {
         room: { select: { name: true, type: true } },
@@ -30,11 +33,12 @@ export async function GET() {
       },
     })
 
-    // Get overdue equipment schedules
+    // Get overdue equipment schedules (scoped to the manager's site via the equipment relation).
     const overdueEquipSchedules = await prisma.equipmentSchedule.findMany({
       where: {
         nextDue: { lt: now },
         status: { in: ['OVERDUE', 'PENDING'] },
+        ...nestedSiteScopeWhere(session.user, 'equipment'),
       },
       include: {
         equipment: { select: { name: true, type: true } },

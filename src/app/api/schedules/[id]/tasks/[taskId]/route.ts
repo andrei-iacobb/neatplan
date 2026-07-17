@@ -1,6 +1,24 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireAdmin } from '@/lib/authz'
+import { requireAdmin, canAccessAnySite, type SessionUser } from '@/lib/authz'
+
+// Verify the task belongs to the given schedule and that the actor can reach
+// one of its sites. Returns a 404 NextResponse when not (no existence leak),
+// else null.
+async function assertTaskAccess(actor: SessionUser, scheduleId: string, taskId: string) {
+  const task = await prisma.scheduleTask.findUnique({
+    where: { id: taskId },
+    select: { scheduleId: true, schedule: { select: { sites: { select: { id: true } } } } },
+  })
+  if (
+    !task ||
+    task.scheduleId !== scheduleId ||
+    !canAccessAnySite(actor, task.schedule?.sites.map((s) => s.id) ?? [])
+  ) {
+    return NextResponse.json({ error: 'Task not found' }, { status: 404 })
+  }
+  return null
+}
 
 // Update a task
 export async function PUT(
@@ -11,6 +29,9 @@ export async function PUT(
   try {
     const auth = await requireAdmin()
     if ('error' in auth) return auth.error
+
+    const denied = await assertTaskAccess(auth.user, params.id, params.taskId)
+    if (denied) return denied
 
     const { description, frequency, additionalNotes } = await req.json()
 
@@ -48,6 +69,9 @@ export async function DELETE(
   try {
     const auth = await requireAdmin()
     if ('error' in auth) return auth.error
+
+    const denied = await assertTaskAccess(auth.user, params.id, params.taskId)
+    if (denied) return denied
 
     await prisma.scheduleTask.delete({
       where: { id: params.taskId }

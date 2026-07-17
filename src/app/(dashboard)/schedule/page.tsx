@@ -15,7 +15,7 @@ const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } }
 
 function SchedulePageContent() {
   const tc = useThemeColors()
-  const [schedules, setSchedules] = useState<(Schedule & { tasks: ScheduleTask[] })[]>([])
+  const [schedules, setSchedules] = useState<(Schedule & { tasks: ScheduleTask[]; sites?: { id: string; name: string }[] })[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isEditMode, setIsEditMode] = useState(false)

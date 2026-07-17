@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getSessionUser, nestedSiteScopeWhere } from '@/lib/authz'
 import { prisma } from '@/lib/db'
 
 // Force dynamic rendering
@@ -8,9 +7,9 @@ export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.isAdmin) {
+    const user = await getSessionUser()
+
+    if (!user?.isAdmin) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
         { status: 401 }
@@ -18,6 +17,7 @@ export async function GET() {
     }
 
     const equipmentSchedules = await prisma.equipmentSchedule.findMany({
+      where: nestedSiteScopeWhere(user, 'equipment'),
       include: {
         equipment: {
           select: {

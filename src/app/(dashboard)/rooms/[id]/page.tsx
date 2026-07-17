@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useToast } from '@/components/ui/toast-context'
 import { useThemeColors } from '@/hooks/useThemeColors'
-import { Loader2, Calendar, CheckCircle2, X, Trash2, Building2, Pencil } from 'lucide-react'
+import { Loader2, Calendar, CheckCircle2, X, Trash2, Pencil, Sparkles } from 'lucide-react'
 import { ScheduleFrequency, ScheduleStatus } from '@prisma/client'
 import { getFrequencyLabel, getScheduleDisplayName } from '@/lib/schedule-utils'
 import { apiRequest } from '@/lib/url-utils'
@@ -223,38 +223,38 @@ export default function RoomDetailsPage() {
     return tc.statusPending
   }
 
+  const selectedScheduleObj = schedules.find(s => s.id === selectedSchedule)
+
   return (
     <div className="max-w-[1100px] mx-auto relative z-10 pb-8">
       {/* Page Header */}
-      <motion.div {...fadeUp} transition={{ duration: 0.4 }} className="mb-8">
-        <div className="flex justify-between items-start">
+      <motion.div {...fadeUp} transition={{ duration: 0.4 }} className="mb-10">
+        <div className="flex flex-wrap justify-between items-start gap-4">
           <div>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${tc.accentGreen}${tc.iconBgAlpha}` }}>
-                <Building2 className="w-[18px] h-[18px]" style={{ color: tc.accentGreen }} strokeWidth={1.8} />
-              </div>
-              <h1 className="text-[28px] font-bold tracking-tight" style={{ color: tc.textPrimary }}>{room.name}</h1>
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="w-4 h-4" style={{ color: 'rgb(16,185,129)' }} />
+              <p className="text-[13px] font-medium tracking-wide uppercase" style={{ color: tc.accentLabel }}>Room Details</p>
             </div>
+            <h1 className="text-[32px] font-bold tracking-tight mb-1" style={{ color: tc.textPrimary }}>{room.name}</h1>
+            <p className="text-[15px]" style={{ color: tc.textMuted }}>
+              {room.floor && <span>{room.floor}</span>}
+              {room.floor && <span className="mx-1.5" style={{ color: tc.textFaint }}>&middot;</span>}
+              <span className="capitalize">{room.type.replace(/_/g, ' ').toLowerCase()}</span>
+            </p>
             {room.description && (
-              <p className="text-[14px] mt-2 ml-12" style={{ color: tc.textSecondary }}>{room.description}</p>
+              <p className="text-[13px] mt-1" style={{ color: tc.textMuted }}>{room.description}</p>
             )}
-            <div className="flex items-center gap-4 text-[12px] mt-3 ml-12" style={{ color: tc.textMuted }}>
-              {room.floor && <span>Floor: {room.floor}</span>}
-              <span>Type: {room.type}</span>
-            </div>
           </div>
-          <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.1 }}>
-            <button
-              onClick={() => setShowEditModal(true)}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors duration-150"
-              style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: `1px solid ${tc.btnPrimaryBorder}` }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              Edit Room
-            </button>
-          </motion.div>
+          <button
+            onClick={() => setShowEditModal(true)}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors duration-150"
+            style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: `1px solid ${tc.btnPrimaryBorder}` }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            Edit Room
+          </button>
         </div>
       </motion.div>
 
@@ -265,68 +265,86 @@ export default function RoomDetailsPage() {
           style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}
         >
           <h2 className="text-[15px] font-semibold mb-4" style={{ color: tc.textPrimary }}>Assign New Schedule</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>
-                Schedule
-              </label>
-              <select
-                value={selectedSchedule}
-                onChange={(e) => handleScheduleSelection(e.target.value)}
-                className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors duration-150"
-                style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
-                onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
-              >
-                <option value="">Select a schedule</option>
-                {schedules.map((schedule) => (
-                  <option key={schedule.id} value={schedule.id}>
-                    {schedule.title}
-                    {schedule.detectedFrequency && ' (AI-detected)'}
-                  </option>
-                ))}
-              </select>
-              {selectedSchedule && schedules.find(s => s.id === selectedSchedule)?.detectedFrequency && (
-                <p className="mt-1.5 text-[11px] font-medium" style={{ color: tc.accentGreen }}>
-                  AI detected frequency: &ldquo;{schedules.find(s => s.id === selectedSchedule)?.detectedFrequency}&rdquo;
-                </p>
-              )}
+          {schedules.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3" style={{ background: tc.emptyBg }}>
+                <Calendar className="w-5 h-5" style={{ color: tc.textFaint }} />
+              </div>
+              <p className="text-[13px] font-medium" style={{ color: tc.textMuted }}>No schedules available</p>
+              <p className="text-[11px] mt-1" style={{ color: tc.textFaint }}>Upload a schedule from the Schedules page, then assign it here</p>
             </div>
-            <div>
-              <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>
-                Frequency
-                {selectedSchedule && schedules.find(s => s.id === selectedSchedule)?.suggestedFrequency && (
-                  <span className="ml-2 text-[11px]" style={{ color: tc.accentGreen }}>(Auto-selected from AI detection)</span>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>
+                    Schedule
+                  </label>
+                  <select
+                    value={selectedSchedule}
+                    onChange={(e) => handleScheduleSelection(e.target.value)}
+                    className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors duration-150"
+                    style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
+                  >
+                    <option value="">Select a schedule</option>
+                    {schedules.map((schedule) => (
+                      <option key={schedule.id} value={schedule.id}>
+                        {schedule.title} ({schedule.tasks.length} {schedule.tasks.length === 1 ? 'task' : 'tasks'})
+                      </option>
+                    ))}
+                  </select>
+                  {selectedScheduleObj?.detectedFrequency && (
+                    <p className="mt-1.5 text-[11px] font-medium" style={{ color: tc.accentGreen }}>
+                      AI detected frequency: &ldquo;{selectedScheduleObj.detectedFrequency}&rdquo;
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="flex items-center text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>
+                    Frequency
+                    {selectedScheduleObj?.suggestedFrequency && selectedFrequency === selectedScheduleObj.suggestedFrequency && (
+                      <span className="ml-2 inline-flex items-center gap-1 text-[11px] font-medium" style={{ color: tc.accentGreen }}>
+                        <Sparkles className="w-3 h-3" />
+                        AI suggested
+                      </span>
+                    )}
+                  </label>
+                  <select
+                    value={selectedFrequency}
+                    onChange={(e) => setSelectedFrequency(e.target.value as ScheduleFrequency)}
+                    className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors duration-150"
+                    style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
+                  >
+                    {Object.values(ScheduleFrequency).map((freq) => (
+                      <option key={freq} value={freq}>
+                        {getFrequencyLabel(freq as ScheduleFrequency)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center gap-3" style={{ borderTop: `1px solid ${tc.divider}`, paddingTop: '16px' }}>
+                <button
+                  onClick={assignSchedule}
+                  disabled={!selectedSchedule || isAssigning}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: `1px solid ${tc.btnPrimaryBorder}` }}
+                  onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}
+                >
+                  {isAssigning && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {isAssigning ? 'Assigning...' : 'Assign Schedule'}
+                </button>
+                {!selectedSchedule && (
+                  <span className="text-[11px]" style={{ color: tc.textFaint }}>Select a schedule to enable assignment</span>
                 )}
-              </label>
-              <select
-                value={selectedFrequency}
-                onChange={(e) => setSelectedFrequency(e.target.value as ScheduleFrequency)}
-                className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors duration-150"
-                style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
-                onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
-              >
-                {Object.values(ScheduleFrequency).map((freq) => (
-                  <option key={freq} value={freq}>
-                    {getFrequencyLabel(freq as ScheduleFrequency)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="mt-4" style={{ borderTop: `1px solid ${tc.divider}`, paddingTop: '16px' }}>
-            <button
-              onClick={assignSchedule}
-              disabled={!selectedSchedule || isAssigning}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: `1px solid ${tc.btnPrimaryBorder}` }}
-              onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}
-            >
-              {isAssigning ? 'Assigning...' : 'Assign Schedule'}
-            </button>
-          </div>
+              </div>
+            </>
+          )}
         </motion.div>
 
         {/* Assigned Schedules Section */}

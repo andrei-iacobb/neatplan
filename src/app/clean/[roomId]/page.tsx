@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type CSSProperties } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { apiRequest } from '@/lib/url-utils'
+import { useThemeColors } from '@/hooks/useThemeColors'
 
 interface ScheduleTask {
   id: string
@@ -56,10 +57,24 @@ interface CompletedTask {
   notes?: string
 }
 
+const JUNK_NOTE_RESIDUE = /^(room|week of|date|name)$/i
+
+// Filters out fill-in-the-blank template fragments captured during document
+// extraction, e.g. "_______________ Room" or "Week of: ____".
+function isJunkNote(note: string): boolean {
+  const residue = note
+    .replace(/[_\-.\u2013\u2014\u2026:;,|/\\()[\]{}'"`~*]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  return residue.replace(/\s+/g, '').length <= 4 || JUNK_NOTE_RESIDUE.test(residue)
+}
+
 export default function CleanRoomPage() {
   const params = useParams()
   const router = useRouter()
   const { data: session, status } = useSession()
+  const tc = useThemeColors()
   const [room, setRoom] = useState<Room | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [completedTasks, setCompletedTasks] = useState<Map<string, CompletedTask>>(new Map())
@@ -270,21 +285,21 @@ export default function CleanRoomPage() {
     
     if (diffDays < 0) {
       const overdueDays = Math.abs(diffDays)
-      return { 
-        text: `${overdueDays} day${overdueDays > 1 ? 's' : ''} overdue`, 
-        color: 'text-red-400', 
-        urgent: true 
+      return {
+        text: `${overdueDays} day${overdueDays > 1 ? 's' : ''} overdue`,
+        color: tc.statusOverdue.text,
+        urgent: true
       }
     } else if (diffDays === 0) {
-      return { text: 'Due today', color: 'text-teal-400', urgent: true }
+      return { text: 'Due today', color: tc.statusOverdue.text, urgent: true }
     } else if (diffDays === 1) {
-      return { text: 'Due tomorrow', color: 'text-yellow-400', urgent: true }
+      return { text: 'Due tomorrow', color: tc.statusPending.text, urgent: true }
     } else if (diffDays === 2) {
-      return { text: 'Due in 2 days', color: 'text-yellow-300', urgent: true }
+      return { text: 'Due in 2 days', color: tc.statusPending.text, urgent: true }
     } else if (diffDays <= 7) {
-      return { text: `Due in ${diffDays} days`, color: 'text-gray-300', urgent: false }
+      return { text: `Due in ${diffDays} days`, color: tc.textSecondary, urgent: false }
     } else {
-      return { text: `Due in ${diffDays} days`, color: 'text-gray-400', urgent: false }
+      return { text: `Due in ${diffDays} days`, color: tc.textMuted, urgent: false }
     }
   }
 
@@ -292,8 +307,8 @@ export default function CleanRoomPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-teal-500 mx-auto mb-4" />
-          <p className="text-gray-400">Loading room details...</p>
+          <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" style={{ color: tc.accentGreen }} />
+          <p style={{ color: tc.textMuted }}>Loading room details...</p>
         </div>
       </div>
     )
@@ -303,15 +318,18 @@ export default function CleanRoomPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center max-w-md">
-          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-100 mb-2">
+          <AlertCircle className="w-12 h-12 mx-auto mb-4" style={{ color: tc.statusOverdue.text }} />
+          <h2 className="text-xl font-semibold mb-2" style={{ color: tc.textPrimary }}>
             {error === 'Room not found' ? 'Room Not Found' : 'Something went wrong'}
           </h2>
-          <p className="text-gray-400 mb-4">{error}</p>
+          <p className="mb-4" style={{ color: tc.textMuted }}>{error}</p>
           <div className="space-x-4">
             <Link
               href="/clean"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors"
+              style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: '1px solid ' + tc.btnPrimaryBorder }}
+              onMouseEnter={(e) => e.currentTarget.style.background = tc.btnPrimaryHoverBg}
+              onMouseLeave={(e) => e.currentTarget.style.background = tc.btnPrimaryBg}
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Dashboard
@@ -319,7 +337,10 @@ export default function CleanRoomPage() {
             {error !== 'Room not found' && (
               <button
                 onClick={fetchRoomData}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                className="px-4 py-2 rounded-lg transition-colors"
+                style={{ background: tc.btnSecondaryBg, color: tc.btnSecondaryText, border: '1px solid ' + tc.btnSecondaryBorder }}
+                onMouseEnter={(e) => e.currentTarget.style.background = tc.btnSecondaryHoverBg}
+                onMouseLeave={(e) => e.currentTarget.style.background = tc.btnSecondaryBg}
               >
                 Try Again
               </button>
@@ -345,15 +366,18 @@ export default function CleanRoomPage() {
     }
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'OVERDUE': return 'bg-red-500/10 text-red-400 border-red-500/20'
-      case 'PENDING': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
-      case 'NOT_DUE_YET': return 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-      case 'COMPLETED': return 'bg-green-500/10 text-green-400 border-green-500/20'
-      case 'PAUSED': return 'bg-gray-500/10 text-gray-400 border-gray-500/20'
-      default: return 'bg-gray-500/10 text-gray-400 border-gray-500/20'
+  const getStatusStyle = (status: string): CSSProperties => {
+    const palette =
+      status === 'OVERDUE' ? tc.statusOverdue :
+      status === 'PENDING' ? tc.statusPending :
+      status === 'NOT_DUE_YET' ? tc.statusActive :
+      status === 'COMPLETED' ? tc.statusCompleted :
+      null
+    if (palette) {
+      return { background: palette.bg, color: palette.text, border: '1px solid ' + palette.border }
     }
+    // PAUSED / unknown
+    return { background: tc.emptyBg, color: tc.textMuted, border: '1px solid ' + tc.cardBorder }
   }
 
   const getStatusDisplayName = (status: string) => {
@@ -374,15 +398,18 @@ export default function CleanRoomPage() {
         <div className="flex items-center gap-4 mb-8">
           <Link
             href="/clean"
-            className="text-gray-400 hover:text-teal-300 transition-colors p-2 rounded-lg hover:bg-gray-800"
+            className="transition-colors p-2 rounded-lg"
+            style={{ color: tc.textMuted }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = tc.btnPrimaryText; e.currentTarget.style.background = tc.btnSecondaryHoverBg }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = tc.textMuted; e.currentTarget.style.background = 'transparent' }}
           >
             <ArrowLeft className="w-6 h-6" />
           </Link>
           <div className="flex items-center gap-3 min-w-0">
             <span className="text-3xl flex-shrink-0">{getRoomTypeIcon(room.type)}</span>
             <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-100 break-words">{room.name}</h1>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-gray-400 text-sm">
+              <h1 className="text-xl sm:text-2xl font-bold break-words" style={{ color: tc.textPrimary }}>{room.name}</h1>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm" style={{ color: tc.textMuted }}>
                 <div className="flex items-center gap-1 min-w-0">
                   <MapPin className="w-4 h-4 flex-shrink-0" />
                   <span className="truncate">{room.floor}</span>
@@ -401,7 +428,7 @@ export default function CleanRoomPage() {
 
         {/* Controls */}
         <div className="flex justify-between items-center mb-6">
-          <div className="text-sm text-gray-400">
+          <div className="text-sm" style={{ color: tc.textMuted }}>
             {startTime && (
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4" />
@@ -411,7 +438,10 @@ export default function CleanRoomPage() {
           </div>
           <button
             onClick={resetTasks}
-            className="flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-gray-300 hover:bg-gray-800 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors"
+            style={{ color: tc.textMuted }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = tc.textSecondary; e.currentTarget.style.background = tc.btnSecondaryHoverBg }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = tc.textMuted; e.currentTarget.style.background = 'transparent' }}
           >
             <RotateCcw className="w-4 h-4" />
             Reset All
@@ -435,13 +465,15 @@ export default function CleanRoomPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: scheduleIndex * 0.036 }}
-                className="bg-gray-800/50 rounded-lg border border-gray-700 overflow-hidden"
+                className="rounded-lg overflow-hidden"
+                style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder }}
               >
                 {/* Schedule Header - Always Visible */}
-                <div 
-                  className={`p-4 cursor-pointer transition-colors ${
-                    isUrgent ? 'bg-gray-800/70' : 'hover:bg-gray-800/30'
-                  }`}
+                <div
+                  className="p-4 cursor-pointer transition-colors"
+                  style={{ background: isUrgent ? tc.surfaceBg : 'transparent' }}
+                  onMouseEnter={(e) => { if (!isUrgent) e.currentTarget.style.background = tc.hoverRow }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = isUrgent ? tc.surfaceBg : 'transparent' }}
                   onClick={() => toggleScheduleExpansion(schedule.id)}
                 >
                   <div className="flex items-center justify-between">
@@ -449,53 +481,54 @@ export default function CleanRoomPage() {
                       <div className="flex items-center gap-3 mb-2">
                         <div className="flex items-center gap-2">
                           {isExpanded ? (
-                            <ChevronDown className="w-4 h-4 text-gray-400" />
+                            <ChevronDown className="w-4 h-4" style={{ color: tc.textMuted }} />
                           ) : (
-                            <ChevronRight className="w-4 h-4 text-gray-400" />
+                            <ChevronRight className="w-4 h-4" style={{ color: tc.textMuted }} />
                           )}
-                          <h2 className={`text-lg font-semibold ${
-                            isUrgent ? 'text-teal-300' : 'text-gray-300'
-                          }`}>
+                          <h2
+                            className="text-lg font-semibold"
+                            style={{ color: isUrgent ? tc.btnPrimaryText : tc.textSecondary }}
+                          >
                             {schedule.title}
                           </h2>
                         </div>
                         {dueDateInfo.urgent && (
                           <div className="flex items-center gap-1">
                             {actualStatus === 'OVERDUE' ? (
-                              <AlertCircle className="w-4 h-4 text-red-400" />
+                              <AlertCircle className="w-4 h-4" style={{ color: tc.statusOverdue.text }} />
                             ) : (
-                              <Clock className="w-4 h-4 text-teal-400" />
+                              <Clock className="w-4 h-4" style={{ color: tc.btnPrimaryText }} />
                             )}
                           </div>
                         )}
                       </div>
                       
                       <div className="flex items-center gap-4 text-sm">
-                        <span className={dueDateInfo.color}>
+                        <span style={{ color: dueDateInfo.color }}>
                           {schedule.completedToday ? 'Completed today' : dueDateInfo.text}
                         </span>
-                        <span className="text-gray-400">•</span>
-                        <div className="flex items-center gap-1 text-gray-300">
+                        <span style={{ color: tc.textMuted }}>•</span>
+                        <div className="flex items-center gap-1" style={{ color: tc.textSecondary }}>
                           <Calendar className="w-3 h-3" />
                           <span>{schedule.frequency}</span>
                         </div>
-                        <span className="text-gray-400">•</span>
-                        <span className="text-gray-300">Est. {schedule.estimatedDuration}</span>
+                        <span style={{ color: tc.textMuted }}>•</span>
+                        <span style={{ color: tc.textSecondary }}>Est. {schedule.estimatedDuration}</span>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-3">
                       {isExpanded && (
                         <div className="text-right">
-                          <div className="text-sm text-gray-300">
+                          <div className="text-sm" style={{ color: tc.textSecondary }}>
                             {progress.completed} of {progress.total} tasks
                           </div>
-                          <div className="text-xs text-gray-400">
+                          <div className="text-xs" style={{ color: tc.textMuted }}>
                             {Math.round(progressPercentage)}% complete
                           </div>
                         </div>
                       )}
-                      <span className={`px-2 py-1 rounded-full text-xs border ${getStatusColor(actualStatus)}`}>
+                      <span className="px-2 py-1 rounded-full text-xs" style={getStatusStyle(actualStatus)}>
                         {getStatusDisplayName(actualStatus)}
                       </span>
                     </div>
@@ -512,18 +545,19 @@ export default function CleanRoomPage() {
                       transition={{ duration: 0.3 }}
                       className="overflow-hidden"
                     >
-                      <div className="border-t border-gray-700">
+                      <div className="border-t" style={{ borderColor: tc.divider }}>
                         {/* Progress Bar */}
-                        <div className="p-6 border-b border-gray-700">
+                        <div className="p-6 border-b" style={{ borderColor: tc.divider }}>
                           <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm font-medium text-gray-300">
+                            <span className="text-sm font-medium" style={{ color: tc.textSecondary }}>
                               Progress: {progress.completed} of {progress.total} tasks
                             </span>
-                            <span className="text-sm text-gray-400">{Math.round(progressPercentage)}%</span>
+                            <span className="text-sm" style={{ color: tc.textMuted }}>{Math.round(progressPercentage)}%</span>
                           </div>
-                          <div className="w-full bg-gray-700 rounded-full h-2">
+                          <div className="w-full rounded-full h-2" style={{ background: tc.progressBg }}>
                             <motion.div
-                              className="bg-teal-500 h-2 rounded-full"
+                              className="h-2 rounded-full"
+                              style={{ background: tc.accentGreen }}
                               initial={{ width: 0 }}
                               animate={{ width: `${progressPercentage}%` }}
                               transition={{ duration: 0.5 }}
@@ -541,44 +575,59 @@ export default function CleanRoomPage() {
                               return (
                                 <motion.div
                                   key={task.id}
+                                  role="button"
+                                  tabIndex={0}
+                                  aria-pressed={isCompleted}
+                                  aria-label={`${isCompleted ? 'Mark incomplete' : 'Mark complete'}: ${task.description}`}
                                   initial={{ opacity: 0, x: -20 }}
                                   animate={{ opacity: 1, x: 0 }}
                                   transition={{ delay: taskIndex * 0.05 }}
-                                  className={`p-4 rounded-lg border transition-all ${
-                                    isCompleted 
-                                      ? 'bg-teal-500/10 border-teal-500/30' 
-                                      : 'bg-gray-700/30 border-gray-600 hover:border-gray-500'
-                                  }`}
+                                  whileHover={{ backgroundColor: isCompleted ? tc.btnPrimaryHoverBg : tc.cardHoverBg }}
+                                  onClick={() => handleTaskToggle(schedule.id, task.id, task)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      e.preventDefault()
+                                      handleTaskToggle(schedule.id, task.id, task)
+                                    }
+                                  }}
+                                  className="p-4 rounded-lg border cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(16,185,129,0.6)]"
+                                  style={{
+                                    backgroundColor: isCompleted ? tc.statusCompleted.bg : tc.surfaceBg,
+                                    borderColor: isCompleted ? tc.statusCompleted.border : tc.cardBorder
+                                  }}
                                 >
                                   <div className="flex items-start gap-3">
-                                    <button
-                                      onClick={() => handleTaskToggle(schedule.id, task.id, task)}
-                                      className={`mt-1 transition-colors ${
-                                        isCompleted ? 'text-teal-400' : 'text-gray-400 hover:text-gray-300'
-                                      }`}
+                                    <span
+                                      aria-hidden="true"
+                                      className="mt-1 transition-colors"
+                                      style={{ color: isCompleted ? tc.statusCompleted.text : tc.textMuted }}
                                     >
                                       {isCompleted ? (
                                         <CheckCircle2 className="w-5 h-5" />
                                       ) : (
                                         <Circle className="w-5 h-5" />
                                       )}
-                                    </button>
-                                    
+                                    </span>
+
                                     <div className="flex-1">
-                                      <p className={`font-medium ${
-                                        isCompleted ? 'text-teal-300 line-through' : 'text-gray-100'
-                                      }`}>
+                                      <p
+                                        className={`font-medium ${isCompleted ? 'line-through' : ''}`}
+                                        style={{ color: isCompleted ? tc.statusCompleted.text : tc.textPrimary }}
+                                      >
                                         {task.description}
                                       </p>
-                                      
-                                      {task.additionalNotes && (
-                                        <p className="text-sm text-gray-400 mt-1">
+
+                                      {task.additionalNotes && !isJunkNote(task.additionalNotes) && (
+                                        <p className="text-sm mt-1" style={{ color: tc.textMuted }}>
                                           {task.additionalNotes}
                                         </p>
                                       )}
-                                      
+
                                       {task.frequency && task.frequency !== schedule.frequency && (
-                                        <span className="text-xs text-teal-400 bg-teal-400/10 px-2 py-1 rounded mt-2 inline-block">
+                                        <span
+                                          className="text-xs px-2 py-1 rounded mt-2 inline-block"
+                                          style={{ color: tc.tabActiveText, backgroundColor: tc.tabActiveBg }}
+                                        >
                                           {task.frequency}
                                         </span>
                                       )}
@@ -597,7 +646,16 @@ export default function CleanRoomPage() {
                                               placeholder="Add notes (optional)..."
                                               value={completedTasks.get(taskKey)?.notes || ''}
                                               onChange={(e) => handleTaskNotes(schedule.id, task.id, e.target.value)}
-                                              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-sm text-gray-100 placeholder-gray-400 focus:border-teal-500 focus:outline-none"
+                                              onClick={(e) => e.stopPropagation()}
+                                              onKeyDown={(e) => e.stopPropagation()}
+                                              onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                                              onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
+                                              className="w-full px-3 py-2 border rounded text-sm placeholder:text-[rgb(var(--muted-foreground))] focus:outline-none"
+                                              style={{
+                                                backgroundColor: tc.inputBg,
+                                                borderColor: tc.inputBorder,
+                                                color: tc.inputText
+                                              }}
                                             />
                                           </motion.div>
                                         )}
@@ -613,7 +671,7 @@ export default function CleanRoomPage() {
                         {/* Schedule Footer */}
                         <div className="px-6 pb-6">
                           <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                            <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
                               General Notes (optional)
                             </label>
                             <textarea
@@ -621,7 +679,14 @@ export default function CleanRoomPage() {
                               onChange={(e) => setNotes(e.target.value)}
                               placeholder="Add any additional notes about this cleaning session..."
                               rows={3}
-                              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-gray-100 placeholder-gray-400 focus:border-teal-500 focus:outline-none resize-none"
+                              onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                              onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
+                              className="w-full px-3 py-2 border rounded placeholder:text-[rgb(var(--muted-foreground))] focus:outline-none resize-none"
+                              style={{
+                                backgroundColor: tc.inputBg,
+                                borderColor: tc.inputBorder,
+                                color: tc.inputText
+                              }}
                             />
                           </div>
 
@@ -630,10 +695,19 @@ export default function CleanRoomPage() {
                               onClick={() => handleCompleteSchedule(schedule.id)}
                               disabled={isSubmitting || progress.completed === 0}
                               className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors ${
-                                progress.completed > 0 && !isSubmitting
-                                  ? 'bg-teal-600 hover:bg-teal-700 text-white'
-                                  : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                progress.completed > 0 && !isSubmitting ? '' : 'cursor-not-allowed'
                               }`}
+                              style={
+                                progress.completed > 0 && !isSubmitting
+                                  ? { background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: '1px solid ' + tc.btnPrimaryBorder }
+                                  : { background: tc.btnSecondaryBg, color: tc.textMuted, border: '1px solid ' + tc.btnSecondaryBorder }
+                              }
+                              onMouseEnter={(e) => {
+                                if (progress.completed > 0 && !isSubmitting) e.currentTarget.style.background = tc.btnPrimaryHoverBg
+                              }}
+                              onMouseLeave={(e) => {
+                                if (progress.completed > 0 && !isSubmitting) e.currentTarget.style.background = tc.btnPrimaryBg
+                              }}
                             >
                               {isSubmitting ? (
                                 <>
@@ -665,11 +739,12 @@ export default function CleanRoomPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="mt-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg"
+              className="mt-6 p-4 rounded-lg"
+              style={{ background: tc.statusOverdue.bg, border: '1px solid ' + tc.statusOverdue.border }}
             >
               <div className="flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-red-400" />
-                <p className="text-red-300">{error}</p>
+                <AlertCircle className="w-5 h-5" style={{ color: tc.statusOverdue.text }} />
+                <p style={{ color: tc.statusOverdue.text }}>{error}</p>
               </div>
             </motion.div>
           )}
@@ -678,12 +753,15 @@ export default function CleanRoomPage() {
         {/* No Schedules */}
         {room.schedules.length === 0 && (
           <div className="text-center py-12">
-            <CheckSquare className="w-16 h-16 text-green-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-100 mb-2">No active schedules</h3>
-            <p className="text-gray-400 mb-4">This room doesn't have any pending cleaning schedules.</p>
+            <CheckSquare className="w-16 h-16 mx-auto mb-4" style={{ color: tc.statusCompleted.text }} />
+            <h3 className="text-xl font-semibold mb-2" style={{ color: tc.textPrimary }}>No active schedules</h3>
+            <p className="mb-4" style={{ color: tc.textMuted }}>This room doesn't have any pending cleaning schedules.</p>
             <Link
               href="/clean"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors"
+              style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: '1px solid ' + tc.btnPrimaryBorder }}
+              onMouseEnter={(e) => e.currentTarget.style.background = tc.btnPrimaryHoverBg}
+              onMouseLeave={(e) => e.currentTarget.style.background = tc.btnPrimaryBg}
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Dashboard

@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { canAccessAllSites } from '@/lib/roles'
 import { useToast } from '@/components/ui/toast-context'
 import { useThemeColors } from '@/hooks/useThemeColors'
 import {
@@ -24,7 +26,14 @@ interface Room {
   type: string
   createdAt: string
   updatedAt: string
+  siteId?: string | null
+  site?: { id: string; name: string } | null
   schedules?: RoomSchedule[]
+}
+
+interface Site {
+  id: string
+  name: string
 }
 
 interface Schedule {
@@ -53,6 +62,13 @@ type AssignMode = 'QUICK' | 'MANUAL'
 export default function RoomsPage() {
   const { showToast } = useToast()
   const tc = useThemeColors()
+  const { data: session } = useSession()
+  // OP/DIRECTOR span every site, so they pick which site a room belongs to and
+  // can filter the list by site. MANAGER/CLEANER are pinned - the server forces
+  // their site, so they never see a site picker.
+  const canPickSite = canAccessAllSites((session?.user as any)?.role)
+  const [sites, setSites] = useState<Site[]>([])
+  const [siteFilter, setSiteFilter] = useState<string>('ALL')
   const [rooms, setRooms] = useState<Room[]>([])
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -70,9 +86,17 @@ export default function RoomsPage() {
     name: '',
     description: '',
     floor: 'Ground Floor',
-    type: 'BEDROOM'
+    type: 'BEDROOM',
+    siteId: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    apiRequest('/api/sites')
+      .then(res => res.json())
+      .then(data => setSites(Array.isArray(data) ? data : []))
+      .catch(() => setSites([]))
+  }, [])
 
   useEffect(() => {
     Promise.all([
@@ -102,6 +126,10 @@ export default function RoomsPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (canPickSite && !formData.siteId) {
+      showToast('Select a site for this room', 'error')
+      return
+    }
     setIsSubmitting(true)
     try {
       const res = await apiRequest('/api/rooms', {
@@ -113,7 +141,7 @@ export default function RoomsPage() {
       const newRoom = await res.json()
       setRooms(prev => [...prev, newRoom])
       setShowForm(false)
-      setFormData({ name: '', description: '', floor: 'Ground Floor', type: 'BEDROOM' })
+      setFormData({ name: '', description: '', floor: 'Ground Floor', type: 'BEDROOM', siteId: '' })
       showToast('Room created successfully', 'success')
     } catch (error) {
       console.error('Error creating room:', error)
@@ -230,11 +258,15 @@ export default function RoomsPage() {
     )
   }
 
-  const bedrooms = rooms.filter(room => room.type === 'BEDROOM')
-  const otherRooms = rooms.filter(room => room.type !== 'BEDROOM')
+  // OP/DIRECTOR can narrow the list to a single site; managers only ever see their own.
+  const visibleRooms = canPickSite && siteFilter !== 'ALL'
+    ? rooms.filter(room => room.siteId === siteFilter)
+    : rooms
+  const bedrooms = visibleRooms.filter(room => room.type === 'BEDROOM')
+  const otherRooms = visibleRooms.filter(room => room.type !== 'BEDROOM')
   const filteredBedrooms = bedrooms.filter(room => room.floor === selectedFloor)
   const floors = Array.from(new Set(bedrooms.map(room => room.floor))).filter(Boolean)
-  const roomTypes = Array.from(new Set(rooms.map(room => room.type)))
+  const roomTypes = Array.from(new Set(visibleRooms.map(room => room.type)))
 
   // Room-category tabs only. The Schedules view lives on the right (next to Add Room)
   // because it's a distinct view, not a room type.
@@ -298,6 +330,18 @@ export default function RoomsPage() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          {canPickSite && sites.length > 0 && viewMode !== 'SCHEDULES' && (
+            <select
+              value={siteFilter}
+              onChange={(e) => setSiteFilter(e.target.value)}
+              className="px-3 py-2 rounded-lg text-[13px] font-medium outline-none transition-colors"
+              style={{ background: tc.tabInactiveBg, color: tc.tabInactiveText, border: `1px solid ${tc.inputBorder}` }}
+              aria-label="Filter rooms by site"
+            >
+              <option value="ALL">All sites</option>
+              {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          )}
           <button
             onClick={() => setViewMode('SCHEDULES')}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97]"
@@ -347,9 +391,9 @@ export default function RoomsPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {filteredBedrooms.map((room, i) => (
-                  <RoomCard key={room.id} room={room} tc={tc} delay={i * 0.04} onEdit={(room) => {
+                  <RoomCard key={room.id} room={room} tc={tc} delay={i * 0.04} showSite={canPickSite} onEdit={(room) => {
                     setSelectedRoom(room)
-                    setFormData({ name: room.name, description: room.description || '', floor: room.floor || 'Ground Floor', type: room.type })
+                    setFormData({ name: room.name, description: room.description || '', floor: room.floor || 'Ground Floor', type: room.type, siteId: room.siteId || '' })
                     setShowEditModal(true)
                   }} />
                 ))}
@@ -373,9 +417,9 @@ export default function RoomsPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {otherRooms.map((room, i) => (
-                  <RoomCard key={room.id} room={room} tc={tc} delay={i * 0.04} onEdit={(room) => {
+                  <RoomCard key={room.id} room={room} tc={tc} delay={i * 0.04} showSite={canPickSite} onEdit={(room) => {
                     setSelectedRoom(room)
-                    setFormData({ name: room.name, description: room.description || '', floor: room.floor || 'Ground Floor', type: room.type })
+                    setFormData({ name: room.name, description: room.description || '', floor: room.floor || 'Ground Floor', type: room.type, siteId: room.siteId || '' })
                     setShowEditModal(true)
                   }} />
                 ))}
@@ -559,6 +603,16 @@ export default function RoomsPage() {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {canPickSite && (
+                <FormField label="Site" tc={tc}>
+                  <select value={formData.siteId} onChange={(e) => setFormData(prev => ({ ...prev, siteId: e.target.value }))}
+                    className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                    style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}>
+                    <option value="">Select a site...</option>
+                    {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </FormField>
+              )}
               <FormField label="Room Name" tc={tc}>
                 <input type="text" required value={formData.name} onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
@@ -624,6 +678,16 @@ export default function RoomsPage() {
               </button>
             </div>
             <form onSubmit={handleEdit} className="space-y-4">
+              {canPickSite && (
+                <FormField label="Site" tc={tc}>
+                  <select value={formData.siteId} onChange={(e) => setFormData(prev => ({ ...prev, siteId: e.target.value }))}
+                    className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                    style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}>
+                    <option value="">Select a site...</option>
+                    {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </FormField>
+              )}
               <FormField label="Room Name" tc={tc}>
                 <input type="text" required value={formData.name} onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
@@ -761,9 +825,10 @@ interface RoomCardProps {
   tc: TC
   delay: number
   onEdit: (room: Room) => void
+  showSite?: boolean
 }
 
-function RoomCard({ room, tc, delay, onEdit }: RoomCardProps) {
+function RoomCard({ room, tc, delay, onEdit, showSite }: RoomCardProps) {
   const activeSchedules = room.schedules?.filter(s => s.status !== 'COMPLETED') || []
   const completedSchedules = room.schedules?.filter(s => s.status === 'COMPLETED') || []
   const accent = tc.accentGreen
@@ -784,7 +849,9 @@ function RoomCard({ room, tc, delay, onEdit }: RoomCardProps) {
           </div>
           <div className="min-w-0">
             <h3 className="text-[13px] font-semibold truncate" style={{ color: tc.textPrimary }}>{room.name}</h3>
-            <p className="text-[11px]" style={{ color: tc.textMuted }}>{room.floor}</p>
+            <p className="text-[11px] truncate" style={{ color: tc.textMuted }}>
+              {room.floor}{showSite && room.site ? ` · ${room.site.name}` : ''}
+            </p>
           </div>
         </div>
         <button type="button" aria-label="Edit room" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(room) }} className="w-10 h-10 -m-[9px] rounded transition-colors flex-shrink-0 flex items-center justify-center"

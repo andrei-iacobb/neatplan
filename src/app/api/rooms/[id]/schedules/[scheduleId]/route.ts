@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireAdmin } from '@/lib/authz'
+import { requireAdmin, canAccessSite } from '@/lib/authz'
 import { calculateNextDueDate } from '@/lib/schedule-utils'
 import { ScheduleStatus } from '@prisma/client'
 
@@ -32,11 +32,13 @@ export async function PATCH(
       const current = await tx.roomSchedule.findUnique({
         where: { id: roomScheduleId },
         include: {
-          room: { select: { name: true } },
+          room: { select: { name: true, siteId: true } },
           schedule: { select: { title: true } },
         },
       })
-      if (!current || current.roomId !== roomId) {
+      // 404 (not 403) on cross-site access so a manager can't probe another
+      // site's schedule ids, mirroring the by-id read routes.
+      if (!current || current.roomId !== roomId || !canAccessSite(auth.user, current.room?.siteId)) {
         return { notFound: true as const }
       }
 

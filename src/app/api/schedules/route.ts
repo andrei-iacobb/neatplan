@@ -1,18 +1,17 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAdmin, m2mSiteScopeWhere, resolveWriteSiteIds, visibleSiteRelationWhere } from '@/lib/authz'
 import { prisma } from '@/lib/db'
 
 // Get all schedules
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await requireAuth()
+    if ('error' in auth) return auth.error
 
     const schedules = await prisma.schedule.findMany({
+      where: m2mSiteScopeWhere(auth.user),
       include: {
+        sites: { where: visibleSiteRelationWhere(auth.user), select: { id: true, name: true } },
         tasks: true
       },
       orderBy: {
@@ -33,15 +32,16 @@ export async function GET() {
 // Create a new schedule manually
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    if (!(session.user as any).isAdmin) {
-      return NextResponse.json({ error: 'Forbidden: admin access required' }, { status: 403 })
-    }
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
 
-    const { title, tasks } = await req.json()
+    const { title, tasks, siteIds: requestedSiteIds, detectedFrequency, suggestedFrequency } = await req.json()
+
+    // Only accept a valid enum value for the AI-suggested frequency.
+    const validFrequencies = ['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY']
+    const safeSuggested = typeof suggestedFrequency === 'string' && validFrequencies.includes(suggestedFrequency)
+      ? suggestedFrequency as import('@prisma/client').ScheduleFrequency
+      : null
 
     if (!title) {
       return NextResponse.json(
@@ -50,9 +50,20 @@ export async function POST(req: Request) {
       )
     }
 
+    const siteIds = resolveWriteSiteIds(auth.user, requestedSiteIds)
+    if (siteIds.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one site is required to create a schedule' },
+        { status: 400 }
+      )
+    }
+
     const schedule = await prisma.schedule.create({
       data: {
         title,
+        detectedFrequency: typeof detectedFrequency === 'string' ? detectedFrequency.slice(0, 100) : null,
+        suggestedFrequency: safeSuggested,
+        sites: { connect: siteIds.map((id) => ({ id })) },
         tasks: {
           create: (tasks || []).map((t: any) => ({
             description: String(t.description || '').slice(0, 1000),
@@ -62,6 +73,7 @@ export async function POST(req: Request) {
         }
       },
       include: {
+        sites: { where: visibleSiteRelationWhere(auth.user), select: { id: true, name: true } },
         tasks: true
       }
     })

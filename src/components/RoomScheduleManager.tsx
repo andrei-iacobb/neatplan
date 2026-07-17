@@ -16,6 +16,7 @@ interface Schedule {
   id: string
   title: string
   tasks: { description: string }[]
+  sites?: { id: string; name: string }[]
 }
 
 interface RoomSchedule {
@@ -36,6 +37,7 @@ export function RoomScheduleManager({ roomId, onUpdate }: RoomScheduleManagerPro
   const { showToast } = useToast()
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [roomSchedules, setRoomSchedules] = useState<RoomSchedule[]>([])
+  const [roomSiteId, setRoomSiteId] = useState<string | null>(null)
   const [selectedSchedule, setSelectedSchedule] = useState('')
   const [selectedFrequency, setSelectedFrequency] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -47,7 +49,7 @@ export function RoomScheduleManager({ roomId, onUpdate }: RoomScheduleManagerPro
         const res = await apiRequest('/api/schedules')
         if (!res.ok) throw new Error('Failed to fetch schedules')
         const data = await res.json()
-        setSchedules(data)
+        setSchedules(Array.isArray(data) ? data : [])
       } catch (error) {
         console.error('Error fetching schedules:', error)
         showToast('Failed to fetch schedules', 'error')
@@ -56,6 +58,25 @@ export function RoomScheduleManager({ roomId, onUpdate }: RoomScheduleManagerPro
 
     fetchSchedules()
   }, [showToast])
+
+  // Fetch the room so we know which site it belongs to. A schedule can only be
+  // assigned to a room when the schedule is linked to that room's site.
+  useEffect(() => {
+    async function fetchRoom() {
+      try {
+        const res = await apiRequest(`/api/rooms/${roomId}`)
+        if (!res.ok) throw new Error('Failed to fetch room')
+        const data = await res.json()
+        setRoomSiteId(data?.siteId ?? null)
+      } catch (error) {
+        console.error('Error fetching room:', error)
+      }
+    }
+
+    if (roomId) {
+      fetchRoom()
+    }
+  }, [roomId])
 
   // Fetch room schedules
   useEffect(() => {
@@ -138,6 +159,12 @@ export function RoomScheduleManager({ roomId, onUpdate }: RoomScheduleManagerPro
     }
   }
 
+  // Only offer schedules linked to this room's site; the server rejects any
+  // off-site assignment, so filter the list to match that rule up front.
+  const availableSchedules = roomSiteId
+    ? schedules.filter(schedule => (schedule.sites ?? []).some(site => site.id === roomSiteId))
+    : schedules
+
   return (
     <div className="space-y-6">
       <div className="bg-gray-800/50 rounded-lg p-6 space-y-4">
@@ -151,11 +178,15 @@ export function RoomScheduleManager({ roomId, onUpdate }: RoomScheduleManagerPro
               <SelectValue placeholder="Select a schedule" />
             </SelectTrigger>
             <SelectContent>
-              {schedules.map(schedule => (
-                <SelectItem key={schedule.id} value={schedule.id}>
-                  {schedule.title}
-                </SelectItem>
-              ))}
+              {availableSchedules.length === 0 ? (
+                <div className="px-2 py-1.5 text-sm text-gray-400">No schedules available for this site.</div>
+              ) : (
+                availableSchedules.map(schedule => (
+                  <SelectItem key={schedule.id} value={schedule.id}>
+                    {schedule.title}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
 

@@ -11,6 +11,8 @@ import {
 } from 'lucide-react'
 import { apiRequest } from '@/lib/url-utils'
 import { useThemeColors } from '@/hooks/useThemeColors'
+import { useToast } from '@/components/ui/toast-context'
+import { canAccessAllSites } from '@/lib/roles'
 
 interface Equipment {
   id: string
@@ -23,6 +25,8 @@ interface Equipment {
   warrantyExpiry: string
   createdAt: string
   updatedAt: string
+  siteId?: string | null
+  site?: { id: string; name: string } | null
   scheduleCount: number
   totalTasks: number
   schedules: {
@@ -63,6 +67,12 @@ interface EquipmentFormData {
   name: string
   description: string
   type: string
+  siteId: string
+}
+
+interface Site {
+  id: string
+  name: string
 }
 
 const equipmentTypeIcons: { [key: string]: React.ReactNode } = {
@@ -97,10 +107,14 @@ export default function EquipmentPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const tc = useThemeColors()
+  const { showToast } = useToast()
+  // OP/DIRECTOR span every site and pick which one equipment belongs to;
+  // MANAGER/CLEANER are pinned, so the server forces their site.
+  const canPickSite = canAccessAllSites((session?.user as any)?.role)
+  const [sites, setSites] = useState<Site[]>([])
   const [equipment, setEquipment] = useState<Equipment[]>([])
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [typeFilter, setTypeFilter] = useState('all')
   const [showAddModal, setShowAddModal] = useState(false)
@@ -110,6 +124,7 @@ export default function EquipmentPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('EQUIPMENT')
+  const [siteFilter, setSiteFilter] = useState<string>('ALL')
   const [assignMode, setAssignMode] = useState<AssignMode>('QUICK')
   const [selectedSchedule, setSelectedSchedule] = useState<string>('')
   const [selectedFrequency, setSelectedFrequency] = useState<ScheduleFrequency>(ScheduleFrequency.WEEKLY)
@@ -121,7 +136,15 @@ export default function EquipmentPage() {
     name: '',
     description: '',
     type: 'OTHER',
+    siteId: '',
   })
+
+  useEffect(() => {
+    apiRequest('/api/sites')
+      .then(res => res.json())
+      .then(data => setSites(Array.isArray(data) ? data : []))
+      .catch(() => setSites([]))
+  }, [])
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -144,7 +167,7 @@ export default function EquipmentPage() {
         setIsLoading(false)
       }).catch(error => {
         console.error('Error fetching data:', error)
-        setError('Failed to load data')
+        showToast('Failed to load data', 'error')
         setIsLoading(false)
       })
     }
@@ -162,6 +185,7 @@ export default function EquipmentPage() {
       name: '',
       description: '',
       type: 'OTHER',
+      siteId: '',
     })
   }
 
@@ -175,7 +199,7 @@ export default function EquipmentPage() {
       setEquipment(data.equipment)
     } catch (error) {
       console.error('Error fetching equipment:', error)
-      setError('Failed to load equipment')
+      showToast('Failed to load equipment', 'error')
     } finally {
       setIsLoading(false)
     }
@@ -207,7 +231,7 @@ export default function EquipmentPage() {
       fetchEquipment()
     } catch (error) {
       console.error('Error assigning schedules:', error)
-      setError('Failed to assign schedules')
+      showToast('Failed to assign schedules', 'error')
     } finally {
       setIsAssigning(false)
     }
@@ -246,7 +270,7 @@ export default function EquipmentPage() {
       fetchEquipment()
     } catch (error) {
       console.error('Error assigning schedule:', error)
-      setError('Failed to assign schedule')
+      showToast('Failed to assign schedule', 'error')
     } finally {
       setIsAssigning(false)
     }
@@ -255,6 +279,10 @@ export default function EquipmentPage() {
   const handleAddEquipment = async (e: React.FormEvent) => {
     e.preventDefault()
     if (isSubmitting) return
+    if (canPickSite && !formData.siteId) {
+      showToast('Select a site for this equipment', 'error')
+      return
+    }
 
     try {
       setIsSubmitting(true)
@@ -274,7 +302,7 @@ export default function EquipmentPage() {
       resetForm()
       setSuccessMessage('Equipment added successfully!')
     } catch (error: any) {
-      setError(error.message)
+      showToast(error.message, 'error')
     } finally {
       setIsSubmitting(false)
     }
@@ -303,7 +331,7 @@ export default function EquipmentPage() {
       resetForm()
       setSuccessMessage('Equipment updated successfully!')
     } catch (error: any) {
-      setError(error.message)
+      showToast(error.message, 'error')
     } finally {
       setIsSubmitting(false)
     }
@@ -328,7 +356,7 @@ export default function EquipmentPage() {
       setSelectedEquipment(null)
       setSuccessMessage('Equipment deleted successfully!')
     } catch (error: any) {
-      setError(error.message)
+      showToast(error.message, 'error')
     } finally {
       setIsSubmitting(false)
     }
@@ -340,6 +368,7 @@ export default function EquipmentPage() {
       name: equip.name,
       description: equip.description || '',
       type: equip.type,
+      siteId: equip.siteId || '',
     })
     setShowEditModal(true)
   }
@@ -354,8 +383,9 @@ export default function EquipmentPage() {
                          equip.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (equip.model && equip.model.toLowerCase().includes(searchTerm.toLowerCase()))
     const matchesType = typeFilter === 'all' || equip.type === typeFilter
+    const matchesSite = !canPickSite || siteFilter === 'ALL' || equip.siteId === siteFilter
 
-    return matchesSearch && matchesType
+    return matchesSearch && matchesType && matchesSite
   })
 
   const types = [...new Set(equipment.map(e => e.type))].sort()
@@ -372,29 +402,6 @@ export default function EquipmentPage() {
             borderTopColor: 'rgb(16,185,129)',
           }}
         />
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <AlertCircle className="w-16 h-16 mx-auto mb-4" style={{ color: tc.accentRed }} />
-          <h2 className="text-xl font-semibold mb-2" style={{ color: tc.textPrimary }}>Error</h2>
-          <p style={{ color: tc.textMuted }}>{error}</p>
-          <button
-            onClick={() => { setError(null); fetchEquipment() }}
-            className="mt-4 px-4 py-2 rounded-lg transition-colors"
-            style={{
-              background: tc.btnPrimaryBg,
-              color: tc.btnPrimaryText,
-              border: '1px solid ' + tc.btnPrimaryBorder,
-            }}
-          >
-            Retry
-          </button>
-        </div>
       </div>
     )
   }
@@ -445,42 +452,62 @@ export default function EquipmentPage() {
       </div>
 
       {/* Controls */}
-      <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.05 }} className="flex justify-between items-center mb-4">
-        <div className="flex rounded-lg p-1" style={{ background: tc.surfaceBg, border: '1px solid ' + tc.cardBorder }}>
-          {(['EQUIPMENT', 'SCHEDULES'] as ViewMode[]).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => setViewMode(mode)}
-              className="px-4 py-2 rounded-md text-[13px] font-medium transition-all"
-              style={viewMode === mode ? {
-                background: tc.tabActiveBg,
-                color: tc.tabActiveText,
-                border: '1px solid ' + tc.tabActiveBorder,
-              } : {
-                background: 'transparent',
-                color: tc.tabInactiveText,
-                border: '1px solid transparent',
-              }}
-            >
-              {mode === 'EQUIPMENT' ? 'Equipment' : 'Assign Schedules'}
-            </button>
-          ))}
+      <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.05 }} className="flex flex-wrap justify-between items-center gap-2 mb-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setViewMode('EQUIPMENT')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-200"
+            style={viewMode === 'EQUIPMENT'
+              ? { background: tc.tabActiveBg, color: tc.tabActiveText, border: '1px solid ' + tc.tabActiveBorder }
+              : { background: tc.tabInactiveBg, color: tc.tabInactiveText, border: '1px solid transparent' }
+            }
+            onMouseEnter={(e) => { if (viewMode !== 'EQUIPMENT') { e.currentTarget.style.background = tc.tabInactiveHoverBg; e.currentTarget.style.color = tc.tabInactiveHoverText } }}
+            onMouseLeave={(e) => { if (viewMode !== 'EQUIPMENT') { e.currentTarget.style.background = tc.tabInactiveBg; e.currentTarget.style.color = tc.tabInactiveText } }}
+          >
+            <Wrench className="w-3.5 h-3.5" />
+            Equipment
+          </button>
         </div>
-
-        <button
-          onClick={() => { resetForm(); setShowAddModal(true) }}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors"
-          style={{
-            background: tc.btnPrimaryBg,
-            color: tc.btnPrimaryText,
-            border: '1px solid ' + tc.btnPrimaryBorder,
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}
-        >
-          <Plus className="w-4 h-4" />
-          Add Equipment
-        </button>
+        <div className="flex items-center gap-2">
+          {canPickSite && sites.length > 0 && viewMode !== 'SCHEDULES' && (
+            <select
+              value={siteFilter}
+              onChange={(e) => setSiteFilter(e.target.value)}
+              className="px-3 py-2 rounded-lg text-[13px] font-medium outline-none transition-colors"
+              style={{ background: tc.tabInactiveBg, color: tc.tabInactiveText, border: '1px solid ' + tc.inputBorder }}
+              aria-label="Filter equipment by site"
+            >
+              <option value="ALL">All sites</option>
+              {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          )}
+          <button
+            onClick={() => setViewMode('SCHEDULES')}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97]"
+            style={viewMode === 'SCHEDULES'
+              ? { background: tc.tabActiveBg, color: tc.tabActiveText, border: '1px solid ' + tc.tabActiveBorder }
+              : { background: tc.tabInactiveBg, color: tc.tabInactiveText, border: '1px solid transparent' }
+            }
+            onMouseEnter={(e) => { if (viewMode !== 'SCHEDULES') { e.currentTarget.style.background = tc.tabInactiveHoverBg; e.currentTarget.style.color = tc.tabInactiveHoverText } }}
+            onMouseLeave={(e) => { if (viewMode !== 'SCHEDULES') { e.currentTarget.style.background = tc.tabInactiveBg; e.currentTarget.style.color = tc.tabInactiveText } }}
+            aria-pressed={viewMode === 'SCHEDULES'}
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            Assign Schedules
+          </button>
+          {viewMode !== 'SCHEDULES' && (
+            <button
+              onClick={() => { resetForm(); setShowAddModal(true) }}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97]"
+              style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: '1px solid ' + tc.btnPrimaryBorder }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}
+            >
+              <Plus className="w-4 h-4" />
+              Add Equipment
+            </button>
+          )}
+        </div>
       </motion.div>
 
       {/* Filters */}
@@ -791,6 +818,12 @@ export default function EquipmentPage() {
                   <span style={{ color: tc.textMuted }}>Type:</span>
                   <span className="ml-2" style={{ color: tc.textSecondary }}>{equip.type.replace('_', ' ')}</span>
                 </div>
+                {canPickSite && equip.site && (
+                  <div className="text-sm">
+                    <span style={{ color: tc.textMuted }}>Site:</span>
+                    <span className="ml-2" style={{ color: tc.textSecondary }}>{equip.site.name}</span>
+                  </div>
+                )}
                 {equip.model && (
                   <div className="text-sm">
                     <span style={{ color: tc.textMuted }}>Model:</span>
@@ -875,6 +908,22 @@ export default function EquipmentPage() {
                 </div>
 
                 <form onSubmit={handleAddEquipment} className="space-y-4">
+                  {canPickSite && (
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
+                        Site *
+                      </label>
+                      <select
+                        value={formData.siteId}
+                        onChange={(e) => setFormData({ ...formData, siteId: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                        style={selectStyle}
+                      >
+                        <option value="">Select a site...</option>
+                        {sites.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      </select>
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
                       Name *
@@ -990,6 +1039,22 @@ export default function EquipmentPage() {
                 </div>
 
                 <form onSubmit={handleEditEquipment} className="space-y-4">
+                  {canPickSite && (
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
+                        Site *
+                      </label>
+                      <select
+                        value={formData.siteId}
+                        onChange={(e) => setFormData({ ...formData, siteId: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                        style={selectStyle}
+                      >
+                        <option value="">Select a site...</option>
+                        {sites.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      </select>
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
                       Name *

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAdmin, siteScopeWhere, resolveWriteSiteId } from '@/lib/authz'
 import { prisma } from '@/lib/db'
 import { Prisma, RoomType } from '@prisma/client'
 import * as z from 'zod'
@@ -9,21 +8,18 @@ const roomSchema = z.object({
   name: z.string().min(1, 'Room name is required'),
   description: z.string().optional(),
   floor: z.string().optional(),
-  type: z.enum(['OFFICE', 'MEETING_ROOM', 'BATHROOM', 'KITCHEN', 'LOBBY', 'STORAGE', 'BEDROOM', 'LOUNGE', 'OTHER'])
+  type: z.enum(['OFFICE', 'MEETING_ROOM', 'BATHROOM', 'KITCHEN', 'LOBBY', 'STORAGE', 'BEDROOM', 'LOUNGE', 'OTHER']),
+  siteId: z.string().optional()
 })
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
+    const auth = await requireAuth()
+    if ('error' in auth) return auth.error
 
     const rooms = await prisma.room.findMany({
+      where: siteScopeWhere(auth.user),
+      include: { site: { select: { id: true, name: true } } },
       orderBy: {
         createdAt: 'desc'
       }
@@ -40,28 +36,27 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    if (!(session.user as any).isAdmin) {
-      return NextResponse.json({ error: 'Forbidden: admin access required' }, { status: 403 })
-    }
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
 
     const body = await req.json()
-    const { name, description, floor, type } = roomSchema.parse(body)
+    const { name, description, floor, type, siteId: requestedSiteId } = roomSchema.parse(body)
+
+    const siteId = resolveWriteSiteId(auth.user, requestedSiteId)
+    if (!siteId) {
+      return NextResponse.json(
+        { error: 'A site is required to create a room' },
+        { status: 400 }
+      )
+    }
 
     const room = await prisma.room.create({
       data: {
         name,
         description,
         floor,
-        type: type as RoomType
+        type: type as RoomType,
+        siteId
       }
     })
 

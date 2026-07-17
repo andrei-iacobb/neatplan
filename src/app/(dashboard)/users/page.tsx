@@ -7,25 +7,44 @@ import * as z from 'zod'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Edit, Trash2, UserPlus, Shield, User as UserIcon, X, AlertTriangle, Users, Sparkles } from 'lucide-react'
-import { useToast } from '@/components/ui/use-toast'
+import { Edit, Trash2, UserPlus, X, AlertTriangle, Sparkles, Building2 } from 'lucide-react'
+import { useToast } from '@/components/ui/toast-context'
 import { apiRequest } from '@/lib/url-utils'
 import { useThemeColors } from '@/hooks/useThemeColors'
+import { ALL_ROLES, ROLE_LABELS, isManagementRole, requiresSite, roleRank, type Role } from '@/lib/roles'
 
 const userSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters').optional().or(z.literal('')),
-  isAdmin: z.boolean(),
+  password: z.string()
+    .refine(
+      (v) => v === '' || (v.length >= 8 && /[A-Z]/.test(v) && /[a-z]/.test(v) && /[0-9]/.test(v) && /[^A-Za-z0-9]/.test(v)),
+      'Min 8 chars incl. uppercase, lowercase, number & special character'
+    )
+    .optional().or(z.literal('')),
+  role: z.enum(['OP', 'DIRECTOR', 'MANAGER', 'CLEANER']),
+  siteId: z.string().optional().or(z.literal('')),
+}).superRefine((data, ctx) => {
+  if (requiresSite(data.role) && !data.siteId) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['siteId'], message: 'A site is required for this role' })
+  }
 })
 
 type UserFormData = z.infer<typeof userSchema>
+
+interface Site {
+  id: string
+  name: string
+}
 
 interface User {
   id: string
   name: string
   email: string
   isAdmin: boolean
+  role: Role
+  siteId?: string | null
+  site?: Site | null
   isBlocked?: boolean
   forcePasswordChange?: boolean
   temporaryUnblockUntil?: string | null
@@ -35,28 +54,39 @@ type ThemeColors = ReturnType<typeof useThemeColors>
 
 const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } }
 
-function UserFormModal({ user, onClose, onSave, tc }: { user: Partial<User> | null, onClose: () => void, onSave: (data: any) => void, tc: ThemeColors }) {
-  const { toast } = useToast()
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<UserFormData>({
+function UserFormModal({ user, onClose, onSave, tc, sites, sessionRole }: { user: Partial<User> | null, onClose: () => void, onSave: (data: any) => void, tc: ThemeColors, sites: Site[], sessionRole?: Role }) {
+  const { showToast } = useToast()
+
+  // Roles the current user is allowed to assign. OP may assign any role; anyone
+  // else may only assign roles strictly below their own rank.
+  const assignableRoles = ALL_ROLES.filter((r) => sessionRole === 'OP' || roleRank(r) < roleRank(sessionRole))
+  // When editing a user whose current role sits above what we may normally
+  // assign (e.g. viewing your own account), keep it selectable for display.
+  const currentRole = user?.role as Role | undefined
+  const roleOptions: Role[] = user?.id && currentRole && !assignableRoles.includes(currentRole)
+    ? [currentRole, ...assignableRoles]
+    : assignableRoles
+  const defaultRole: Role = currentRole ?? assignableRoles[assignableRoles.length - 1] ?? 'CLEANER'
+
+  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: {
       name: user?.name || '',
       email: user?.email || '',
       password: '',
-      isAdmin: user?.isAdmin || false,
+      role: defaultRole,
+      siteId: user?.siteId || '',
     },
   })
+
+  const watchedRole = watch('role')
 
   const onSubmit = async (data: UserFormData) => {
     try {
       await onSave(data)
       onClose()
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to save user.',
-        variant: 'destructive'
-      })
+      showToast(error.message || 'Failed to save user.', 'error')
     }
   }
 
@@ -118,13 +148,47 @@ function UserFormModal({ user, onClose, onSave, tc }: { user: Partial<User> | nu
                 onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
                 onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
               />
-              {errors.password && <p className="text-[12px] mt-1" style={{ color: tc.statusOverdue.text }}>{errors.password.message}</p>}
+              {errors.password
+                ? <p className="text-[12px] mt-1" style={{ color: tc.statusOverdue.text }}>{errors.password.message}</p>
+                : <p className="text-[11px] mt-1" style={{ color: tc.textMuted }}>{user?.id ? 'Leave blank to keep current password.' : 'Min 8 chars with uppercase, lowercase, number & special character.'}</p>}
             </div>
 
-            <div className="flex items-center gap-2">
-              <input type="checkbox" {...register('isAdmin')} id="isAdmin" className="h-4 w-4 rounded accent-emerald-500" />
-              <label htmlFor="isAdmin" className="text-[13px]" style={{ color: tc.textSecondary }}>Administrator</label>
+            <div>
+              <label htmlFor="role" className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>Role</label>
+              <select
+                {...register('role')}
+                id="role"
+                className="w-full p-2.5 rounded-lg text-[14px] outline-none transition-colors"
+                style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
+                onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
+                onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
+              >
+                {roleOptions.map((r) => (
+                  <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                ))}
+              </select>
+              {errors.role && <p className="text-[12px] mt-1" style={{ color: tc.statusOverdue.text }}>{errors.role.message}</p>}
             </div>
+
+            {requiresSite(watchedRole) && (
+              <div>
+                <label htmlFor="siteId" className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>Site</label>
+                <select
+                  {...register('siteId')}
+                  id="siteId"
+                  className="w-full p-2.5 rounded-lg text-[14px] outline-none transition-colors"
+                  style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
+                  onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
+                  onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
+                >
+                  <option value="">Select a site...</option>
+                  {sites.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+                {errors.siteId && <p className="text-[12px] mt-1" style={{ color: tc.statusOverdue.text }}>{errors.siteId.message}</p>}
+              </div>
+            )}
           </div>
           <div className="flex justify-end gap-3 mt-8">
             <button
@@ -217,15 +281,17 @@ function DeleteConfirmationModal({ user, onClose, onConfirm, tc }: { user: User,
 export default function UsersPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const { toast } = useToast()
+  const { showToast } = useToast()
   const tc = useThemeColors()
   const [users, setUsers] = useState<User[]>([])
+  const [sites, setSites] = useState<Site[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<Partial<User> | null>(null)
   const [deletingUser, setDeletingUser] = useState<User | null>(null)
   const [hoveredRow, setHoveredRow] = useState<string | null>(null)
+
+  const sessionRole = session?.user?.role as Role | undefined
 
   const fetchUsers = async () => {
     setIsLoading(true)
@@ -235,9 +301,20 @@ export default function UsersPage() {
       const data = await res.json()
       setUsers(data)
     } catch (e: any) {
-      setError(e.message)
+      showToast(e.message || 'Failed to load users', 'error')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchSites = async () => {
+    try {
+      const res = await apiRequest('/api/sites')
+      if (!res.ok) return
+      const data = await res.json()
+      setSites(data)
+    } catch {
+      // Non-fatal: the site selector just stays empty.
     }
   }
 
@@ -247,6 +324,7 @@ export default function UsersPage() {
         router.replace('/clean')
       } else {
         fetchUsers()
+        fetchSites()
       }
     }
   }, [status, session, router])
@@ -257,10 +335,12 @@ export default function UsersPage() {
     const method = isEditing ? 'PUT' : 'POST'
 
     // Don't send empty password field on edit unless it's being changed
-    const payload = { ...data };
+    const payload: Record<string, unknown> = { ...data };
     if (isEditing && !payload.password) {
       delete payload.password;
     }
+    // OP/DIRECTOR span every site; force siteId to null for them.
+    payload.siteId = requiresSite(data.role) ? (data.siteId || null) : null;
 
     const res = await fetch(url, {
       method,
@@ -273,10 +353,7 @@ export default function UsersPage() {
       throw new Error(errorData.error || 'Failed to save user')
     }
 
-    toast({
-      title: 'Success',
-      description: `User ${isEditing ? 'updated' : 'created'} successfully.`,
-    })
+    showToast(`User ${isEditing ? 'updated' : 'created'} successfully.`, 'success')
 
     setIsModalOpen(false)
     setEditingUser(null)
@@ -292,11 +369,11 @@ export default function UsersPage() {
         const errorData = await res.json()
         throw new Error(errorData.error || 'Failed to delete user.')
       }
-      toast({ title: 'Success', description: 'User deleted successfully.' })
+      showToast('User deleted successfully.', 'success')
       setDeletingUser(null)
       fetchUsers()
     } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' })
+      showToast(e.message, 'error')
     }
   }
 
@@ -304,22 +381,6 @@ export default function UsersPage() {
     <div className="flex items-center justify-center min-h-[60vh]">
       <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
         className="w-8 h-8 rounded-full border-2 border-transparent" style={{ borderTopColor: 'rgb(16,185,129)', borderRightColor: 'rgba(16,185,129,0.3)' }} />
-    </div>
-  )
-
-  if (error) return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="text-center">
-        <AlertTriangle className="w-12 h-12 mx-auto mb-3" style={{ color: 'rgb(239,68,68)' }} />
-        <p className="text-[13px] mb-4" style={{ color: tc.textMuted }}>{error}</p>
-        <button
-          onClick={fetchUsers}
-          className="px-5 py-2 text-[13px] rounded-lg font-medium"
-          style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: '1px solid ' + tc.btnPrimaryBorder }}
-        >
-          Retry
-        </button>
-      </div>
     </div>
   )
 
@@ -358,6 +419,7 @@ export default function UsersPage() {
                 <tr style={{ background: tc.tableHeaderBg }}>
                   <th scope="col" className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider" style={{ color: tc.textMuted, borderBottom: '1px solid ' + tc.tableDivider }}>Name</th>
                   <th scope="col" className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider" style={{ color: tc.textMuted, borderBottom: '1px solid ' + tc.tableDivider }}>Role</th>
+                  <th scope="col" className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider" style={{ color: tc.textMuted, borderBottom: '1px solid ' + tc.tableDivider }}>Site</th>
                   <th scope="col" className="relative px-6 py-3" style={{ borderBottom: '1px solid ' + tc.tableDivider }}><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
@@ -395,20 +457,30 @@ export default function UsersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap" style={{ borderBottom: i < users.length - 1 ? '1px solid ' + tc.tableDivider : 'none' }}>
-                      {user.isAdmin ? (
+                      {isManagementRole(user.role) ? (
                         <span
                           className="px-2.5 py-0.5 inline-flex text-[11px] leading-5 font-semibold rounded-full"
                           style={{ background: tc.statusCompleted.bg, color: tc.statusCompleted.text, border: '1px solid ' + tc.statusCompleted.border }}
                         >
-                          Admin
+                          {ROLE_LABELS[user.role]}
                         </span>
                       ) : (
                         <span
                           className="px-2.5 py-0.5 inline-flex text-[11px] leading-5 font-semibold rounded-full"
                           style={{ background: tc.btnSecondaryBg, color: tc.btnSecondaryText, border: '1px solid ' + tc.btnSecondaryBorder }}
                         >
-                          Cleaner
+                          {ROLE_LABELS[user.role]}
                         </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap" style={{ borderBottom: i < users.length - 1 ? '1px solid ' + tc.tableDivider : 'none' }}>
+                      {user.site?.name ? (
+                        <span className="inline-flex items-center gap-1.5 text-[12px]" style={{ color: tc.textSecondary }}>
+                          <Building2 className="w-3.5 h-3.5" style={{ color: tc.textMuted }} />
+                          {user.site.name}
+                        </span>
+                      ) : (
+                        <span className="text-[12px]" style={{ color: tc.textMuted }}>All sites</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" style={{ borderBottom: i < users.length - 1 ? '1px solid ' + tc.tableDivider : 'none' }}>
@@ -428,10 +500,10 @@ export default function UsersPage() {
                               try {
                                 const res = await apiRequest(`/api/users/${user.id}/unblock`, { method: 'POST' })
                                 if (!res.ok) throw new Error('Failed to unblock user')
-                                toast({ description: 'User unblocked for 10 minutes. Must change password on next login.' })
+                                showToast('User unblocked for 10 minutes. Must change password on next login.', 'success')
                                 fetchUsers()
                               } catch (e: any) {
-                                toast({ description: e.message, variant: 'destructive' })
+                                showToast(e.message, 'error')
                               }
                             }}
                             className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors"
@@ -451,10 +523,10 @@ export default function UsersPage() {
                                   body: JSON.stringify({ isBlocked: true })
                                 })
                                 if (!res.ok) throw new Error('Failed to block user')
-                                toast({ description: 'User blocked' })
+                                showToast('User blocked', 'success')
                                 fetchUsers()
                               } catch (e: any) {
-                                toast({ description: e.message, variant: 'destructive' })
+                                showToast(e.message, 'error')
                               }
                             }}
                             className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors"
@@ -485,7 +557,7 @@ export default function UsersPage() {
       </div>
 
       <AnimatePresence>
-        {isModalOpen && <UserFormModal user={editingUser} onClose={() => setIsModalOpen(false)} onSave={handleSaveUser} tc={tc} />}
+        {isModalOpen && <UserFormModal user={editingUser} onClose={() => setIsModalOpen(false)} onSave={handleSaveUser} tc={tc} sites={sites} sessionRole={sessionRole} />}
         {deletingUser && <DeleteConfirmationModal user={deletingUser} onClose={() => setDeletingUser(null)} onConfirm={handleDeleteUser} tc={tc} />}
       </AnimatePresence>
     </>

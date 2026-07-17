@@ -15,7 +15,6 @@ import {
   AlertTriangle,
   RefreshCw
 } from 'lucide-react'
-import { useSoundEffects } from '@/hooks/useSoundEffects'
 
 interface SMTPConfig {
   host: string
@@ -84,7 +83,6 @@ const emailProviders = [
 ]
 
 export function SMTPConfiguration() {
-  const { playSound } = useSoundEffects()
   const [config, setConfig] = useState<SMTPConfig>(defaultConfig)
   const [selectedProvider, setSelectedProvider] = useState('Custom')
   const [showPassword, setShowPassword] = useState(false)
@@ -113,7 +111,6 @@ export function SMTPConfiguration() {
   }
 
   const handleProviderChange = (providerName: string) => {
-    playSound('click')
     setSelectedProvider(providerName)
     const provider = emailProviders.find(p => p.name === providerName)
     if (provider && providerName !== 'Custom') {
@@ -135,7 +132,6 @@ export function SMTPConfiguration() {
 
   const handleSave = async () => {
     setIsLoading(true)
-    playSound('click')
     
     try {
       const response = await fetch('/api/admin/smtp-config', {
@@ -145,15 +141,12 @@ export function SMTPConfiguration() {
       })
 
       if (response.ok) {
-        playSound('success')
         setTestResult({ success: true, message: 'SMTP configuration saved successfully!' })
       } else {
-        playSound('error')
         const error = await response.json()
         setTestResult({ success: false, message: error.message || 'Failed to save configuration' })
       }
     } catch (error) {
-      playSound('error')
       setTestResult({ success: false, message: 'Network error occurred' })
     } finally {
       setIsLoading(false)
@@ -163,7 +156,6 @@ export function SMTPConfiguration() {
 
   const handleTest = async () => {
     setIsTesting(true)
-    playSound('click')
 
     try {
       const response = await fetch('/api/admin/smtp-test', {
@@ -175,14 +167,11 @@ export function SMTPConfiguration() {
       const result = await response.json()
       
       if (result.success) {
-        playSound('success')
         setTestResult({ success: true, message: 'Test email sent successfully! Check your inbox.' })
       } else {
-        playSound('error')
         setTestResult({ success: false, message: result.message || 'Test failed' })
       }
     } catch (error) {
-      playSound('error')
       setTestResult({ success: false, message: 'Network error occurred' })
     } finally {
       setIsTesting(false)

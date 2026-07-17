@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireAuth } from '@/lib/authz'
+import { requireAuth, nestedSiteScopeWhere } from '@/lib/authz'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -13,6 +13,7 @@ export async function GET() {
     // Status transitions (COMPLETED -> PENDING re-arm, PENDING -> OVERDUE) are
     // handled by runScheduleCheck() via the scheduler/cron - GET stays read-only.
     const roomSchedules = await prisma.roomSchedule.findMany({
+      where: nestedSiteScopeWhere(auth.user, 'room'),
       include: {
         schedule: true
       },

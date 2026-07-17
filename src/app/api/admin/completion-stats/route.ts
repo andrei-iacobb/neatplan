@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { canAccessAllSites } from '@/lib/roles'
+import { siteScopeWhere } from '@/lib/authz'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +26,12 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // MANAGERs are limited to their own site; OP/DIRECTOR count across every site.
+    const user = session.user
+    const scoped = !canAccessAllSites(user.role)
+    const roomLogSiteWhere = scoped ? { roomSchedule: { room: siteScopeWhere(user) } } : {}
+    const equipLogSiteWhere = scoped ? { equipmentSchedule: { equipment: siteScopeWhere(user) } } : {}
+
     const today = startOfDay(new Date())
     const days: string[] = []
     const counts: number[] = []
@@ -35,10 +43,10 @@ export async function GET() {
 
       const [roomCount, equipmentCount] = await Promise.all([
         prisma.roomScheduleCompletionLog.count({
-          where: { completedAt: { gte: dayStart, lt: dayEnd } }
+          where: { completedAt: { gte: dayStart, lt: dayEnd }, ...roomLogSiteWhere }
         }),
         prisma.equipmentScheduleCompletionLog.count({
-          where: { completedAt: { gte: dayStart, lt: dayEnd } }
+          where: { completedAt: { gte: dayStart, lt: dayEnd }, ...equipLogSiteWhere }
         })
       ])
 

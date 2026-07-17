@@ -1,32 +1,45 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
-import { UserRole } from '@prisma/client'
 import { prisma } from '@/lib/db'
+import { requireAdmin, resolveWriteSiteId, siteScopeWhere } from '@/lib/authz'
+import { ALL_ROLES, isManagementRole, requiresSite, roleRank, type Role } from '@/lib/roles'
 
-export async function GET(request: Request) {
+/** Narrow an arbitrary value to a valid Role. */
+function isRole(value: unknown): value is Role {
+  return typeof value === 'string' && (ALL_ROLES as string[]).includes(value)
+}
+
+/**
+ * Whether `actorRole` is allowed to assign/manage `targetRole`.
+ * OP may assign anything; everyone else may only touch roles strictly below
+ * their own rank (a MANAGER can manage CLEANERs, a DIRECTOR can manage
+ * MANAGER/CLEANER but never DIRECTOR or OP).
+ */
+function canAssignRole(actorRole: string | null | undefined, targetRole: Role): boolean {
+  if (actorRole === 'OP') return true
+  return roleRank(targetRole) < roleRank(actorRole)
+}
+
+export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.isAdmin) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
+    const actor = auth.user
 
     const users = await prisma.user.findMany({
+      where: siteScopeWhere(actor),
       select: {
         id: true,
         name: true,
         email: true,
         isAdmin: true,
         role: true,
+        siteId: true,
+        site: { select: { id: true, name: true } },
         isBlocked: true,
         forcePasswordChange: true,
         temporaryUnblockUntil: true,
-      }
+      },
     })
 
     return NextResponse.json(users)
@@ -42,22 +55,30 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.isAdmin) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
+    const actor = auth.user
 
     const body = await request.json()
-    const { name, email, password, isAdmin } = body
+    const { name, email, password, role, siteId } = body
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !role) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
+      )
+    }
+
+    // Validate role
+    if (!isRole(role)) {
+      return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+    }
+
+    // Only allow assigning roles the actor has authority over.
+    if (!canAssignRole(actor.role, role)) {
+      return NextResponse.json(
+        { error: 'You are not allowed to assign this role' },
+        { status: 403 }
       )
     }
 
@@ -88,6 +109,19 @@ export async function POST(request: Request) {
       )
     }
 
+    // Resolve the site the new user belongs to. MANAGER/CLEANER must have one;
+    // OP/DIRECTOR span every site and are forced to null.
+    let resolvedSiteId: string | null = null
+    if (requiresSite(role)) {
+      resolvedSiteId = resolveWriteSiteId(actor, siteId)
+      if (!resolvedSiteId) {
+        return NextResponse.json(
+          { error: 'A site is required for Manager and Cleaner roles' },
+          { status: 400 }
+        )
+      }
+    }
+
     // Hash the password before saving
     const hashedPassword = await bcrypt.hash(password, 12)
 
@@ -96,8 +130,9 @@ export async function POST(request: Request) {
         name,
         email,
         password: hashedPassword,
-        isAdmin,
-        role: isAdmin ? UserRole.ADMIN : UserRole.CLEANER,
+        role,
+        isAdmin: isManagementRole(role),
+        siteId: resolvedSiteId,
       }
     })
 
@@ -115,4 +150,4 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
-} 
+}
