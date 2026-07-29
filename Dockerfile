@@ -23,6 +23,12 @@ WORKDIR /app
 # install outright with ERR_PNPM_IGNORED_BUILDS.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
+# The schema has to land before the install: package.json runs `prisma generate` as a
+# postinstall hook, and without prisma/ present it fails with "Could not find Prisma
+# Schema". Copied separately from the rest of the source so the dependency layer still
+# caches on the manifests and schema alone.
+COPY prisma ./prisma
+
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
