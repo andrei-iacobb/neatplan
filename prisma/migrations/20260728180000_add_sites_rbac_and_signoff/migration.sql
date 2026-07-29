@@ -1,7 +1,7 @@
 -- AlterEnum
 BEGIN;
 CREATE TYPE "UserRole_new" AS ENUM ('OP', 'DIRECTOR', 'MANAGER', 'CLEANER');
-ALTER TABLE "public"."users" ALTER COLUMN "role" DROP DEFAULT;
+ALTER TABLE "users" ALTER COLUMN "role" DROP DEFAULT;
 -- The legacy enum was ('ADMIN', 'CLEANER'). ADMIN meant unrestricted administrative
 -- access, which the new hierarchy calls OP. Remap via text before the cast - casting
 -- straight to the new type rejects every ADMIN row and fails the whole migration.
@@ -10,7 +10,7 @@ UPDATE "users" SET "role" = 'OP' WHERE "role" = 'ADMIN';
 ALTER TABLE "users" ALTER COLUMN "role" TYPE "UserRole_new" USING ("role"::"UserRole_new");
 ALTER TYPE "UserRole" RENAME TO "UserRole_old";
 ALTER TYPE "UserRole_new" RENAME TO "UserRole";
-DROP TYPE "public"."UserRole_old";
+DROP TYPE "UserRole_old";
 ALTER TABLE "users" ALTER COLUMN "role" SET DEFAULT 'CLEANER';
 COMMIT;
 
