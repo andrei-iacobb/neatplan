@@ -2,8 +2,11 @@
 FROM node:20-alpine
 
 # Add necessary packages for Prisma and database tools
+# pnpm is pinned deliberately. An unpinned `npm install -g pnpm` silently moved from 10
+# to 11 between builds, and 11 changed how install scripts are approved - a green build
+# in July failed in July on identical application code.
 RUN apk add --no-cache libc6-compat openssl postgresql-client && \
-    npm install -g pnpm
+    npm install -g pnpm@11.17.0
 
 # Create a non-root user and group
 RUN addgroup -g 1001 -S nodejs && \
@@ -12,7 +15,10 @@ RUN addgroup -g 1001 -S nodejs && \
 WORKDIR /app
 
 # Copy package files
-COPY package.json pnpm-lock.yaml ./
+# pnpm-workspace.yaml carries onlyBuiltDependencies. Without it in the build context
+# pnpm ignores the postinstall scripts for prisma, sharp and esbuild and then fails the
+# install outright with ERR_PNPM_IGNORED_BUILDS.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
