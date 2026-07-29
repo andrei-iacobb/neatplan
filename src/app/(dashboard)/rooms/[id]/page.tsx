@@ -5,12 +5,12 @@ import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useToast } from '@/components/ui/toast-context'
 import { useThemeColors } from '@/hooks/useThemeColors'
-import { Loader2, Calendar, CheckCircle2, X, Trash2, Pencil, Sparkles } from 'lucide-react'
+import { Calendar, CheckCircle2, X, Trash2, Pencil, Sparkles } from 'lucide-react'
 import { ScheduleFrequency, ScheduleStatus } from '@prisma/client'
 import { getFrequencyLabel, getScheduleDisplayName } from '@/lib/schedule-utils'
 import { apiRequest } from '@/lib/url-utils'
-
-const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } }
+import { fadeUp, enter } from '@/lib/motion'
+import { PageLoading, Spinner } from '@/components/ui/loading'
 
 interface Room {
   id: string
@@ -18,6 +18,7 @@ interface Room {
   description?: string
   floor?: string
   type: string
+  siteId?: string | null
 }
 
 interface Schedule {
@@ -26,6 +27,7 @@ interface Schedule {
   detectedFrequency?: string
   suggestedFrequency?: ScheduleFrequency
   tasks: { id: string; description: string }[]
+  sites?: { id: string; name: string }[]
 }
 
 interface RoomSchedule {
@@ -112,7 +114,13 @@ export default function RoomDetailsPage() {
         })
       })
 
-      if (!response.ok) throw new Error('Failed to assign schedule')
+      if (!response.ok) {
+        // The server explains exactly why (wrong site, missing frequency, already
+        // assigned). Throwing a generic message here hid that and made every failure
+        // look identical.
+        const body = await response.json().catch(() => null)
+        throw new Error(body?.error || 'Failed to assign schedule')
+      }
 
       const newRoomSchedule = await response.json()
       setRoomSchedules(prev => [...prev, newRoomSchedule])
@@ -121,7 +129,7 @@ export default function RoomDetailsPage() {
       setSelectedFrequency(ScheduleFrequency.WEEKLY)
     } catch (error) {
       console.error('Error assigning schedule:', error)
-      showToast('Failed to assign schedule', 'error')
+      showToast(error instanceof Error ? error.message : 'Failed to assign schedule', 'error')
     } finally {
       setIsAssigning(false)
     }
@@ -202,9 +210,8 @@ export default function RoomDetailsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
-          className="w-8 h-8 rounded-full border-2 border-transparent" style={{ borderTopColor: 'rgb(16,185,129)', borderRightColor: 'rgba(16,185,129,0.3)' }} />
+      <div className="max-w-[1100px] mx-auto relative z-10 pb-8">
+        <PageLoading cards={2} columns={1} label="Loading room" />
       </div>
     )
   }
@@ -223,12 +230,18 @@ export default function RoomDetailsPage() {
     return tc.statusPending
   }
 
-  const selectedScheduleObj = schedules.find(s => s.id === selectedSchedule)
+  // Only schedules linked to THIS room's site can be assigned - the API enforces it and
+  // returns 400 otherwise. Offering the rest just invites a guaranteed failure, which is
+  // exactly what happened when two sites each had a schedule of the same name.
+  const assignableSchedules = schedules.filter(
+    (s) => !s.sites?.length || s.sites.some((site) => site.id === room?.siteId)
+  )
+  const selectedScheduleObj = assignableSchedules.find(s => s.id === selectedSchedule)
 
   return (
     <div className="max-w-[1100px] mx-auto relative z-10 pb-8">
       {/* Page Header */}
-      <motion.div {...fadeUp} transition={{ duration: 0.4 }} className="mb-10">
+      <motion.div {...fadeUp} transition={enter()} className="mb-10">
         <div className="flex flex-wrap justify-between items-start gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -260,18 +273,18 @@ export default function RoomDetailsPage() {
 
       <div className="space-y-4">
         {/* Assign New Schedule Section */}
-        <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.1 }}
+        <motion.div {...fadeUp} transition={enter(1)}
           className="rounded-xl p-5"
           style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}
         >
           <h2 className="text-[15px] font-semibold mb-4" style={{ color: tc.textPrimary }}>Assign New Schedule</h2>
-          {schedules.length === 0 ? (
+          {assignableSchedules.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8">
               <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3" style={{ background: tc.emptyBg }}>
                 <Calendar className="w-5 h-5" style={{ color: tc.textFaint }} />
               </div>
-              <p className="text-[13px] font-medium" style={{ color: tc.textMuted }}>No schedules available</p>
-              <p className="text-[11px] mt-1" style={{ color: tc.textFaint }}>Upload a schedule from the Schedules page, then assign it here</p>
+              <p className="text-[13px] font-medium" style={{ color: tc.textMuted }}>No schedules available for this site</p>
+              <p className="text-[11px] mt-1" style={{ color: tc.textFaint }}>Create a schedule on the Schedules page and link it to this room&apos;s site, then assign it here</p>
             </div>
           ) : (
             <>
@@ -289,7 +302,7 @@ export default function RoomDetailsPage() {
                     onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
                   >
                     <option value="">Select a schedule</option>
-                    {schedules.map((schedule) => (
+                    {assignableSchedules.map((schedule) => (
                       <option key={schedule.id} value={schedule.id}>
                         {schedule.title} ({schedule.tasks.length} {schedule.tasks.length === 1 ? 'task' : 'tasks'})
                       </option>
@@ -336,7 +349,7 @@ export default function RoomDetailsPage() {
                   onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}
                 >
-                  {isAssigning && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {isAssigning && <Spinner size="sm" />}
                   {isAssigning ? 'Assigning...' : 'Assign Schedule'}
                 </button>
                 {!selectedSchedule && (
@@ -348,7 +361,7 @@ export default function RoomDetailsPage() {
         </motion.div>
 
         {/* Assigned Schedules Section */}
-        <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.2 }}
+        <motion.div {...fadeUp} transition={enter(2)}
           className="rounded-xl p-5"
           style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}
         >
@@ -369,7 +382,7 @@ export default function RoomDetailsPage() {
                   <motion.div
                     key={roomSchedule.id}
                     {...fadeUp}
-                    transition={{ duration: 0.3, delay: 0.25 + i * 0.05 }}
+                    transition={enter(3 + i)}
                     className="flex items-center justify-between rounded-xl p-4"
                     style={{ background: tc.surfaceBg, border: '1px solid ' + tc.cardBorder }}
                   >

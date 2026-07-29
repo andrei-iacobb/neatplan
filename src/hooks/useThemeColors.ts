@@ -8,19 +8,27 @@ export function useThemeColors() {
   const d = resolvedTheme === 'dark'
   return useMemo(() => ({
     d,
-    // Backgrounds
-    cardBg: d ? 'rgba(22,22,31,0.7)' : 'rgba(255,255,255,0.8)',
-    cardBorder: d ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)',
+    /*
+     * Surface and border values read the globals.css tokens rather than
+     * restating them. Inline styles resolve var() against the cascade, so the
+     * theme class already picks the right side and these need no `d` ternary.
+     * Keeping literals here is what let this hook drift out of sync with the
+     * tokens and paint every surface white regardless of the ramp.
+     */
+    cardBg: 'rgb(var(--surface))',
+    cardBorder: 'rgb(var(--border) / var(--border-alpha))',
     cardHoverBorder: (accent: string) => d ? `${accent}33` : `${accent}44`,
-    cardHoverBg: d ? 'rgba(22,22,31,0.9)' : 'rgba(255,255,255,0.95)',
-    surfaceBg: d ? 'rgba(18,18,26,0.6)' : 'rgba(248,248,252,0.8)',
-    modalBg: d ? 'rgba(22,22,31,0.98)' : 'rgba(255,255,255,0.98)',
-    modalOverlay: d ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.3)',
+    // Cards already sit at the top of the ramp, so hover lifts by edge, not fill.
+    cardHoverBg: 'rgb(var(--surface))',
+    surfaceBg: 'rgb(var(--surface-raised))',
+    modalBg: 'rgb(var(--surface-overlay))',
+    modalOverlay: d ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.45)',
     // Text
-    textPrimary: d ? 'rgba(232,232,237,0.95)' : 'rgba(17,17,27,0.9)',
-    textSecondary: d ? 'rgba(170,170,190,0.9)' : 'rgba(75,75,95,0.9)',
-    textMuted: d ? 'rgba(139,139,158,0.7)' : 'rgba(140,140,160,0.7)',
-    textFaint: d ? 'rgba(139,139,158,0.4)' : 'rgba(140,140,160,0.5)',
+    textPrimary: 'rgb(var(--text-primary))',
+    textSecondary: 'rgb(var(--text-secondary))',
+    // Full opacity: the old 0.7 alpha dropped muted text to 3.3:1, under AA.
+    textMuted: 'rgb(var(--text-muted))',
+    textFaint: 'rgb(var(--text-muted) / 0.75)',
     // Accents
     accentLabel: d ? 'rgba(16,185,129,0.8)' : 'rgba(16,155,109,0.9)',
     accentGreen: 'rgb(16,185,129)',
@@ -46,8 +54,9 @@ export function useThemeColors() {
     chipColor: (positive: boolean) => positive ? 'rgb(16,185,129)' : (d ? 'rgba(139,139,158,0.5)' : 'rgba(140,140,160,0.5)'),
     shadow: d ? 'none' : '0 1px 3px rgba(0,0,0,0.04)',
     // Inputs & forms
-    inputBg: d ? 'rgba(14,14,20,0.5)' : 'rgba(248,248,252,0.8)',
-    inputBorder: d ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)',
+    inputBg: 'rgb(var(--surface-raised))',
+    // Controls answer to WCAG 1.4.11 (3:1), which is stricter than a card edge.
+    inputBorder: 'rgb(var(--control-border))',
     inputFocusBorder: 'rgba(16,185,129,0.5)',
     inputText: d ? 'rgba(232,232,237,0.95)' : 'rgba(17,17,27,0.9)',
     inputPlaceholder: d ? 'rgba(139,139,158,0.5)' : 'rgba(140,140,160,0.5)',
@@ -70,8 +79,8 @@ export function useThemeColors() {
     statusCompleted: { bg: d ? 'rgba(16,185,129,0.08)' : 'rgba(16,185,129,0.08)', text: d ? 'rgb(52,211,153)' : 'rgb(16,155,109)', border: d ? 'rgba(16,185,129,0.2)' : 'rgba(16,185,129,0.25)' },
     statusOverdue: { bg: d ? 'rgba(239,68,68,0.08)' : 'rgba(239,68,68,0.08)', text: d ? 'rgb(252,165,165)' : 'rgb(220,38,38)', border: d ? 'rgba(239,68,68,0.2)' : 'rgba(239,68,68,0.25)' },
     // Table
-    tableBg: d ? 'rgba(22,22,31,0.5)' : 'rgba(255,255,255,0.6)',
-    tableHeaderBg: d ? 'rgba(22,22,31,0.8)' : 'rgba(248,248,252,0.9)',
+    tableBg: 'rgb(var(--surface))',
+    tableHeaderBg: 'rgb(var(--surface-raised))',
     tableDivider: d ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
     // Tab / toggle active
     tabActiveBg: d ? 'rgba(16,185,129,0.1)' : 'rgba(16,185,129,0.1)',

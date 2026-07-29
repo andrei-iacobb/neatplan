@@ -1,7 +1,8 @@
 // Single source of truth for the role hierarchy and per-site access rules.
 //
 // Hierarchy (highest first): OP > DIRECTOR > MANAGER > CLEANER
-//  - OP, DIRECTOR   -> management dashboard, access to EVERY site (siteId = null)
+//  - OP             -> top of the hierarchy, access to EVERY site (siteId = null)
+//  - DIRECTOR       -> management dashboard, access to EVERY site (siteId = null)
 //  - MANAGER        -> management dashboard, pinned to exactly one site
 //  - CLEANER        -> /clean only, pinned to exactly one site
 //
@@ -43,6 +44,21 @@ export function isManagementRole(role?: string | null): boolean {
 /** OP and DIRECTOR span every site; MANAGER and CLEANER are pinned to one. */
 export function canAccessAllSites(role?: string | null): boolean {
   return roleRank(role) >= ROLE_RANK.DIRECTOR
+}
+
+/**
+ * Whether `actorRole` may assign or manage `targetRole`.
+ *
+ * OP and above may act on roles at or below their own rank, so an OP can create another
+ * OP - but not an OWNER, which outranks them. Everyone below OP may only touch roles
+ * strictly beneath their own (a DIRECTOR manages MANAGER/CLEANER, never another
+ * DIRECTOR).
+ */
+export function canAssignRole(actorRole: string | null | undefined, targetRole: Role): boolean {
+  if (roleRank(actorRole) >= ROLE_RANK.OP) {
+    return roleRank(targetRole) <= roleRank(actorRole)
+  }
+  return roleRank(targetRole) < roleRank(actorRole)
 }
 
 /** A user pinned to a single site must have one assigned. */

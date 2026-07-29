@@ -77,8 +77,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const token = await getToken({ req: request })
-  
+  const rawToken = await getToken({ req: request })
+
+  // Middleware runs on the edge and cannot re-read the database, so it cannot revalidate
+  // the account itself. The jwt callback does that on every session check and stamps
+  // `revoked` onto the cookie when the account is blocked, deleted or signed out.
+  // Honour that stamp here so a revoked session stops being routed into the app instead
+  // of getting a page shell whose every API call then fails.
+  const token = (rawToken as any)?.revoked === true ? null : rawToken
+
   // Check if the current path is a public route
   const isPublicRoute = publicRoutes.some(route => 
     request.nextUrl.pathname.startsWith(route)
@@ -103,6 +110,11 @@ export async function middleware(request: NextRequest) {
 
   // Protect all other routes
   if (!token) {
+    // API callers expect JSON. Redirecting them to the HTML sign-in page makes a fetch
+    // client parse a login document as a payload, so answer them in their own terms.
+    if (path.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     const redirectUrl = new URL('/auth', request.url)
     const callbackBase = process.env.NEXTAUTH_URL || request.url
     const callbackUrl = new URL(`${request.nextUrl.pathname}${request.nextUrl.search}`, callbackBase)

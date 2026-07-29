@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { getSessionUser, siteScopeWhere, resolveWriteSiteId } from '@/lib/authz'
+import { getSessionUser, siteScopeWhere, resolveWriteSiteId, resolveReadSiteId, readSiteWhere } from '@/lib/authz'
 import { prisma } from '@/lib/db'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const user = await getSessionUser()
 
@@ -12,9 +12,16 @@ export async function GET() {
         { status: 401 }
       )
     }
+    const requestedSiteId = new URL(request.url).searchParams.get('site')
+    const siteId = resolveReadSiteId(user, requestedSiteId)
 
     const equipment = await prisma.equipment.findMany({
-      where: siteScopeWhere(user),
+      where: {
+        AND: [
+          siteScopeWhere(user),
+          readSiteWhere(siteId),
+        ],
+      },
       include: {
         site: { select: { id: true, name: true } },
         schedules: {
@@ -134,4 +141,4 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
-} 
+}

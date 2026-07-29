@@ -8,6 +8,7 @@ import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Spinner } from "@/components/ui/loading"
 import { motion } from "framer-motion"
 import { Eye, EyeOff, Mail, Lock } from "lucide-react"
 
@@ -222,7 +223,7 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
           >
             {isLoading ? (
               <div className="flex items-center gap-2">
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <Spinner size="sm" />
                 Signing in...
               </div>
             ) : (

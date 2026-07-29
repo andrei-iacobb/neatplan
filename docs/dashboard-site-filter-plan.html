@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NeatPlan - Dashboard Per-Site Filter Plan</title>
+<style>
+:root { color-scheme: dark; }
+body { background:#0d1117; color:#d5dbe3; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  max-width:760px; margin:0 auto; padding:2rem 1.2rem 4rem; line-height:1.65; }
+h1 { font-size:1.6rem; border-bottom:1px solid #2a3038; padding-bottom:.6rem; }
+h2 { font-size:1.2rem; margin-top:2.2rem; color:#e8edf3; }
+h3 { font-size:1rem; margin-top:1.4rem; color:#e8edf3; }
+table { width:100%; border-collapse:collapse; font-size:.9rem; margin:1rem 0; }
+td,th { padding:.5rem .6rem; border-bottom:1px solid #21262e; vertical-align:top; text-align:left; }
+code { background:#161b22; padding:.1rem .35rem; border-radius:4px; font-size:.85em; }
+pre { background:#161b22; padding:.8rem 1rem; border-radius:8px; overflow-x:auto; font-size:.8rem; line-height:1.45; }
+.note { background:#161b22; border:1px solid #2a3038; border-radius:8px; padding:.9rem 1.1rem; font-size:.9rem; }
+.warn { background:#1b1614; border:1px solid #4a3524; border-radius:8px; padding:.9rem 1.1rem; font-size:.9rem; }
+details { margin:.5rem 0; } summary { cursor:pointer; color:#8ab4f8; }
+.tag { padding:.05rem .5rem; border-radius:99px; font-size:.75rem; border:1px solid #444; }
+.g { color:#6cd28c; border-color:#2c5c3c; } .y { color:#d2b96c; border-color:#5c542c; } .r { color:#d28c8c; border-color:#5c2c2c; }
+ul.check { list-style:none; padding-left:0; }
+ul.check li { margin:.35rem 0; }
+ul.check input { margin-right:.55rem; }
+</style></head><body>
+
+<h1>Dashboard Per-Site Filter - Design Plan</h1>
+
+<p class="note"><strong>Goal:</strong> the main dashboard currently aggregates every site into one view. Add a site
+selector so an OP or DIRECTOR can narrow the whole dashboard to one site, with a control that still works at 40+ sites.
+<br><strong>Status:</strong> plan only, no code written. Branch <code>feature/qr-nfc-checkin</code>.
+<br><strong>Observed live</strong> at <code>http://localhost:4040</code> as <code>admin@neatplan.com</code>: two sites exist -
+<code>Maple Care Home</code> (55 rooms, 2 users) and <code>Unassigned</code> (<code>site_legacy_backfill</code>, 54 rooms, 4 users).
+The dashboard reports "109 Total Rooms", which is exactly the sum. That single number is the problem in miniature: it is
+half real data and half legacy backfill, and nothing on screen says so.</p>
+
+<section>
+<h2>What actually feeds the dashboard</h2>
+
+<p>The dashboard is <code>src/app/page.tsx</code> (not a <code>(dashboard)/page.tsx</code>) rendering
+<code>DashboardOverview</code> from <code>src/components/dashboard/dashboard-overview.tsx</code>. All fetching happens
+client-side in one <code>Promise.all</code> at <code>dashboard-overview.tsx:46-54</code>. Seven endpoints, not the set
+assumed at kickoff:</p>
+
+<table>
+<tr><th>Endpoint</th><th>Auth</th><th>Site scoping today</th><th>Can the client filter it?</th></tr>
+<tr><td><code>/api/users</code></td><td><code>requireAdmin()</code></td><td><code>siteScopeWhere</code> (<code>users/route.ts:21</code>)</td><td class="g">Yes - returns <code>siteId</code></td></tr>
+<tr><td><code>/api/rooms</code></td><td><code>requireAuth()</code></td><td><code>siteScopeWhere</code> (<code>rooms/route.ts:21</code>)</td><td class="g">Yes - returns <code>siteId</code></td></tr>
+<tr><td><code>/api/admin/equipment</code></td><td>inline <code>getSessionUser()</code> + <code>isAdmin</code></td><td><code>siteScopeWhere</code> (<code>equipment/route.ts:17</code>)</td><td class="g">Yes - returns <code>siteId</code></td></tr>
+<tr><td><code>/api/schedules</code></td><td><code>requireAuth()</code></td><td><code>m2mSiteScopeWhere</code> + <code>visibleSiteRelationWhere</code> (<code>schedules/route.ts:12,14</code>)</td><td class="y">Yes, but m2m - returns <code>sites[]</code></td></tr>
+<tr><td><code>/api/room-schedules</code></td><td><code>requireAuth()</code></td><td><code>nestedSiteScopeWhere(user,'room')</code> (<code>room-schedules/route.ts:16</code>)</td><td class="r">No - <code>room</code> is used for filtering only, never included in the payload</td></tr>
+<tr><td><code>/api/admin/recent-activity</code></td><td>inline session + <code>isAdmin</code></td><td>hand-built <code>siteScopeWhere</code> nests (<code>recent-activity/route.ts:27-34</code>)</td><td class="r">No - activity items carry no site</td></tr>
+<tr><td><code>/api/admin/completion-stats</code></td><td>inline session + <code>isAdmin</code></td><td>hand-built <code>siteScopeWhere</code> nests (<code>completion-stats/route.ts:31-33</code>)</td><td class="r">No - returns <code>{days,counts}</code> only</td></tr>
+</table>
+
+<p>Three of the seven cannot be filtered in the browser at all. That settles the architecture: <strong>the filter is
+server-side</strong>. Doing rooms and users client-side while the weekly chart needs a round trip would leave two
+filtering mechanisms that drift apart.</p>
+
+<div class="warn"><strong>Corrections to the brief.</strong> <code>/api/metrics</code> has no consumer anywhere in
+<code>src/</code> - it is an ops endpoint, and its <code>userSession</code> and <code>documentJob</code> counts are not
+site-scoped at all (<code>metrics/route.ts:18-19</code>). <code>/api/admin/compliance-rate</code>,
+<code>/api/admin/overdue-summary</code> and <code>/api/admin/completion-history</code> feed the Audit page
+(<code>src/app/(dashboard)/audit/page.tsx:110,139-140</code>), not the dashboard. None of them need touching for this
+feature, though the same helper will serve them when Audit gets the same treatment.
+<br>Also: <code>src/app/api/auth/switch-account/route.ts</code> does not exist on disk despite appearing in
+<code>git status</code>, and there is no account or site switcher UI anywhere in the app.</div>
+</section>
+
+<section>
+<h2>1. Placement</h2>
+
+<h3>Where the chrome actually is</h3>
+<p>There is no desktop topbar. The shell is a fixed 60px sidebar rail
+(<code>src/components/ui/sidebar.tsx:119-226</code>, expands to 220px on hover or pin) plus a content column at
+<code>src/components/layout/conditional-layout.tsx:29-32</code>. The only bar-shaped element is
+<code>sidebar.tsx:229</code>, which is <code>md:hidden</code> - mobile only, logo and hamburger. The sidebar never
+renders the signed-in user's name, role or site. The first element inside the content area is the dashboard's own
+<code>&lt;header&gt;</code> at <code>dashboard-overview.tsx:121-134</code>: greeting on the left, and on the right a
+static sentence, "Overview of your cleaning management system."</p>
+
+<pre>
+Current, 1440px wide (verified by screenshot)
+
++----+------------------------------------------------------------------+
+| ra |  Tuesday, 28 July 2026                                           |
+| il |  Good evening, System        Overview of your cleaning mgmt sys.  |  <- header, right slot
+|    +------------------------------------------------------------------+     is low-value filler
+| 60 |  [ 7 Team ] [ 109 Rooms ] [ 0 Equipment ] [ 3 Schedules ]         |  <- KPI row, 4 tiles
+| px +------------------------------------------------------------------+
+|    |  Weekly Completions          |  Schedule Status                  |  <- 7 / 5 cols
+|    +------------------------------+-----------------------------------+
+|    | Rooms by Type | Recent Activity        | Quick Actions           |  <- 4 / 5 / 3 cols
++----+------------------------------------------------------------------+
+</pre>
+
+<h3>Option A - header right slot <span class="tag g">recommended</span></h3>
+<p>Put the control where the filler sentence is, on the same baseline row as the greeting. The sentence at
+<code>dashboard-overview.tsx:131-133</code> already flips between a stats line and boilerplate; demote it to a small
+line under the control, or drop it when a specific site is selected and show the site's own summary instead.</p>
+
+<pre>
++----+------------------------------------------------------------------+
+| ra |  Tuesday, 28 July 2026                                           |
+| il |  Good evening, System     [ All sites | Maple Care Home | ... ]   |  <- filter here
+|    |                                        0 tasks completed today    |  <- sentence demoted
+|    +------------------------------------------------------------------+
+| 60 |  [ 7 Team ] [ 55 Rooms ] [ 0 Equipment ] [ 3 Schedules ]          |  <- now scoped
+| px +------------------------------------------------------------------+
+</pre>
+
+<table>
+<tr><th>For</th><th>Against</th></tr>
+<tr><td>Sits directly above everything it governs, so the scope-to-data relationship reads without explanation.</td>
+<td>Dashboard-only. Rooms and Equipment keep their own local pickers, so the same choice is made twice in a session.</td></tr>
+<tr><td>Reclaims dead space. Nothing is displaced except a sentence that says nothing.</td>
+<td>The header is <code>sm:flex-row</code>; a wide control forces a rethink of the mobile stack.</td></tr>
+<tr><td>Zero shell surgery - one component, one file, no layout regression risk on the other seven pages.</td>
+<td>Scrolls away with the page. Acceptable: the dashboard fits one viewport on large screens by design.</td></tr>
+</table>
+
+<h3>Option B - new global topbar in the shell</h3>
+<p>Add a persistent bar as a sibling above <code>&lt;main&gt;</code> in
+<code>conditional-layout.tsx:29-32</code>, hosting the site selector plus the user identity that the chrome currently
+never shows. Every page inherits one site context.</p>
+
+<table>
+<tr><th>For</th><th>Against</th></tr>
+<tr><td>One site context for the whole app. Rooms, Equipment, Schedule and Audit all obey it, and the two duplicated page-local pickers at <code>rooms/page.tsx:333-344</code> and <code>equipment/page.tsx:472-483</code> collapse into it.</td>
+<td>Builds a desktop topbar that does not exist today. Every page loses vertical space, and the dashboard's "fits one viewport" property (<code>dashboard-overview.tsx:157</code> comment) is the first casualty.</td></tr>
+<tr><td>Right long-term home for account switching and the missing profile menu.</td>
+<td><code>&lt;main&gt;</code> carries <code>pt-16 md:pt-6</code> to clear the mobile bar; a second bar means reworking that on mobile.</td></tr>
+<tr><td>Sticky - survives scrolling on long pages.</td>
+<td>Global state that silently changes what six other pages show is a much larger blast radius to verify. Wrong first move.</td></tr>
+</table>
+
+<h3>Option C - inside the sidebar rail</h3>
+<p>Between the logo block (<code>sidebar.tsx:129</code>) and the nav list (<code>sidebar.tsx:150</code>).
+<span class="tag r">not recommended</span> The rail is 60px collapsed and only expands on hover or when pinned, so the
+control would be an unlabelled icon most of the time. A dropdown anchored to a container that collapses out from under
+the cursor is a bad interaction, and site names would be permanently truncated.</p>
+
+<h3>Recommendation</h3>
+<p>Ship Option A. Build the control as a standalone <code>src/components/dashboard/site-filter.tsx</code> with the
+selection owned by a <code>useSiteFilter()</code> hook, so it is presentation-only and portable. If it earns its place,
+Option B is then a move of one JSX element plus lifting the hook - not a rewrite. Do not start with B: it changes six
+pages before anyone has confirmed the control is right.</p>
+</section>
+
+<section>
+<h2>2. Scaling</h2>
+
+<p>A fixed tab strip fails earlier than instinct suggests. The header's right slot is roughly 500px at the 1230px
+content width (<code>dashboard-overview.tsx:119</code>). At 13px in a pill with padding, "Maple Care Home" is about
+130px and "All sites" about 85px. That is three real pills before it wraps into the greeting. The switch points below
+are set from that arithmetic, not from a round number.</p>
+
+<table>
+<tr><th>Visible sites</th><th>Control</th><th>Why</th></tr>
+<tr><td>0</td><td>Nothing renders</td><td>Fresh database, or a MANAGER with no <code>siteId</code>. <code>/api/sites</code> returns <code>[]</code> (<code>sites/route.ts:24-26</code>).</td></tr>
+<tr><td>1</td><td>Static chip showing the site name. Not interactive.</td><td>A choice of one is not a choice. But the name still has to be on screen, otherwise the user cannot tell whether "109 rooms" is scoped. This is also what a MANAGER gets.</td></tr>
+<tr><td>2 to 4</td><td>Segmented pill row: <code>All sites</code> plus each name.</td><td>Fits the slot, zero clicks to switch, whole option set visible. This is the "tab" Andrei asked for, and it is what today's data lands on.</td></tr>
+<tr><td>5 to 10</td><td>Single trigger button showing the current selection, opening a popover list.</td><td>Past four pills the row wraps or truncates names to uselessness. The list is short enough that scanning beats typing, so no search box yet.</td></tr>
+<tr><td>11 to 25</td><td>Same popover, with a search input auto-focused on open. Type-to-filter on name and address.</td><td>Above ten a list needs scrolling; typing three characters is faster than scrolling and reading.</td></tr>
+<tr><td>26+</td><td>Same popover and search, plus a pinned "Recent" group of the last three selections at the top, above a divider.</td><td>At 40 sites nobody is choosing uniformly at random. Recency covers the common case; search covers the rest. Recents live in <code>localStorage</code>, so they cost nothing server-side.</td></tr>
+<tr><td>200+</td><td>Add windowed rendering to the list.</td><td>Named for completeness. Not a real case for this product; do not build it speculatively.</td></tr>
+</table>
+
+<p>Rules that hold at every count: <code>All sites</code> is always the first entry and always the default;
+<code>Unassigned</code> is always sorted last regardless of alphabetical order; the trigger always shows the current
+selection as text, never just an icon; keyboard support is arrow keys plus Enter plus Escape, and the trigger is a real
+<code>&lt;button&gt;</code> with <code>aria-expanded</code>. The pill row and the popover share one options array, so the
+switch between them is a render branch, not two implementations.</p>
+
+<details><summary>Why a hard count threshold rather than measuring overflow</summary>
+<p>Measuring the container and collapsing pills into a popover when they no longer fit is nicer and adapts to long site
+names. It also needs a <code>ResizeObserver</code>, a hidden measurement pass, and it makes the component's behaviour
+untestable without a real layout engine. Ship count thresholds first because they are predictable and unit-testable,
+then swap in measurement later behind the same props if long names turn out to be a real problem. The thresholds above
+already assume names as long as the ones in the live database.</p></details>
+</section>
+
+<section>
+<h2>3. Role behaviour</h2>
+
+<p>From <code>src/lib/roles.ts</code>: <code>ROLE_RANK</code> is <code>OP:4, DIRECTOR:3, MANAGER:2, CLEANER:1</code>
+(<code>roles.ts:16-21</code>). <code>canAccessAllSites</code> is rank at or above DIRECTOR
+(<code>roles.ts:45-47</code>). <code>isManagementRole</code> is rank at or above MANAGER (<code>roles.ts:40-42</code>)
+and is what <code>isAdmin</code> encodes.</p>
+
+<table>
+<tr><th>Role</th><th>Reaches the dashboard?</th><th>Control</th><th>What "All sites" means</th></tr>
+<tr><td>OP</td><td>Yes</td><td>Full control</td><td>Literally unfiltered. <code>siteScopeWhere</code> returns <code>{}</code>, so rows with a null <code>siteId</code> and orphaned completion logs are included.</td></tr>
+<tr><td>DIRECTOR</td><td>Yes</td><td>Full control, identical to OP</td><td>Same as OP. <code>canAccessAllSites</code> does not distinguish them.</td></tr>
+<tr><td>MANAGER</td><td>Yes - <code>isAdmin</code> is true</td><td>Static chip with their site name, not interactive</td><td>Never shown. Their view is already pinned by <code>siteScopeWhere</code> and always was.</td></tr>
+<tr><td>CLEANER</td><td>No - redirected to <code>/clean</code> at <code>src/app/page.tsx:19-20</code></td><td>Not applicable</td><td>Not applicable</td></tr>
+</table>
+
+<p>Rendering rule, in order: if the user is not <code>canAccessAllSites</code>, render the static chip and stop. Else if
+<code>sites.length &lt; 2</code>, render the static chip (or nothing at zero). Else render the interactive control at the
+size band from section 2. The chip for a MANAGER is a genuine improvement independent of this feature - right now
+nothing in the chrome tells a MANAGER which site they are looking at.</p>
+
+<div class="warn"><strong>Pre-existing bug worth logging separately.</strong> <code>prisma/schema.prisma:340-346</code>
+defines <code>enum UserRole { OWNER, OP, DIRECTOR, MANAGER, CLEANER }</code>, but <code>roles.ts:11</code> omits
+<code>OWNER</code>. <code>roleRank</code> falls through to <code>?? 0</code> (<code>roles.ts:30-32</code>), so an OWNER
+ranks below CLEANER, gets <code>isAdmin === false</code>, and is redirected to <code>/clean</code>. Not caused by this
+work and not fixed by it, but any role-shaped change should not paper over it.</div>
+</section>
+
+<section>
+<h2>4. State and URL</h2>
+
+<p><strong>Selection lives in the URL query param <code>?site=&lt;siteId&gt;</code>, with
+<code>localStorage['neatplan-dashboard-site']</code> as the sticky default.</strong> Absent or
+<code>site=all</code> means all sites.</p>
+
+<p>Resolution order on mount: URL param, then localStorage, then <code>all</code>. Whichever wins is validated against
+the fetched <code>/api/sites</code> list before it is applied - a stale id must never silently produce an empty
+dashboard (see section 6).</p>
+
+<table>
+<tr><th>Option</th><th>Verdict</th></tr>
+<tr><td>URL query param</td><td class="g">Primary. Deep-linkable, so "look at Maple's overdue count" is a link not a set of instructions. Survives refresh. Two tabs can hold two different sites. Screenshots carry their own context.</td></tr>
+<tr><td><code>localStorage</code></td><td class="y">Secondary, for stickiness only. Key <code>neatplan-dashboard-site</code>, matching the existing convention (<code>neatplan-settings</code> at <code>layout.tsx:44</code>, <code>neatplan-sidebar-pinned</code> at <code>sidebar.tsx:52</code>). Written on every change, read only when the URL is silent.</td></tr>
+<tr><td>Server session / JWT</td><td class="r">Rejected. Switching site would mutate the session and need a refresh round trip, two tabs could not hold two sites, and it would sit next to the real <code>user.siteId</code> claim that <code>siteScopeWhere</code> trusts for authorization - one confusion away from a privilege bug. Display preference does not belong in an auth token.</td></tr>
+</table>
+
+<p><strong>Back button.</strong> Use <code>router.push</code>, not <code>replace</code>. Changing site changes what the
+whole page is about, which is navigation-scale, and back-to-the-previous-site is what people reach for. The cost is
+history noise from rapid toggling. If that becomes annoying in practice, switch the pill row alone to
+<code>replace</code> and keep <code>push</code> on the popover - do not build debounce cleverness.</p>
+
+<p>The URL is the single source of truth in the component: <code>useSearchParams()</code> reads it,
+<code>fetchDashboardStats</code> keys off it, and the effect at <code>dashboard-overview.tsx:41</code> (currently
+<code>[]</code>) gains the site value as a dependency so browser navigation refetches without any extra wiring.</p>
+</section>
+
+<section>
+<h2>5. API changes</h2>
+
+<h3>The authorization rule</h3>
+<p><code>src/lib/authz.ts</code> has <code>resolveWriteSiteId</code> (<code>authz.ts:106</code>) for writes but nothing
+equivalent for reads. Every read helper derives the site purely from the session and cannot express "this user asked for
+site X". That is the one new primitive needed.</p>
+
+<pre>
+// src/lib/authz.ts - new
+
+export function resolveReadSiteId(
+  user: SessionUser,
+  requested?: string | null,
+): string | null {
+  // Pinned roles: the request is ignored entirely, exactly as
+  // resolveWriteSiteId already does for writes (authz.ts:106-115).
+  // NO_SITE keeps the fail-closed behaviour of siteScopeWhere.
+  if (!canAccessAllSites(user.role)) return user.siteId ?? NO_SITE
+
+  // All-sites roles: no request means no filter.
+  if (!requested || requested === 'all') return null
+
+  return requested
+}
+</pre>
+
+<p><strong>A MANAGER passing another site's id gets their own site's data.</strong> The requested value is never read on
+that branch, so there is no comparison to get wrong and no way for a crafted id to reach Prisma. This mirrors the
+write-side behaviour already in the codebase rather than inventing a second convention. A 403 was considered and
+rejected: the control does not render for a MANAGER, so a foreign id in the URL is either a stale bookmark or an
+attack, and returning their own correct data serves the first while telling the second nothing.</p>
+
+<p>The returned id then feeds three shapers matching the three relationship shapes already in
+<code>authz.ts</code>. Each returns <code>{}</code> when the id is <code>null</code>, so an all-sites read is unchanged:</p>
+
+<table>
+<tr><th>Shape</th><th>Where clause</th><th>Models</th><th>Mirrors</th></tr>
+<tr><td>direct</td><td><code>{ siteId }</code></td><td>User, Room, Equipment</td><td><code>siteScopeWhere</code> (<code>authz.ts:80</code>)</td></tr>
+<tr><td>nested</td><td><code>{ [relation]: { siteId } }</code></td><td>RoomSchedule via <code>room</code></td><td><code>nestedSiteScopeWhere</code> (<code>authz.ts:90</code>)</td></tr>
+<tr><td>many-to-many</td><td><code>{ sites: { some: { id } } }</code></td><td>Schedule</td><td><code>m2mSiteScopeWhere</code> (<code>authz.ts:118</code>)</td></tr>
+</table>
+
+<p>The two completion-log endpoints need the two-hop form the routes already hand-build, for example
+<code>{ roomSchedule: { room: { siteId } } }</code> (<code>completion-stats/route.ts:32</code>,
+<code>recent-activity/route.ts:28</code>). No new mechanism, just the resolved id substituted for the session-derived one.</p>
+
+<h3>Per-endpoint work</h3>
+<table>
+<tr><th>Endpoint</th><th>Change</th></tr>
+<tr><td><code>/api/room-schedules</code></td><td class="r"><strong>Required.</strong> Add <code>request</code> arg and a <code>site</code> param. Nested shape on <code>room</code>. Feeds the Schedule Status panel; no client-side alternative exists because <code>room</code> is not in the payload (<code>room-schedules/route.ts:15-23</code>).</td></tr>
+<tr><td><code>/api/admin/recent-activity</code></td><td class="r"><strong>Required.</strong> Add <code>request</code> arg and a <code>site</code> param. Applies to all three sub-queries at <code>recent-activity/route.ts:27-34</code>.</td></tr>
+<tr><td><code>/api/admin/completion-stats</code></td><td class="r"><strong>Required.</strong> Add <code>request</code> arg and a <code>site</code> param. Two-hop shape at <code>completion-stats/route.ts:31-33</code>. Feeds the weekly chart.</td></tr>
+<tr><td><code>/api/rooms</code></td><td class="y">Required for consistency. Direct shape. Feeds the "Total Rooms" tile and "Rooms by Type". Filterable client-side, but see below.</td></tr>
+<tr><td><code>/api/users</code></td><td class="y">Required for consistency. Direct shape. Feeds "Team Members".</td></tr>
+<tr><td><code>/api/admin/equipment</code></td><td class="y">Required for consistency. Direct shape. Feeds "Equipment".</td></tr>
+<tr><td><code>/api/schedules</code></td><td class="y">Required for consistency. Many-to-many shape. Feeds "Active Schedules".</td></tr>
+<tr><td><code>/api/sites</code></td><td class="g">No change. It is the authority for what the control lists and already scopes correctly (<code>sites/route.ts:24-28</code>).</td></tr>
+<tr><td><code>/api/metrics</code>, <code>/api/admin/compliance-rate</code>, <code>/api/admin/overdue-summary</code>, <code>/api/admin/completion-history</code></td><td class="g">No change for this feature. Not dashboard dependencies.</td></tr>
+</table>
+
+<p>The four "consistency" endpoints could be filtered in the browser instead. Do not. Two reasons: the browser would
+download 109 rooms to display 55, and more importantly the KPI tiles would be computed by a different rule than the
+chart beside them. One rule - every dashboard fetch carries <code>?site=</code> and the server decides - is the only
+version that cannot drift.</p>
+
+<p>Every parameter is optional and additive. Omitting it reproduces today's behaviour exactly, so no existing caller
+breaks - which is what makes phase 1 of the build order shippable on its own.</p>
+</section>
+
+<section>
+<h2>6. Empty and edge states</h2>
+
+<table>
+<tr><th>Case</th><th>Behaviour</th></tr>
+<tr><td>Site with no rooms</td><td>Tiles read 0, the chart renders a flat week, "Rooms by Type" already handles it (<code>dashboard-overview.tsx:246-248</code>). Change that copy from the generic "No rooms yet" to name the site and link to <code>/rooms</code>. Never surface the error state - zero is a valid answer, and <code>fetchDashboardStats</code> already swallows per-endpoint failures via <code>.catch</code> at <code>dashboard-overview.tsx:47-53</code>, so an empty result and a broken request currently look identical. Worth separating while in there.</td></tr>
+<tr><td>Newly created site</td><td>Must appear in the control without a full reload. The sites list is fetched once on mount; refetch it on window focus. Everything else naturally reads zero.</td></tr>
+<tr><td><code>Unassigned</code></td><td>Real and large: <code>site_legacy_backfill</code>, 54 of the 109 rooms and 4 of the 7 users, created by <code>prisma/migrations/20260728180000_add_sites_rbac_and_signoff/migration.sql:134-140</code>. List it, but sort it last, style it muted, and use its own migration description as the title attribute: "Holds records that pre-date multi-site support. Reassign them to real sites, then delete this site." Never let it become the sticky default, and never auto-select it. Selecting it is a cleanup workflow, not a normal view. It does not exist on a fresh database - the migration only creates it when legacy rows are present (<code>migration.sql:120-131</code>).</td></tr>
+<tr><td>Site the user just lost access to</td><td>Covers a deleted site, a DIRECTOR demoted to MANAGER, and a stale bookmark. On load, if the resolved id is not in the <code>/api/sites</code> response, fall back to all sites (or, for a pinned role, their own), clear the localStorage key, strip the param with <code>router.replace</code> so back does not return to a dead state, and toast "That site is no longer available." The server is safe regardless - <code>resolveReadSiteId</code> pins the role first - but a dashboard showing a phantom site name is worse than one that corrects itself out loud.</td></tr>
+<tr><td>Zero sites</td><td>Control does not render. Dashboard behaves exactly as it does today.</td></tr>
+</table>
+
+<div class="warn"><strong>Per-site views will not sum to "All sites", and that is correct.</strong> Two causes, both
+already in the code. Completion logs have a nullable <code>roomScheduleId</code> with <code>onDelete: SetNull</code>
+(<code>prisma/schema.prisma:224-254</code>), so a log whose schedule was deleted has no reachable site;
+<code>recent-activity/route.ts:22-25</code> deliberately keeps those visible for OP and DIRECTOR. Selecting any specific
+site necessarily drops them. Separately, <code>Room.siteId</code>, <code>Equipment.siteId</code>,
+<code>User.siteId</code> and <code>CleaningTask.siteId</code> are all nullable
+(<code>schema.prisma:23,88,124,143</code>), so legacy null-site rows also appear only in the aggregate view. Do not
+"fix" this by making All sites the sum of the parts - that hides orphaned records. Document it, and consider a later
+"Unattributed" line item in the Audit page.</div>
+</section>
+
+<section>
+<h2>7. Build order</h2>
+
+<p>Each phase is independently shippable and leaves the app fully working. The APIs go first and stay invisible, so the
+UI phase can be reverted on its own without stranding anything.</p>
+
+<ul class="check">
+<li><input type="checkbox"> <strong>Phase 0 - the helper.</strong> Add <code>resolveReadSiteId</code> and the three
+shapers to <code>src/lib/authz.ts</code>. Nothing calls them yet.
+<br><em>Verify:</em> unit tests alongside the existing ones in <code>tests/unit/</code>. Cases: OP with no request gives
+null; OP with an id gives that id; MANAGER with a foreign id gives their own; MANAGER with a null <code>siteId</code>
+gives <code>NO_SITE</code>; CLEANER same as MANAGER; unknown role treated as pinned.</li>
+
+<li><input type="checkbox"> <strong>Phase 1 - the three endpoints that have no alternative.</strong> Optional
+<code>site</code> param on <code>/api/room-schedules</code>, <code>/api/admin/recent-activity</code> and
+<code>/api/admin/completion-stats</code>. Two of the three need a <code>request</code> argument added to a zero-arg
+<code>GET</code>.
+<br><em>Verify:</em> curl matrix against the live server. OP with no param must return byte-identical output to today.
+OP with <code>?site=cms4sflah0000xg13gbyfb57f</code> returns a strict subset. A MANAGER passing Maple's id gets their
+own site's rows.</li>
+
+<li><input type="checkbox"> <strong>Phase 2 - the remaining four endpoints.</strong> Same optional param on
+<code>/api/rooms</code>, <code>/api/users</code>, <code>/api/admin/equipment</code>, <code>/api/schedules</code>. Note
+<code>/api/schedules</code> uses the many-to-many shape, not <code>siteId</code>.
+<br><em>Verify:</em> same curl matrix, plus confirm the seven other pages that call these endpoints are unaffected when
+the param is absent.</li>
+
+<li><input type="checkbox"> <strong>Phase 3 - the control, inert.</strong> Build
+<code>src/components/dashboard/site-filter.tsx</code> using <code>useThemeColors</code> tokens
+(<code>tabActiveBg</code>, <code>tabActiveText</code>, <code>tabInactiveBg</code>, <code>tabInactiveHoverBg</code>,
+<code>inputBorder</code> - the same set the existing pickers at <code>rooms/page.tsx:333-344</code> use). Render it in
+the header at <code>dashboard-overview.tsx:121-134</code>. Include the full role and count gating from sections 2 and 3.
+Selection changes nothing yet.
+<br><em>Verify:</em> screenshot at 1440 and 1024 as OP (pill row, two sites), as MANAGER (static chip), and with the
+sites list stubbed to 1, 6 and 30 entries.</li>
+
+<li><input type="checkbox"> <strong>Phase 4 - wire it up.</strong> Add the <code>useSiteFilter</code> hook with URL and
+localStorage resolution, pass <code>site</code> into all seven fetches in <code>fetchDashboardStats</code>, and add the
+value to the effect dependency array at <code>dashboard-overview.tsx:41</code>. This is the step where the feature
+starts working, and it works completely in one move.
+<br><em>Verify:</em> Playwright. Select Maple, assert Total Rooms drops from 109 to 55 and the URL gains
+<code>?site=</code>. Refresh, assert it holds. Back, assert it returns to all sites. Open the deep link in a fresh
+context, assert it lands scoped.</li>
+
+<li><input type="checkbox"> <strong>Phase 5 - scaling bands.</strong> Add the popover with search and the recents group,
+switching on the thresholds in section 2.
+<br><em>Verify:</em> Playwright against a stubbed sites list at 4, 5, 11 and 26 entries; assert the control type flips
+at each boundary and that keyboard navigation reaches every option.</li>
+
+<li><input type="checkbox"> <strong>Phase 6 - edge states.</strong> Stale id fallback with toast and
+<code>router.replace</code>, <code>Unassigned</code> sorting and styling, site-named empty copy, refetch of the sites
+list on focus, and splitting the "request failed" case from the "genuinely zero" case in
+<code>fetchDashboardStats</code>.
+<br><em>Verify:</em> Playwright with a fabricated <code>?site=doesnotexist</code>; assert the fallback, the toast, and
+that the param is gone from the URL without a new history entry.</li>
+
+<li><input type="checkbox"> <strong>Phase 7 (optional, separate decision) - promote to the shell.</strong> Only if
+phases 3 to 6 prove the control. Move it into a topbar per Option B and retire the duplicated page-local pickers at
+<code>rooms/page.tsx:333-344</code> and <code>equipment/page.tsx:472-483</code>. Treat as its own project with its own
+plan.</li>
+</ul>
+</section>
+
+<section>
+<h2>Open questions for Andrei</h2>
+<ul>
+<li>Should the site selection persist across pages once Rooms and Equipment already have their own local pickers, or
+stay dashboard-only until phase 7? Plan assumes dashboard-only.</li>
+<li><code>Unassigned</code> holds half the current data. Is cleaning it up scheduled? If it is about to disappear, some
+of the edge-state work in phase 6 is wasted effort.</li>
+<li>Is a DIRECTOR always going to span every site, or is a "director over a subset of sites" model coming? The plan
+survives it unchanged because the control lists whatever <code>/api/sites</code> returns, but it would change what
+"All sites" means in the copy.</li>
+</ul>
+</section>
+
+</body></html>

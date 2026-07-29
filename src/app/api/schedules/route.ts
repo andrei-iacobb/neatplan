@@ -1,18 +1,28 @@
 import { NextResponse } from 'next/server'
-import { requireAuth, requireAdmin, m2mSiteScopeWhere, resolveWriteSiteIds, visibleSiteRelationWhere } from '@/lib/authz'
+import { requireAuth, requireAdmin, m2mSiteScopeWhere, resolveWriteSiteIds, visibleSiteRelationWhere, resolveReadSiteId, m2mReadSiteWhere } from '@/lib/authz'
 import { prisma } from '@/lib/db'
 
 // Get all schedules
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const auth = await requireAuth()
     if ('error' in auth) return auth.error
+    const requestedSiteId = new URL(request.url).searchParams.get('site')
+    const siteId = resolveReadSiteId(auth.user, requestedSiteId)
 
     const schedules = await prisma.schedule.findMany({
-      where: m2mSiteScopeWhere(auth.user),
+      where: {
+        AND: [
+          m2mSiteScopeWhere(auth.user),
+          m2mReadSiteWhere(siteId),
+        ],
+      },
       include: {
         sites: { where: visibleSiteRelationWhere(auth.user), select: { id: true, name: true } },
-        tasks: true
+        // Deterministic task order so the list matches the order they were
+        // entered. cuids sort by creation within the same millisecond, which
+        // is what a single nested `create` produces.
+        tasks: { orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] }
       },
       orderBy: {
         title: 'asc'
@@ -74,7 +84,10 @@ export async function POST(req: Request) {
       },
       include: {
         sites: { where: visibleSiteRelationWhere(auth.user), select: { id: true, name: true } },
-        tasks: true
+        // Deterministic task order so the list matches the order they were
+        // entered. cuids sort by creation within the same millisecond, which
+        // is what a single nested `create` produces.
+        tasks: { orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] }
       }
     })
 
@@ -85,4 +98,4 @@ export async function POST(req: Request) {
       { status: 500 }
     )
   }
-} 
+}

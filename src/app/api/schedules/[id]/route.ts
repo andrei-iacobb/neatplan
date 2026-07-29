@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireAdmin, canAccessAnySite, resolveWriteSiteIds, visibleSiteRelationWhere } from '@/lib/authz'
+import { requireAdmin, canAccessAnySite, resolveWriteSiteIds, visibleSiteRelationWhere, canMutateSchedule } from '@/lib/authz'
 import { canAccessAllSites } from '@/lib/roles'
 import { Prisma } from '@prisma/client'
 
@@ -19,6 +19,12 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
       select: { sites: { select: { id: true } } }
     })
     if (!existing || !canAccessAnySite(auth.user, existing.sites.map((s) => s.id))) {
+      return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })
+    }
+
+    // MANAGER/CLEANER can only mutate schedules linked to exactly their own site.
+    // OP/DIRECTOR can mutate any schedule.
+    if (!canMutateSchedule(auth.user, existing)) {
       return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })
     }
 
@@ -74,6 +80,12 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
       return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })
     }
 
+    // MANAGER/CLEANER can only mutate schedules linked to exactly their own site.
+    // OP/DIRECTOR can mutate any schedule.
+    if (!canMutateSchedule(auth.user, existing)) {
+      return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })
+    }
+
     const body = await req.json()
 
     const updateData: Record<string, unknown> = {}
@@ -120,10 +132,31 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
       return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })
     }
 
-    // Delete the schedule and its tasks
-    await prisma.schedule.delete({
-      where: { id }
+    // MANAGER/CLEANER can only mutate schedules linked to exactly their own site.
+    // OP/DIRECTOR can mutate any schedule.
+    if (!canMutateSchedule(auth.user, existing)) {
+      return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })
+    }
+
+    // Delete through a guarded predicate rather than by id alone. The check above reads
+    // the site links in a separate statement, so a concurrent relink could otherwise let
+    // a MANAGER's delete land on a schedule that has just become shared. Repeating the
+    // "linked to exactly my site" condition in the delete itself closes that window.
+    const deleted = await prisma.schedule.deleteMany({
+      where: canAccessAllSites(auth.user.role)
+        ? { id }
+        : {
+            id,
+            sites: {
+              every: { id: auth.user.siteId ?? '' },
+              some: { id: auth.user.siteId ?? '' },
+            },
+          },
     })
+
+    if (deleted.count === 0) {
+      return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

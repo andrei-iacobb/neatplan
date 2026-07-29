@@ -92,6 +92,39 @@ export function nestedSiteScopeWhere(user: SessionUser, relation: string): Recor
   return { [relation]: { siteId: user.siteId ?? NO_SITE } }
 }
 
+/**
+ * The site a READ should be narrowed to, given what the caller asked for.
+ *
+ * `resolveWriteSiteId` already does this for writes; reads had no equivalent, so every
+ * read helper derived the site purely from the session and could not express "this user
+ * asked to look at site X".
+ *
+ * For a pinned role the requested value is never read, so a crafted id cannot reach
+ * Prisma - a MANAGER passing another site's id simply gets their own data. That is the
+ * same convention the write side already uses, rather than a second one. Returning
+ * NO_SITE for an unassigned pinned user keeps siteScopeWhere's fail-closed behaviour.
+ */
+export function resolveReadSiteId(user: SessionUser, requested?: string | null): string | null {
+  if (!canAccessAllSites(user.role)) return user.siteId ?? NO_SITE
+  if (!requested || requested === 'all') return null
+  return requested
+}
+
+/** Direct `siteId` column (User, Room, Equipment). `{}` when unfiltered. */
+export function readSiteWhere(siteId: string | null): { siteId?: string } {
+  return siteId ? { siteId } : {}
+}
+
+/** Site reached through a named relation, e.g. RoomSchedule -> room. */
+export function nestedReadSiteWhere(siteId: string | null, relation: string): Record<string, unknown> {
+  return siteId ? { [relation]: { siteId } } : {}
+}
+
+/** Many-to-many site links (Schedule). */
+export function m2mReadSiteWhere(siteId: string | null, relation = 'sites'): Record<string, unknown> {
+  return siteId ? { [relation]: { some: { id: siteId } } } : {}
+}
+
 /** Whether this user may read/write data belonging to `siteId`. */
 export function canAccessSite(user: SessionUser, siteId: string | null | undefined): boolean {
   if (canAccessAllSites(user.role)) return true
@@ -145,4 +178,22 @@ export function visibleSiteRelationWhere(user: SessionUser): { id: string } | un
 export function resolveWriteSiteIds(user: SessionUser, requestedSiteIds?: string[] | null): string[] {
   if (!canAccessAllSites(user.role)) return user.siteId ? [user.siteId] : []
   return Array.from(new Set((requestedSiteIds ?? []).filter((id): id is string => typeof id === 'string' && id.length > 0)))
+}
+
+/**
+ * Whether the user may mutate (write/delete) a schedule. Only applies to mutations;
+ * read access uses canAccessAnySite.
+ *
+ * MANAGER/CLEANER may only mutate schedules linked to exactly ONE site (their own).
+ * If a schedule is shared across multiple sites, only OP/DIRECTOR may mutate it.
+ *
+ * This prevents a MANAGER pinned to site A from destroying operational data when
+ * a schedule is shared with site B (though they read it via canAccessAnySite).
+ */
+export function canMutateSchedule(user: SessionUser, schedule: { sites: { id: string }[] }): boolean {
+  if (canAccessAllSites(user.role)) return true
+
+  // MANAGER/CLEANER can only mutate if the schedule is linked to exactly their own site.
+  if (schedule.sites.length !== 1) return false
+  return schedule.sites[0].id === user.siteId
 }

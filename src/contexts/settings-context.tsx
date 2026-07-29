@@ -233,12 +233,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   return (
     <SettingsContext.Provider value={value}>
-      {/* When animations are disabled, MotionConfig forces framer-motion to skip
-          animations (JS-driven, so the .reduce-motion CSS class alone can't stop them).
-          reducedMotion stops transform/layout motion; the 0-duration transition also
-          collapses opacity fades so elements just snap to their final state. */}
+      {/* MotionConfig is the single place framer-motion honours reduced motion,
+          since JS-driven animations ignore the .reduce-motion CSS class.
+          'always' when the in-app toggle is off; otherwise 'user', so the OS
+          prefers-reduced-motion setting still wins. reducedMotion stops
+          transform/layout motion; the 0-duration transition also collapses
+          opacity fades so elements just snap to their final state. */}
       <MotionConfig
-        reducedMotion={settings.display.animationsEnabled ? 'never' : 'always'}
+        reducedMotion={settings.display.animationsEnabled ? 'user' : 'always'}
         transition={settings.display.animationsEnabled ? undefined : { duration: 0 }}
       >
         {children}

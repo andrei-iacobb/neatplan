@@ -8,6 +8,13 @@ const nextConfig = {
   // Configure output for deployment
   output: 'standalone',
 
+  experimental: {
+    // Next already does this for lucide-react and date-fns by default, but not for
+    // framer-motion - which the root layout pulls in via SettingsProvider, so it lands
+    // in the first-load bundle of every route including the login screen.
+    optimizePackageImports: ['framer-motion'],
+  },
+
   // Note: the instrumentation hook (src/instrumentation.ts, which starts the in-process
   // scheduler) is stable as of Next 15, so no experimental flag is needed.
 

@@ -2,22 +2,13 @@ import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
 import { requireAdmin, canAccessSite, resolveWriteSiteId } from '@/lib/authz'
-import { ALL_ROLES, isManagementRole, requiresSite, roleRank, type Role } from '@/lib/roles'
+import { ALL_ROLES, canAssignRole, isManagementRole, requiresSite, type Role } from '@/lib/roles'
 
 /** Narrow an arbitrary value to a valid Role. */
 function isRole(value: unknown): value is Role {
   return typeof value === 'string' && (ALL_ROLES as string[]).includes(value)
 }
 
-/**
- * Whether `actorRole` is allowed to assign/manage `targetRole`.
- * OP may manage anything; everyone else may only touch roles strictly below
- * their own rank.
- */
-function canAssignRole(actorRole: string | null | undefined, targetRole: Role): boolean {
-  if (actorRole === 'OP') return true
-  return roleRank(targetRole) < roleRank(actorRole)
-}
 
 export async function PUT(
   request: Request,
@@ -36,13 +27,21 @@ export async function PUT(
     // Load the target so we can enforce site scoping and role authority.
     const target = await prisma.user.findUnique({
       where: { id },
-      select: { id: true, role: true, siteId: true },
+      select: { id: true, role: true, siteId: true, isHidden: true },
     })
     if (!target) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     const isSelf = actor.id === id
+
+    // A hidden owner account is absent from every listing, so it must be untouchable by
+    // everyone else too - otherwise an admin who cannot even see it could still demote,
+    // block or rename it by id. The owner may still edit themselves. 404, not 403, so
+    // the account's existence stays unconfirmed.
+    if (target.isHidden && !isSelf) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
 
     if (isSelf) {
       // Users may edit their own name/email/password, but never elevate
@@ -172,9 +171,15 @@ export async function DELETE(
 
     const target = await prisma.user.findUnique({
       where: { id },
-      select: { id: true, role: true, siteId: true },
+      select: { id: true, role: true, siteId: true, isHidden: true },
     })
     if (!target) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // A hidden owner account cannot be deleted by anyone (self-deletion is already
+    // refused above), so it can never be removed by an admin who cannot see it.
+    if (target.isHidden) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 

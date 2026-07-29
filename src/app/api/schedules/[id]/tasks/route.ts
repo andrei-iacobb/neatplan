@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireAdmin, canAccessAnySite } from '@/lib/authz'
+import { requireAdmin, canAccessAnySite, canMutateSchedule } from '@/lib/authz'
 
 // Add a task to a schedule
 export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
@@ -15,6 +15,12 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
       select: { sites: { select: { id: true } } }
     })
     if (!schedule || !canAccessAnySite(auth.user, schedule.sites.map((s) => s.id))) {
+      return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })
+    }
+
+    // MANAGER/CLEANER can only create tasks for schedules linked to exactly their own site.
+    // OP/DIRECTOR can create tasks for any schedule.
+    if (!canMutateSchedule(auth.user, schedule)) {
       return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })
     }
 

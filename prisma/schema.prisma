@@ -35,6 +35,10 @@ model User {
   settings                   Json?
   totpSecret                 String?
   totpEnabled                Boolean                     @default(false)
+  // Owner-level account: kept out of user listings and immutable to everyone else.
+  // Authentication and authorization are unchanged - it is hidden, not privileged
+  // beyond its role.
+  isHidden                   Boolean                     @default(false)
 
   @@index([siteId])
   @@map("users")
@@ -236,6 +240,12 @@ model RoomScheduleCompletionLog {
   checkedInAt        DateTime?
   checkInId          String?            @unique
   checkIn            RoomCheckIn?       @relation(fields: [checkInId], references: [id], onDelete: SetNull)
+  // Sign-off captured on the cleaner's device at completion time. Nullable because
+  // logs written before sign-off existed have none; the API requires all three on
+  // every new completion.
+  signatureDataUrl   String?
+  signedName         String?
+  signedAt           DateTime?
 
   @@index([roomScheduleId])
   @@index([completedAt])

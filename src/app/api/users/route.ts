@@ -1,33 +1,32 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
-import { requireAdmin, resolveWriteSiteId, siteScopeWhere } from '@/lib/authz'
-import { ALL_ROLES, isManagementRole, requiresSite, roleRank, type Role } from '@/lib/roles'
+import { requireAdmin, resolveWriteSiteId, siteScopeWhere, resolveReadSiteId, readSiteWhere } from '@/lib/authz'
+import { ALL_ROLES, canAssignRole, isManagementRole, requiresSite, type Role } from '@/lib/roles'
 
 /** Narrow an arbitrary value to a valid Role. */
 function isRole(value: unknown): value is Role {
   return typeof value === 'string' && (ALL_ROLES as string[]).includes(value)
 }
 
-/**
- * Whether `actorRole` is allowed to assign/manage `targetRole`.
- * OP may assign anything; everyone else may only touch roles strictly below
- * their own rank (a MANAGER can manage CLEANERs, a DIRECTOR can manage
- * MANAGER/CLEANER but never DIRECTOR or OP).
- */
-function canAssignRole(actorRole: string | null | undefined, targetRole: Role): boolean {
-  if (actorRole === 'OP') return true
-  return roleRank(targetRole) < roleRank(actorRole)
-}
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const auth = await requireAdmin()
     if ('error' in auth) return auth.error
     const actor = auth.user
+    const requestedSiteId = new URL(request.url).searchParams.get('site')
+    const siteId = resolveReadSiteId(actor, requestedSiteId)
 
     const users = await prisma.user.findMany({
-      where: siteScopeWhere(actor),
+      // Hidden owner accounts never appear in the directory, for anyone.
+      where: {
+        AND: [
+          siteScopeWhere(actor),
+          readSiteWhere(siteId),
+          { isHidden: false },
+        ],
+      },
       select: {
         id: true,
         name: true,

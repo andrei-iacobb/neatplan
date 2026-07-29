@@ -1,13 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAdmin, canAccessSite } from '@/lib/authz'
-import { roleRank, type Role } from '@/lib/roles'
+import { canAssignRole, type Role } from '@/lib/roles'
 
-/** OP may manage anyone; everyone else only roles strictly below their rank. */
-function canAssignRole(actorRole: string | null | undefined, targetRole: Role): boolean {
-  if (actorRole === 'OP') return true
-  return roleRank(targetRole) < roleRank(actorRole)
-}
 
 export async function POST(
   request: Request,
@@ -21,9 +16,14 @@ export async function POST(
 
     const target = await prisma.user.findUnique({
       where: { id: params.id },
-      select: { id: true, role: true, siteId: true },
+      select: { id: true, role: true, siteId: true, isHidden: true },
     })
     if (!target) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Hidden owner accounts are not administrable by anyone else.
+    if (target.isHidden) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 

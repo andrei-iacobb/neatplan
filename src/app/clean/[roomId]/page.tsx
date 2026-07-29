@@ -24,6 +24,8 @@ import {
 import Link from 'next/link'
 import { apiRequest } from '@/lib/url-utils'
 import { useThemeColors } from '@/hooks/useThemeColors'
+import { PageLoading, Spinner } from '@/components/ui/loading'
+import { SignaturePad } from '@/components/cleaner/signature-pad'
 
 interface ScheduleTask {
   id: string
@@ -83,6 +85,21 @@ export default function CleanRoomPage() {
   const [notes, setNotes] = useState('')
   const [startTime, setStartTime] = useState<Date | null>(null)
   const [expandedSchedules, setExpandedSchedules] = useState<Set<string>>(new Set())
+  // Sign-off state. Signatures are keyed per schedule so two open schedules cannot
+  // share one signature; the printed name is per-session.
+  const [signatures, setSignatures] = useState<Record<string, string | null>>({})
+  const [signedName, setSignedName] = useState('')
+  const [blockedScheduleId, setBlockedScheduleId] = useState<string | null>(null)
+  // Sign-off problems are shown inline next to the pad. They must never go through
+  // `error`, which unmounts the whole room and would throw away the ticked tasks.
+  const [signOffError, setSignOffError] = useState<string | null>(null)
+
+  // Pre-print the cleaner's name the way a paper sign-off sheet does; still editable.
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.name && !signedName) {
+      setSignedName(session.user.name)
+    }
+  }, [status, session?.user?.name, signedName])
 
   // Redirect admins away from cleaner interface
   useEffect(() => {
@@ -142,6 +159,7 @@ export default function CleanRoomPage() {
   }
 
   const handleTaskToggle = (scheduleId: string, taskId: string, task: ScheduleTask) => {
+    setSignOffError(null)
     const key = `${scheduleId}-${taskId}`
     setCompletedTasks(prev => {
       const newMap = new Map(prev)
@@ -173,11 +191,52 @@ export default function CleanRoomPage() {
     return { completed: completedCount, total: totalTasks }
   }
 
+  // Everything standing between the cleaner and a valid sign-off, in the order they
+  // should fix it. Drives both the inline checklist and the click-time message.
+  const getBlockers = (scheduleId: string) => {
+    const blockers: { field: 'tasks' | 'signature' | 'name'; message: string }[] = []
+
+    const hasTask = Array.from(completedTasks.keys()).some(key => key.startsWith(`${scheduleId}-`))
+    if (!hasTask) {
+      blockers.push({ field: 'tasks', message: 'Tick at least one task you completed' })
+    }
+    if (!signatures[scheduleId]) {
+      blockers.push({ field: 'signature', message: 'Sign in the box to confirm this room is done' })
+    }
+    if (signedName.trim().length < 2 || signedName.trim().length > 80) {
+      blockers.push({ field: 'name', message: 'Enter your printed name (2-80 characters)' })
+    }
+
+    return blockers
+  }
+
   const handleCompleteSchedule = async (scheduleId: string) => {
     if (!room || !startTime) return
 
     const schedule = room.schedules.find(s => s.id === scheduleId)
     if (!schedule) return
+
+    const blockers = getBlockers(scheduleId)
+    if (blockers.length > 0) {
+      setBlockedScheduleId(scheduleId)
+      setSignOffError(
+        blockers.length === 1
+          ? `Can't complete yet - ${blockers[0].message.toLowerCase()}.`
+          : `Can't complete yet - ${blockers.map(b => b.message.toLowerCase()).join(', and ')}.`
+      )
+      // Send focus to the first thing that needs fixing so the reason is unmissable.
+      const first = blockers[0].field
+      if (first === 'name') {
+        document.getElementById(`signed-name-${scheduleId}`)?.focus()
+      } else if (first === 'signature') {
+        document
+          .getElementById(`sign-off-${scheduleId}`)
+          ?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      }
+      return
+    }
+
+    setBlockedScheduleId(null)
 
     // Get completed tasks for this schedule
     const scheduleCompletedTasks = Array.from(completedTasks.entries())
@@ -186,11 +245,6 @@ export default function CleanRoomPage() {
         taskId: value.taskId,
         notes: value.notes
       }))
-
-    if (scheduleCompletedTasks.length === 0) {
-      setError('Please complete at least one task before finishing')
-      return
-    }
 
     setIsSubmitting(true)
     try {
@@ -206,12 +260,21 @@ export default function CleanRoomPage() {
           scheduleId,
           completedTasks: scheduleCompletedTasks,
           notes,
-          duration
+          duration,
+          signature: signatures[scheduleId],
+          signedName: signedName.trim()
         })
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
+        const errorData = await response.json().catch(() => ({}))
+
+        if (response.status === 409 && errorData?.duplicate) {
+          setBlockedScheduleId(scheduleId)
+          setSignOffError('Already completed today - this schedule has been signed off once already. Nothing more to do here.')
+          return
+        }
+
         throw new Error(errorData.error || 'Failed to complete schedule')
       }
 
@@ -219,7 +282,10 @@ export default function CleanRoomPage() {
       router.push('/clean?completed=true')
     } catch (err) {
       console.error('Error completing schedule:', err)
-      setError(err instanceof Error ? err.message : 'Failed to complete schedule')
+      // Keep the cleaner on the page with their ticks and signature intact so they can
+      // retry - a failed submit is not a reason to lose the work.
+      setBlockedScheduleId(scheduleId)
+      setSignOffError(err instanceof Error ? err.message : 'Failed to complete schedule')
     } finally {
       setIsSubmitting(false)
     }
@@ -228,6 +294,9 @@ export default function CleanRoomPage() {
   const resetTasks = () => {
     setCompletedTasks(new Map())
     setNotes('')
+    setSignatures({})
+    setBlockedScheduleId(null)
+    setSignOffError(null)
   }
 
   const toggleScheduleExpansion = (scheduleId: string) => {
@@ -305,11 +374,8 @@ export default function CleanRoomPage() {
 
   if (status === 'loading' || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" style={{ color: tc.accentGreen }} />
-          <p style={{ color: tc.textMuted }}>Loading room details...</p>
-        </div>
+      <div className="max-w-[1100px] mx-auto relative z-10 pb-8">
+        <PageLoading cards={3} label="Loading room" />
       </div>
     )
   }
@@ -690,6 +756,60 @@ export default function CleanRoomPage() {
                             />
                           </div>
 
+                          {/* Sign-off. A completion is a compliance record, so the cleaner
+                              puts their name and signature to it before it can be filed. */}
+                          <div id={`sign-off-${schedule.id}`} className="mb-4">
+                            <label
+                              htmlFor={`signed-name-${schedule.id}`}
+                              className="block text-sm font-medium mb-2"
+                              style={{ color: tc.textSecondary }}
+                            >
+                              Printed name
+                            </label>
+                            <input
+                              id={`signed-name-${schedule.id}`}
+                              type="text"
+                              value={signedName}
+                              onChange={(e) => {
+                                setSignedName(e.target.value)
+                                setSignOffError(null)
+                              }}
+                              placeholder="Your full name"
+                              maxLength={80}
+                              autoComplete="name"
+                              onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                              onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
+                              className="w-full px-3 py-2 mb-4 border rounded min-h-[44px] placeholder:text-[rgb(var(--muted-foreground))] focus:outline-none"
+                              style={{
+                                backgroundColor: tc.inputBg,
+                                borderColor: tc.inputBorder,
+                                color: tc.inputText
+                              }}
+                            />
+
+                            <SignaturePad
+                              label="Sign to confirm this room is done"
+                              value={signatures[schedule.id] ?? null}
+                              onChange={(dataUrl) => {
+                                setSignatures(prev => ({ ...prev, [schedule.id]: dataUrl }))
+                                setSignOffError(null)
+                              }}
+                              disabled={isSubmitting}
+                              invalid={blockedScheduleId === schedule.id && !signatures[schedule.id]}
+                            />
+
+                            {blockedScheduleId === schedule.id && signOffError && (
+                              <p
+                                role="alert"
+                                className="mt-3 text-sm flex items-start gap-2"
+                                style={{ color: tc.statusOverdue.text }}
+                              >
+                                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
+                                {signOffError}
+                              </p>
+                            )}
+                          </div>
+
                           <div className="flex gap-3">
                             <button
                               onClick={() => handleCompleteSchedule(schedule.id)}
@@ -711,7 +831,7 @@ export default function CleanRoomPage() {
                             >
                               {isSubmitting ? (
                                 <>
-                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  <Spinner size="sm" />
                                   Saving...
                                 </>
                               ) : (

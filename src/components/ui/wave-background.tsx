@@ -7,7 +7,7 @@ export function WaveBackground() {
   const isDark = resolvedTheme === 'dark'
 
   return (
-    <div className="fixed inset-0 -z-10 pointer-events-none transition-colors duration-300" style={{ background: isDark ? 'rgb(10, 10, 15)' : 'rgb(250, 250, 252)' }}>
+    <div className="fixed inset-0 -z-10 pointer-events-none transition-colors duration-300" style={{ background: 'rgb(var(--background))' }}>
       {/* Subtle accent glow */}
       <div
         className="absolute inset-0 transition-opacity duration-300"

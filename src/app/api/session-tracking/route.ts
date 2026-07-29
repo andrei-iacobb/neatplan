@@ -86,7 +86,11 @@ export async function GET() {
     // Get recent sessions for admin dashboard, scoped to the viewer's site
     // (OP/DIRECTOR see all; a MANAGER only sees staff activity at their site).
     const recentSessions = await prisma.userSession.findMany({
-      where: canAccessAllSites((session.user as any).role) ? {} : { user: siteScopeWhere(session.user as any) },
+      // Hidden owner accounts stay out of the activity list too, otherwise signing in
+      // would advertise the account that the user directory deliberately omits.
+      where: canAccessAllSites((session.user as any).role)
+        ? { user: { isHidden: false } }
+        : { user: { ...siteScopeWhere(session.user as any), isHidden: false } },
       include: {
         user: {
           select: {

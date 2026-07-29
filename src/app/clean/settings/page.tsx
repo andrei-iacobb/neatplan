@@ -8,6 +8,7 @@ import { User, Lock, Palette, ArrowLeft, Sun, Moon, Monitor, Check, AlertCircle 
 import { Input } from '@/components/ui/input'
 import { useSettings } from '@/contexts/settings-context'
 import { useThemeColors } from '@/hooks/useThemeColors'
+import { PageLoading } from '@/components/ui/loading'
 
 export default function CleanerSettingsPage() {
   const { data: session, status } = useSession()
@@ -103,8 +104,8 @@ export default function CleanerSettingsPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-[400px] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: tc.accentGreen }}></div>
+      <div className="max-w-[1100px] mx-auto relative z-10 pb-8">
+        <PageLoading cards={3} label="Loading settings" />
       </div>
     )
   }

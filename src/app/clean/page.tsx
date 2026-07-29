@@ -213,12 +213,7 @@ export default function CleanerDashboard() {
         setError(null)
       }
       
-      const response = await apiRequest('/api/cleaner/dashboard', {
-        // Add cache control for better performance
-        headers: {
-          'Cache-Control': 'max-age=30, stale-while-revalidate=60'
-        }
-      })
+      const response = await apiRequest('/api/cleaner/dashboard')
       
       if (!response.ok) {
         throw new Error('Failed to fetch dashboard data')

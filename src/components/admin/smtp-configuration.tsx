@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { 
+import { Spinner } from '@/components/ui/loading'
+import {
   Mail, 
   Server, 
   Lock, 
@@ -367,7 +368,7 @@ export function SMTPConfiguration() {
               className="btn-secondary flex items-center px-4 py-2 rounded-lg disabled:opacity-50"
             >
               {isTesting ? (
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                <Spinner size="sm" className="mr-2" />
               ) : (
                 <TestTube className="w-4 h-4 mr-2" />
               )}
@@ -380,7 +381,7 @@ export function SMTPConfiguration() {
               className="btn-primary flex items-center px-4 py-2 rounded-lg disabled:opacity-50"
             >
               {isLoading ? (
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                <Spinner size="sm" className="mr-2" />
               ) : (
                 <Save className="w-4 h-4 mr-2" />
               )}

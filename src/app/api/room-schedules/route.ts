@@ -1,19 +1,26 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireAuth, nestedSiteScopeWhere } from '@/lib/authz'
+import { requireAuth, nestedSiteScopeWhere, resolveReadSiteId, nestedReadSiteWhere } from '@/lib/authz'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const auth = await requireAuth()
     if ('error' in auth) return auth.error
+    const requestedSiteId = new URL(request.url).searchParams.get('site')
+    const siteId = resolveReadSiteId(auth.user, requestedSiteId)
 
     // Status transitions (COMPLETED -> PENDING re-arm, PENDING -> OVERDUE) are
     // handled by runScheduleCheck() via the scheduler/cron - GET stays read-only.
     const roomSchedules = await prisma.roomSchedule.findMany({
-      where: nestedSiteScopeWhere(auth.user, 'room'),
+      where: {
+        AND: [
+          nestedSiteScopeWhere(auth.user, 'room'),
+          nestedReadSiteWhere(siteId, 'room'),
+        ],
+      },
       include: {
         schedule: true
       },
@@ -30,4 +37,4 @@ export async function GET() {
       { status: 500 }
     )
   }
-} 
+}

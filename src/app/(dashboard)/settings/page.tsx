@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
+import { fadeUp, enter } from '@/lib/motion'
 import {
   User,
   Palette,
@@ -19,11 +20,10 @@ import {
 } from 'lucide-react'
 import { useSettings } from '@/contexts/settings-context'
 import { useThemeColors } from '@/hooks/useThemeColors'
+import { Spinner } from '@/components/ui/loading'
 import { SMTPConfiguration } from '@/components/admin/smtp-configuration'
 import { TotpSettings } from '@/components/admin/totp-settings'
 import { ROLE_LABELS, type Role } from '@/lib/roles'
-
-const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } }
 
 function formatUptime(seconds?: number): string {
   if (!seconds || seconds < 0) return '-'
@@ -197,7 +197,7 @@ export default function SettingsPage() {
 
       <div className="flex flex-col md:flex-row gap-6">
         {/* Sidebar Navigation */}
-        <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.05 }} className="w-full md:w-56 flex-shrink-0">
+        <motion.div {...fadeUp} transition={enter()} className="w-full md:w-56 flex-shrink-0">
           <div className="rounded-xl p-3 sticky top-6" style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}>
             <nav className="space-y-1">
               {tabs.map((tab) => (
@@ -226,13 +226,13 @@ export default function SettingsPage() {
         </motion.div>
 
         {/* Main Content */}
-        <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.1 }} className="flex-1">
+        <motion.div {...fadeUp} transition={enter(1)} className="flex-1">
           <div className="rounded-xl p-6" style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}>
             {/* Profile Tab */}
             {activeTab === 'profile' && (
               <motion.div
                 {...fadeUp}
-                transition={{ duration: 0.35 }}
+                transition={enter(2)}
                 className="space-y-6"
               >
                 <h2 className="text-[17px] font-semibold mb-4" style={{ color: tc.textPrimary }}>Profile Settings</h2>
@@ -354,7 +354,7 @@ export default function SettingsPage() {
                     }
                   >
                     {profileLoading ? (
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      <Spinner size="sm" className="mr-2" />
                     ) : (
                       <Save className="w-4 h-4 mr-2" />
                     )}
@@ -368,7 +368,7 @@ export default function SettingsPage() {
             {activeTab === 'appearance' && (
               <motion.div
                 {...fadeUp}
-                transition={{ duration: 0.35 }}
+                transition={enter(2)}
                 className="space-y-6"
               >
                 <h2 className="text-[17px] font-semibold mb-4" style={{ color: tc.textPrimary }}>Appearance Settings</h2>
@@ -417,7 +417,7 @@ export default function SettingsPage() {
             {activeTab === 'notifications' && (
               <motion.div
                 {...fadeUp}
-                transition={{ duration: 0.35 }}
+                transition={enter(2)}
                 className="space-y-6"
               >
                 <h2 className="text-[17px] font-semibold mb-4" style={{ color: tc.textPrimary }}>Notification Settings</h2>
@@ -490,7 +490,7 @@ export default function SettingsPage() {
             {activeTab === 'privacy' && (
               <motion.div
                 {...fadeUp}
-                transition={{ duration: 0.35 }}
+                transition={enter(2)}
                 className="space-y-6"
               >
                 <h2 className="text-[17px] font-semibold mb-4" style={{ color: tc.textPrimary }}>Privacy & Security</h2>
@@ -553,7 +553,7 @@ export default function SettingsPage() {
                         }}
                       >
                         {exportLoading ? (
-                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          <Spinner size="sm" className="mr-2" />
                         ) : (
                           <Download className="w-4 h-4 mr-2" />
                         )}
@@ -569,7 +569,7 @@ export default function SettingsPage() {
             {activeTab === 'system' && isOp && (
               <motion.div
                 {...fadeUp}
-                transition={{ duration: 0.35 }}
+                transition={enter(2)}
                 className="space-y-6"
               >
                 <h2 className="text-[17px] font-semibold mb-4" style={{ color: tc.textPrimary }}>System Settings</h2>
@@ -716,7 +716,7 @@ export default function SettingsPage() {
                 }
               >
                 {isLoading ? (
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  <Spinner size="sm" className="mr-2" />
                 ) : (
                   <Save className="w-4 h-4 mr-2" />
                 )}

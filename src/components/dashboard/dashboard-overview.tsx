@@ -1,9 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
+import { fadeUp, enter } from '@/lib/motion'
 import { useSession } from 'next-auth/react'
 import { useThemeColors } from '@/hooks/useThemeColors'
+import { useSiteFilter, ALL_SITES } from '@/hooks/useSiteFilter'
+import { SiteFilter } from '@/components/dashboard/site-filter'
 import {
   Users, Wrench, DoorOpen, Calendar, AlertTriangle, Activity,
   ArrowRight, Clock, CheckCircle2, AlertCircle, Loader2,
@@ -11,6 +14,7 @@ import {
   MoreHorizontal, Sparkles, TrendingUp,
 } from 'lucide-react'
 import Link from 'next/link'
+import { PageLoading } from '@/components/ui/loading'
 import { apiRequest } from '@/lib/url-utils'
 
 interface DashboardStats {
@@ -18,8 +22,6 @@ interface DashboardStats {
 }
 interface ScheduleStatusCounts { pending: number; inProgress: number; completed: number; overdue: number }
 interface RoomTypeCounts { [key: string]: number }
-
-const fadeUp = { initial: false, animate: { opacity: 1, y: 0 } }
 
 const cardStyle = (tc: ReturnType<typeof useThemeColors>) => ({
   background: tc.cardBg,
@@ -38,19 +40,35 @@ export function DashboardOverview() {
   const [weekly, setWeekly] = useState<number[]>([])
   const [weeklyDays, setWeeklyDays] = useState<string[]>([])
 
-  useEffect(() => { fetchDashboardStats() }, [])
+  const site = useSiteFilter()
+  const latestRequest = useRef(0)
 
-  const fetchDashboardStats = async () => {
+  // The site is a dependency, not a trigger: browser navigation changes the URL
+  // and the refetch follows from that, with no extra wiring on the control.
+  useEffect(() => {
+    if (!site.ready) return
+    fetchDashboardStats(site.selected)
+  }, [site.ready, site.selected])
+
+  const fetchDashboardStats = async (selected: string = site.selected) => {
+    // One rule for all seven: the server decides. Filtering rooms and users in
+    // the browser while the weekly chart needs a round trip would leave two
+    // mechanisms that drift apart.
+    const q = selected && selected !== ALL_SITES ? `?site=${encodeURIComponent(selected)}` : ''
+    // Switching site twice quickly leaves two flights in the air, and the slower
+    // one must not win. Only the newest request is allowed to write state.
+    const seq = ++latestRequest.current
+    const stale = () => seq !== latestRequest.current
     try {
       setIsLoading(true)
       const [usersRes, roomsRes, equipmentRes, schedulesRes, activityRes, weeklyRes, roomSchedulesRes] = await Promise.all([
-        apiRequest('/api/users').catch(() => ({ ok: false })),
-        apiRequest('/api/rooms').catch(() => ({ ok: false })),
-        apiRequest('/api/admin/equipment').catch(() => ({ ok: false })),
-        apiRequest('/api/schedules').catch(() => ({ ok: false })),
-        apiRequest('/api/admin/recent-activity').catch(() => ({ ok: false })),
-        apiRequest('/api/admin/completion-stats').catch(() => ({ ok: false })),
-        apiRequest('/api/room-schedules').catch(() => ({ ok: false })),
+        apiRequest(`/api/users${q}`).catch(() => ({ ok: false })),
+        apiRequest(`/api/rooms${q}`).catch(() => ({ ok: false })),
+        apiRequest(`/api/admin/equipment${q}`).catch(() => ({ ok: false })),
+        apiRequest(`/api/schedules${q}`).catch(() => ({ ok: false })),
+        apiRequest(`/api/admin/recent-activity${q}`).catch(() => ({ ok: false })),
+        apiRequest(`/api/admin/completion-stats${q}`).catch(() => ({ ok: false })),
+        apiRequest(`/api/room-schedules${q}`).catch(() => ({ ok: false })),
       ])
       const users = usersRes.ok && 'json' in usersRes ? await usersRes.json() : []
       const rooms = roomsRes.ok && 'json' in roomsRes ? await roomsRes.json() : []
@@ -59,6 +77,8 @@ export function DashboardOverview() {
       const activity = activityRes.ok && 'json' in activityRes ? await activityRes.json() : { activities: [] }
       const weeklyJson = weeklyRes.ok && 'json' in weeklyRes ? await weeklyRes.json() : { counts: [], days: [] }
       const roomSchedules = roomSchedulesRes.ok && 'json' in roomSchedulesRes ? await roomSchedulesRes.json() : []
+
+      if (stale()) return
 
       const sc: ScheduleStatusCounts = { pending: 0, inProgress: 0, completed: 0, overdue: 0 }
       if (Array.isArray(roomSchedules)) roomSchedules.forEach((rs: any) => { if (rs.status === 'PENDING') sc.pending++; else if (rs.status === 'IN_PROGRESS') sc.inProgress++; else if (rs.status === 'COMPLETED') sc.completed++; else if (rs.status === 'OVERDUE') sc.overdue++ })
@@ -71,13 +91,12 @@ export function DashboardOverview() {
       setStats({ totalUsers: Array.isArray(users) ? users.filter((u: any) => u.role !== 'OP').length : 0, totalRooms: Array.isArray(rooms) ? rooms.length : 0, totalEquipment: Array.isArray(equipment.equipment) ? equipment.equipment.length : 0, totalSchedules: Array.isArray(schedules) ? schedules.length : 0, recentActivity: activity.activities || [] })
       setWeekly(Array.isArray(weeklyJson.counts) ? weeklyJson.counts : [])
       setWeeklyDays(Array.isArray(weeklyJson.days) ? weeklyJson.days : [])
-    } catch (e) { console.error(e); setError('Failed to load dashboard data') } finally { setIsLoading(false) }
+    } catch (e) { if (stale()) return; console.error(e); setError('Failed to load dashboard data') } finally { if (!stale()) setIsLoading(false) }
   }
 
   if (isLoading) return (
-    <div className="flex items-center justify-center min-h-[50vh]">
-      <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
-        className="w-8 h-8 rounded-full border-2 border-transparent" style={{ borderTopColor: 'rgb(16,185,129)', borderRightColor: 'rgba(16,185,129,0.3)' }} />
+    <div className="max-w-[1230px] mx-auto relative z-10 pb-[17px]">
+      <PageLoading cards={4} label="Loading dashboard" />
     </div>
   )
 
@@ -86,7 +105,7 @@ export function DashboardOverview() {
       <div className="text-center">
         <AlertTriangle className="w-12 h-12 mx-auto mb-3" style={{ color: 'rgb(239,68,68)' }} />
         <p className="text-sm mb-4" style={{ color: tc.textMuted }}>{error}</p>
-        <button onClick={fetchDashboardStats} className="btn-primary px-5 py-2 text-sm rounded-lg">Retry</button>
+        <button onClick={() => fetchDashboardStats()} className="btn-primary px-5 py-2 text-sm rounded-lg">Retry</button>
       </div>
     </div>
   )
@@ -128,15 +147,30 @@ export function DashboardOverview() {
             {greeting}, {userName}
           </h1>
         </div>
-        <p className="text-[15px] leading-snug sm:text-right sm:max-w-xs" style={{ color: tc.textMuted }}>
-          {weeklyTotal > 0 ? `${weeklyTotal} tasks completed this week.` : `Overview of your cleaning management system.`}
-        </p>
+        {/* The right slot used to hold a sentence that said nothing. */}
+        {weeklyTotal > 0 && (
+          <p className="text-[14px] leading-snug sm:text-right" style={{ color: tc.textMuted }}>
+            {weeklyTotal} tasks completed this week
+          </p>
+        )}
       </header>
+
+      {/* The site control gets its own full-width row rather than the header's
+          ~500px right slot. That slot is what forced a dropdown at six homes; across
+          the full 1230px column the homes fit as pills and stay visible, which is
+          the point of a filter you switch between. */}
+      <SiteFilter
+        sites={site.sites}
+        selected={site.selected}
+        onSelect={site.setSelected}
+        canPick={site.canPick}
+        recents={site.recents}
+      />
 
       {/* KPI row — horizontal, compact */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-[11px]">
         {statCards.map((s, i) => (
-          <motion.div key={s.name} {...fadeUp} transition={{ duration: 0.3, delay: 0.04 + i * 0.04 }} className="h-full">
+          <motion.div key={s.name} {...fadeUp} transition={enter(i)} className="h-full">
             <Link href={s.href} className="group flex h-full w-full items-center gap-3 rounded-xl px-[15px] py-[13px] transition-all duration-200"
               style={cardStyle(tc)}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = tc.cardHoverBorder(s.accent); e.currentTarget.style.background = tc.cardHoverBg }}
@@ -157,7 +191,7 @@ export function DashboardOverview() {
       {/* Main bento grid — fits one viewport on lg+ */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-[11px] lg:gap-[13px] auto-rows-auto">
         {/* Weekly chart */}
-        <motion.div {...fadeUp} transition={{ duration: 0.3, delay: 0.2 }}
+        <motion.div {...fadeUp} transition={enter(4)}
           className="lg:col-span-7 rounded-xl p-[17px] flex flex-col"
           style={cardStyle(tc)}>
           <div className="flex items-center justify-between mb-3">
@@ -189,7 +223,7 @@ export function DashboardOverview() {
         </motion.div>
 
         {/* Schedule status */}
-        <motion.div {...fadeUp} transition={{ duration: 0.3, delay: 0.24 }}
+        <motion.div {...fadeUp} transition={enter(5)}
           className="lg:col-span-5 rounded-xl p-[17px]"
           style={cardStyle(tc)}>
           <div className="flex items-center justify-between mb-3">
@@ -216,7 +250,7 @@ export function DashboardOverview() {
         </motion.div>
 
         {/* Rooms by type */}
-        <motion.div {...fadeUp} transition={{ duration: 0.3, delay: 0.28 }}
+        <motion.div {...fadeUp} transition={enter(6)}
           className="lg:col-span-4 rounded-xl p-[17px]"
           style={cardStyle(tc)}>
           <div className="flex items-center justify-between mb-3">
@@ -243,8 +277,17 @@ export function DashboardOverview() {
                 </div>
               )
             })}
+            {/* Zero is a valid answer for a real but empty site, so this names
+                the site rather than reading like something went wrong. */}
             {Object.keys(roomTypes).length === 0 && (
-              <p className="text-[14px] py-4 text-center" style={{ color: tc.textFaint }}>No rooms yet</p>
+              <div className="py-4 text-center">
+                <p className="text-[14px]" style={{ color: tc.textFaint }}>
+                  {site.selectedSite ? `No rooms in ${site.selectedSite.name} yet` : 'No rooms yet'}
+                </p>
+                <Link href="/rooms" className="text-[14px] font-medium inline-block mt-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50" style={{ color: 'rgb(16,185,129)' }}>
+                  Add rooms &rarr;
+                </Link>
+              </div>
             )}
             {Object.keys(roomTypes).length > 5 && (
               <div className="flex items-center gap-2 pt-0.5">
@@ -256,7 +299,7 @@ export function DashboardOverview() {
         </motion.div>
 
         {/* Recent activity */}
-        <motion.div {...fadeUp} transition={{ duration: 0.3, delay: 0.32 }}
+        <motion.div {...fadeUp} transition={enter(7)}
           className="lg:col-span-5 rounded-xl p-[17px] flex flex-col min-h-0"
           style={cardStyle(tc)}>
           <h2 className="text-[17px] font-semibold mb-2" style={{ color: tc.textPrimary }}>Recent Activity</h2>
@@ -278,7 +321,7 @@ export function DashboardOverview() {
         </motion.div>
 
         {/* Quick actions — compact vertical list */}
-        <motion.div {...fadeUp} transition={{ duration: 0.3, delay: 0.36 }}
+        <motion.div {...fadeUp} transition={enter(8)}
           className="lg:col-span-3 rounded-xl p-[17px]"
           style={cardStyle(tc)}>
           <h2 className="text-[17px] font-semibold mb-2" style={{ color: tc.textPrimary }}>Quick Actions</h2>

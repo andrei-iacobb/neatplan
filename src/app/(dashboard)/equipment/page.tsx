@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import { fadeUp, enter } from '@/lib/motion'
 import {
   Plus, Search, Filter, Edit, Trash2, Calendar, MapPin,
   Wrench, AlertCircle, CheckCircle, Clock, Settings, X,
-  HeartHandshake, Sparkles, Box, Loader2
+  HeartHandshake, Sparkles, Box, Loader2, Check
 } from 'lucide-react'
 import { apiRequest } from '@/lib/url-utils'
+import { PageLoading, Spinner } from '@/components/ui/loading'
 import { useThemeColors } from '@/hooks/useThemeColors'
 import { useToast } from '@/components/ui/toast-context'
 import { canAccessAllSites } from '@/lib/roles'
@@ -98,11 +100,6 @@ function getStatusStyle(status: string, tc: ThemeColors) {
   }
 }
 
-const fadeUp = {
-  initial: { opacity: 0, y: 16 },
-  animate: { opacity: 1, y: 0 },
-}
-
 export default function EquipmentPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -129,6 +126,10 @@ export default function EquipmentPage() {
   const [selectedSchedule, setSelectedSchedule] = useState<string>('')
   const [selectedFrequency, setSelectedFrequency] = useState<ScheduleFrequency>(ScheduleFrequency.WEEKLY)
   const [selectedEquipmentType, setSelectedEquipmentType] = useState<string>('OTHER')
+  // Which items of the chosen type actually get the schedule. Picking a type selects all
+  // of them, then you untick the exceptions - having five hoists but only needing three
+  // on the rota should not force you into the one-by-one Manual tab.
+  const [excludedEquipmentIds, setExcludedEquipmentIds] = useState<Set<string>>(new Set())
   const [isAssigning, setIsAssigning] = useState(false)
   const [hoveredCard, setHoveredCard] = useState<string | null>(null)
 
@@ -173,6 +174,18 @@ export default function EquipmentPage() {
     }
   }, [status, session, router])
 
+  // Land on a type that actually has equipment. Defaulting to OTHER meant opening Quick
+  // Assign to an empty picker even when there was plenty of equipment under another type.
+  useEffect(() => {
+    if (equipment.length === 0) return
+    if (equipment.some((e) => e.type === selectedEquipmentType)) return
+    const firstPopulated = equipmentTypes.find((t) => equipment.some((e) => e.type === t.value))
+    if (firstPopulated) {
+      setSelectedEquipmentType(firstPopulated.value)
+      setExcludedEquipmentIds(new Set())
+    }
+  }, [equipment, selectedEquipmentType])
+
   useEffect(() => {
     if (successMessage) {
       const timer = setTimeout(() => setSuccessMessage(null), 5000)
@@ -210,9 +223,13 @@ export default function EquipmentPage() {
 
     setIsAssigning(true)
     try {
-      const targetEquipment = equipment.filter(equip => equip.type === selectedEquipmentType)
+      // Only the items still ticked, not everything sharing the type.
+      const targetEquipment = equipment.filter(
+        equip => equip.type === selectedEquipmentType && !excludedEquipmentIds.has(equip.id)
+      )
+      if (targetEquipment.length === 0) return
 
-      await Promise.all(
+      const results = await Promise.all(
         targetEquipment.map(equip =>
           apiRequest(`/api/admin/equipment/${equip.id}/schedules`, {
             method: 'POST',
@@ -222,12 +239,27 @@ export default function EquipmentPage() {
               frequency: selectedFrequency
             })
           })
+            .then(res => res.ok)
+            .catch(() => false)
         )
       )
 
-      setSuccessMessage(`Schedule assigned to all ${selectedEquipmentType.toLowerCase().replace('_', ' ')} equipment`)
+      // These POSTs used to be fired and never checked, so a failed assignment still
+      // reported success and the item silently had no schedule.
+      const failed = results.filter(ok => !ok).length
+      if (failed === results.length) {
+        showToast('Could not assign the schedule to any of the selected equipment', 'error')
+      } else if (failed > 0) {
+        showToast(`Assigned to ${results.length - failed}, but ${failed} failed`, 'error')
+      } else {
+        setSuccessMessage(
+          `Schedule assigned to ${results.length} ${results.length === 1 ? 'item' : 'items'}`
+        )
+      }
+
       setSelectedSchedule('')
       setSelectedFrequency(ScheduleFrequency.WEEKLY)
+      setExcludedEquipmentIds(new Set())
       fetchEquipment()
     } catch (error) {
       console.error('Error assigning schedules:', error)
@@ -392,16 +424,8 @@ export default function EquipmentPage() {
 
   if (status === 'loading' || isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-          style={{
-            width: 48, height: 48, borderRadius: '50%',
-            border: '3px solid rgba(16,185,129,0.15)',
-            borderTopColor: 'rgb(16,185,129)',
-          }}
-        />
+      <div className="max-w-[1300px] mx-auto relative z-10 pb-8">
+        <PageLoading cards={6} label="Loading equipment" />
       </div>
     )
   }
@@ -452,7 +476,7 @@ export default function EquipmentPage() {
       </div>
 
       {/* Controls */}
-      <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.05 }} className="flex flex-wrap justify-between items-center gap-2 mb-4">
+      <motion.div {...fadeUp} transition={enter()} className="flex flex-wrap justify-between items-center gap-2 mb-4">
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setViewMode('EQUIPMENT')}
@@ -511,7 +535,7 @@ export default function EquipmentPage() {
       </motion.div>
 
       {/* Filters */}
-      <motion.div {...fadeUp} transition={{ duration: 0.45, delay: 0.06 }} className="rounded-xl p-4 mb-6" style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}>
+      <motion.div {...fadeUp} transition={enter(1)} className="rounded-xl p-4 mb-6" style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="relative md:col-span-2">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: tc.textFaint }} />
@@ -548,35 +572,46 @@ export default function EquipmentPage() {
 
       {/* Schedule Assignment Section */}
       {viewMode === 'SCHEDULES' && (
-        <motion.div {...fadeUp} transition={{ duration: 0.45, delay: 0.12 }} className="mb-8">
+        <motion.div {...fadeUp} transition={enter(2)} className="mb-8">
           <h2 className="text-xl font-semibold mb-6" style={{ color: tc.textPrimary }}>Schedule Assignment</h2>
 
           {/* Assignment Mode Toggle */}
-          <div className="flex gap-2 mb-6">
-            {(['QUICK', 'MANUAL'] as AssignMode[]).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => setAssignMode(mode)}
-                className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
-                style={assignMode === mode ? {
-                  background: tc.tabActiveBg,
-                  color: tc.tabActiveText,
-                  border: '1px solid ' + tc.tabActiveBorder,
-                } : {
-                  background: tc.tabInactiveBg,
-                  color: tc.tabInactiveText,
-                  border: '1px solid ' + tc.cardBorder,
-                }}
-              >
-                {mode === 'QUICK' ? 'Quick Assign' : 'Manual Assign'}
-              </button>
-            ))}
+          {/* One segmented control rather than two free-floating buttons, so the pair
+              reads as a single choice with two positions. */}
+          <div
+            role="tablist"
+            aria-label="Assignment mode"
+            className="inline-flex p-1 rounded-xl mb-6"
+            style={{ background: tc.surfaceBg, border: '1px solid ' + tc.cardBorder }}
+          >
+            {(['QUICK', 'MANUAL'] as AssignMode[]).map((mode) => {
+              const active = assignMode === mode
+              return (
+                <button
+                  key={mode}
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setAssignMode(mode)}
+                  className="px-4 min-h-[36px] rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+                  style={active ? {
+                    background: tc.cardBg,
+                    color: tc.textPrimary,
+                    boxShadow: tc.shadow,
+                  } : {
+                    background: 'transparent',
+                    color: tc.textMuted,
+                  }}
+                >
+                  {mode === 'QUICK' ? 'Quick Assign' : 'Manual Assign'}
+                </button>
+              )
+            })}
           </div>
 
           {assignMode === 'QUICK' && (
             <div className="rounded-xl p-6 mb-6" style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}>
               <h3 className="text-lg font-semibold mb-2" style={{ color: tc.textPrimary }}>Quick Assignment</h3>
-              <p className="text-sm mb-4" style={{ color: tc.textMuted }}>Assign a schedule to all equipment of a specific type</p>
+              <p className="text-sm mb-4" style={{ color: tc.textMuted }}>Pick a type to select its equipment, then untick anything that should not get this schedule</p>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
@@ -600,7 +635,11 @@ export default function EquipmentPage() {
                   <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>Equipment Type</label>
                   <select
                     value={selectedEquipmentType}
-                    onChange={(e) => setSelectedEquipmentType(e.target.value)}
+                    onChange={(e) => {
+                      setSelectedEquipmentType(e.target.value)
+                      // A new type starts with everything ticked.
+                      setExcludedEquipmentIds(new Set())
+                    }}
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                     style={selectStyle}
                   >
@@ -630,9 +669,106 @@ export default function EquipmentPage() {
                 </div>
               </div>
 
+              {(() => {
+                const ofType = equipment.filter((e) => e.type === selectedEquipmentType)
+                const chosen = ofType.filter((e) => !excludedEquipmentIds.has(e.id))
+                const typeLabel = equipmentTypes.find((t) => t.value === selectedEquipmentType)?.label
+                  ?? selectedEquipmentType.replace('_', ' ')
+
+                if (ofType.length === 0) {
+                  return (
+                    <div
+                      className="rounded-xl p-4 mb-5 text-sm"
+                      style={{ background: tc.surfaceBg, color: tc.textMuted, border: '1px solid ' + tc.cardBorder }}
+                    >
+                      No {typeLabel.toLowerCase()} equipment yet. Add some above and it will appear here to pick from.
+                    </div>
+                  )
+                }
+
+                return (
+                  <div
+                    className="rounded-xl p-4 mb-5"
+                    style={{ background: tc.surfaceBg, border: '1px solid ' + tc.cardBorder }}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-3">
+                      <label className="text-sm font-medium" style={{ color: tc.textSecondary }}>
+                        Apply to
+                        <span className="ml-2 font-normal tabular-nums" style={{ color: tc.textMuted }}>
+                          {chosen.length} of {ofType.length} selected
+                        </span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExcludedEquipmentIds(
+                            chosen.length === ofType.length ? new Set(ofType.map((e) => e.id)) : new Set()
+                          )
+                        }
+                        className="text-[12px] font-medium rounded px-2 py-1 shrink-0 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+                        style={{ color: tc.accentGreen }}
+                      >
+                        {chosen.length === ofType.length ? 'Clear all' : 'Select all'}
+                      </button>
+                    </div>
+
+                    <ul className="flex flex-wrap gap-2" role="group" aria-label={`${typeLabel} equipment to assign`}>
+                      {ofType.map((item) => {
+                        const on = !excludedEquipmentIds.has(item.id)
+                        return (
+                          <li key={item.id}>
+                            <button
+                              type="button"
+                              role="checkbox"
+                              aria-checked={on}
+                              onClick={() =>
+                                setExcludedEquipmentIds((prev) => {
+                                  const next = new Set(prev)
+                                  if (next.has(item.id)) next.delete(item.id)
+                                  else next.add(item.id)
+                                  return next
+                                })
+                              }
+                              className="flex items-center gap-2 min-h-[40px] px-3 rounded-lg text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+                              style={{
+                                // Selected pills stay neutral. They used to carry the same
+                                // mint as the primary button (0.08 vs 0.10 alpha of one
+                                // colour), so a dozen chips drowned out the one control that
+                                // actually does something. Only the checkbox is accented.
+                                background: tc.cardBg,
+                                color: on ? tc.textPrimary : tc.textMuted,
+                                border: '1px solid ' + (on ? tc.cardBorder : 'transparent'),
+                                opacity: on ? 1 : 0.6,
+                              }}
+                            >
+                              <span
+                                aria-hidden="true"
+                                className="flex items-center justify-center w-[18px] h-[18px] rounded-[5px] shrink-0 transition-colors"
+                                style={{
+                                  background: on ? tc.accentGreen : 'transparent',
+                                  border: '1px solid ' + (on ? tc.accentGreen : tc.textFaint),
+                                }}
+                              >
+                                {on && <Check className="w-3 h-3" strokeWidth={3} style={{ color: tc.cardBg }} />}
+                              </span>
+                              {item.name}
+                            </button>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </div>
+                )
+              })()}
+
               <button
                 onClick={handleQuickAssign}
-                disabled={!selectedSchedule || !selectedEquipmentType || isAssigning}
+                disabled={
+                  !selectedSchedule ||
+                  !selectedEquipmentType ||
+                  isAssigning ||
+                  equipment.filter((e) => e.type === selectedEquipmentType && !excludedEquipmentIds.has(e.id)).length === 0
+                }
                 className="flex items-center px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 style={{
                   background: tc.btnPrimaryBg,
@@ -641,11 +777,16 @@ export default function EquipmentPage() {
                 }}
               >
                 {isAssigning ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Spinner size="sm" className="mr-2" />
                 ) : (
                   <Plus className="w-4 h-4 mr-2" />
                 )}
-                Assign to All {selectedEquipmentType.replace('_', ' ')} Equipment
+                {(() => {
+                  const n = equipment.filter(
+                    (e) => e.type === selectedEquipmentType && !excludedEquipmentIds.has(e.id)
+                  ).length
+                  return `Assign to ${n} selected ${n === 1 ? 'item' : 'items'}`
+                })()}
               </button>
             </div>
           )}
@@ -722,7 +863,7 @@ export default function EquipmentPage() {
                 }}
               >
                 {isAssigning ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Spinner size="sm" className="mr-2" />
                 ) : (
                   <Plus className="w-4 h-4 mr-2" />
                 )}
@@ -735,7 +876,7 @@ export default function EquipmentPage() {
 
       {/* Equipment Grid */}
       {viewMode === 'EQUIPMENT' && filteredEquipment.length === 0 ? (
-        <motion.div {...fadeUp} transition={{ duration: 0.45, delay: 0.12 }} className="text-center py-16 rounded-xl" style={{ background: tc.emptyBg, border: '1px solid ' + tc.cardBorder }}>
+        <motion.div {...fadeUp} transition={enter(2)} className="text-center py-16 rounded-xl" style={{ background: tc.emptyBg, border: '1px solid ' + tc.cardBorder }}>
           <div className="w-14 h-14 rounded-xl mx-auto mb-4 flex items-center justify-center" style={{ background: tc.surfaceBg }}>
             <Wrench className="w-7 h-7" style={{ color: tc.textFaint }} />
           </div>
@@ -768,7 +909,7 @@ export default function EquipmentPage() {
             <motion.div
               key={equip.id}
               {...fadeUp}
-              transition={{ duration: 0.45, delay: 0.12 + index * 0.06 }}
+              transition={enter(2 + index)}
               className="rounded-xl p-5 transition-all cursor-default"
               style={{
                 background: hoveredCard === equip.id ? tc.cardHoverBg : tc.cardBg,
@@ -992,11 +1133,7 @@ export default function EquipmentPage() {
                     >
                       {isSubmitting ? (
                         <>
-                          <motion.div
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                            style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(16,185,129,0.2)', borderTopColor: tc.accentGreen }}
-                          />
+                          <Spinner size="sm" />
                           Adding...
                         </>
                       ) : (
@@ -1127,11 +1264,7 @@ export default function EquipmentPage() {
                     >
                       {isSubmitting ? (
                         <>
-                          <motion.div
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                            style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(16,185,129,0.2)', borderTopColor: tc.accentGreen }}
-                          />
+                          <Spinner size="sm" />
                           Updating...
                         </>
                       ) : (
@@ -1221,11 +1354,7 @@ export default function EquipmentPage() {
                   >
                     {isSubmitting ? (
                       <>
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                          style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(239,68,68,0.2)', borderTopColor: tc.accentRed }}
-                        />
+                        <Spinner size="sm" />
                         Deleting...
                       </>
                     ) : (

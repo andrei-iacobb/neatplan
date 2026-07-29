@@ -3,12 +3,12 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { canAccessAllSites } from '@/lib/roles'
-import { siteScopeWhere } from '@/lib/authz'
+import { siteScopeWhere, resolveReadSiteId, readSiteWhere } from '@/lib/authz'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -25,82 +25,102 @@ export async function GET() {
     // existing behaviour (including orphaned "Deleted" logs) is preserved.
     const user = session.user
     const scoped = !canAccessAllSites(user.role)
-    const roomLogSiteWhere = scoped ? { roomSchedule: { room: siteScopeWhere(user) } } : {}
-    const equipLogSiteWhere = scoped ? { equipmentSchedule: { equipment: siteScopeWhere(user) } } : {}
-    const sessionSiteWhere = scoped ? { user: siteScopeWhere(user) } : {}
+    const requestedSiteId = new URL(request.url).searchParams.get('site')
+    const siteId = resolveReadSiteId(user, requestedSiteId)
+    const readSiteClause = readSiteWhere(siteId)
+    const roomLogSiteWhere = {
+      AND: [
+        scoped ? { roomSchedule: { room: siteScopeWhere(user) } } : {},
+        siteId ? { roomSchedule: { room: readSiteClause } } : {},
+      ],
+    }
+    const equipLogSiteWhere = {
+      AND: [
+        scoped ? { equipmentSchedule: { equipment: siteScopeWhere(user) } } : {},
+        siteId ? { equipmentSchedule: { equipment: readSiteClause } } : {},
+      ],
+    }
+    // Hidden owner accounts are omitted from the activity feed, matching the user
+    // directory and the active-session list.
+    const sessionSiteWhere = {
+      AND: [
+        scoped ? { user: siteScopeWhere(user) } : {},
+        { user: { ...readSiteClause, isHidden: false } },
+      ],
+    }
 
-    // Get recent room schedule completions
-    const recentRoomCompletions = await prisma.roomScheduleCompletionLog.findMany({
-      where: roomLogSiteWhere,
-      include: {
-        roomSchedule: {
-          include: {
-            room: {
-              select: {
-                name: true,
-                type: true
+    // Get recent room, equipment, and session data in parallel
+    const [recentRoomCompletions, recentEquipmentCompletions, recentSessions] = await Promise.all([
+      prisma.roomScheduleCompletionLog.findMany({
+        where: roomLogSiteWhere,
+        include: {
+          roomSchedule: {
+            include: {
+              room: {
+                select: {
+                  name: true,
+                  type: true
+                }
+              },
+              schedule: {
+                select: {
+                  title: true
+                }
               }
-            },
-            schedule: {
-              select: {
-                title: true
+            }
+          },
+          completedBy: {
+            select: { id: true, name: true, email: true }
+          }
+        },
+        orderBy: {
+          completedAt: 'desc'
+        },
+        take: 5
+      }),
+
+      prisma.equipmentScheduleCompletionLog.findMany({
+        where: equipLogSiteWhere,
+        include: {
+          equipmentSchedule: {
+            include: {
+              equipment: {
+                select: {
+                  name: true,
+                  type: true
+                }
+              },
+              schedule: {
+                select: {
+                  title: true
+                }
               }
             }
           }
         },
-        completedBy: {
-          select: { id: true, name: true, email: true }
-        }
-      },
-      orderBy: {
-        completedAt: 'desc'
-      },
-      take: 5
-    })
+        orderBy: {
+          completedAt: 'desc'
+        },
+        take: 5
+      }),
 
-    // Get recent equipment schedule completions
-    const recentEquipmentCompletions = await prisma.equipmentScheduleCompletionLog.findMany({
-      where: equipLogSiteWhere,
-      include: {
-        equipmentSchedule: {
-          include: {
-            equipment: {
-              select: {
-                name: true,
-                type: true
-              }
-            },
-            schedule: {
-              select: {
-                title: true
-              }
+      prisma.userSession.findMany({
+        where: sessionSiteWhere,
+        include: {
+          user: {
+            select: {
+              email: true,
+              name: true,
+              isAdmin: true
             }
           }
-        }
-      },
-      orderBy: {
-        completedAt: 'desc'
-      },
-      take: 5
-    })
-
-    // Get recent user sessions
-    const recentSessions = await prisma.userSession.findMany({
-      where: sessionSiteWhere,
-      include: {
-        user: {
-          select: {
-            email: true,
-            name: true,
-            isAdmin: true
-          }
-        }
-      },
-      orderBy: {
-        lastActivity: 'desc'
-      },
-      take: 5
-    })
+        },
+        orderBy: {
+          lastActivity: 'desc'
+        },
+        take: 5
+      })
+    ])
 
     // Combine and format all activities
     const activities = [
@@ -182,4 +202,4 @@ export async function GET() {
       { status: 500 }
     )
   }
-} 
+}

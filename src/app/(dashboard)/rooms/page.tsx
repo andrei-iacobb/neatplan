@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { fadeUp, enter } from '@/lib/motion'
 import { canAccessAllSites } from '@/lib/roles'
 import { useToast } from '@/components/ui/toast-context'
 import { useThemeColors } from '@/hooks/useThemeColors'
@@ -15,8 +16,7 @@ import {
 import { ScheduleFrequency, ScheduleStatus } from '@prisma/client'
 import { getFrequencyLabel, getScheduleDisplayName } from '@/lib/schedule-utils'
 import { apiRequest } from '@/lib/url-utils'
-
-const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } }
+import { PageLoading, Spinner } from '@/components/ui/loading'
 
 interface Room {
   id: string
@@ -99,24 +99,16 @@ export default function RoomsPage() {
   }, [])
 
   useEffect(() => {
+    // One request for every room AND its schedules. This used to load the room list and
+    // then fire a request per room - 109 rooms meant 109 extra round trips before the
+    // page would render anything, which is what made this page feel hung.
     Promise.all([
-      apiRequest('/api/rooms').then(res => res.json()),
+      apiRequest('/api/rooms?include=schedules').then(res => res.json()),
       apiRequest('/api/schedules').then(res => res.json())
     ]).then(([roomsData, schedulesData]) => {
-      Promise.all(
-        roomsData.map((room: Room) =>
-          apiRequest(`/api/rooms/${room.id}/schedules`)
-            .then(res => res.json())
-            .then(schedules => ({
-              ...room,
-              schedules
-            }))
-        )
-      ).then(roomsWithSchedules => {
-        setRooms(roomsWithSchedules)
-        setSchedules(schedulesData)
-        setIsLoading(false)
-      })
+      setRooms(roomsData.map((room: Room) => ({ ...room, schedules: room.schedules ?? [] })))
+      setSchedules(schedulesData)
+      setIsLoading(false)
     }).catch(error => {
       console.error('Error fetching data:', error)
       showToast('Failed to load data', 'error')
@@ -251,9 +243,8 @@ export default function RoomsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
-          className="w-8 h-8 rounded-full border-2 border-transparent" style={{ borderTopColor: 'rgb(16,185,129)', borderRightColor: 'rgba(16,185,129,0.3)' }} />
+      <div className="max-w-[1100px] mx-auto relative z-10 pb-8">
+        <PageLoading cards={6} label="Loading rooms" />
       </div>
     )
   }
@@ -288,7 +279,7 @@ export default function RoomsPage() {
       </div>
 
       {/* Controls */}
-      <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.05 }} className="flex flex-wrap justify-between items-center gap-2 mb-4">
+      <motion.div {...fadeUp} transition={enter()} className="flex flex-wrap justify-between items-center gap-2 mb-4">
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex gap-2">
             {viewTabs.map((tab) => (
@@ -371,10 +362,10 @@ export default function RoomsPage() {
         </div>
       </motion.div>
 
-      {/* Main Content */}
-      <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.1 }}
-        className="rounded-xl p-5"
-        style={{ background: tc.cardBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}>
+      {/* Main Content - a section wrapper, not a card. Giving it a card surface
+          put white behind the white room cards and erased their edges. */}
+      <motion.div {...fadeUp} transition={enter(1)}
+        className="rounded-xl">
 
         {viewMode === 'BEDROOMS' && (
           <div>
@@ -391,7 +382,7 @@ export default function RoomsPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {filteredBedrooms.map((room, i) => (
-                  <RoomCard key={room.id} room={room} tc={tc} delay={i * 0.04} showSite={canPickSite} onEdit={(room) => {
+                  <RoomCard key={room.id} room={room} tc={tc} index={i} showSite={canPickSite} onEdit={(room) => {
                     setSelectedRoom(room)
                     setFormData({ name: room.name, description: room.description || '', floor: room.floor || 'Ground Floor', type: room.type, siteId: room.siteId || '' })
                     setShowEditModal(true)
@@ -417,7 +408,7 @@ export default function RoomsPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {otherRooms.map((room, i) => (
-                  <RoomCard key={room.id} room={room} tc={tc} delay={i * 0.04} showSite={canPickSite} onEdit={(room) => {
+                  <RoomCard key={room.id} room={room} tc={tc} index={i} showSite={canPickSite} onEdit={(room) => {
                     setSelectedRoom(room)
                     setFormData({ name: room.name, description: room.description || '', floor: room.floor || 'Ground Floor', type: room.type, siteId: room.siteId || '' })
                     setShowEditModal(true)
@@ -508,8 +499,7 @@ export default function RoomsPage() {
                   onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}>
                   {isAssigning ? (
-                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                      className="w-4 h-4 rounded-full border-2 border-transparent" style={{ borderTopColor: tc.btnPrimaryText, borderRightColor: 'transparent' }} />
+                    <Spinner size="sm" />
                   ) : (
                     <Plus className="w-4 h-4" />
                   )}
@@ -574,8 +564,7 @@ export default function RoomsPage() {
                   onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}>
                   {isAssigning ? (
-                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                      className="w-4 h-4 rounded-full border-2 border-transparent" style={{ borderTopColor: tc.btnPrimaryText, borderRightColor: 'transparent' }} />
+                    <Spinner size="sm" />
                   ) : (
                     <Plus className="w-4 h-4" />
                   )}
@@ -823,18 +812,18 @@ function getStatusStyle(status: string, tc: TC) {
 interface RoomCardProps {
   room: Room
   tc: TC
-  delay: number
+  index: number
   onEdit: (room: Room) => void
   showSite?: boolean
 }
 
-function RoomCard({ room, tc, delay, onEdit, showSite }: RoomCardProps) {
+function RoomCard({ room, tc, index, onEdit, showSite }: RoomCardProps) {
   const activeSchedules = room.schedules?.filter(s => s.status !== 'COMPLETED') || []
   const completedSchedules = room.schedules?.filter(s => s.status === 'COMPLETED') || []
   const accent = tc.accentGreen
 
   return (
-    <motion.div {...fadeUp} transition={{ duration: 0.3, delay: 0.15 + delay }} className="h-full">
+    <motion.div {...fadeUp} transition={enter(2 + index)} className="h-full">
       <Link href={`/rooms/${room.id}`}
         className="group block h-full rounded-xl p-4 transition-all duration-200 relative overflow-hidden"
         style={{ background: tc.cardBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}

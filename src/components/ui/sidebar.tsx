@@ -98,10 +98,15 @@ export function Sidebar() {
   }, [])
 
   const t = {
-    bg: isDark ? 'rgba(14, 14, 20, 0.85)' : 'rgba(255, 255, 255, 0.92)',
-    border: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
-    title: isDark ? 'rgba(232,232,237,0.95)' : 'rgba(17,17,27,0.9)',
-    navDefault: isDark ? 'rgba(139,139,158,0.9)' : 'rgba(100,100,120,0.8)',
+    /*
+     * Chrome sits below content on the ramp - the sidebar is the darkest
+     * surface, not the brightest. A white sidebar over a white canvas is what
+     * made the shell read as glare with no edge between frame and content.
+     */
+    bg: 'rgb(var(--sidebar-bg))',
+    border: 'rgb(var(--sidebar-border) / var(--sidebar-border-alpha))',
+    title: 'rgb(var(--text-primary))',
+    navDefault: isDark ? 'rgba(139,139,158,0.9)' : 'rgba(90,90,110,0.95)',
     navHover: isDark ? 'rgba(232,232,237,0.85)' : 'rgba(17,17,27,0.85)',
     navHoverBg: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
     activeBg: isDark ? 'rgba(16,185,129,0.08)' : 'rgba(16,185,129,0.08)',

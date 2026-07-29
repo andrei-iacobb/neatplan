@@ -7,9 +7,11 @@ import * as z from 'zod'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import { fadeUp, enter } from '@/lib/motion'
 import { Plus, Edit, Trash2, X, AlertTriangle, Building2, Sparkles, Users as UsersIcon, DoorOpen } from 'lucide-react'
 import { useToast } from '@/components/ui/toast-context'
 import { apiRequest } from '@/lib/url-utils'
+import { PageLoading } from '@/components/ui/loading'
 import { useThemeColors } from '@/hooks/useThemeColors'
 import { canAccessAllSites } from '@/lib/roles'
 
@@ -30,8 +32,6 @@ interface Site {
 }
 
 type ThemeColors = ReturnType<typeof useThemeColors>
-
-const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } }
 
 function SiteFormModal({ site, onClose, onSave, tc }: { site: Partial<Site> | null, onClose: () => void, onSave: (data: SiteFormData) => Promise<void>, tc: ThemeColors }) {
   const { showToast } = useToast()
@@ -282,9 +282,8 @@ export default function SitesPage() {
   }
 
   if (isLoading) return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
-        className="w-8 h-8 rounded-full border-2 border-transparent" style={{ borderTopColor: 'rgb(16,185,129)', borderRightColor: 'rgba(16,185,129,0.3)' }} />
+    <div className="max-w-[1100px] mx-auto relative z-10 pb-8">
+      <PageLoading cards={6} label="Loading sites" />
     </div>
   )
 
@@ -320,7 +319,7 @@ export default function SitesPage() {
         </div>
 
         {sites.length === 0 ? (
-          <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.08 }}
+          <motion.div {...fadeUp} transition={enter()}
             className="rounded-xl p-10 text-center" style={{ background: tc.tableBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}>
             <Building2 className="w-10 h-10 mx-auto mb-3" style={{ color: tc.textMuted }} />
             <p className="text-[14px] font-medium mb-1" style={{ color: tc.textPrimary }}>No sites yet</p>

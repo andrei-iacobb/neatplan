@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { fadeUp, enter } from '@/lib/motion'
 import { useSession } from 'next-auth/react'
 import { useThemeColors } from '@/hooks/useThemeColors'
 import { apiRequest } from '@/lib/url-utils'
+import { ListLoading } from '@/components/ui/loading'
 import {
   Sparkles,
   Download,
@@ -18,8 +20,6 @@ import {
   Users,
   Search,
 } from 'lucide-react'
-
-const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } }
 
 interface CompletionItem {
   id: string
@@ -267,7 +267,7 @@ export default function AuditPage() {
       {/* Filter Bar */}
       <motion.div
         {...fadeUp}
-        transition={{ duration: 0.35, delay: 0.03 }}
+        transition={enter()}
         className="rounded-xl p-4 mb-6"
         style={{
           background: tc.cardBg,
@@ -387,7 +387,7 @@ export default function AuditPage() {
       {/* Summary Cards */}
       <motion.div
         {...fadeUp}
-        transition={{ duration: 0.35, delay: 0.06 }}
+        transition={enter(1)}
         className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6"
       >
         {[
@@ -449,7 +449,7 @@ export default function AuditPage() {
       {/* Table */}
       <motion.div
         {...fadeUp}
-        transition={{ duration: 0.35, delay: 0.09 }}
+        transition={enter(2)}
         className="rounded-xl overflow-hidden"
         style={{
           background: tc.cardBg,
@@ -458,17 +458,7 @@ export default function AuditPage() {
         }}
       >
         {isLoading ? (
-          <div className="flex items-center justify-center p-12">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
-              className="w-8 h-8 rounded-full border-2 border-transparent"
-              style={{
-                borderTopColor: 'rgb(16,185,129)',
-                borderRightColor: 'rgba(16,185,129,0.3)',
-              }}
-            />
-          </div>
+          <ListLoading rows={8} label="Loading audit log" />
         ) : items.length === 0 ? (
           <div className="p-12 text-center">
             <p className="text-[13px]" style={{ color: tc.textMuted }}>

@@ -7,11 +7,13 @@ import * as z from 'zod'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import { fadeUp, enter } from '@/lib/motion'
 import { Edit, Trash2, UserPlus, X, AlertTriangle, Sparkles, Building2 } from 'lucide-react'
 import { useToast } from '@/components/ui/toast-context'
 import { apiRequest } from '@/lib/url-utils'
+import { ListLoading } from '@/components/ui/loading'
 import { useThemeColors } from '@/hooks/useThemeColors'
-import { ALL_ROLES, ROLE_LABELS, isManagementRole, requiresSite, roleRank, type Role } from '@/lib/roles'
+import { ALL_ROLES, ROLE_LABELS, canAssignRole, isManagementRole, requiresSite, roleRank, type Role } from '@/lib/roles'
 
 const userSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -31,6 +33,7 @@ const userSchema = z.object({
 })
 
 type UserFormData = z.infer<typeof userSchema>
+type AssignableRole = UserFormData['role']
 
 interface Site {
   id: string
@@ -52,21 +55,22 @@ interface User {
 
 type ThemeColors = ReturnType<typeof useThemeColors>
 
-const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } }
-
 function UserFormModal({ user, onClose, onSave, tc, sites, sessionRole }: { user: Partial<User> | null, onClose: () => void, onSave: (data: any) => void, tc: ThemeColors, sites: Site[], sessionRole?: Role }) {
   const { showToast } = useToast()
 
-  // Roles the current user is allowed to assign. OP may assign any role; anyone
-  // else may only assign roles strictly below their own rank.
-  const assignableRoles = ALL_ROLES.filter((r) => sessionRole === 'OP' || roleRank(r) < roleRank(sessionRole))
+  // Roles the current user is allowed to assign. ALL_ROLES already excludes OWNER, so
+  // that tier is never offered here regardless of who is looking.
+  const assignableRoles = ALL_ROLES.filter((r) => canAssignRole(sessionRole, r))
   // When editing a user whose current role sits above what we may normally
   // assign (e.g. viewing your own account), keep it selectable for display.
   const currentRole = user?.role as Role | undefined
   const roleOptions: Role[] = user?.id && currentRole && !assignableRoles.includes(currentRole)
     ? [currentRole, ...assignableRoles]
     : assignableRoles
-  const defaultRole: Role = currentRole ?? assignableRoles[assignableRoles.length - 1] ?? 'CLEANER'
+  // The form only ever submits an assignable role. An OWNER editing their own record
+  // would otherwise try to seed the field with a value the schema does not accept.
+  const defaultRole: AssignableRole =
+    (currentRole && (assignableRoles as Role[]).includes(currentRole) ? currentRole : assignableRoles[assignableRoles.length - 1] ?? 'CLEANER') as AssignableRole
 
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
@@ -378,9 +382,8 @@ export default function UsersPage() {
   }
 
   if (isLoading) return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
-        className="w-8 h-8 rounded-full border-2 border-transparent" style={{ borderTopColor: 'rgb(16,185,129)', borderRightColor: 'rgba(16,185,129,0.3)' }} />
+    <div className="max-w-[1100px] mx-auto relative z-10 pb-8">
+      <ListLoading rows={8} label="Loading users" />
     </div>
   )
 
@@ -412,7 +415,7 @@ export default function UsersPage() {
         </div>
 
         {/* Users Table */}
-        <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.08 }}>
+        <motion.div {...fadeUp} transition={enter()}>
           <div className="rounded-xl overflow-x-auto" style={{ background: tc.tableBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}>
             <table className="min-w-[640px] sm:min-w-full" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
               <thead>

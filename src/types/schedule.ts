@@ -17,6 +17,7 @@ export enum ScheduleStatus {
 export interface ScheduleTask {
   id: string
   description: string
+  frequency?: string | null
   additionalNotes?: string | null
   scheduleId: string
   createdAt: Date

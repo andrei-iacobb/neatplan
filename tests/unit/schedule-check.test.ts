@@ -1,9 +1,25 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
-const { roomUpdateMany, equipUpdateMany, userFindMany, sendSystemAlert, cleanupStaleSessions } =
+const {
+  transaction,
+  queryRaw,
+  roomFindMany,
+  roomUpdateMany,
+  equipFindMany,
+  equipUpdateMany,
+  rearmRoomUpdateMany,
+  userFindMany,
+  sendSystemAlert,
+  cleanupStaleSessions,
+} =
   vi.hoisted(() => ({
+    transaction: vi.fn(),
+    queryRaw: vi.fn(),
+    roomFindMany: vi.fn(),
     roomUpdateMany: vi.fn(),
+    equipFindMany: vi.fn(),
     equipUpdateMany: vi.fn(),
+    rearmRoomUpdateMany: vi.fn(),
     userFindMany: vi.fn(),
     sendSystemAlert: vi.fn(),
     cleanupStaleSessions: vi.fn(),
@@ -11,8 +27,7 @@ const { roomUpdateMany, equipUpdateMany, userFindMany, sendSystemAlert, cleanupS
 
 vi.mock('@/lib/db', () => ({
   prisma: {
-    roomSchedule: { updateMany: roomUpdateMany },
-    equipmentSchedule: { updateMany: equipUpdateMany },
+    $transaction: transaction,
     user: { findMany: userFindMany },
   },
 }))
@@ -25,6 +40,29 @@ import { runScheduleCheck } from '@/lib/schedule-check'
 describe('runScheduleCheck', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    queryRaw.mockResolvedValue([{ locked: true }])
+    roomFindMany.mockResolvedValue([])
+    equipFindMany.mockResolvedValue([])
+    rearmRoomUpdateMany.mockResolvedValue({ count: 0 })
+    transaction.mockImplementation(async (callback) => {
+      let roomUpdateCall = 0
+      return callback({
+        $queryRaw: queryRaw,
+        roomSchedule: {
+          findMany: roomFindMany,
+          updateMany: vi.fn((args) => {
+            roomUpdateCall++
+            return roomUpdateCall === 1
+              ? roomUpdateMany(args)
+              : rearmRoomUpdateMany(args)
+          }),
+        },
+        equipmentSchedule: {
+          findMany: equipFindMany,
+          updateMany: equipUpdateMany,
+        },
+      })
+    })
     cleanupStaleSessions.mockResolvedValue(0)
     userFindMany.mockResolvedValue([{ email: 'admin@example.com', name: 'Admin' }])
   })

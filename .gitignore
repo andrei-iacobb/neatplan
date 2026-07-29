@@ -61,3 +61,9 @@ playwright-report/
 
 # Local audit artifacts
 .audit/
+
+# Local Ralph loop state - contains DB credentials, never commit
+.claude/ralph-loop.local.md
+
+# Generated audit artifacts (large, with inline screenshots)
+ui-audit.html

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { requireAuth, requireAdmin, siteScopeWhere, resolveWriteSiteId } from '@/lib/authz'
+import { requireAuth, requireAdmin, siteScopeWhere, resolveWriteSiteId, resolveReadSiteId, readSiteWhere } from '@/lib/authz'
 import { prisma } from '@/lib/db'
 import { Prisma, RoomType } from '@prisma/client'
 import * as z from 'zod'
@@ -12,14 +12,40 @@ const roomSchema = z.object({
   siteId: z.string().optional()
 })
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const auth = await requireAuth()
     if ('error' in auth) return auth.error
 
+    // Opt-in so the rooms list can fetch every room's schedules in ONE query. Without it
+    // the page loaded the list and then issued a request per room - 109 rooms meant 109
+    // extra round trips, each re-running auth revalidation. Callers that only need counts
+    // (the dashboard) keep the lean payload by not asking for it.
+    const searchParams = new URL(request.url).searchParams
+    const withSchedules = searchParams.get('include') === 'schedules'
+    const siteId = resolveReadSiteId(auth.user, searchParams.get('site'))
+
     const rooms = await prisma.room.findMany({
-      where: siteScopeWhere(auth.user),
-      include: { site: { select: { id: true, name: true } } },
+      where: {
+        AND: [
+          siteScopeWhere(auth.user),
+          readSiteWhere(siteId),
+        ],
+      },
+      include: {
+        site: { select: { id: true, name: true } },
+        // Matches the shape of GET /api/rooms/[id]/schedules exactly, so consumers can
+        // swap the fan-out for this without reshaping anything.
+        ...(withSchedules
+          ? {
+              schedules: {
+                include: {
+                  schedule: { select: { id: true, title: true, tasks: true } },
+                },
+              },
+            }
+          : {}),
+      },
       orderBy: {
         createdAt: 'desc'
       }
