@@ -2,11 +2,14 @@
 FROM node:20-alpine
 
 # Add necessary packages for Prisma and database tools
-# pnpm is pinned deliberately. An unpinned `npm install -g pnpm` silently moved from 10
-# to 11 between builds, and 11 changed how install scripts are approved - a green build
-# in July failed in July on identical application code.
+# pnpm is pinned deliberately, to the last 10.x. An unpinned `npm install -g pnpm`
+# silently moved to 11 between builds and broke an image whose application code had not
+# changed: pnpm 11 requires node:sqlite, which does not exist on Node 20, so the install
+# died with ERR_UNKNOWN_BUILTIN_MODULE. Pinning the build tool rather than bumping the
+# runtime keeps this a build-time change with no new Node major under a live service.
+# If Node is ever moved to 22+, pnpm 11 becomes available again.
 RUN apk add --no-cache libc6-compat openssl postgresql-client && \
-    npm install -g pnpm@11.17.0
+    npm install -g pnpm@10.34.5
 
 # Create a non-root user and group
 RUN addgroup -g 1001 -S nodejs && \
