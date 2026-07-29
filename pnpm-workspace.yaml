@@ -16,3 +16,13 @@ onlyBuiltDependencies:
   - prisma
   - sharp
   - unrs-resolver
+
+# Security pins, duplicated from package.json#pnpm.overrides on purpose. pnpm 10 reads
+# them from package.json and pnpm 11 only reads them here, so keeping both means an
+# install under either version writes the same lockfile. When they lived in package.json
+# alone, a local pnpm 11 install silently dropped them from the lockfile, which both
+# unpinned the patched versions and broke the image build with a config mismatch.
+overrides:
+  form-data: '>=4.0.6'
+  postcss: '>=8.5.10'
+  uuid: '>=13.0.1'
