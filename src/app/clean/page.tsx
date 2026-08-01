@@ -74,9 +74,15 @@ interface Equipment {
   id: string
   name: string
   type: string
-  location: string
-  model: string
-  serialNumber: string
+  /*
+   * The Prisma Equipment model has no location/model/serialNumber columns and the
+   * cleaner dashboard API never sends them. They were typed as required strings,
+   * so search and sort-by-floor called .toLowerCase()/.localeCompare() on
+   * undefined and took the whole page down. Optional, and guarded at every use.
+   */
+  location?: string
+  model?: string
+  serialNumber?: string
   priority: 'OVERDUE' | 'DUE_TODAY' | 'UPCOMING' | 'COMPLETED'
   nextDue: string
   summary: EquipmentSummary
@@ -411,10 +417,11 @@ export default function CleanerDashboard() {
 
   // NEW: Filter and sort equipment (mirrors room logic)
   const filteredEquipment = equipment.filter(equip => {
-    const matchesSearch = equip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         equip.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         equip.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (equip.model && equip.model.toLowerCase().includes(searchTerm.toLowerCase()))
+    const needle = searchTerm.toLowerCase()
+    const matchesSearch = equip.name.toLowerCase().includes(needle) ||
+                         equip.type.toLowerCase().includes(needle) ||
+                         (equip.location?.toLowerCase().includes(needle) ?? false) ||
+                         (equip.model?.toLowerCase().includes(needle) ?? false)
     // For equipment, location acts like floor for filtering
     const matchesFloor = floorFilter === 'all' || equip.location === floorFilter
     const matchesType = typeFilter === 'all' || equip.type === typeFilter
@@ -427,7 +434,7 @@ export default function CleanerDashboard() {
       case 'name':
         return a.name.localeCompare(b.name)
       case 'floor': // Use location for equipment
-        return a.location.localeCompare(b.location)
+        return (a.location ?? '').localeCompare(b.location ?? '')
       case 'type':
         return a.type.localeCompare(b.type)
       case 'priority':
@@ -452,9 +459,8 @@ export default function CleanerDashboard() {
     const categories: { [key: string]: Equipment[] } = {}
     
     equipment.forEach(equip => {
-      const key = sortBy === 'floor' ? equip.location : 
-                  sortBy === 'type' ? equip.type.replace('_', ' ') :
-                  equip.location // default to location
+      const key = sortBy === 'type' ? equip.type.replace('_', ' ')
+                : (equip.location || 'Unassigned') // location is optional; never key on undefined
       
       if (!categories[key]) {
         categories[key] = []
@@ -468,7 +474,9 @@ export default function CleanerDashboard() {
   const equipmentCategories = categorizeEquipment(sortedEquipment)
 
   // NEW: Get unique values for equipment filters
-  const locations = [...new Set(equipment.map(e => e.location))].sort()
+  // Equipment has no location column, so this collected a lone `undefined` and fed it
+  // to a SelectItem, which throws on a nullish value. Drop the empties.
+  const locations = [...new Set(equipment.map(e => e.location).filter((l): l is string => !!l))].sort()
   const equipmentTypes = [...new Set(equipment.map(e => e.type))].sort()
 
   // NEW: Categorize equipment by priority for priority view
@@ -978,8 +986,15 @@ function RoomCard({ room, index, priority }: RoomCardProps) {
               {room.summary.overdueCount > 0 && (
                 <span style={{ color: tc.statusOverdue.text }}>{room.summary.overdueCount} overdue</span>
               )}
+              {/*
+                Sign-off happens per schedule, not per task, so completion is counted
+                in schedules. Printing `completedCount` against `totalTasks` compared
+                two different units and read as "2 of 12" on a fully finished room.
+              */}
               {room.summary.completedCount > 0 && (
-                <span style={{ color: tc.statusCompleted.text }}>{room.summary.completedCount} completed</span>
+                <span style={{ color: tc.statusCompleted.text }}>
+                  {room.summary.completedCount} of {room.summary.totalSchedules} done
+                </span>
               )}
             </div>
           </div>
@@ -997,8 +1012,11 @@ function RoomCard({ room, index, priority }: RoomCardProps) {
   )
 }
 
+// Progress is measured in schedules, matching how completion is recorded. The old
+// version divided completed *schedules* by total *task definitions*, so a room with
+// every schedule signed off still showed a 2/12 bar.
 function computeRoomProgressPercent(room: Room): number {
-  const total = room.summary?.totalTasks || 0
+  const total = room.summary?.totalSchedules || 0
   const completed = room.summary?.completedCount || 0
   if (!total) return 0
   const pct = Math.max(0, Math.min(100, Math.round((completed / total) * 100)))
@@ -1086,23 +1104,28 @@ function EquipmentCard({ equipment, index, priority }: EquipmentCardProps) {
       transition={{ delay: Math.min(index, 8) * 0.03, duration: 0.3 }}
       className="h-full"
     >
-      <div className={`rounded-lg border-2 p-6 transition-transform duration-200 hover:scale-[1.02] h-full flex flex-col ${priorityColors[priority]}`}>
+      {/* Equipment cards were a plain div, so nothing happened when a cleaner tapped
+          one. Same link treatment as the room card. */}
+      <Link
+        href={`/clean/equipment/${equipment.id}`}
+        className={`block rounded-lg border-2 p-6 transition-transform duration-200 hover:scale-[1.02] h-full flex flex-col ${priorityColors[priority]}`}
+      >
         {/* Header - Fixed height */}
         <div className="flex items-start justify-between mb-4 min-h-[60px]">
           <div className="flex items-center gap-3">
             <span className="text-2xl">{getEquipmentTypeIcon(equipment.type)}</span>
             <div>
               <h3 className="text-lg font-semibold line-clamp-1" style={{ color: tc.textPrimary }}>{equipment.name}</h3>
-              <div className="flex items-center gap-2 text-sm" style={{ color: tc.textMuted }}>
-                <MapPin className="w-3 h-3" />
-                <span>{equipment.location}</span>
-                {equipment.model && (
-                  <>
-                    <span>•</span>
-                    <span>{equipment.model}</span>
-                  </>
-                )}
-              </div>
+              {/* Both fields are optional and absent in practice - without the guard
+                  this rendered a location pin next to an empty string. */}
+              {(equipment.location || equipment.model) && (
+                <div className="flex items-center gap-2 text-sm" style={{ color: tc.textMuted }}>
+                  <MapPin className="w-3 h-3" />
+                  {equipment.location && <span>{equipment.location}</span>}
+                  {equipment.location && equipment.model && <span>•</span>}
+                  {equipment.model && <span>{equipment.model}</span>}
+                </div>
+              )}
             </div>
           </div>
           <div className="bg-blue-500/10 px-2 py-1 rounded text-xs border border-blue-500/20" style={{ color: tc.accentBlue }}>
@@ -1144,13 +1167,16 @@ function EquipmentCard({ equipment, index, priority }: EquipmentCardProps) {
               {equipment.summary.overdueCount > 0 && (
                 <span style={{ color: tc.statusOverdue.text }}>{equipment.summary.overdueCount} overdue</span>
               )}
+              {/* Schedules, not tasks - same unit mismatch as the room card. */}
               {equipment.summary.completedCount > 0 && (
-                <span style={{ color: tc.statusCompleted.text }}>{equipment.summary.completedCount} completed</span>
+                <span style={{ color: tc.statusCompleted.text }}>
+                  {equipment.summary.completedCount} of {equipment.summary.totalSchedules} done
+                </span>
               )}
             </div>
           </div>
         </div>
-      </div>
+      </Link>
     </motion.div>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, type CSSProperties } from 'react'
+import { useState, useEffect, useMemo, type CSSProperties } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -93,6 +93,50 @@ export default function CleanRoomPage() {
   // Sign-off problems are shown inline next to the pad. They must never go through
   // `error`, which unmounts the whole room and would throw away the ticked tasks.
   const [signOffError, setSignOffError] = useState<string | null>(null)
+
+  /*
+   * A cleaner works exactly one schedule at a time. The room opens on a single
+   * schedule - the most urgent one still outstanding - and the rest stay hidden
+   * until it is signed off. There is deliberately no picker: choosing between
+   * jobs is not the cleaner's decision, and offering both invited them to start
+   * one and drift to the other.
+   *
+   * Derived rather than stored so it cannot drift out of step with the ticks and
+   * the schedule data it is based on.
+   */
+  const activeScheduleId = useMemo(() => {
+    if (!room) return null
+
+    /*
+     * A schedule with ticks against it is already underway, so it wins outright -
+     * re-ranking mid-clean would yank the page out from under them.
+     * Task keys are `${scheduleId}-${taskId}` and both halves are cuids, so the id
+     * has to be matched by prefix against the known schedules, not by splitting.
+     */
+    const keys = Array.from(completedTasks.keys())
+    const started = room.schedules.find(s => keys.some(k => k.startsWith(`${s.id}-`)))
+    if (started) return started.id
+
+    // Otherwise take the most pressing job that still needs doing: overdue first,
+    // then whatever falls due soonest. Anything already signed off today is not work.
+    const outstanding = room.schedules.filter(s => !s.completedToday)
+    if (outstanding.length === 0) return null
+
+    // Read `status`/`nextDue` straight off the schedule rather than calling
+    // getScheduleStatus, which is declared further down and would be in its TDZ here.
+    const urgency = (s: RoomSchedule) => (s.status === 'OVERDUE' ? 0 : 1)
+    return [...outstanding].sort((a, b) =>
+      urgency(a) - urgency(b) ||
+      new Date(a.nextDue).getTime() - new Date(b.nextDue).getTime()
+    )[0].id
+  }, [room, completedTasks])
+
+  const visibleSchedules = useMemo(() => {
+    if (!room) return []
+    return activeScheduleId
+      ? room.schedules.filter(s => s.id === activeScheduleId)
+      : room.schedules
+  }, [room, activeScheduleId])
 
   // Pre-print the cleaner's name the way a paper sign-off sheet does; still editable.
   useEffect(() => {
@@ -516,10 +560,12 @@ export default function CleanRoomPage() {
 
         {/* Schedules */}
         <div className="space-y-4">
-          {room.schedules.map((schedule, scheduleIndex) => {
+          {visibleSchedules.map((schedule, scheduleIndex) => {
             const progress = getCompletionProgress(schedule)
             const progressPercentage = progress.total > 0 ? (progress.completed / progress.total) * 100 : 0
-            const isExpanded = expandedSchedules.has(schedule.id)
+            // The claimed schedule stays open - collapsing it would leave a blank page.
+            const isActive = schedule.id === activeScheduleId
+            const isExpanded = isActive || expandedSchedules.has(schedule.id)
             const actualStatus = schedule.completedToday ? 'COMPLETED' : getScheduleStatus(schedule)
             const isDueToday = isScheduleDueToday(schedule)
             const isUrgent = isScheduleUrgent(schedule)
@@ -536,11 +582,11 @@ export default function CleanRoomPage() {
               >
                 {/* Schedule Header - Always Visible */}
                 <div
-                  className="p-4 cursor-pointer transition-colors"
+                  className={`p-4 transition-colors ${isActive ? '' : 'cursor-pointer'}`}
                   style={{ background: isUrgent ? tc.surfaceBg : 'transparent' }}
-                  onMouseEnter={(e) => { if (!isUrgent) e.currentTarget.style.background = tc.hoverRow }}
+                  onMouseEnter={(e) => { if (!isUrgent && !isActive) e.currentTarget.style.background = tc.hoverRow }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = isUrgent ? tc.surfaceBg : 'transparent' }}
-                  onClick={() => toggleScheduleExpansion(schedule.id)}
+                  onClick={isActive ? undefined : () => toggleScheduleExpansion(schedule.id)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
