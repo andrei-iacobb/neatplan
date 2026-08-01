@@ -25,6 +25,7 @@ model User {
   tasks                      Task[]                      @relation("UserTasks")
   sessions                   UserSession[]
   roomScheduleCompletionLogs RoomScheduleCompletionLog[]
+  equipmentScheduleCompletionLogs EquipmentScheduleCompletionLog[]
   roomCheckIns               RoomCheckIn[]
   // Account security fields
   isBlocked                  Boolean                     @default(false)
@@ -265,9 +266,19 @@ model EquipmentScheduleCompletionLog {
   equipmentName       String?
   scheduleTitle       String?
   equipmentSchedule   EquipmentSchedule? @relation(fields: [equipmentScheduleId], references: [id], onDelete: SetNull)
+  // Mirrors RoomScheduleCompletionLog. An equipment clean is the same kind of
+  // compliance record as a room clean, so it carries the same sign-off: who did it,
+  // the signature they drew and the name they printed. Nullable for the same reason
+  // the room columns are - logs predating sign-off have none.
+  completedByUserId   String?
+  completedBy         User?              @relation(fields: [completedByUserId], references: [id])
+  signatureDataUrl    String?
+  signedName          String?
+  signedAt            DateTime?
 
   @@index([equipmentScheduleId])
   @@index([completedAt])
+  @@index([completedByUserId])
   @@map("equipment_schedule_completion_logs")
 }
 
