@@ -14,7 +14,7 @@ import {
   MoreHorizontal, Sparkles, TrendingUp,
 } from 'lucide-react'
 import Link from 'next/link'
-import { PageLoading } from '@/components/ui/loading'
+import { PageLoading, Spinner } from '@/components/ui/loading'
 import { apiRequest } from '@/lib/url-utils'
 
 interface DashboardStats {
@@ -36,6 +36,10 @@ export function DashboardOverview() {
   const [scheduleCounts, setScheduleCounts] = useState<ScheduleStatusCounts>({ pending: 0, inProgress: 0, completed: 0, overdue: 0 })
   const [roomTypes, setRoomTypes] = useState<RoomTypeCounts>({})
   const [isLoading, setIsLoading] = useState(true)
+  // Distinguishes the first paint from a site switch. Without it, every switch
+  // set isLoading and replaced the whole dashboard - site control included - with
+  // a skeleton, which reads as a full page reload rather than a filter change.
+  const [hasLoaded, setHasLoaded] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [weekly, setWeekly] = useState<number[]>([])
   const [weeklyDays, setWeeklyDays] = useState<string[]>([])
@@ -91,10 +95,14 @@ export function DashboardOverview() {
       setStats({ totalUsers: Array.isArray(users) ? users.filter((u: any) => u.role !== 'OP').length : 0, totalRooms: Array.isArray(rooms) ? rooms.length : 0, totalEquipment: Array.isArray(equipment.equipment) ? equipment.equipment.length : 0, totalSchedules: Array.isArray(schedules) ? schedules.length : 0, recentActivity: activity.activities || [] })
       setWeekly(Array.isArray(weeklyJson.counts) ? weeklyJson.counts : [])
       setWeeklyDays(Array.isArray(weeklyJson.days) ? weeklyJson.days : [])
-    } catch (e) { if (stale()) return; console.error(e); setError('Failed to load dashboard data') } finally { if (!stale()) setIsLoading(false) }
+    } catch (e) { if (stale()) return; console.error(e); setError('Failed to load dashboard data') } finally { if (!stale()) { setIsLoading(false); setHasLoaded(true) } }
   }
 
-  if (isLoading) return (
+  // Only the very first load gets the skeleton. Afterwards the numbers on screen
+  // stay put and are replaced in place when the new site's data lands.
+  const isSwitching = isLoading && hasLoaded
+
+  if (isLoading && !hasLoaded) return (
     <div className="max-w-[1230px] mx-auto relative z-10 pb-[17px]">
       <PageLoading cards={4} label="Loading dashboard" />
     </div>
@@ -147,8 +155,15 @@ export function DashboardOverview() {
             {greeting}, {userName}
           </h1>
         </div>
-        {/* The right slot used to hold a sentence that said nothing. */}
-        {weeklyTotal > 0 && (
+        {/* The right slot used to hold a sentence that said nothing. While a site
+            switch is in flight it names what is happening, so the fade below reads
+            as loading rather than as the page glitching. */}
+        {isSwitching ? (
+          <p className="text-[14px] leading-snug sm:text-right flex items-center gap-2 sm:justify-end" style={{ color: tc.textMuted }}>
+            <Spinner className="w-[14px] h-[14px]" />
+            Updating{site.selectedSite ? ` for ${site.selectedSite.name}` : ''}
+          </p>
+        ) : weeklyTotal > 0 && (
           <p className="text-[14px] leading-snug sm:text-right" style={{ color: tc.textMuted }}>
             {weeklyTotal} tasks completed this week
           </p>
@@ -166,6 +181,18 @@ export function DashboardOverview() {
         canPick={site.canPick}
         recents={site.recents}
       />
+
+      {/*
+        Everything below the site control is the site's data. It stays mounted
+        across a switch and just fades while the new figures are in flight, so the
+        page keeps its shape instead of collapsing to a skeleton and back.
+        The wrapper repeats the parent's column gap so inserting it changes no layout.
+      */}
+      <div
+        className="flex flex-col gap-[17px] lg:gap-[13px] transition-opacity duration-200 ease-out"
+        style={{ opacity: isSwitching ? 0.4 : 1, pointerEvents: isSwitching ? 'none' : undefined }}
+        aria-busy={isSwitching}
+      >
 
       {/* KPI row — horizontal, compact */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-[11px]">
@@ -340,6 +367,8 @@ export function DashboardOverview() {
             ))}
           </nav>
         </motion.div>
+      </div>
+
       </div>
     </div>
   )
