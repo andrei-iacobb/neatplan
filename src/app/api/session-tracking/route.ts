@@ -39,22 +39,32 @@ export async function POST(request: Request) {
     }
 
     if (action === 'logout') {
-      // Mark session as logged out
-      const whereClause: any = {
-        userId: session.user.id,
-        isActive: true,
+      /*
+       * Only ever deactivate the one session named by the caller. Falling back to
+       * `{ userId, isActive: true }` when no token was supplied signed the user out
+       * of every device at once, and because the jwt callback treats an inactive
+       * tracked row as a revocation, the caller's own session died with it - so a
+       * single stray logout call 401'd every subsequent request.
+       */
+      if (!sessionToken || typeof sessionToken !== 'string') {
+        return NextResponse.json(
+          { error: 'sessionToken is required to sign a session out' },
+          { status: 400 }
+        )
       }
-      if (sessionToken) {
-        whereClause.sessionToken = sessionToken
-      }
+
       await prisma.userSession.updateMany({
-        where: whereClause,
+        where: {
+          userId: session.user.id,
+          isActive: true,
+          sessionToken,
+        },
         data: {
           logoutAt: new Date(),
           isActive: false
         }
       })
-      
+
       return NextResponse.json({ success: true })
     }
 

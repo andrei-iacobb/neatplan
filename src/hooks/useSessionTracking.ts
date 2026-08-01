@@ -74,21 +74,13 @@ export function useSessionTracking(options: SessionTrackingOptions = {}) {
       })
     }
 
-    // Handle page unload (logout tracking)
-    const handleBeforeUnload = () => {
-      // Use sendBeacon for better reliability during page unload
-      if (navigator.sendBeacon) {
-        const data = JSON.stringify({
-          action: 'logout',
-          sessionToken: (session as any).sessionToken
-        })
-        navigator.sendBeacon('/api/session-tracking', data)
-      } else {
-        logoutSession()
-      }
-    }
-
-    window.addEventListener('beforeunload', handleBeforeUnload)
+    /*
+     * Deliberately no `beforeunload` -> logout handler. `beforeunload` fires on every
+     * ordinary navigation, reload and tab close, none of which are a sign-out, and the
+     * session it posted was treated as a revocation - so tapping a room from the
+     * cleaner dashboard signed the cleaner out and 401'd the page they had just opened.
+     * Signing out is an explicit act; it belongs on the sign-out control, not here.
+     */
 
     // Initial activity update
     updateSessionActivity()
@@ -97,12 +89,10 @@ export function useSessionTracking(options: SessionTrackingOptions = {}) {
       if (intervalRef.current) {
         clearInterval(intervalRef.current)
       }
-      
+
       activityEvents.forEach(event => {
         document.removeEventListener(event, handleActivity, true)
       })
-      
-      window.removeEventListener('beforeunload', handleBeforeUnload)
     }
   }, [session, updateInterval, trackActivity])
 
