@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     const { title, tasks, siteIds: requestedSiteIds, detectedFrequency, suggestedFrequency } = await req.json()
 
     // Only accept a valid enum value for the AI-suggested frequency.
-    const validFrequencies = ['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY']
+    const validFrequencies = ['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'QUARTERLY', 'SEMIANNUAL', 'YEARLY']
     const safeSuggested = typeof suggestedFrequency === 'string' && validFrequencies.includes(suggestedFrequency)
       ? suggestedFrequency as import('@prisma/client').ScheduleFrequency
       : null

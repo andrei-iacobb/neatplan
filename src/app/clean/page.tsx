@@ -83,6 +83,7 @@ interface Equipment {
   location?: string
   model?: string
   serialNumber?: string
+  assetCode?: string
   priority: 'OVERDUE' | 'DUE_TODAY' | 'UPCOMING' | 'COMPLETED'
   nextDue: string
   summary: EquipmentSummary
@@ -1115,7 +1116,14 @@ function EquipmentCard({ equipment, index, priority }: EquipmentCardProps) {
           <div className="flex items-center gap-3">
             <span className="text-2xl">{getEquipmentTypeIcon(equipment.type)}</span>
             <div>
-              <h3 className="text-lg font-semibold line-clamp-1" style={{ color: tc.textPrimary }}>{equipment.name}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold line-clamp-1" style={{ color: tc.textPrimary }}>{equipment.name}</h3>
+                {equipment.assetCode && (
+                  <span className="font-mono text-xs px-1.5 py-0.5 rounded border border-green-500/30 bg-green-500/10 shrink-0" style={{ color: tc.accentGreen }}>
+                    {equipment.assetCode}
+                  </span>
+                )}
+              </div>
               {/* Both fields are optional and absent in practice - without the guard
                   this rendered a location pin next to an empty string. */}
               {(equipment.location || equipment.model) && (

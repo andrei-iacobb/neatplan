@@ -25,7 +25,7 @@ const pick = <T,>(xs: T[]) => xs[Math.floor(rand() * xs.length)]
 
 const DAY = 24 * 60 * 60 * 1000
 const FREQ_DAYS: Record<ScheduleFrequency, number> = {
-  DAILY: 1, WEEKLY: 7, BIWEEKLY: 14, MONTHLY: 30, QUARTERLY: 91, YEARLY: 365,
+  DAILY: 1, WEEKLY: 7, BIWEEKLY: 14, MONTHLY: 30, QUARTERLY: 91, SEMIANNUAL: 182, YEARLY: 365,
 }
 
 interface ScheduleSpec {

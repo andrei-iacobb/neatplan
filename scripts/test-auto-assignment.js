@@ -88,6 +88,9 @@ async function testAutoAssignment() {
       case 'QUARTERLY':
         nextDueDate.setMonth(nextDueDate.getMonth() + 3)
         break
+      case 'SEMIANNUAL':
+        nextDueDate.setMonth(nextDueDate.getMonth() + 6)
+        break
       default:
         nextDueDate.setDate(nextDueDate.getDate() + 7)
     }

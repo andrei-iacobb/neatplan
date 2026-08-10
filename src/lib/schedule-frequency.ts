@@ -11,6 +11,7 @@ export const FREQUENCY_LABELS: Record<ScheduleFrequency, string> = {
   [ScheduleFrequency.BIWEEKLY]: 'Every 2 weeks',
   [ScheduleFrequency.MONTHLY]: 'Monthly',
   [ScheduleFrequency.QUARTERLY]: 'Every 3 months',
+  [ScheduleFrequency.SEMIANNUAL]: 'Six Monthly',
   [ScheduleFrequency.YEARLY]: 'Yearly',
 }
 

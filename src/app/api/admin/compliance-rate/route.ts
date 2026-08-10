@@ -13,6 +13,7 @@ const FREQUENCY_DAYS: Record<ScheduleFrequency, number> = {
   BIWEEKLY: 14,
   MONTHLY: 30,
   QUARTERLY: 90,
+  SEMIANNUAL: 182,
   YEARLY: 365,
 }
 

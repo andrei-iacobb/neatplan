@@ -39,6 +39,7 @@ interface Equipment {
     status: string
     tasksCount: number
   }[]
+  assetCode?: string
 }
 
 interface Schedule {
@@ -57,6 +58,7 @@ enum ScheduleFrequency {
   BIWEEKLY = 'BIWEEKLY',
   MONTHLY = 'MONTHLY',
   QUARTERLY = 'QUARTERLY',
+  SEMIANNUAL = 'SEMIANNUAL',
   YEARLY = 'YEARLY'
 }
 
@@ -70,6 +72,9 @@ interface EquipmentFormData {
   description: string
   type: string
   siteId: string
+  assetCode?: string
+  model?: string
+  serialNumber?: string
 }
 
 interface Site {
@@ -138,6 +143,9 @@ export default function EquipmentPage() {
     description: '',
     type: 'OTHER',
     siteId: '',
+    assetCode: '',
+    model: '',
+    serialNumber: '',
   })
 
   useEffect(() => {
@@ -199,6 +207,9 @@ export default function EquipmentPage() {
       description: '',
       type: 'OTHER',
       siteId: '',
+      assetCode: '',
+      model: '',
+      serialNumber: '',
     })
   }
 
@@ -401,6 +412,9 @@ export default function EquipmentPage() {
       description: equip.description || '',
       type: equip.type,
       siteId: equip.siteId || '',
+      assetCode: equip.assetCode || '',
+      model: equip.model || '',
+      serialNumber: equip.serialNumber || '',
     })
     setShowEditModal(true)
   }
@@ -664,6 +678,7 @@ export default function EquipmentPage() {
                     <option value="BIWEEKLY">Bi-weekly</option>
                     <option value="MONTHLY">Monthly</option>
                     <option value="QUARTERLY">Quarterly</option>
+                    <option value="SEMIANNUAL">Six Monthly</option>
                     <option value="YEARLY">Yearly</option>
                   </select>
                 </div>
@@ -847,6 +862,7 @@ export default function EquipmentPage() {
                     <option value="BIWEEKLY">Bi-weekly</option>
                     <option value="MONTHLY">Monthly</option>
                     <option value="QUARTERLY">Quarterly</option>
+                    <option value="SEMIANNUAL">Six Monthly</option>
                     <option value="YEARLY">Yearly</option>
                   </select>
                 </div>
@@ -928,6 +944,11 @@ export default function EquipmentPage() {
                   <div>
                     <h3 className="text-base font-semibold" style={{ color: tc.textPrimary }}>{equip.name}</h3>
                   </div>
+                    {equip.assetCode && (
+                      <div className="text-xs font-mono px-2 py-1 rounded mt-1" style={{ background: tc.surfaceBg, color: tc.accentGreen, border: `1px solid ${tc.accentGreen}` }}>
+                        {equip.assetCode}
+                      </div>
+                    )}
                 </div>
                 <div className="flex items-center gap-1">
                   <button
@@ -1111,6 +1132,48 @@ export default function EquipmentPage() {
                       placeholder="Enter description"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
+                      Asset Code
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.assetCode || ''}
+                      onChange={(e) => setFormData({ ...formData, assetCode: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                      style={inputStyle}
+                      placeholder="e.g., HT-001, WC-042"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
+                      Model
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.model || ''}
+                      onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                      style={inputStyle}
+                      placeholder="Equipment model"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
+                      Serial Number
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.serialNumber || ''}
+                      onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                      style={inputStyle}
+                      placeholder="Serial number"
+                    />
+                  </div>
+
 
                   <div className="flex items-center justify-end gap-3 pt-4">
                     <button
@@ -1238,6 +1301,48 @@ export default function EquipmentPage() {
                       placeholder="Enter description"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
+                      Asset Code
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.assetCode || ''}
+                      onChange={(e) => setFormData({ ...formData, assetCode: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                      style={inputStyle}
+                      placeholder="e.g., HT-001, WC-042"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
+                      Model
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.model || ''}
+                      onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                      style={inputStyle}
+                      placeholder="Equipment model"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
+                      Serial Number
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.serialNumber || ''}
+                      onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                      style={inputStyle}
+                      placeholder="Serial number"
+                    />
+                  </div>
+
 
                   <div className="flex items-center justify-end gap-3 pt-4">
                     <button

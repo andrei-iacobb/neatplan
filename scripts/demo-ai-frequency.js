@@ -11,8 +11,9 @@ function mapFrequencyToEnum(frequencyString) {
   if (frequency.includes('daily')) return 'DAILY'
   if (frequency.includes('weekly')) return 'WEEKLY'
   if (frequency.includes('bi-weekly') || frequency.includes('biweekly')) return 'BIWEEKLY'
-  if (frequency.includes('monthly')) return 'MONTHLY'
   if (frequency.includes('quarterly')) return 'QUARTERLY'
+  if (frequency.includes('six month') || frequency.includes('semiannual')) return 'SEMIANNUAL'
+  if (frequency.includes('monthly')) return 'MONTHLY'
   if (frequency.includes('yearly') || frequency.includes('annually')) return 'YEARLY'
   
   return 'WEEKLY' // Default

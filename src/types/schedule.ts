@@ -4,6 +4,7 @@ export enum ScheduleFrequency {
   BIWEEKLY = 'BIWEEKLY',
   MONTHLY = 'MONTHLY',
   QUARTERLY = 'QUARTERLY',
+  SEMIANNUAL = 'SEMIANNUAL',
   YEARLY = 'YEARLY'
 }
 

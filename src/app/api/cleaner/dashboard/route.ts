@@ -281,6 +281,7 @@ export async function GET() {
           id: equip.id,
           name: equip.name,
           type: equip.type,
+          assetCode: equip.assetCode,
           priority: equipmentPriority,
           nextDue: earliestDue.toISOString(),
           summary: {

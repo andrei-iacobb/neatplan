@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { apiRequest } from '@/lib/url-utils'
+import { frequencyLabel } from '@/lib/schedule-frequency'
 import { useThemeColors } from '@/hooks/useThemeColors'
 import { PageLoading, Spinner } from '@/components/ui/loading'
 import { SignaturePad } from '@/components/cleaner/signature-pad'
@@ -622,7 +623,7 @@ export default function CleanRoomPage() {
                         <span style={{ color: tc.textMuted }}>•</span>
                         <div className="flex items-center gap-1" style={{ color: tc.textSecondary }}>
                           <Calendar className="w-3 h-3" />
-                          <span>{schedule.frequency}</span>
+                          <span>{frequencyLabel(schedule.frequency)}</span>
                         </div>
                         <span style={{ color: tc.textMuted }}>•</span>
                         <span style={{ color: tc.textSecondary }}>Est. {schedule.estimatedDuration}</span>

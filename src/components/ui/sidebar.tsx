@@ -6,7 +6,7 @@ import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { usePathname } from "next/navigation"
 import {
-  Home, Calendar, Settings, DoorOpen, LogOut, User, Wrench, ClipboardCheck, Menu, X, ChevronsRight, ChevronsLeft, Building2
+  Home, Calendar, CalendarDays, Settings, DoorOpen, LogOut, User, Wrench, ClipboardCheck, Menu, X, ChevronsRight, ChevronsLeft, Building2
 } from "lucide-react"
 import { Logo } from "@/components/ui/logo"
 import { useSettings } from "@/contexts/settings-context"
@@ -16,6 +16,7 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Rooms", href: "/rooms", icon: DoorOpen },
   { name: "Equipment", href: "/equipment", icon: Wrench },
+  { name: "Diary", href: "/diary", icon: CalendarDays },
   { name: "Schedule", href: "/schedule", icon: Calendar },
   { name: "Audit Log", href: "/audit", icon: ClipboardCheck },
   { name: "Sites", href: "/sites", icon: Building2 },

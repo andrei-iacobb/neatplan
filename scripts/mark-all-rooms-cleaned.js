@@ -21,6 +21,9 @@ function calculateNextDueDate(frequency, startDate = new Date()) {
     case 'QUARTERLY':
       nextDue.setMonth(nextDue.getMonth() + 3)
       break
+    case 'SEMIANNUAL':
+      nextDue.setMonth(nextDue.getMonth() + 6)
+      break
     case 'YEARLY':
       nextDue.setFullYear(nextDue.getFullYear() + 1)
       break

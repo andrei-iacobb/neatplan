@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { apiRequest } from '@/lib/url-utils'
+import { frequencyLabel } from '@/lib/schedule-frequency'
 import { useThemeColors } from '@/hooks/useThemeColors'
 import { PageLoading, Spinner } from '@/components/ui/loading'
 import { SignaturePad } from '@/components/cleaner/signature-pad'
@@ -50,6 +51,7 @@ interface Equipment {
   name: string
   type: string
   description?: string
+  assetCode?: string
   schedules: EquipmentSchedule[]
 }
 
@@ -501,7 +503,14 @@ export default function CleanEquipmentPage() {
           <div className="flex items-center gap-3 min-w-0">
             <Wrench className="w-8 h-8 flex-shrink-0" style={{ color: tc.btnPrimaryText }} />
             <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold break-words" style={{ color: tc.textPrimary }}>{equipment.name}</h1>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-bold break-words" style={{ color: tc.textPrimary }}>{equipment.name}</h1>
+                {equipment.assetCode && (
+                  <div className="text-xs font-mono px-2.5 py-1 rounded" style={{ background: tc.surfaceBg, color: tc.accentGreen, border: `1px solid ${tc.accentGreen}` }}>
+                    {equipment.assetCode}
+                  </div>
+                )}
+              </div>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm" style={{ color: tc.textMuted }}>
                 <span className="truncate">{equipment.type.replace('_', ' ')}</span>
                 <span aria-hidden="true">•</span>
@@ -603,7 +612,7 @@ export default function CleanEquipmentPage() {
                         <span style={{ color: tc.textMuted }}>•</span>
                         <div className="flex items-center gap-1" style={{ color: tc.textSecondary }}>
                           <Calendar className="w-3 h-3" />
-                          <span>{schedule.frequency}</span>
+                          <span>{frequencyLabel(schedule.frequency)}</span>
                         </div>
                         <span style={{ color: tc.textMuted }}>•</span>
                         <span style={{ color: tc.textSecondary }}>Est. {schedule.estimatedDuration}</span>

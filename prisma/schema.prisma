@@ -120,6 +120,9 @@ model Equipment {
   name        String
   description String?
   type        String              @default("OTHER")
+  assetCode   String?
+  model       String?
+  serialNumber String?
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
   siteId      String?
@@ -127,6 +130,7 @@ model Equipment {
   schedules   EquipmentSchedule[]
 
   @@unique([siteId, name])
+  @@unique([siteId, assetCode])
   @@index([siteId])
   @@map("equipment")
 }
@@ -313,6 +317,7 @@ enum ScheduleFrequency {
   BIWEEKLY
   MONTHLY
   QUARTERLY
+  SEMIANNUAL
   YEARLY
 }
 
