@@ -13,9 +13,8 @@
  *
  * Run: npx tsx scripts/seed-partnership-in-care.ts
  */
-import { PrismaClient, RoomType } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { RoomType } from '../src/generated/prisma/enums'
+import { prisma } from '../src/lib/db'
 
 interface Home {
   name: string

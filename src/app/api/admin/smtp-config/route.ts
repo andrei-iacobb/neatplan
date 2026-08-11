@@ -4,7 +4,6 @@ import { authOptions } from '@/lib/auth'
 import fs from 'fs'
 import path from 'path'
 
-export const dynamic = 'force-dynamic'
 
 interface SMTPConfig {
   host: string
@@ -19,7 +18,8 @@ interface SMTPConfig {
 // SECURITY WARNING: Storing SMTP passwords in a file is not recommended for production.
 // Use environment variables instead (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, etc.)
 // This file-based storage is provided for development convenience only.
-const CONFIG_FILE = path.join(process.cwd(), '.smtp-config.json')
+const DATA_DIR = process.env.NEATPLAN_DATA_DIR || path.join(process.cwd(), 'data')
+const CONFIG_FILE = path.join(DATA_DIR, 'smtp-config.json')
 
 // SMTP configuration is system-level and OP-only (matches the OP-only Settings System tab).
 async function isAdmin(request: NextRequest) {
@@ -139,6 +139,7 @@ export async function POST(request: NextRequest) {
     // Only save to file in development mode
     if (process.env.NODE_ENV !== 'production') {
       try {
+        fs.mkdirSync(DATA_DIR, { recursive: true })
         fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2))
       } catch (writeError) {
         console.error('Failed to write SMTP config:', writeError)
@@ -203,4 +204,4 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     )
   }
-} 
+}

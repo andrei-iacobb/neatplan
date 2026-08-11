@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server'
+import { connection, NextResponse } from 'next/server'
 import { getSessionUser, nestedSiteScopeWhere } from '@/lib/authz'
 import { prisma } from '@/lib/db'
 
 // Force dynamic rendering
-export const dynamic = 'force-dynamic'
 
 export async function GET() {
+  await connection()
   try {
     const user = await getSessionUser()
 
@@ -47,4 +47,4 @@ export async function GET() {
       { status: 500 }
     )
   }
-} 
+}

@@ -122,7 +122,7 @@ function UserFormModal({ user, onClose, onSave, tc, sites, sessionRole }: { user
               <input
                 {...register('name')}
                 placeholder="Name"
-                className="w-full p-2.5 rounded-lg text-[14px] outline-none transition-colors"
+                className="w-full p-2.5 rounded-lg text-[14px] outline-hidden transition-colors"
                 style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
                 onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
                 onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
@@ -134,7 +134,7 @@ function UserFormModal({ user, onClose, onSave, tc, sites, sessionRole }: { user
               <input
                 {...register('email')}
                 placeholder="Email"
-                className="w-full p-2.5 rounded-lg text-[14px] outline-none transition-colors"
+                className="w-full p-2.5 rounded-lg text-[14px] outline-hidden transition-colors"
                 style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
                 onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
                 onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
@@ -147,7 +147,7 @@ function UserFormModal({ user, onClose, onSave, tc, sites, sessionRole }: { user
                 type="password"
                 {...register('password')}
                 placeholder={user?.id ? 'New Password (optional)' : 'Password'}
-                className="w-full p-2.5 rounded-lg text-[14px] outline-none transition-colors"
+                className="w-full p-2.5 rounded-lg text-[14px] outline-hidden transition-colors"
                 style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
                 onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
                 onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
@@ -162,7 +162,7 @@ function UserFormModal({ user, onClose, onSave, tc, sites, sessionRole }: { user
               <select
                 {...register('role')}
                 id="role"
-                className="w-full p-2.5 rounded-lg text-[14px] outline-none transition-colors"
+                className="w-full p-2.5 rounded-lg text-[14px] outline-hidden transition-colors"
                 style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
                 onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
                 onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
@@ -180,7 +180,7 @@ function UserFormModal({ user, onClose, onSave, tc, sites, sessionRole }: { user
                 <select
                   {...register('siteId')}
                   id="siteId"
-                  className="w-full p-2.5 rounded-lg text-[14px] outline-none transition-colors"
+                  className="w-full p-2.5 rounded-lg text-[14px] outline-hidden transition-colors"
                   style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
                   onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
                   onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
@@ -240,7 +240,7 @@ function DeleteConfirmationModal({ user, onClose, onConfirm, tc }: { user: User,
         style={{ background: tc.modalBg, border: '1px solid ' + tc.btnDangerBorder }}
       >
         <div className="flex items-start gap-4">
-          <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full" style={{ background: tc.statusOverdue.bg }}>
+          <div className="shrink-0 flex items-center justify-center h-12 w-12 rounded-full" style={{ background: tc.statusOverdue.bg }}>
             <AlertTriangle className="h-6 w-6" style={{ color: tc.statusOverdue.text }} aria-hidden="true" />
           </div>
           <div className="mt-0 text-left">
@@ -403,7 +403,7 @@ export default function UsersPage() {
             </div>
             <button
               onClick={() => { setEditingUser({}); setIsModalOpen(true); }}
-              className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors w-full sm:w-auto flex-shrink-0"
+              className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors w-full sm:w-auto shrink-0"
               style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: '1px solid ' + tc.btnPrimaryBorder }}
               onMouseEnter={(e) => e.currentTarget.style.background = tc.btnPrimaryHoverBg}
               onMouseLeave={(e) => e.currentTarget.style.background = tc.btnPrimaryBg}

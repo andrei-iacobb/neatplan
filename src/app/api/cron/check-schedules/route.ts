@@ -12,11 +12,13 @@ function safeSecretMatch(provided: string | null, expected: string | undefined):
 }
 
 export async function GET(request: Request) {
+  // Read request state outside the application catch. Next uses this access to
+  // stop prerendering; catching that internal signal would turn it into a 500.
+  const providedSecret = request.headers.get('x-cron-secret')
+  const expectedSecret = process.env.CRON_SECRET
+
   try {
     // Protect cron route: require shared secret via header only, compared in constant time.
-    const providedSecret = request.headers.get('x-cron-secret')
-    const expectedSecret = process.env.CRON_SECRET
-
     if (!safeSecretMatch(providedSecret, expectedSecret)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

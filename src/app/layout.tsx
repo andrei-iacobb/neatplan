@@ -7,6 +7,7 @@ import { ToastProvider } from '@/components/ui/toast-context'
 import { PageWrapper } from "@/components/layout/page-wrapper";
 import { SettingsProvider } from "@/contexts/settings-context";
 import Script from "next/script";
+import { OfflineState } from "@/components/system/offline-state";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -37,8 +38,9 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="h-full" suppressHydrationWarning>
+    <html lang="en" className="h-full" data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className={`${jakarta.variable} font-sans antialiased h-full`} style={{ fontFamily: 'var(--font-jakarta), system-ui, sans-serif' }}>
+        <OfflineState />
         {/* Pre-hydration theme: apply the persisted/system theme before first paint to avoid a flash */}
         <script
           dangerouslySetInnerHTML={{

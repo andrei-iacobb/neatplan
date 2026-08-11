@@ -274,10 +274,10 @@ export function ScheduleList({ schedules, onUpdate }: ScheduleListProps) {
                 disabled={isSaving && !isOpen}
                 aria-expanded={isOpen}
                 aria-controls={panelId}
-                className="flex items-start gap-3 flex-1 text-left min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+                className="flex items-start gap-3 flex-1 text-left min-w-0 rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50"
               >
                 <ChevronDown
-                  className="h-5 w-5 mt-0.5 flex-shrink-0 transition-transform duration-200"
+                  className="h-5 w-5 mt-0.5 shrink-0 transition-transform duration-200"
                   style={{ color: tc.textMuted, transform: isOpen ? 'none' : 'rotate(-90deg)' }}
                   aria-hidden="true"
                 />
@@ -344,7 +344,7 @@ export function ScheduleList({ schedules, onUpdate }: ScheduleListProps) {
                       value={draft.title}
                       onChange={(e) => patchDraft({ title: e.target.value })}
                       disabled={isSaving}
-                      className="w-full px-3 py-2 rounded-lg text-[14px] outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+                      className="w-full px-3 py-2 rounded-lg text-[14px] outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50"
                       style={inputStyle}
                     />
                   </div>
@@ -361,7 +361,7 @@ export function ScheduleList({ schedules, onUpdate }: ScheduleListProps) {
                       value={draft.frequency}
                       onChange={(e) => patchDraft({ frequency: e.target.value })}
                       disabled={isSaving}
-                      className="w-full px-3 py-2 rounded-lg text-[14px] outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+                      className="w-full px-3 py-2 rounded-lg text-[14px] outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50"
                       style={inputStyle}
                     >
                       <option value="">No frequency set</option>
@@ -400,7 +400,7 @@ export function ScheduleList({ schedules, onUpdate }: ScheduleListProps) {
                             disabled={isSaving}
                             placeholder="Task description"
                             aria-label={`Task ${i + 1} description`}
-                            className="w-full px-2.5 py-1.5 rounded-md text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+                            className="w-full px-2.5 py-1.5 rounded-md text-[13px] outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50"
                             style={inputStyle}
                           />
                           <input
@@ -409,7 +409,7 @@ export function ScheduleList({ schedules, onUpdate }: ScheduleListProps) {
                             disabled={isSaving}
                             placeholder="Notes (optional)"
                             aria-label={`Task ${i + 1} notes`}
-                            className="w-full px-2.5 py-1.5 rounded-md text-[12px] outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+                            className="w-full px-2.5 py-1.5 rounded-md text-[12px] outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50"
                             style={inputStyle}
                           />
                         </div>
@@ -419,7 +419,7 @@ export function ScheduleList({ schedules, onUpdate }: ScheduleListProps) {
                           disabled={isSaving}
                           aria-label={`Remove task ${i + 1}`}
                           title={`Remove task ${i + 1}`}
-                          className="shrink-0 flex items-center justify-center w-8 h-8 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 active:scale-[0.94] disabled:opacity-50"
+                          className="shrink-0 flex items-center justify-center w-8 h-8 rounded-md transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-red-500/50 active:scale-[0.94] disabled:opacity-50"
                           style={{ background: tc.btnDangerBg, color: tc.btnDangerText, border: `1px solid ${tc.btnDangerBorder}` }}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -431,7 +431,7 @@ export function ScheduleList({ schedules, onUpdate }: ScheduleListProps) {
                     type="button"
                     onClick={addTask}
                     disabled={isSaving}
-                    className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97] disabled:opacity-50"
+                    className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97] disabled:opacity-50"
                     style={{ background: tc.btnSecondaryBg, color: tc.btnSecondaryText, border: `1px solid ${tc.btnSecondaryBorder}` }}
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -450,7 +450,7 @@ export function ScheduleList({ schedules, onUpdate }: ScheduleListProps) {
                     type="button"
                     onClick={() => deleteSchedule(schedule.id)}
                     disabled={isSaving || isDeleting.current.has(schedule.id)}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 active:scale-[0.97] disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-red-500/50 active:scale-[0.97] disabled:opacity-50"
                     style={{ background: tc.btnDangerBg, color: tc.btnDangerText, border: `1px solid ${tc.btnDangerBorder}` }}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -461,7 +461,7 @@ export function ScheduleList({ schedules, onUpdate }: ScheduleListProps) {
                       type="button"
                       onClick={closeSchedule}
                       disabled={isSaving}
-                      className="px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97] disabled:opacity-50"
+                      className="px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97] disabled:opacity-50"
                       style={{ background: tc.btnSecondaryBg, color: tc.btnSecondaryText, border: `1px solid ${tc.btnSecondaryBorder}` }}
                     >
                       Cancel
@@ -470,7 +470,7 @@ export function ScheduleList({ schedules, onUpdate }: ScheduleListProps) {
                       type="button"
                       onClick={() => save(schedule)}
                       disabled={isSaving}
-                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97] disabled:opacity-60"
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97] disabled:opacity-60"
                       style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: `1px solid ${tc.btnPrimaryBorder}` }}
                     >
                       {isSaving && <Spinner />}

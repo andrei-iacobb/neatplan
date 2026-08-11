@@ -1,57 +1,48 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+import { defineConfig, globalIgnores } from 'eslint/config'
+import nextVitals from 'eslint-config-next/core-web-vitals'
+import nextTypeScript from 'eslint-config-next/typescript'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+export default defineConfig([
+  ...nextVitals,
+  ...nextTypeScript,
+  globalIgnores([
+    '.next/**',
+    'out/**',
+    'build/**',
+    'dist/**',
+    'node_modules/**',
+    '**/generated/**',
+    '**/prisma/generated/**',
+    'src/generated/**',
+    '**/*.d.ts',
+    '**/*.js.map',
+    '**/*.d.ts.map',
+    '**/wasm.js',
+    '**/react-native.js',
+    '**/runtime/**/*.js',
+  ]),
   {
-    ignores: [
-      // Generated Prisma files
-      "**/generated/**",
-      "**/prisma/generated/**",
-      "src/generated/**",
-      
-      // Build and distribution files
-      ".next/**",
-      "out/**",
-      "build/**",
-      "dist/**",
-      
-      // Node modules
-      "node_modules/**",
-      
-      // Other generated files
-      "**/*.d.ts",
-      "**/*.js.map",
-      "**/*.d.ts.map",
-      
-      // Specific problematic files
-      "**/wasm.js",
-      "**/react-native.js",
-      "**/runtime/**/*.js"
-    ]
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
   },
   {
-    files: ["**/*.ts", "**/*.tsx"],
+    files: ['**/*.ts', '**/*.tsx'],
     rules: {
-      // Relax rules for better compatibility
-      "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/no-unused-vars": "warn",
-      "@typescript-eslint/no-unused-expressions": "off",
-      "@typescript-eslint/no-this-alias": "off",
-      "@typescript-eslint/no-require-imports": "warn",
-      "prefer-const": "warn",
-      "no-var": "warn",
-      "react-hooks/exhaustive-deps": "warn"
-    }
-  }
-];
-
-export default eslintConfig;
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-unused-expressions': 'off',
+      '@typescript-eslint/no-this-alias': 'off',
+      'prefer-const': 'warn',
+      'no-var': 'warn',
+      'react-hooks/exhaustive-deps': 'warn',
+      '@typescript-eslint/no-empty-object-type': 'off',
+      'react-hooks/immutability': 'off',
+      'react-hooks/purity': 'off',
+      'react-hooks/refs': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/static-components': 'off',
+      'react/no-unescaped-entities': 'off',
+    },
+  },
+])

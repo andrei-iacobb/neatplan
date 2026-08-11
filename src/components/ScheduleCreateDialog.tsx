@@ -251,7 +251,7 @@ export function ScheduleCreateDialog({ onScheduleCreated, trigger }: ScheduleCre
   const labelStyle = { color: tc.textSecondary }
   const inputStyle = { background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }
   const inputClass =
-    'w-full px-3 py-2 rounded-lg text-[14px] outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50'
+    'w-full px-3 py-2 rounded-lg text-[14px] outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50'
   const sectionLabelClass = 'text-[11px] font-semibold uppercase tracking-[0.06em]'
 
   return (
@@ -260,7 +260,7 @@ export function ScheduleCreateDialog({ onScheduleCreated, trigger }: ScheduleCre
         {trigger ?? (
           <button
             type="button"
-            className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97]"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97]"
             style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: `1px solid ${tc.btnPrimaryBorder}` }}
           >
             <Plus className="w-4 h-4" />
@@ -410,7 +410,7 @@ export function ScheduleCreateDialog({ onScheduleCreated, trigger }: ScheduleCre
                           disabled={isSaving}
                           placeholder="Task description"
                           aria-label={`Task ${i + 1} description`}
-                          className="w-full px-2.5 py-1.5 rounded-md text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+                          className="w-full px-2.5 py-1.5 rounded-md text-[13px] outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50"
                           style={inputStyle}
                         />
                         <input
@@ -419,7 +419,7 @@ export function ScheduleCreateDialog({ onScheduleCreated, trigger }: ScheduleCre
                           disabled={isSaving}
                           placeholder="Notes (optional)"
                           aria-label={`Task ${i + 1} notes`}
-                          className="w-full px-2.5 py-1.5 rounded-md text-[12px] outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+                          className="w-full px-2.5 py-1.5 rounded-md text-[12px] outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50"
                           style={inputStyle}
                         />
                       </div>
@@ -458,7 +458,7 @@ export function ScheduleCreateDialog({ onScheduleCreated, trigger }: ScheduleCre
                   type="button"
                   onClick={addTask}
                   disabled={isSaving}
-                  className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97] disabled:opacity-50"
+                  className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97] disabled:opacity-50"
                   style={{
                     background: tc.btnSecondaryBg,
                     color: tc.btnSecondaryText,
@@ -502,7 +502,7 @@ export function ScheduleCreateDialog({ onScheduleCreated, trigger }: ScheduleCre
                             checked={selectedSiteIds.includes(s.id)}
                             onChange={() => toggleSite(s.id)}
                             disabled={isSaving}
-                            className="h-3.5 w-3.5 rounded focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+                            className="h-3.5 w-3.5 rounded-sm focus-visible:ring-2 focus-visible:ring-emerald-500/50"
                           />
                           {s.name}
                         </label>
@@ -524,7 +524,7 @@ export function ScheduleCreateDialog({ onScheduleCreated, trigger }: ScheduleCre
               type="button"
               onClick={() => handleOpenChange(false)}
               disabled={isSaving}
-              className="flex-1 sm:flex-none px-3.5 py-2.5 sm:py-2 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97] disabled:opacity-50"
+              className="flex-1 sm:flex-none px-3.5 py-2.5 sm:py-2 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97] disabled:opacity-50"
               style={{
                 background: tc.btnSecondaryBg,
                 color: tc.btnSecondaryText,
@@ -536,7 +536,7 @@ export function ScheduleCreateDialog({ onScheduleCreated, trigger }: ScheduleCre
             <button
               type="submit"
               disabled={isSaving}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2.5 sm:py-2 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97] disabled:opacity-60"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2.5 sm:py-2 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97] disabled:opacity-60"
               style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: `1px solid ${tc.btnPrimaryBorder}` }}
             >
               {isSaving && <Spinner />}
@@ -580,7 +580,7 @@ function IconAction({
       disabled={disabled}
       aria-label={label}
       title={label}
-      className="flex items-center justify-center w-7 h-7 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.94] disabled:opacity-35 disabled:cursor-not-allowed"
+      className="flex items-center justify-center w-7 h-7 rounded-md transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.94] disabled:opacity-35 disabled:cursor-not-allowed"
       style={{
         background: danger ? tc.btnDangerBg : tc.btnSecondaryBg,
         color: danger ? tc.btnDangerText : tc.btnSecondaryText,

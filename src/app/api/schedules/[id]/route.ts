@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAdmin, canAccessAnySite, resolveWriteSiteIds, visibleSiteRelationWhere, canMutateSchedule } from '@/lib/authz'
 import { canAccessAllSites } from '@/lib/roles'
-import { Prisma } from '@prisma/client'
+import { Prisma } from '@/generated/prisma/client'
 
 // Update a schedule
 export async function PUT(req: Request, context: { params: Promise<{ id: string }> }) {

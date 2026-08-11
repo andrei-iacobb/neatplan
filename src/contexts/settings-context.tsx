@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import React, { createContext, Suspense, useContext, useState, useEffect, ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
 import { MotionConfig } from 'framer-motion'
 
@@ -69,7 +69,6 @@ interface SettingsContextType {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined)
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const pathname = usePathname()
   const [settings, setSettings] = useState<SettingsState>(defaultSettings)
   const [isLoading, setIsLoading] = useState(false)
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light')
@@ -125,27 +124,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     mediaQuery.addEventListener('change', handleChange)
     return () => mediaQuery.removeEventListener('change', handleChange)
   }, [settings.theme])
-
-  // Apply theme to document
-  useEffect(() => {
-    const root = document.documentElement
-
-    // The standalone /demo pages are hardcoded dark and must not receive the
-    // .light overrides from globals.css - force dark while on them.
-    if (pathname === '/demo' || pathname?.startsWith('/demo/')) {
-      root.classList.remove('light')
-      root.classList.add('dark')
-      return
-    }
-
-    if (resolvedTheme === 'light') {
-      root.classList.remove('dark')
-      root.classList.add('light')
-    } else {
-      root.classList.remove('light')
-      root.classList.add('dark')
-    }
-  }, [resolvedTheme, pathname])
 
   // Apply compact mode
   useEffect(() => {
@@ -233,6 +211,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   return (
     <SettingsContext.Provider value={value}>
+      <Suspense fallback={null}>
+        <ThemeRouteSync resolvedTheme={resolvedTheme} />
+      </Suspense>
       {/* MotionConfig is the single place framer-motion honours reduced motion,
           since JS-driven animations ignore the .reduce-motion CSS class.
           'always' when the in-app toggle is off; otherwise 'user', so the OS
@@ -249,10 +230,31 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   )
 }
 
+function ThemeRouteSync({ resolvedTheme }: { resolvedTheme: 'light' | 'dark' }) {
+  const pathname = usePathname()
+
+  useEffect(() => {
+    const root = document.documentElement
+
+    // The standalone /demo pages are hardcoded dark and must not receive the
+    // .light overrides from globals.css - force dark while on them.
+    if (pathname === '/demo' || pathname?.startsWith('/demo/')) {
+      root.classList.remove('light')
+      root.classList.add('dark')
+      return
+    }
+
+    root.classList.toggle('light', resolvedTheme === 'light')
+    root.classList.toggle('dark', resolvedTheme === 'dark')
+  }, [pathname, resolvedTheme])
+
+  return null
+}
+
 export function useSettings() {
   const context = useContext(SettingsContext)
   if (context === undefined) {
     throw new Error('useSettings must be used within a SettingsProvider')
   }
   return context
-} 
+}

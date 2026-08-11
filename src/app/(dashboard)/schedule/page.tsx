@@ -50,7 +50,7 @@ function SchedulePageContent() {
           <h1 className="text-[32px] font-bold tracking-tight mb-1" style={{ color: tc.textPrimary }}>Cleaning Schedule</h1>
           <p className="text-[15px]" style={{ color: tc.textMuted }}>Click any schedule to edit its title, frequency and tasks</p>
         </div>
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <ScheduleCreateDialog onScheduleCreated={fetchSchedules} />
         </div>
       </div>

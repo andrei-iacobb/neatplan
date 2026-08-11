@@ -1,11 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { connection, NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { canAccessAllSites } from '@/lib/roles'
 import { siteScopeWhere } from '@/lib/authz'
 
-export const dynamic = 'force-dynamic'
 
 // Hard cap on rows pulled per source so an export can never try to materialise years of
 // completion history into memory at once. Each source is bounded independently.
@@ -19,6 +18,7 @@ function escapeCSV(value: string): string {
 }
 
 export async function GET(request: NextRequest) {
+  await connection()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.isAdmin) {

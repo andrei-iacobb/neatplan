@@ -517,19 +517,19 @@ export default function CleanRoomPage() {
             <ArrowLeft className="w-6 h-6" />
           </Link>
           <div className="flex items-center gap-3 min-w-0">
-            <span className="text-3xl flex-shrink-0">{getRoomTypeIcon(room.type)}</span>
+            <span className="text-3xl shrink-0">{getRoomTypeIcon(room.type)}</span>
             <div className="min-w-0">
               <h1 className="text-xl sm:text-2xl font-bold break-words" style={{ color: tc.textPrimary }}>{room.name}</h1>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm" style={{ color: tc.textMuted }}>
                 <div className="flex items-center gap-1 min-w-0">
-                  <MapPin className="w-4 h-4 flex-shrink-0" />
+                  <MapPin className="w-4 h-4 shrink-0" />
                   <span className="truncate">{room.floor}</span>
                 </div>
                 <span aria-hidden="true">•</span>
                 <span className="truncate">{room.type.replace('_', ' ')}</span>
                 <span aria-hidden="true">•</span>
                 <div className="flex items-center gap-1 min-w-0">
-                  <User className="w-4 h-4 flex-shrink-0" />
+                  <User className="w-4 h-4 shrink-0" />
                   <span className="truncate">{session?.user?.name}</span>
                 </div>
               </div>
@@ -703,7 +703,7 @@ export default function CleanRoomPage() {
                                       handleTaskToggle(schedule.id, task.id, task)
                                     }
                                   }}
-                                  className="p-4 rounded-lg border cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(16,185,129,0.6)]"
+                                  className="p-4 rounded-lg border cursor-pointer transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[rgba(16,185,129,0.6)]"
                                   style={{
                                     backgroundColor: isCompleted ? tc.statusCompleted.bg : tc.surfaceBg,
                                     borderColor: isCompleted ? tc.statusCompleted.border : tc.cardBorder
@@ -738,7 +738,7 @@ export default function CleanRoomPage() {
 
                                       {task.frequency && task.frequency !== schedule.frequency && (
                                         <span
-                                          className="text-xs px-2 py-1 rounded mt-2 inline-block"
+                                          className="text-xs px-2 py-1 rounded-sm mt-2 inline-block"
                                           style={{ color: tc.tabActiveText, backgroundColor: tc.tabActiveBg }}
                                         >
                                           {task.frequency}
@@ -763,7 +763,7 @@ export default function CleanRoomPage() {
                                               onKeyDown={(e) => e.stopPropagation()}
                                               onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                                               onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
-                                              className="w-full px-3 py-2 border rounded text-sm placeholder:text-[rgb(var(--muted-foreground))] focus:outline-none"
+                                              className="w-full px-3 py-2 border rounded-sm text-sm placeholder:text-[rgb(var(--muted-foreground))] focus:outline-hidden"
                                               style={{
                                                 backgroundColor: tc.inputBg,
                                                 borderColor: tc.inputBorder,
@@ -794,7 +794,7 @@ export default function CleanRoomPage() {
                               rows={3}
                               onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                               onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
-                              className="w-full px-3 py-2 border rounded placeholder:text-[rgb(var(--muted-foreground))] focus:outline-none resize-none"
+                              className="w-full px-3 py-2 border rounded-sm placeholder:text-[rgb(var(--muted-foreground))] focus:outline-hidden resize-none"
                               style={{
                                 backgroundColor: tc.inputBg,
                                 borderColor: tc.inputBorder,
@@ -826,7 +826,7 @@ export default function CleanRoomPage() {
                               autoComplete="name"
                               onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                               onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
-                              className="w-full px-3 py-2 mb-4 border rounded min-h-[44px] placeholder:text-[rgb(var(--muted-foreground))] focus:outline-none"
+                              className="w-full px-3 py-2 mb-4 border rounded-sm min-h-[44px] placeholder:text-[rgb(var(--muted-foreground))] focus:outline-hidden"
                               style={{
                                 backgroundColor: tc.inputBg,
                                 borderColor: tc.inputBorder,

@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test'
+import { instant } from '@next/playwright'
+import { expect, test } from '@playwright/test'
 
 test('dashboard links are clickable', async ({ page }) => {
   await page.goto('/auth')
@@ -12,6 +13,11 @@ test('dashboard links are clickable', async ({ page }) => {
 
   const roomsStat = page.locator('a[href="/rooms"]').filter({ hasText: 'Total Rooms' })
   await expect(roomsStat).toBeVisible()
-  await roomsStat.click()
-  await expect(page).toHaveURL(/\/rooms/)
+  await instant(page, async () => {
+    await roomsStat.click()
+    await expect(page).toHaveURL(/\/rooms/)
+    await expect(page.getByRole('status', { name: 'Loading rooms' })).toBeVisible()
+  })
+
+  await expect(page.getByRole('heading', { name: 'Room Management' })).toBeVisible()
 })

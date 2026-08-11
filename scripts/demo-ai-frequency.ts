@@ -1,9 +1,8 @@
-const { PrismaClient } = require('@prisma/client')
-
-const prisma = new PrismaClient()
+import { prisma } from '../src/lib/db'
+import type { ScheduleFrequency } from '../src/generated/prisma/enums'
 
 // Simple frequency mapping function
-function mapFrequencyToEnum(frequencyString) {
+function mapFrequencyToEnum(frequencyString: string | null | undefined): ScheduleFrequency {
   if (!frequencyString) return 'WEEKLY'
   
   const frequency = frequencyString.toLowerCase().trim()

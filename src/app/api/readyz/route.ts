@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { connection, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
 /**
@@ -6,6 +6,7 @@ import { prisma } from '@/lib/db'
  * Use for Kubernetes readinessProbe or load-balancer health checks.
  */
 export async function GET() {
+  await connection()
   const checks: Record<string, { ready: boolean }> = {}
 
   // Database is the only hard dependency for serving traffic. The AI provider is optional

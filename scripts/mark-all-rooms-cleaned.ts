@@ -1,8 +1,7 @@
-const { PrismaClient } = require('@prisma/client')
+import { prisma } from '../src/lib/db'
+import type { ScheduleFrequency } from '../src/generated/prisma/enums'
 
-const prisma = new PrismaClient()
-
-function calculateNextDueDate(frequency, startDate = new Date()) {
+function calculateNextDueDate(frequency: ScheduleFrequency, startDate = new Date()) {
   const nextDue = new Date(startDate)
   
   switch (frequency) {

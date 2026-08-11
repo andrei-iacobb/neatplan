@@ -1,6 +1,4 @@
-const { PrismaClient } = require('@prisma/client')
-
-const prisma = new PrismaClient()
+import { prisma } from '../src/lib/db'
 
 async function testAIFrequencies() {
   try {
@@ -32,7 +30,7 @@ async function testAIFrequencies() {
       
       if (schedule.tasks.length > 0) {
         console.log(`   Task Frequencies:`)
-        schedule.tasks.forEach((task, taskIndex) => {
+        schedule.tasks.forEach((task) => {
           if (task.frequency) {
             console.log(`     - ${task.description.substring(0, 50)}... (${task.frequency})`)
           }
@@ -87,4 +85,4 @@ async function testAIFrequencies() {
   }
 }
 
-testAIFrequencies() 
+testAIFrequencies()

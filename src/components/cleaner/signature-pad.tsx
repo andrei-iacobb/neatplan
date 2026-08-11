@@ -313,7 +313,7 @@ export function SignaturePad({
           type="button"
           onClick={clear}
           disabled={disabled || !hasInk}
-          className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-40"
+          className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-40"
           style={{
             background: tc.btnSecondaryBg,
             color: tc.btnSecondaryText,
@@ -362,7 +362,7 @@ export function SignaturePad({
           onPointerCancel={handlePointerUp}
           onPointerLeave={handlePointerUp}
           onContextMenu={(e) => e.preventDefault()}
-          className="relative block h-48 w-full cursor-crosshair rounded-xl focus-visible:outline-none focus-visible:ring-2 sm:h-56"
+          className="relative block h-48 w-full cursor-crosshair rounded-xl focus-visible:outline-hidden focus-visible:ring-2 sm:h-56"
           style={{
             // Claims all touch gestures inside the pad so drawing never scrolls the page.
             touchAction: 'none',

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuth, requireAdmin, siteScopeWhere, resolveWriteSiteId, canAccessSite } from '@/lib/authz'
 import { prisma } from '@/lib/db'
-import { Prisma } from '@prisma/client'
+import { Prisma } from '@/generated/prisma/client'
 
 export async function GET() {
   try {

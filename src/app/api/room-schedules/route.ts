@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server'
+import { connection, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAuth, nestedSiteScopeWhere, resolveReadSiteId, nestedReadSiteWhere } from '@/lib/authz'
 
 // Force dynamic rendering
-export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
+  await connection()
   try {
     const auth = await requireAuth()
     if ('error' in auth) return auth.error

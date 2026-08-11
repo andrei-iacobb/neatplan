@@ -20,7 +20,7 @@ export default function DemoFullView() {
   const [scenario, setScenario] = useState<'normal' | 'overdue' | 'equipment'>('normal')
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-gray-100">
+    <main className="min-h-screen bg-linear-to-b from-gray-900 to-gray-800 text-gray-100">
       <div className="max-w-7xl mx-auto px-4 pt-10 pb-6">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold">Demo View</h1>
@@ -140,7 +140,7 @@ function CleanerMock({ scenario }: { scenario: 'normal' | 'overdue' | 'equipment
               <span className="text-xs text-blue-300">{item.due}</span>
             </div>
             <div className="mt-3 h-2 rounded-full bg-gray-800/60 overflow-hidden">
-              <motion.div initial={{ width: 0 }} animate={{ width: `${item.progress}%` }} transition={{ duration: 0.7, delay: i * 0.1 }} className="h-full rounded-full bg-gradient-to-r from-blue-500 to-teal-400" />
+              <motion.div initial={{ width: 0 }} animate={{ width: `${item.progress}%` }} transition={{ duration: 0.7, delay: i * 0.1 }} className="h-full rounded-full bg-linear-to-r from-blue-500 to-teal-400" />
             </div>
           </li>
         ))}
@@ -159,12 +159,10 @@ function SimpleBars({ values, color = 'blue' }: { values: number[]; color?: 'blu
           initial={{ height: 0, opacity: 0.7 }}
           animate={{ height: `${Math.round((v / max) * 100)}%`, opacity: 1 }}
           transition={{ duration: 0.6, delay: i * 0.05 }}
-          className={`w-6 rounded-md bg-gradient-to-t ${color === 'red' ? 'from-rose-600/70 to-orange-400/70 border border-rose-400/30' : 'from-blue-600/70 to-teal-400/70 border border-blue-400/20'}`}
+          className={`w-6 rounded-md bg-linear-to-t ${color === 'red' ? 'from-rose-600/70 to-orange-400/70 border border-rose-400/30' : 'from-blue-600/70 to-teal-400/70 border border-blue-400/20'}`}
           title={`${v}`}
         />
       ))}
     </div>
   )
 }
-
-

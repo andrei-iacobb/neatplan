@@ -3,12 +3,12 @@
 import { useSettings } from "@/contexts/settings-context"
 
 export function Footer() {
-  const currentYear = new Date().getFullYear()
+  const currentYear = process.env.NEXT_PUBLIC_COPYRIGHT_YEAR
   const { resolvedTheme } = useSettings()
   const isDark = resolvedTheme === 'dark'
 
   return (
-    <footer className="w-full flex-shrink-0 transition-colors duration-300"
+    <footer className="w-full shrink-0 transition-colors duration-300"
       style={{ borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` }}>
       <div className="px-6 py-2.5">
         <p className="text-[11px] text-center" style={{ color: isDark ? 'rgba(139,139,158,0.6)' : 'rgba(140,140,160,0.6)' }}>

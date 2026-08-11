@@ -11,9 +11,9 @@
  *
  * Run: npx tsx scripts/seed-demo-operations.ts
  */
-import { PrismaClient, RoomType, ScheduleFrequency, ScheduleStatus } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { RoomType, ScheduleFrequency, ScheduleStatus } from '../src/generated/prisma/enums'
+import type { Prisma } from '../src/generated/prisma/client'
+import { prisma } from '../src/lib/db'
 
 /** Deterministic PRNG so reruns produce the same history. */
 let seedState = 20260729
@@ -377,7 +377,7 @@ async function main() {
       select: { id: true, room: { select: { name: true } }, schedule: { select: { title: true, tasks: { select: { id: true } } } } },
       take: 400,
     })
-    const logs: any[] = []
+    const logs: Prisma.RoomScheduleCompletionLogCreateManyInput[] = []
     for (let daysAgo = 13; daysAgo >= 0; daysAgo--) {
       // Fewer at weekends, the way a real rota thins out.
       const day = new Date(now.getTime() - daysAgo * DAY)

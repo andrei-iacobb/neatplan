@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAdmin, requireAuth, canAccessSite } from '@/lib/authz'
 import { calculateNextDueDate } from '@/lib/schedule-utils'
-import { Prisma } from '@prisma/client'
+import { Prisma } from '@/generated/prisma/client'
 
 // POST /api/rooms/[id]/schedules - Assign a schedule to a room (admin only)
 export async function POST(

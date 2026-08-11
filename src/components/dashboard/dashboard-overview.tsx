@@ -148,7 +148,7 @@ export function DashboardOverview() {
       <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-1 sm:gap-4">
         <div>
           <div className="flex items-center gap-2 mb-0.5">
-            <Sparkles className="w-[15px] h-[15px] flex-shrink-0" style={{ color: 'rgb(16,185,129)' }} />
+            <Sparkles className="w-[15px] h-[15px] shrink-0" style={{ color: 'rgb(16,185,129)' }} />
             <p className="text-[14px] font-medium" style={{ color: tc.accentLabel }}>{dateStr}</p>
           </div>
           <h1 className="text-[23px] sm:text-[25px] font-semibold tracking-tight leading-tight" style={{ color: tc.textPrimary }}>
@@ -202,14 +202,14 @@ export function DashboardOverview() {
               style={cardStyle(tc)}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = tc.cardHoverBorder(s.accent); e.currentTarget.style.background = tc.cardHoverBg }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = tc.cardBorder; e.currentTarget.style.background = tc.cardBg }}>
-              <div className="w-[37px] h-[37px] rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: `${s.accent}${tc.iconBgAlpha}` }}>
+              <div className="w-[37px] h-[37px] rounded-lg shrink-0 flex items-center justify-center" style={{ background: `${s.accent}${tc.iconBgAlpha}` }}>
                 <s.icon className="w-[19px] h-[19px]" style={{ color: s.accent }} strokeWidth={1.8} />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[23px] sm:text-[25px] font-bold tabular-nums leading-none" style={{ color: tc.textPrimary }}>{s.value}</p>
                 <p className="text-[13px] sm:text-[14px] font-medium mt-0.5 leading-tight" style={{ color: tc.textMuted }}>{s.name}</p>
               </div>
-              <ArrowRight className="w-[17px] h-[17px] flex-shrink-0 opacity-0 group-hover:opacity-50 transition-opacity hidden sm:block" style={{ color: s.accent }} />
+              <ArrowRight className="w-[17px] h-[17px] shrink-0 opacity-0 group-hover:opacity-50 transition-opacity hidden sm:block" style={{ color: s.accent }} />
             </Link>
           </motion.div>
         ))}
@@ -296,7 +296,7 @@ export function DashboardOverview() {
                       <RoomTypeIcon type={type} tc={tc} />
                       <span className="text-[14px] font-medium truncate" style={{ color: tc.textSecondary }}>{formatRoomType(type)}</span>
                     </div>
-                    <span className="text-[15px] font-semibold tabular-nums ml-2 flex-shrink-0" style={{ color: tc.textMuted }}>{count}</span>
+                    <span className="text-[15px] font-semibold tabular-nums ml-2 shrink-0" style={{ color: tc.textMuted }}>{count}</span>
                   </div>
                   <div className="h-1.5 rounded-full overflow-hidden" style={{ background: tc.progressBg }}>
                     <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.5, delay: 0.35 }} className="h-full rounded-full" style={{ background: 'rgba(16,185,129,0.45)' }} />
@@ -311,7 +311,7 @@ export function DashboardOverview() {
                 <p className="text-[14px]" style={{ color: tc.textFaint }}>
                   {site.selectedSite ? `No rooms in ${site.selectedSite.name} yet` : 'No rooms yet'}
                 </p>
-                <Link href="/rooms" className="text-[14px] font-medium inline-block mt-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50" style={{ color: 'rgb(16,185,129)' }}>
+                <Link href="/rooms" className="text-[14px] font-medium inline-block mt-1 rounded-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50" style={{ color: 'rgb(16,185,129)' }}>
                   Add rooms &rarr;
                 </Link>
               </div>
@@ -358,11 +358,11 @@ export function DashboardOverview() {
                 className="group flex items-center gap-3 rounded-lg px-[11px] py-[11px] transition-all duration-150"
                 onMouseEnter={(e) => { e.currentTarget.style.background = tc.hoverRow; e.currentTarget.style.borderColor = tc.cardHoverBorder(a.accent) }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}>
-                <div className="w-[33px] h-[33px] rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: `${a.accent}${tc.iconBgAlpha}` }}>
+                <div className="w-[33px] h-[33px] rounded-lg shrink-0 flex items-center justify-center" style={{ background: `${a.accent}${tc.iconBgAlpha}` }}>
                   <a.icon className="w-[17px] h-[17px]" style={{ color: a.accent }} strokeWidth={1.8} />
                 </div>
                 <span className="text-[15px] font-medium flex-1 min-w-0" style={{ color: tc.textPrimary }}>{a.name}</span>
-                <ArrowRight className="w-[17px] h-[17px] flex-shrink-0 opacity-30 group-hover:opacity-70 group-hover:translate-x-0.5 transition-all" style={{ color: a.accent }} />
+                <ArrowRight className="w-[17px] h-[17px] shrink-0 opacity-30 group-hover:opacity-70 group-hover:translate-x-0.5 transition-all" style={{ color: a.accent }} />
               </Link>
             ))}
           </nav>
@@ -378,7 +378,7 @@ function StatusRow({ icon, label, count, color, tc }: { icon: React.ReactNode; l
   return (
     <div className="flex items-center justify-between py-1">
       <div className="flex items-center gap-2.5">
-        <div className="w-[29px] h-[29px] rounded-md flex items-center justify-center flex-shrink-0" style={{ background: `${color}${tc.iconBgAlpha}`, color }}>{icon}</div>
+        <div className="w-[29px] h-[29px] rounded-md flex items-center justify-center shrink-0" style={{ background: `${color}${tc.iconBgAlpha}`, color }}>{icon}</div>
         <span className="text-[15px] font-medium" style={{ color: tc.textSecondary }}>{label}</span>
       </div>
       <span className="text-[16px] font-bold tabular-nums" style={{ color: count > 0 ? color : tc.textFaint }}>{count}</span>
@@ -396,15 +396,15 @@ function ActivityItem({ activity, tc }: { activity: any; tc: ReturnType<typeof u
     <div className="flex items-center gap-2.5 py-2 rounded-lg px-2 transition-colors duration-100"
       onMouseEnter={(e) => e.currentTarget.style.background = tc.hoverRow}
       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-      <div className="w-[9px] h-[9px] rounded-full flex-shrink-0" style={{ background: dotColor }} />
+      <div className="w-[9px] h-[9px] rounded-full shrink-0" style={{ background: dotColor }} />
       <p className="text-[15px] font-medium flex-1 min-w-0 truncate" style={{ color: tc.textSecondary }}>{activity.description || activity.title || 'Unknown activity'}</p>
-      <span className="text-[13px] font-medium flex-shrink-0 tabular-nums" style={{ color: tc.textFaint }}>{timeAgo}</span>
+      <span className="text-[13px] font-medium shrink-0 tabular-nums" style={{ color: tc.textFaint }}>{timeAgo}</span>
     </div>
   )
 }
 
 function RoomTypeIcon({ type, tc }: { type: string; tc: ReturnType<typeof useThemeColors> }) {
-  const s = { color: tc.textMuted }; const c = "w-[17px] h-[17px] flex-shrink-0"
+  const s = { color: tc.textMuted }; const c = "w-[17px] h-[17px] shrink-0"
   switch (type) {
     case 'BEDROOM': return <BedDouble className={c} style={s} />
     case 'OFFICE': return <Building2 className={c} style={s} />

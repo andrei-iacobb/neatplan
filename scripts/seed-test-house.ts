@@ -8,10 +8,9 @@
  *
  *   npx tsx scripts/seed-test-house.ts
  */
-import { PrismaClient, ScheduleFrequency, ScheduleStatus, RoomType } from '@prisma/client'
 import { hash } from 'bcryptjs'
-
-const prisma = new PrismaClient()
+import { RoomType, ScheduleFrequency, ScheduleStatus } from '../src/generated/prisma/enums'
+import { prisma } from '../src/lib/db'
 
 const SITE_NAME = 'Test House'
 

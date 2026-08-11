@@ -1,4 +1,4 @@
-import { ScheduleFrequency } from '@prisma/client'
+import { ScheduleFrequency } from '@/generated/prisma/enums'
 
 /**
  * Add whole months to a date, clamping the day to the last valid day of the target month.

@@ -221,13 +221,13 @@ export default function CleaningPage() {
               key={task.id}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="p-4 rounded-lg bg-black/20 backdrop-blur-sm border border-white/5 hover:border-white/10 transition-colors"
+              className="p-4 rounded-lg bg-black/20 backdrop-blur-xs border border-white/5 hover:border-white/10 transition-colors"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
                     <h3 className="text-lg font-medium text-gray-100">{task.taskDescription}</h3>
-                    <span className="px-2 py-1 rounded text-xs border bg-teal-500/10 text-teal-300 border-teal-500/30">
+                    <span className="px-2 py-1 rounded-sm text-xs border bg-teal-500/10 text-teal-300 border-teal-500/30">
                       {task.frequency}
                     </span>
                   </div>
@@ -268,7 +268,7 @@ export default function CleaningPage() {
                       {selectedTaskId === task.id && selectedRoomForTask && (
                         <button
                           onClick={() => assignTaskToRoom(task.id, selectedRoomForTask)}
-                          className="px-3 py-1 bg-teal-500/10 text-teal-300 rounded border border-teal-500/30 hover:bg-teal-500/20 transition-colors text-sm"
+                          className="px-3 py-1 bg-teal-500/10 text-teal-300 rounded-sm border border-teal-500/30 hover:bg-teal-500/20 transition-colors text-sm"
                         >
                           Assign
                         </button>
@@ -278,7 +278,7 @@ export default function CleaningPage() {
                 </div>
                 <div className="flex space-x-2 ml-4">
                   <button
-                    className={`px-3 py-1.5 rounded border transition-colors text-sm ${
+                    className={`px-3 py-1.5 rounded-sm border transition-colors text-sm ${
                       task.status === 'completed'
                         ? 'bg-green-500/10 text-green-300 border-green-500/30 cursor-default'
                         : 'bg-teal-500/10 text-teal-300 border-teal-500/30 hover:bg-teal-500/20'

@@ -10,7 +10,7 @@ export default function Loading() {
           <Skeleton className="h-8" width={180} />
           <Skeleton className="h-4" width={320} />
         </div>
-        <Skeleton className="h-9 rounded-lg flex-shrink-0" width={110} />
+        <Skeleton className="h-9 rounded-lg shrink-0" width={110} />
       </div>
 
       <ListLoading rows={8} label="Loading users" />

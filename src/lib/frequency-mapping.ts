@@ -1,4 +1,4 @@
-import { ScheduleFrequency } from '@prisma/client'
+import { ScheduleFrequency } from '@/generated/prisma/enums'
 
 /**
  * Maps AI-detected frequency strings to ScheduleFrequency enum values

@@ -4,7 +4,6 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { hash } from 'bcryptjs'
 
-export const dynamic = 'force-dynamic'
 
 export async function PUT(request: NextRequest) {
   try {
@@ -121,4 +120,4 @@ export async function GET(request: NextRequest) {
       error: 'Failed to get profile' 
     }, { status: 500 })
   }
-} 
+}

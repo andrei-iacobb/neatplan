@@ -1,32 +1,46 @@
 #!/bin/sh
+set -eu
 
-echo "Starting NeatPlan application..."
+# Load platform-mounted secrets without placing their values in the image or command
+# line. Direct environment variables remain supported for local Compose deployments.
+load_secret() {
+  variable="$1"
+  eval "value=\${${variable}:-}"
+  eval "secret_file=\${${variable}_FILE:-}"
 
-# Wait for database to be ready using DATABASE_URL
-if [ -z "$DATABASE_URL" ]; then
-  echo "DATABASE_URL is not set"
+  if [ -n "$value" ] && [ -n "$secret_file" ]; then
+    echo "$variable and ${variable}_FILE cannot both be set" >&2
+    exit 1
+  fi
+
+  if [ -n "$secret_file" ]; then
+    if [ ! -r "$secret_file" ]; then
+      echo "${variable}_FILE is not readable" >&2
+      exit 1
+    fi
+    value="$(cat "$secret_file")"
+    export "$variable=$value"
+  fi
+}
+
+for variable in DATABASE_URL NEXTAUTH_SECRET CRON_SECRET OPENAI_API_KEY SMTP_PASS; do
+  load_secret "$variable"
+done
+
+if [ -z "${DATABASE_URL:-}" ]; then
+  echo "DATABASE_URL or DATABASE_URL_FILE must be set" >&2
   exit 1
 fi
 
-echo "Waiting for database connection..."
-# pg_isready does not accept Prisma query params like ?schema=...
-DB_READY_URL="${DATABASE_URL%%\?*}"
-until pg_isready -d "$DB_READY_URL"; do
-  echo "Database is unavailable - sleeping"
-  sleep 1
-done
+if [ "${NEATPLAN_APP_SERVER:-0}" = "1" ]; then
+  if [ -z "${NEXTAUTH_URL:-}" ]; then
+    echo "NEXTAUTH_URL must be set for the application server" >&2
+    exit 1
+  fi
+  if [ -z "${NEXTAUTH_SECRET:-}" ]; then
+    echo "NEXTAUTH_SECRET or NEXTAUTH_SECRET_FILE must be set" >&2
+    exit 1
+  fi
+fi
 
-echo "Database is ready!"
-
-# Run database migrations
-echo "Running database migrations..."
-pnpm exec prisma migrate deploy
-
-# Seed database if needed (optional, uncomment if you want initial data)
-# echo "Seeding database..."
-# npm run prisma:seed
-
-echo "Starting production server..."
-# Call `next start` directly rather than `pnpm start -- ...`: under Next 15 the forwarded
-# `--` makes next mis-parse `-H` as the project directory ("no such directory: /app/-H").
-exec pnpm exec next start -H 0.0.0.0 -p 4040
+exec "$@"

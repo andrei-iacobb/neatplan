@@ -1,6 +1,5 @@
-const { PrismaClient } = require('@prisma/client')
-
-const prisma = new PrismaClient()
+import { prisma } from '../src/lib/db'
+import { UserRole } from '../src/generated/prisma/enums'
 
 async function updateUserRoles() {
   try {
@@ -9,7 +8,7 @@ async function updateUserRoles() {
     // Update admin users
     const adminResult = await prisma.user.updateMany({
       where: { isAdmin: true },
-      data: { role: 'ADMIN' }
+      data: { role: UserRole.OP }
     })
     
     console.log(`Updated ${adminResult.count} admin users`)
@@ -17,7 +16,7 @@ async function updateUserRoles() {
     // Update cleaner users
     const cleanerResult = await prisma.user.updateMany({
       where: { isAdmin: false },
-      data: { role: 'CLEANER' }
+      data: { role: UserRole.CLEANER }
     })
     
     console.log(`Updated ${cleanerResult.count} cleaner users`)
@@ -30,4 +29,4 @@ async function updateUserRoles() {
   }
 }
 
-updateUserRoles() 
+updateUserRoles()

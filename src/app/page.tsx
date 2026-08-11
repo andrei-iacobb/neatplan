@@ -5,10 +5,7 @@ import { redirect } from 'next/navigation'
 import { DashboardOverview } from '@/components/dashboard/dashboard-overview'
 import { PageLoading } from '@/components/ui/loading'
 
-// Force dynamic rendering to prevent build issues
-export const dynamic = 'force-dynamic'
-
-export default async function HomePage() {
+async function AuthenticatedHome() {
   const session = await getServerSession(authOptions)
 
   if (!session) {
@@ -29,6 +26,18 @@ export default async function HomePage() {
       </div>
     }>
       <DashboardOverview />
+    </Suspense>
+  )
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-[1230px] mx-auto relative z-10 pb-[17px]">
+        <PageLoading cards={4} columns={4} label="Loading dashboard" />
+      </div>
+    }>
+      <AuthenticatedHome />
     </Suspense>
   )
 }

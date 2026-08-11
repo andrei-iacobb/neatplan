@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import nodemailer from 'nodemailer'
 
-export const dynamic = 'force-dynamic'
 
 interface SMTPConfig {
   host: string
@@ -236,4 +235,4 @@ function getSuggestions(error: any, config: SMTPConfig): string[] {
   }
 
   return suggestions
-} 
+}

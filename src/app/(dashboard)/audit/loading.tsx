@@ -13,7 +13,7 @@ export default function Loading() {
           <Skeleton className="h-8" width={200} />
           <Skeleton className="h-4" width={340} />
         </div>
-        <Skeleton className="h-8 rounded-lg flex-shrink-0" width={110} />
+        <Skeleton className="h-8 rounded-lg shrink-0" width={110} />
       </div>
 
       {/* Date, room, cleaner and search filters */}

@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client'
 import { RoomType } from '../src/types/room'
-
-const prisma = new PrismaClient()
+import { prisma } from '../src/lib/db'
 
 async function updateRooms() {
   try {
@@ -23,4 +21,4 @@ async function updateRooms() {
   }
 }
 
-updateRooms() 
+updateRooms()

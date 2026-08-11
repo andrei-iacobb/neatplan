@@ -14,7 +14,8 @@ const adminRoutes = [
   '/users',
   '/audit',
   '/equipment',
-  '/sites'
+  '/sites',
+  '/diary'
 ]
 
 // Routes that cleaners can access
@@ -23,14 +24,14 @@ const cleanerRoutes = [
   '/api/cleaner'
 ]
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname
 
   // 0) Let public static assets and PWA files through without auth so logged-out pages
   // (login, demo) render their logo/manifest/service worker. Fixes the broken-image and
   // "script behind a redirect" errors that disabled the PWA for not-yet-logged-in users.
   // API routes are never treated as static.
-  if (!path.startsWith('/api') && isStaticAsset(path)) {
+  if (!isPathWithin(path, '/api') && isStaticAsset(path)) {
     return NextResponse.next()
   }
 
@@ -45,12 +46,12 @@ export async function middleware(request: NextRequest) {
 
     if (!isAllowed) {
       // Deny all API/data access with 403
-      if (path.startsWith('/api')) {
+      if (isPathWithin(path, '/api')) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
 
       // Allow demo route and required static assets only; redirect everything else to /demo
-      const isDemoRoute = path === '/demo' || path.startsWith('/_next') || path === '/favicon.ico'
+      const isDemoRoute = isPathWithin(path, '/demo') || isPathWithin(path, '/_next') || path === '/favicon.ico'
       if (!isDemoRoute) {
         const url = new URL('/demo', request.url)
         return NextResponse.redirect(url)
@@ -61,7 +62,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Allow scheduled cron route with shared secret only
-  if (path.startsWith('/api/cron')) {
+  if (isPathWithin(path, '/api/cron')) {
     // SECURITY: Only accept secret via header, not query parameter to prevent logging.
     // Note: x-vercel-cron header alone is not sufficient as it can be spoofed.
     // Middleware runs before the route handler, so this comparison is the effective gate -
@@ -87,15 +88,13 @@ export async function middleware(request: NextRequest) {
   const token = (rawToken as any)?.revoked === true ? null : rawToken
 
   // Check if the current path is a public route
-  const isPublicRoute = publicRoutes.some(route => 
-    request.nextUrl.pathname.startsWith(route)
-  )
+  const isPublicRoute = publicRoutes.some((route) => isPathWithin(path, route))
 
   // Handle public routes
   if (isPublicRoute) {
     if (token) {
       // If user is authenticated and tries to access auth page, redirect to appropriate dashboard
-      if (request.nextUrl.pathname.startsWith('/auth')) {
+      if (isPathWithin(path, '/auth')) {
         const mustChange = (token as any).forcePasswordChange === true
         const desiredPath = mustChange ? '/auth/change-password' : (token.isAdmin ? '/' : '/clean')
         // Avoid redirect loop when already on the change-password page
@@ -112,7 +111,7 @@ export async function middleware(request: NextRequest) {
   if (!token) {
     // API callers expect JSON. Redirecting them to the HTML sign-in page makes a fetch
     // client parse a login document as a payload, so answer them in their own terms.
-    if (path.startsWith('/api/')) {
+    if (isPathWithin(path, '/api')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     const redirectUrl = new URL('/auth', request.url)
@@ -125,9 +124,9 @@ export async function middleware(request: NextRequest) {
   // Enforce password change before accessing app
   const mustChange = (token as any).forcePasswordChange === true
   if (mustChange) {
-    const isChangePasswordPage = path.startsWith('/auth/change-password')
-    const isChangePasswordApi = path.startsWith('/api/auth/change-password')
-    const isAuthStatic = path.startsWith('/_next') || path.startsWith('/favicon.ico')
+    const isChangePasswordPage = isPathWithin(path, '/auth/change-password')
+    const isChangePasswordApi = isPathWithin(path, '/api/auth/change-password')
+    const isAuthStatic = isPathWithin(path, '/_next') || path === '/favicon.ico'
     if (!isChangePasswordPage && !isChangePasswordApi && !isAuthStatic) {
       return NextResponse.redirect(new URL('/auth/change-password', request.url))
     }
@@ -136,7 +135,7 @@ export async function middleware(request: NextRequest) {
   const isAdmin = token.isAdmin as boolean
 
   // Check if the user is trying to access admin routes
-  if (adminRoutes.some(route => path.startsWith(route))) {
+  if (adminRoutes.some((route) => isPathWithin(path, route))) {
     if (!isAdmin) {
       // Redirect non-admin users to cleaner dashboard
       return NextResponse.redirect(new URL('/clean', request.url))
@@ -144,7 +143,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Check if the user is trying to access cleaner routes
-  if (cleanerRoutes.some(route => path.startsWith(route))) {
+  if (cleanerRoutes.some((route) => isPathWithin(path, route))) {
     if (isAdmin) {
       // Redirect admin users to admin dashboard
       return NextResponse.redirect(new URL('/', request.url))
@@ -178,6 +177,10 @@ function constantTimeEqual(a: string | null | undefined, b: string | null | unde
     mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i)
   }
   return mismatch === 0
+}
+
+function isPathWithin(path: string, route: string): boolean {
+  return path === route || path.startsWith(`${route}/`)
 }
 
 function isStaticAsset(path: string): boolean {

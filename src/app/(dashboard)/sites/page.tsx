@@ -81,7 +81,7 @@ function SiteFormModal({ site, onClose, onSave, tc }: { site: Partial<Site> | nu
               <input
                 {...register('name')}
                 placeholder="Site name"
-                className="w-full p-2.5 rounded-lg text-[14px] outline-none transition-colors"
+                className="w-full p-2.5 rounded-lg text-[14px] outline-hidden transition-colors"
                 style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
                 onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
                 onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
@@ -93,7 +93,7 @@ function SiteFormModal({ site, onClose, onSave, tc }: { site: Partial<Site> | nu
               <input
                 {...register('address')}
                 placeholder="Address (optional)"
-                className="w-full p-2.5 rounded-lg text-[14px] outline-none transition-colors"
+                className="w-full p-2.5 rounded-lg text-[14px] outline-hidden transition-colors"
                 style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
                 onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
                 onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
@@ -106,7 +106,7 @@ function SiteFormModal({ site, onClose, onSave, tc }: { site: Partial<Site> | nu
                 {...register('description')}
                 placeholder="Description (optional)"
                 rows={3}
-                className="w-full p-2.5 rounded-lg text-[14px] outline-none transition-colors resize-none"
+                className="w-full p-2.5 rounded-lg text-[14px] outline-hidden transition-colors resize-none"
                 style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
                 onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
                 onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
@@ -160,7 +160,7 @@ function DeleteConfirmationModal({ site, onClose, onConfirm, tc }: { site: Site,
         style={{ background: tc.modalBg, border: '1px solid ' + tc.btnDangerBorder }}
       >
         <div className="flex items-start gap-4">
-          <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full" style={{ background: tc.statusOverdue.bg }}>
+          <div className="shrink-0 flex items-center justify-center h-12 w-12 rounded-full" style={{ background: tc.statusOverdue.bg }}>
             <AlertTriangle className="h-6 w-6" style={{ color: tc.statusOverdue.text }} aria-hidden="true" />
           </div>
           <div className="mt-0 text-left">
@@ -306,7 +306,7 @@ export default function SitesPage() {
             {canManage && (
               <button
                 onClick={() => { setEditingSite({}); setIsModalOpen(true); }}
-                className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors w-full sm:w-auto flex-shrink-0"
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors w-full sm:w-auto shrink-0"
                 style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: '1px solid ' + tc.btnPrimaryBorder }}
                 onMouseEnter={(e) => e.currentTarget.style.background = tc.btnPrimaryHoverBg}
                 onMouseLeave={(e) => e.currentTarget.style.background = tc.btnPrimaryBg}
@@ -342,7 +342,7 @@ export default function SitesPage() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.12)', color: 'rgb(16,185,129)' }}>
+                    <div className="w-10 h-10 rounded-lg shrink-0 flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.12)', color: 'rgb(16,185,129)' }}>
                       <Building2 className="w-5 h-5" />
                     </div>
                     <div className="min-w-0">
@@ -351,7 +351,7 @@ export default function SitesPage() {
                     </div>
                   </div>
                   {canManage && (
-                    <div className="flex items-center gap-1 flex-shrink-0">
+                    <div className="flex items-center gap-1 shrink-0">
                       <button
                         aria-label="Edit site"
                         onClick={() => { setEditingSite(site); setIsModalOpen(true); }}

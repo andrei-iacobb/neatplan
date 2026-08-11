@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { connection, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
@@ -6,9 +6,9 @@ import { canAccessAllSites } from '@/lib/roles'
 import { siteScopeWhere, resolveReadSiteId, readSiteWhere } from '@/lib/authz'
 
 // Force dynamic rendering
-export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
+  await connection()
   try {
     const session = await getServerSession(authOptions)
 

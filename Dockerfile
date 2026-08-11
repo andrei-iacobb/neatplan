@@ -1,58 +1,112 @@
-# Use Node.js Alpine Linux image
-FROM node:20-alpine
+# syntax=docker/dockerfile:1.7
 
-# Add necessary packages for Prisma and database tools
-# pnpm is pinned deliberately, to the last 10.x. An unpinned `npm install -g pnpm`
-# silently moved to 11 between builds and broke an image whose application code had not
-# changed: pnpm 11 requires node:sqlite, which does not exist on Node 20, so the install
-# died with ERR_UNKNOWN_BUILTIN_MODULE. Pinning the build tool rather than bumping the
-# runtime keeps this a build-time change with no new Node major under a live service.
-# If Node is ever moved to 22+, pnpm 11 becomes available again.
-RUN apk add --no-cache libc6-compat openssl postgresql-client && \
-    npm install -g pnpm@10.34.5
+ARG NODE_VERSION=24.19.0
 
-# Create a non-root user and group
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nextjs -u 1001 -G nodejs
+FROM node:${NODE_VERSION}-bookworm-slim AS build-base
+
+ENV NEXT_TELEMETRY_DISABLED=1
+WORKDIR /app
+
+RUN apt-get update \
+  && apt-get install --yes --no-install-recommends ca-certificates dumb-init \
+  && rm -rf /var/lib/apt/lists/* \
+  && npm install --global corepack@0.35.0 \
+  && corepack enable \
+  && groupadd --gid 1001 nodejs \
+  && useradd --uid 1001 --gid nodejs --create-home --shell /usr/sbin/nologin nextjs
+
+FROM build-base AS dependencies
+
+# Prisma 7 loads its datasource config during the package postinstall. This URL is
+# deliberately non-secret and exists only in build stages; production receives its URL
+# at runtime.
+ENV DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml prisma.config.ts ./
+COPY prisma ./prisma
+
+RUN --mount=type=cache,id=neatplan-pnpm,target=/pnpm/store \
+  pnpm config set store-dir /pnpm/store \
+  && pnpm install --frozen-lockfile
+
+FROM dependencies AS builder
+
+ARG NEXT_PUBLIC_APP_BASE_URL=http://localhost:4040
+ARG NEXTAUTH_URL=http://localhost:4040
+ARG CORS_ALLOWED_ORIGIN=http://localhost:4040
+ENV NODE_ENV=production \
+    NEXT_PUBLIC_APP_BASE_URL=${NEXT_PUBLIC_APP_BASE_URL} \
+    NEXTAUTH_URL=${NEXTAUTH_URL} \
+    CORS_ALLOWED_ORIGIN=${CORS_ALLOWED_ORIGIN}
+COPY . .
+
+# Generate after the complete Prisma configuration is present, then let Next produce
+# the traced standalone server and Linux-native Prisma/Sharp artifacts.
+RUN pnpm exec prisma generate \
+  && pnpm build
+
+FROM build-base AS migrator
+
+ENV NODE_ENV=production \
+  HOME=/tmp \
+  XDG_CACHE_HOME=/tmp/.cache
+
+COPY --from=dependencies --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --chown=nextjs:nodejs package.json pnpm-lock.yaml pnpm-workspace.yaml prisma.config.ts ./
+COPY --chown=nextjs:nodejs prisma ./prisma
+COPY --chmod=0555 start.sh /usr/local/bin/neatplan-entrypoint
+
+USER nextjs
+ENTRYPOINT ["dumb-init", "--", "/usr/local/bin/neatplan-entrypoint"]
+CMD ["./node_modules/.bin/prisma", "migrate", "deploy"]
+
+FROM node:${NODE_VERSION}-bookworm-slim AS runner
+
+ARG APP_GIT_SHA=unknown
+ARG APP_GIT_BRANCH=unknown
+
+LABEL org.opencontainers.image.source="https://github.com/andrei-iacobb/neatplan" \
+  org.opencontainers.image.revision="${APP_GIT_SHA}"
+
+ENV NODE_ENV=production \
+  NEXT_TELEMETRY_DISABLED=1 \
+  HOSTNAME=0.0.0.0 \
+  PORT=4040 \
+  HOME=/tmp \
+  XDG_CACHE_HOME=/tmp/.cache \
+  TESSERACT_PATH=/usr/bin/tesseract \
+  TESSERACT_LANG=eng \
+  NEATPLAN_DATA_DIR=/app/data \
+  NEATPLAN_APP_SERVER=1 \
+  APP_GIT_SHA=${APP_GIT_SHA} \
+  APP_GIT_BRANCH=${APP_GIT_BRANCH}
 
 WORKDIR /app
 
-# Copy package files
-# pnpm-workspace.yaml carries onlyBuiltDependencies. Without it in the build context
-# pnpm ignores the postinstall scripts for prisma, sharp and esbuild and then fails the
-# install outright with ERR_PNPM_IGNORED_BUILDS.
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN apt-get update \
+  && apt-get install --yes --no-install-recommends \
+    ca-certificates \
+    dumb-init \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+  && rm -rf /var/lib/apt/lists/* \
+  && groupadd --gid 1001 nodejs \
+  && useradd --uid 1001 --gid nodejs --create-home --shell /usr/sbin/nologin nextjs
 
-# The schema has to land before the install: package.json runs `prisma generate` as a
-# postinstall hook, and without prisma/ present it fails with "Could not find Prisma
-# Schema". Copied separately from the rest of the source so the dependency layer still
-# caches on the manifests and schema alone.
-COPY prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --chmod=0555 start.sh /usr/local/bin/neatplan-entrypoint
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN mkdir -p /app/data/document-jobs /app/.next/cache \
+  && chown -R nextjs:nodejs /app/data /app/.next/cache
 
-# Copy source code
-COPY --chown=nextjs:nodejs . .
-
-# Generate Prisma client for the correct platform
-RUN pnpm exec prisma generate
-
-# Build the Next.js app for production startup
-RUN pnpm run build:no-lint
-
-# Set environment variables - use production by default
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-
-# Create a startup script to handle database migration and startup
-COPY --chown=nextjs:nodejs start.sh /usr/local/bin/start.sh
-RUN chmod +x /usr/local/bin/start.sh
-
-# Switch to non-root user
 USER nextjs
-
 EXPOSE 4040
+STOPSIGNAL SIGTERM
 
-# Use startup script
-CMD ["/usr/local/bin/start.sh"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD ["node", "-e", "fetch('http://127.0.0.1:4040/api/readyz').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
+
+ENTRYPOINT ["dumb-init", "--", "/usr/local/bin/neatplan-entrypoint"]
+CMD ["node", "server.js"]

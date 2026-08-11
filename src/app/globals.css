@@ -1,6 +1,168 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/*
+ * Keep the app's v3 design tokens and the subset of the v3 palette used by the
+ * UI. Tailwind v4's P3 palette is intentionally more vivid; retaining these
+ * values prevents a framework upgrade from changing the rendered colours.
+ */
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  --color-gray-950: #030712;
+  --color-red-50: #fef2f2;
+  --color-red-200: #fecaca;
+  --color-red-300: #fca5a5;
+  --color-red-400: #f87171;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+  --color-red-900: #7f1d1d;
+  --color-orange-400: #fb923c;
+  --color-yellow-400: #facc15;
+  --color-green-300: #86efac;
+  --color-green-400: #4ade80;
+  --color-green-500: #22c55e;
+  --color-emerald-400: #34d399;
+  --color-emerald-500: #10b981;
+  --color-teal-200: #99f6e4;
+  --color-teal-300: #5eead4;
+  --color-teal-400: #2dd4bf;
+  --color-teal-500: #14b8a6;
+  --color-teal-600: #0d9488;
+  --color-teal-700: #0f766e;
+  --color-teal-900: #134e4a;
+  --color-blue-300: #93c5fd;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-purple-400: #c084fc;
+  --color-purple-500: #a855f7;
+  --color-pink-500: #ec4899;
+  --color-rose-300: #fda4af;
+  --color-rose-400: #fb7185;
+  --color-rose-500: #f43f5e;
+  --color-rose-600: #e11d48;
+  --color-yellow-200: #fef08a;
+  --color-yellow-900: #713f12;
+
+  --default-ring-color: var(--color-blue-500);
+}
+
+/*
+ * v4 moved space-* from a leading sibling margin to a trailing margin. Keep
+ * the v3 selector semantics for every scale used by the app so hidden children
+ * and children with their own margins continue to lay out identically.
+ */
+@layer utilities {
+  .space-y-0\.5 > :not(:last-child),
+  .space-y-1 > :not(:last-child),
+  .space-y-1\.5 > :not(:last-child),
+  .space-y-2 > :not(:last-child),
+  .space-y-2\.5 > :not(:last-child),
+  .space-y-3 > :not(:last-child),
+  .space-y-4 > :not(:last-child),
+  .space-y-5 > :not(:last-child),
+  .space-y-6 > :not(:last-child),
+  .space-y-8 > :not(:last-child) {
+    margin-block: 0;
+  }
+
+  .space-y-0\.5 > :not([hidden]) ~ :not([hidden]) { --tw-v3-space-y-value: 0.125rem; }
+  .space-y-1 > :not([hidden]) ~ :not([hidden]) { --tw-v3-space-y-value: 0.25rem; }
+  .space-y-1\.5 > :not([hidden]) ~ :not([hidden]) { --tw-v3-space-y-value: 0.375rem; }
+  .space-y-2 > :not([hidden]) ~ :not([hidden]) { --tw-v3-space-y-value: 0.5rem; }
+  .space-y-2\.5 > :not([hidden]) ~ :not([hidden]) { --tw-v3-space-y-value: 0.625rem; }
+  .space-y-3 > :not([hidden]) ~ :not([hidden]) { --tw-v3-space-y-value: 0.75rem; }
+  .space-y-4 > :not([hidden]) ~ :not([hidden]) { --tw-v3-space-y-value: 1rem; }
+  .space-y-5 > :not([hidden]) ~ :not([hidden]) { --tw-v3-space-y-value: 1.25rem; }
+  .space-y-6 > :not([hidden]) ~ :not([hidden]) { --tw-v3-space-y-value: 1.5rem; }
+  .space-y-8 > :not([hidden]) ~ :not([hidden]) { --tw-v3-space-y-value: 2rem; }
+
+  .space-y-0\.5 > :not([hidden]) ~ :not([hidden]),
+  .space-y-1 > :not([hidden]) ~ :not([hidden]),
+  .space-y-1\.5 > :not([hidden]) ~ :not([hidden]),
+  .space-y-2 > :not([hidden]) ~ :not([hidden]),
+  .space-y-2\.5 > :not([hidden]) ~ :not([hidden]),
+  .space-y-3 > :not([hidden]) ~ :not([hidden]),
+  .space-y-4 > :not([hidden]) ~ :not([hidden]),
+  .space-y-5 > :not([hidden]) ~ :not([hidden]),
+  .space-y-6 > :not([hidden]) ~ :not([hidden]),
+  .space-y-8 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(var(--tw-v3-space-y-value) * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(var(--tw-v3-space-y-value) * var(--tw-space-y-reverse));
+  }
+
+  .space-x-2 > :not(:last-child),
+  .space-x-3 > :not(:last-child),
+  .space-x-4 > :not(:last-child) {
+    margin-inline: 0;
+  }
+
+  .space-x-2 > :not([hidden]) ~ :not([hidden]) { --tw-v3-space-x-value: 0.5rem; }
+  .space-x-3 > :not([hidden]) ~ :not([hidden]) { --tw-v3-space-x-value: 0.75rem; }
+  .space-x-4 > :not([hidden]) ~ :not([hidden]) { --tw-v3-space-x-value: 1rem; }
+
+  .space-x-2 > :not([hidden]) ~ :not([hidden]),
+  .space-x-3 > :not([hidden]) ~ :not([hidden]),
+  .space-x-4 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-x-reverse: 0;
+    margin-right: calc(var(--tw-v3-space-x-value) * var(--tw-space-x-reverse));
+    margin-left: calc(var(--tw-v3-space-x-value) * calc(1 - var(--tw-space-x-reverse)));
+  }
+
+  @media (width >= 40rem) {
+    .sm\:space-x-2 > :not(:last-child) {
+      margin-inline: 0;
+    }
+
+    .sm\:space-x-2 > :not([hidden]) ~ :not([hidden]) {
+      --tw-space-x-reverse: 0;
+      --tw-v3-space-x-value: 0.5rem;
+      margin-right: calc(var(--tw-v3-space-x-value) * var(--tw-space-x-reverse));
+      margin-left: calc(var(--tw-v3-space-x-value) * calc(1 - var(--tw-space-x-reverse)));
+    }
+  }
+}
+
+/* Preserve Tailwind v3's touch-hover behavior while the UI is kept unchanged. */
+@custom-variant hover (&:hover);
+
+/* Tailwind v4 changed these Preflight defaults. */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-gray-400);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  dialog {
+    margin: auto;
+  }
+}
 
 @layer base {
   :root {
@@ -250,7 +412,9 @@
     outline: none;
     box-shadow: 0 0 0 2px rgb(var(--primary) / 0.1);
   }
+}
 
+@layer utilities {
   /*
    * ===============================================
    * LIGHT THEME OVERRIDES
@@ -304,8 +468,8 @@
   .light .border-white\/10 { border-color: rgb(0 0 0 / 0.06); }
 
   /* --- Divide colors --- */
-  .light .divide-gray-700 > :not([hidden]) ~ :not([hidden]) { border-color: rgb(0 0 0 / 0.08); }
-  .light .divide-gray-700\/50 > :not([hidden]) ~ :not([hidden]) { border-color: rgb(0 0 0 / 0.06); }
+  .light .divide-gray-700 > :not(:last-child) { border-color: rgb(0 0 0 / 0.08); }
+  .light .divide-gray-700\/50 > :not(:last-child) { border-color: rgb(0 0 0 / 0.06); }
 
   /* --- Hover states --- */
   .light .hover\:bg-gray-700\/30:hover { background-color: rgb(0 0 0 / 0.04); }
@@ -396,4 +560,3 @@
   .light .hover\:from-teal-500\/20:hover { --tw-gradient-from: rgb(20 184 166 / 0.1); }
   .light .hover\:to-blue-500\/20:hover { --tw-gradient-to: rgb(59 130 246 / 0.1); }
 }
-

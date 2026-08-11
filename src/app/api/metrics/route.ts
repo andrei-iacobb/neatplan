@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAdmin, siteScopeWhere } from '@/lib/authz'
 
-export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {

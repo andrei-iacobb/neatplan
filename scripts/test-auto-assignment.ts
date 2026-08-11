@@ -1,6 +1,4 @@
-const { PrismaClient } = require('@prisma/client')
-
-const prisma = new PrismaClient()
+import { prisma } from '../src/lib/db'
 
 async function testAutoAssignment() {
   try {
@@ -66,7 +64,7 @@ async function testAutoAssignment() {
     console.log('\n🧪 Testing assignment without frequency (should auto-use suggested frequency)...')
     
     // Simulate the API call logic
-    const assignedFrequency = null || schedule.suggestedFrequency // This is what our API does
+    const assignedFrequency = schedule.suggestedFrequency
     
     if (!assignedFrequency) {
       console.log('❌ No frequency provided and no suggested frequency available')

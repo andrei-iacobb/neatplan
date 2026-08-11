@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { requireAuth, requireAdmin, siteScopeWhere, resolveWriteSiteId, resolveReadSiteId, readSiteWhere } from '@/lib/authz'
 import { prisma } from '@/lib/db'
-import { Prisma, RoomType } from '@prisma/client'
+import { Prisma } from '@/generated/prisma/client'
+import { RoomType } from '@/generated/prisma/enums'
 import * as z from 'zod'
 
 const roomSchema = z.object({
@@ -91,7 +92,7 @@ export async function POST(req: Request) {
     console.error(error)
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid room data', details: error.errors },
+        { error: 'Invalid room data', details: error.issues },
         { status: 400 }
       )
     }

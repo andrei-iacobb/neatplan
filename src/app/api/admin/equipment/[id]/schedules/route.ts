@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSessionUser, canAccessSite, canAccessAnySite } from '@/lib/authz'
 import { prisma } from '@/lib/db'
 import { calculateNextDueDate } from '@/lib/schedule-utils'
-import { Prisma } from '@prisma/client'
+import { Prisma } from '@/generated/prisma/client'
 
 // GET /api/admin/equipment/[id]/schedules - Get schedules for equipment
 export async function GET(

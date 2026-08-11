@@ -1,9 +1,10 @@
 import sharp from 'sharp'
 import * as z from 'zod'
-import type { ScheduleFrequency } from '@prisma/client'
+import type { ScheduleFrequency } from '@/generated/prisma/enums'
 import { getSchedulePrimaryFrequency, inferFrequencyFromTasks } from './frequency-mapping'
 import { AIProviderUnavailableError, ensureAIProviderReady, getAIClient } from './ai-provider'
 import { ocrImageToText, OcrBusyError, OcrUnavailableError } from './ocr'
+import { extractPdfText } from './pdf'
 
 export interface ExtractedScheduleTask {
   description: string
@@ -318,12 +319,6 @@ function dedupeTasks(tasks: ModelExtraction['tasks']): ExtractedScheduleTask[] {
   }
 
   return extracted
-}
-
-async function extractPdfText(buffer: Buffer): Promise<string> {
-  const pdfParse = (await import('pdf-parse')).default
-  const { text } = await pdfParse(buffer)
-  return text
 }
 
 async function extractDocxText(buffer: Buffer): Promise<string> {

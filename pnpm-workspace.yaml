@@ -9,6 +9,9 @@ allowBuilds:
   prisma: true
   sharp: true
   unrs-resolver: true
+minimumReleaseAgeExclude:
+  - framer-motion@13.1.0
+  - tsx@4.23.12
 onlyBuiltDependencies:
   - '@prisma/client'
   - '@prisma/engines'
@@ -17,12 +20,20 @@ onlyBuiltDependencies:
   - sharp
   - unrs-resolver
 
-# Security pins, duplicated from package.json#pnpm.overrides on purpose. pnpm 10 reads
-# them from package.json and pnpm 11 only reads them here, so keeping both means an
-# install under either version writes the same lockfile. When they lived in package.json
-# alone, a local pnpm 11 install silently dropped them from the lockfile, which both
-# unpinned the patched versions and broke the image build with a config mismatch.
+# Security pins live here because pnpm 11 reads root overrides from the workspace
+# configuration. Keeping a single source of truth avoids lockfile drift.
 overrides:
+  'brace-expansion@<2': '1.1.18'
+  'brace-expansion@>=5 <6': '5.0.9'
+  'esbuild@>=0.27.3 <0.28.1': '0.28.2'
   form-data: '>=4.0.6'
-  postcss: '>=8.5.10'
+  postcss: '8.5.26'
+  nanoid: '3.3.18'
   uuid: '>=13.0.1'
+
+# NextAuth 4's peer range has not caught up with Nodemailer 9, even though the
+# transport API used here is compatible. Nodemailer 7 is affected by multiple
+# file-read, SSRF, and header-injection advisories, so accept the patched major.
+peerDependencyRules:
+  allowedVersions:
+    nodemailer: '9'
