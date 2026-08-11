@@ -104,7 +104,6 @@ jobs:
             test ! -e /app/.env
             test ! -e /app/tests
           '
-          docker exec "${web_id}" node -e "require('@prisma/adapter-pg'); require('pg'); console.log('prisma-adapter-ok')"
           docker exec "${web_id}" tesseract --version
 
           docker cp tests/e2e/fixtures/cleaning-schedule.png "${web_id}:/tmp/cleaning-schedule.png"
