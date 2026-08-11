@@ -76,8 +76,18 @@ jobs:
         run: |
           set -euo pipefail
           curl --fail --silent --show-error http://127.0.0.1:4040/api/readyz
-          curl --fail --silent --show-error http://127.0.0.1:4040/auth | grep --quiet "Welcome Back"
-          curl --fail --silent --show-error http://127.0.0.1:4040/demo | grep --quiet "Welcome to NeatPlan"
+          curl --fail --silent --show-error \
+            --output "${RUNNER_TEMP}/auth.html" \
+            http://127.0.0.1:4040/auth
+          grep --fixed-strings --quiet \
+            "Professional cleaning management system" \
+            "${RUNNER_TEMP}/auth.html"
+          curl --fail --silent --show-error \
+            --output "${RUNNER_TEMP}/demo.html" \
+            http://127.0.0.1:4040/demo
+          grep --fixed-strings --quiet \
+            "Welcome to NeatPlan" \
+            "${RUNNER_TEMP}/demo.html"
 
           web_id="$(docker compose ps --quiet web)"
           test "$(docker exec "${web_id}" id -u)" = "1001"
