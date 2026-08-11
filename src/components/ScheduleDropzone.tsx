@@ -130,7 +130,7 @@ export function ScheduleDropzone({ onExtracted, disabled = false }: ScheduleDrop
         }}
         disabled={busy}
         aria-describedby="schedule-dropzone-hint"
-        className="w-full rounded-xl px-6 py-8 sm:py-10 flex flex-col items-center justify-center gap-2 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 disabled:cursor-wait disabled:opacity-60"
+        className="w-full rounded-xl px-6 py-8 sm:py-10 flex flex-col items-center justify-center gap-2 text-center transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50 disabled:cursor-wait disabled:opacity-60"
         style={{
           background: dragging ? tc.dropzoneActiveBg : tc.dropzoneBg,
           border: `1.5px dashed ${dragging ? tc.dropzoneActiveBorder : tc.dropzoneBorder}`,

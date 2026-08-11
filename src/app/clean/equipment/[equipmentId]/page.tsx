@@ -4,13 +4,13 @@ import { useState, useEffect, useMemo, type CSSProperties } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  Loader2, 
-  CheckCircle2, 
-  Circle, 
-  ArrowLeft, 
-  Clock, 
-  Wrench, 
+import {
+  Loader2,
+  CheckCircle2,
+  Circle,
+  ArrowLeft,
+  Clock,
+  Wrench,
   Calendar,
   User,
   Save,
@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { apiRequest } from '@/lib/url-utils'
+import { frequencyLabel } from '@/lib/schedule-frequency'
 import { useThemeColors } from '@/hooks/useThemeColors'
 import { PageLoading, Spinner } from '@/components/ui/loading'
 import { SignaturePad } from '@/components/cleaner/signature-pad'
@@ -50,6 +51,7 @@ interface Equipment {
   name: string
   type: string
   description?: string
+  assetCode?: string
   schedules: EquipmentSchedule[]
 }
 
@@ -158,16 +160,16 @@ export default function CleanEquipmentPage() {
   useEffect(() => {
     if (equipment?.schedules) {
       const autoExpandIds = new Set<string>()
-      
+
       equipment.schedules.forEach(schedule => {
         const scheduleStatus = getScheduleStatus(schedule)
-        
+
         // Auto-expand if overdue or pending (due within 48 hours)
         if (scheduleStatus === 'OVERDUE' || scheduleStatus === 'PENDING') {
           autoExpandIds.add(schedule.id)
         }
       })
-      
+
       setExpandedSchedules(autoExpandIds)
     }
   }, [equipment])
@@ -176,9 +178,9 @@ export default function CleanEquipmentPage() {
     try {
       setIsLoading(true)
       setError(null)
-      
+
       const response = await apiRequest(`/api/cleaner/equipment/${params.equipmentId}`)
-      
+
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error('Equipment not found')
@@ -223,7 +225,7 @@ export default function CleanEquipmentPage() {
 
   const getCompletionProgress = (schedule: EquipmentSchedule) => {
     const totalTasks = schedule.tasks.length
-    const completedCount = schedule.tasks.filter(task => 
+    const completedCount = schedule.tasks.filter(task =>
       completedTasks.has(`${schedule.id}-${task.id}`)
     ).length
     return { completed: completedCount, total: totalTasks }
@@ -349,15 +351,15 @@ export default function CleanEquipmentPage() {
 
   const getScheduleStatus = (schedule: EquipmentSchedule) => {
     if (schedule.status === 'COMPLETED') return 'COMPLETED'
-    
+
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const dueDate = new Date(schedule.nextDue)
     dueDate.setHours(0, 0, 0, 0)
-    
+
     const diffTime = dueDate.getTime() - today.getTime()
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    
+
     if (diffDays < 0) {
       return 'OVERDUE'
     } else if (diffDays <= 2) { // Due today, tomorrow, or day after (within 48 hours)
@@ -372,7 +374,7 @@ export default function CleanEquipmentPage() {
     today.setHours(0, 0, 0, 0)
     const dueDate = new Date(schedule.nextDue)
     dueDate.setHours(0, 0, 0, 0)
-    
+
     return dueDate.getTime() === today.getTime()
   }
 
@@ -386,10 +388,10 @@ export default function CleanEquipmentPage() {
     today.setHours(0, 0, 0, 0)
     const dueDate = new Date(schedule.nextDue)
     dueDate.setHours(0, 0, 0, 0)
-    
+
     const diffTime = dueDate.getTime() - today.getTime()
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    
+
     if (diffDays < 0) {
       const overdueDays = Math.abs(diffDays)
       return {
@@ -499,14 +501,21 @@ export default function CleanEquipmentPage() {
             <ArrowLeft className="w-6 h-6" />
           </Link>
           <div className="flex items-center gap-3 min-w-0">
-            <Wrench className="w-8 h-8 flex-shrink-0" style={{ color: tc.btnPrimaryText }} />
+            <Wrench className="w-8 h-8 shrink-0" style={{ color: tc.btnPrimaryText }} />
             <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold break-words" style={{ color: tc.textPrimary }}>{equipment.name}</h1>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-bold break-words" style={{ color: tc.textPrimary }}>{equipment.name}</h1>
+                {equipment.assetCode && (
+                  <div className="text-xs font-mono px-2.5 py-1 rounded-sm" style={{ background: tc.surfaceBg, color: tc.accentGreen, border: `1px solid ${tc.accentGreen}` }}>
+                    {equipment.assetCode}
+                  </div>
+                )}
+              </div>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm" style={{ color: tc.textMuted }}>
                 <span className="truncate">{equipment.type.replace('_', ' ')}</span>
                 <span aria-hidden="true">•</span>
                 <div className="flex items-center gap-1 min-w-0">
-                  <User className="w-4 h-4 flex-shrink-0" />
+                  <User className="w-4 h-4 shrink-0" />
                   <span className="truncate">{session?.user?.name}</span>
                 </div>
               </div>
@@ -548,7 +557,7 @@ export default function CleanEquipmentPage() {
             const isDueToday = isScheduleDueToday(schedule)
             const isUrgent = isScheduleUrgent(schedule)
             const dueDateInfo = getDueDateDisplay(schedule)
-            
+
             return (
               <motion.div
                 key={schedule.id}
@@ -595,7 +604,7 @@ export default function CleanEquipmentPage() {
                           </div>
                         )}
                       </div>
-                      
+
                       <div className="flex items-center gap-4 text-sm">
                         <span style={{ color: dueDateInfo.color }}>
                           {schedule.completedToday ? 'Completed today' : dueDateInfo.text}
@@ -603,13 +612,13 @@ export default function CleanEquipmentPage() {
                         <span style={{ color: tc.textMuted }}>•</span>
                         <div className="flex items-center gap-1" style={{ color: tc.textSecondary }}>
                           <Calendar className="w-3 h-3" />
-                          <span>{schedule.frequency}</span>
+                          <span>{frequencyLabel(schedule.frequency)}</span>
                         </div>
                         <span style={{ color: tc.textMuted }}>•</span>
                         <span style={{ color: tc.textSecondary }}>Est. {schedule.estimatedDuration}</span>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-3">
                       {isExpanded && (
                         <div className="text-right">
@@ -664,7 +673,7 @@ export default function CleanEquipmentPage() {
                             {schedule.tasks.map((task, taskIndex) => {
                               const taskKey = `${schedule.id}-${task.id}`
                               const isCompleted = completedTasks.has(taskKey)
-                              
+
                               return (
                                 <motion.div
                                   key={task.id}
@@ -683,7 +692,7 @@ export default function CleanEquipmentPage() {
                                       handleTaskToggle(schedule.id, task.id, task)
                                     }
                                   }}
-                                  className="p-4 rounded-lg border cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2"
+                                  className="p-4 rounded-lg border cursor-pointer transition-colors focus-visible:outline-hidden focus-visible:ring-2"
                                   style={{
                                     backgroundColor: isCompleted ? tc.statusCompleted.bg : tc.surfaceBg,
                                     borderColor: isCompleted ? tc.statusCompleted.border : tc.cardBorder,
@@ -719,7 +728,7 @@ export default function CleanEquipmentPage() {
 
                                       {task.frequency && task.frequency !== schedule.frequency && (
                                         <span
-                                          className="text-xs px-2 py-1 rounded mt-2 inline-block"
+                                          className="text-xs px-2 py-1 rounded-sm mt-2 inline-block"
                                           style={{ color: tc.tabActiveText, backgroundColor: tc.tabActiveBg }}
                                         >
                                           {task.frequency}
@@ -744,7 +753,7 @@ export default function CleanEquipmentPage() {
                                               onKeyDown={(e) => e.stopPropagation()}
                                               onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                                               onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
-                                              className="w-full px-3 py-2 border rounded text-sm placeholder:text-[rgb(var(--muted-foreground))] focus:outline-none"
+                                              className="w-full px-3 py-2 border rounded-sm text-sm placeholder:text-[rgb(var(--muted-foreground))] focus:outline-hidden"
                                               style={{
                                                 backgroundColor: tc.inputBg,
                                                 borderColor: tc.inputBorder,
@@ -775,7 +784,7 @@ export default function CleanEquipmentPage() {
                               rows={3}
                               onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                               onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
-                              className="w-full px-3 py-2 border rounded placeholder:text-[rgb(var(--muted-foreground))] focus:outline-none resize-none"
+                              className="w-full px-3 py-2 border rounded-sm placeholder:text-[rgb(var(--muted-foreground))] focus:outline-hidden resize-none"
                               style={{
                                 backgroundColor: tc.inputBg,
                                 borderColor: tc.inputBorder,
@@ -807,7 +816,7 @@ export default function CleanEquipmentPage() {
                               autoComplete="name"
                               onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                               onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
-                              className="w-full px-3 py-2 mb-4 border rounded min-h-[44px] placeholder:text-[rgb(var(--muted-foreground))] focus:outline-none"
+                              className="w-full px-3 py-2 mb-4 border rounded-sm min-h-[44px] placeholder:text-[rgb(var(--muted-foreground))] focus:outline-hidden"
                               style={{
                                 backgroundColor: tc.inputBg,
                                 borderColor: tc.inputBorder,
@@ -919,4 +928,4 @@ export default function CleanEquipmentPage() {
       </div>
     </div>
   )
-} 
+}

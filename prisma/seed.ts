@@ -1,9 +1,28 @@
-import { PrismaClient, RoomType, ScheduleFrequency, ScheduleStatus, UserRole } from '@prisma/client'
 import { hash } from 'bcryptjs'
+import { RoomType, ScheduleFrequency, ScheduleStatus, UserRole } from '../src/generated/prisma/enums'
+import { prisma } from '../src/lib/db'
 
-const prisma = new PrismaClient()
+function seedPassword(name: string, localDefault: string): string {
+  const configured = process.env[name]?.trim()
+  if (configured) return configured
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(`${name} is required when seeding in production`)
+  }
+
+  return localDefault
+}
 
 async function main() {
+  // Resolve every credential before touching the database so a production seed
+  // cannot partially apply with missing account secrets.
+  const [adminPassword, directorPassword, managerPassword, cleanerPassword] = await Promise.all([
+    hash(seedPassword('SEED_ADMIN_PASSWORD', 'admin123'), 12),
+    hash(seedPassword('SEED_DIRECTOR_PASSWORD', 'director123'), 12),
+    hash(seedPassword('SEED_MANAGER_PASSWORD', 'manager123'), 12),
+    hash(seedPassword('SEED_CLEANER_PASSWORD', 'cleaner123'), 12),
+  ])
+
   // Create the primary site all seeded rooms/schedules/users belong to.
   const site = await prisma.site.upsert({
     where: { name: 'Maple Care Home' },
@@ -17,7 +36,6 @@ async function main() {
   console.log('Site:', site)
 
   // Owner (OP): spans every site, so siteId stays null. isAdmin = management role.
-  const adminPassword = await hash('admin123', 12)
   const admin = await prisma.user.upsert({
     where: { email: 'admin@neatplan.com' },
     update: {
@@ -36,7 +54,6 @@ async function main() {
   console.log('Owner (OP) user:', admin)
 
   // Director: management across every site, no site pin.
-  const directorPassword = await hash('director123', 12)
   const director = await prisma.user.upsert({
     where: { email: 'director@neatplan.com' },
     update: {
@@ -55,7 +72,6 @@ async function main() {
   console.log('Director user:', director)
 
   // Manager: management pinned to a single site.
-  const managerPassword = await hash('manager123', 12)
   const manager = await prisma.user.upsert({
     where: { email: 'manager@neatplan.com' },
     update: {
@@ -75,7 +91,6 @@ async function main() {
   console.log('Manager user:', manager)
 
   // Cleaner: /clean only, pinned to a single site.
-  const cleanerPassword = await hash('cleaner123', 12)
   const cleaner = await prisma.user.upsert({
     where: { email: 'cleaner@neatplan.com' },
     update: {

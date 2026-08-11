@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { Prisma } from '@prisma/client'
+import { Prisma } from '@/generated/prisma/client'
 import * as z from 'zod'
 import { prisma } from '@/lib/db'
 import { requireAuth, requireRole } from '@/lib/authz'
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid site data', details: error.errors },
+        { error: 'Invalid site data', details: error.issues },
         { status: 400 }
       )
     }

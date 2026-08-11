@@ -1,60 +1,138 @@
-services:
-  web:
-    build: .
-    container_name: neatplan_web
-    restart: always
-    env_file:
-      - .env  
-    environment:
-      - NODE_ENV=${NODE_ENV:-production}
-    volumes:
-      - .:/app
-      - /app/node_modules
-    depends_on:
-      db:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4040/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    networks:
-      - neatplan_network
-    # For local development, expose only on localhost. In production, remove ports and
-    # place the app behind a reverse proxy (e.g., Traefik, Nginx) instead of binding 0.0.0.0
-    ports:
-      - "127.0.0.1:4040:4040"
+name: neatplan
 
+# Set POSTGRES_PASSWORD, a DATABASE_URL whose host is `db`, and NEXTAUTH_SECRET in
+# `.env`, or mount their corresponding *_FILE values through the deployment platform.
+services:
   db:
-    image: postgres:15
-    container_name: neatplan_db
-    restart: always
+    image: postgres:15-bookworm
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      # PostgreSQL configuration for better performance
-      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+      POSTGRES_USER: ${POSTGRES_USER:-neatplan_user}
+      POSTGRES_DB: ${POSTGRES_DB:-neatplan}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+      POSTGRES_PASSWORD_FILE: ${POSTGRES_PASSWORD_FILE:-}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --auth-local=scram-sha-256
     volumes:
       - neatplan_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 12
+      start_period: 10s
     networks:
-      - neatplan_network
-    # For local development, expose DB only on localhost. In production, remove this mapping.
+      - backend
     ports:
-      - "127.0.0.1:5432:5432"
-    # secrets removed: using POSTGRES_PASSWORD from .env
+      - "127.0.0.1:${POSTGRES_PORT:-5434}:5432"
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  migrate:
+    build:
+      context: .
+      target: migrator
+    image: ${NEATPLAN_MIGRATOR_IMAGE:-neatplan-migrator:local}
+    restart: "no"
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-}
+      DATABASE_URL_FILE: ${DATABASE_URL_FILE:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=128m,uid=1001,gid=1001,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backend
+
+  web:
+    build:
+      context: .
+      target: runner
+      args:
+        APP_GIT_SHA: ${APP_GIT_SHA:-unknown}
+        APP_GIT_BRANCH: ${APP_GIT_BRANCH:-unknown}
+        NEXT_PUBLIC_APP_BASE_URL: ${NEXT_PUBLIC_APP_BASE_URL:-http://localhost:4040}
+        NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:4040}
+        CORS_ALLOWED_ORIGIN: ${CORS_ALLOWED_ORIGIN:-http://localhost:4040}
+    image: ${NEATPLAN_IMAGE:-neatplan:local}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEATPLAN_DATA_DIR: /app/data
+      DATABASE_URL: ${DATABASE_URL:-}
+      DATABASE_URL_FILE: ${DATABASE_URL_FILE:-}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:4040}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-}
+      NEXTAUTH_SECRET_FILE: ${NEXTAUTH_SECRET_FILE:-}
+      CRON_SECRET: ${CRON_SECRET:-}
+      CRON_SECRET_FILE: ${CRON_SECRET_FILE:-}
+      CORS_ALLOWED_ORIGIN: ${CORS_ALLOWED_ORIGIN:-}
+      ALLOWED_IPS: ${ALLOWED_IPS:-}
+      IP_WHITELIST_ENFORCE: ${IP_WHITELIST_ENFORCE:-false}
+      TRUSTED_PROXY_COUNT: ${TRUSTED_PROXY_COUNT:-0}
+      SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-true}
+      SCHEDULE_CHECK_INTERVAL_MINUTES: ${SCHEDULE_CHECK_INTERVAL_MINUTES:-15}
+      SESSION_RETENTION_DAYS: ${SESSION_RETENTION_DAYS:-90}
+      SCHEDULE_AI_PROVIDER: ${SCHEDULE_AI_PROVIDER:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_API_KEY_FILE: ${OPENAI_API_KEY_FILE:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b}
+      AI_SCHEDULE_MAX_CHUNKS: ${AI_SCHEDULE_MAX_CHUNKS:-}
+      OCR_MAX_CONCURRENCY: ${OCR_MAX_CONCURRENCY:-2}
+      TESSERACT_PATH: ${TESSERACT_PATH:-/usr/bin/tesseract}
+      TESSERACT_LANG: ${TESSERACT_LANG:-eng}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_PASS_FILE: ${SMTP_PASS_FILE:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=512m,uid=1001,gid=1001,mode=1777
+      - /app/data:rw,nosuid,nodev,noexec,size=512m,uid=1001,gid=1001,mode=0700
+      - /app/.next/cache:rw,nosuid,nodev,size=256m,uid=1001,gid=1001,mode=0750
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4040/api/readyz').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    networks:
+      - backend
+      - egress
+    ports:
+      - "127.0.0.1:${NEATPLAN_PORT:-4040}:4040"
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
 
 volumes:
   neatplan_data:
 
 networks:
-  neatplan_network:
-    driver: bridge
-
-# secrets removed: using POSTGRES_PASSWORD from .env
+  backend:
+    internal: true
+  egress:

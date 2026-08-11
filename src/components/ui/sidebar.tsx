@@ -6,7 +6,7 @@ import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { usePathname } from "next/navigation"
 import {
-  Home, Calendar, Settings, DoorOpen, LogOut, User, Wrench, ClipboardCheck, Menu, X, ChevronsRight, ChevronsLeft, Building2
+  Home, Calendar, CalendarDays, Settings, DoorOpen, LogOut, User, Wrench, ClipboardCheck, Menu, X, ChevronsRight, ChevronsLeft, Building2
 } from "lucide-react"
 import { Logo } from "@/components/ui/logo"
 import { useSettings } from "@/contexts/settings-context"
@@ -16,6 +16,7 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Rooms", href: "/rooms", icon: DoorOpen },
   { name: "Equipment", href: "/equipment", icon: Wrench },
+  { name: "Diary", href: "/diary", icon: CalendarDays },
   { name: "Schedule", href: "/schedule", icon: Calendar },
   { name: "Audit Log", href: "/audit", icon: ClipboardCheck },
   { name: "Sites", href: "/sites", icon: Building2 },
@@ -126,12 +127,12 @@ export function Sidebar() {
       onMouseLeave={handleMouseLeave}
     >
       {/* Logo */}
-      <div className="h-[60px] flex items-center px-[14px] flex-shrink-0">
+      <div className="h-[60px] flex items-center px-[14px] shrink-0">
         <div className="flex items-center min-w-0">
           <motion.div
             animate={{ scale: expanded ? 1.05 : 0.85 }}
             transition={{ duration: 0.25, ease }}
-            className="flex-shrink-0"
+            className="shrink-0"
           >
             <Logo size="sm" />
           </motion.div>
@@ -151,12 +152,12 @@ export function Sidebar() {
         <button
           onClick={togglePinned}
           aria-label={pinned ? 'Collapse navigation' : 'Expand navigation'}
-          className="flex items-center rounded-lg px-[10px] py-[9px] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-95"
+          className="flex items-center rounded-lg px-[10px] py-[9px] transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-95"
           style={{ color: t.navDefault }}
           onMouseEnter={(e) => { e.currentTarget.style.background = t.navHoverBg; e.currentTarget.style.color = t.navHover }}
           onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = t.navDefault }}
         >
-          <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
+          <div className="w-5 h-5 shrink-0 flex items-center justify-center">
             {pinned ? <ChevronsLeft className="w-[18px] h-[18px]" /> : <ChevronsRight className="w-[18px] h-[18px]" />}
           </div>
         </button>
@@ -183,7 +184,7 @@ export function Sidebar() {
                   transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                 />
               )}
-              <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
+              <div className="w-5 h-5 shrink-0 flex items-center justify-center">
                 <item.icon className="w-[18px] h-[18px]" strokeWidth={active ? 2.2 : 1.8} />
               </div>
               <motion.span
@@ -200,7 +201,7 @@ export function Sidebar() {
 
       {/* Sign out */}
       {session?.user && (
-        <div className="px-[10px] pb-4 flex-shrink-0">
+        <div className="px-[10px] pb-4 shrink-0">
           <div className="mb-2 border-t" style={{ borderColor: t.divider }} />
           <button
             onClick={() => { signOut({ redirect: false }).then(() => { window.location.href = '/auth' }) }}
@@ -210,7 +211,7 @@ export function Sidebar() {
             onMouseLeave={(e) => { e.currentTarget.style.color = t.signoutDefault; e.currentTarget.style.background = 'transparent' }}
             title={!expanded ? "Sign Out" : undefined}
           >
-            <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
+            <div className="w-5 h-5 shrink-0 flex items-center justify-center">
               <LogOut className="w-[18px] h-[18px]" strokeWidth={1.8} />
             </div>
             <motion.span
@@ -237,7 +238,7 @@ export function Sidebar() {
         <button
           onClick={() => setMobileOpen(true)}
           aria-label="Open navigation menu"
-          className="w-10 h-10 flex items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-95"
+          className="w-10 h-10 flex items-center justify-center rounded-lg transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-95"
           style={{ color: t.navDefault }}
         >
           <Menu className="w-5 h-5" />
@@ -269,7 +270,7 @@ export function Sidebar() {
               role="dialog"
               aria-label="Navigation"
             >
-              <div className="h-14 flex items-center justify-between px-4 flex-shrink-0">
+              <div className="h-14 flex items-center justify-between px-4 shrink-0">
                 <div className="flex items-center gap-2 min-w-0">
                   <Logo size="sm" />
                   <span className="font-bold text-[15px] tracking-tight truncate" style={{ color: t.title }}>NeatPlan</span>
@@ -277,7 +278,7 @@ export function Sidebar() {
                 <button
                   onClick={() => setMobileOpen(false)}
                   aria-label="Close navigation menu"
-                  className="w-9 h-9 flex items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-95"
+                  className="w-9 h-9 flex items-center justify-center rounded-lg transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-95"
                   style={{ color: t.navDefault }}
                 >
                   <X className="w-5 h-5" />
@@ -291,24 +292,24 @@ export function Sidebar() {
                       key={item.name}
                       href={item.href}
                       onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-3 rounded-lg px-3 py-3 text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+                      className="flex items-center gap-3 rounded-lg px-3 py-3 text-[14px] font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50"
                       style={{ color: active ? 'rgb(16, 185, 129)' : t.navDefault, background: active ? t.activeBg : 'transparent' }}
                     >
-                      <item.icon className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={active ? 2.2 : 1.8} />
+                      <item.icon className="w-[18px] h-[18px] shrink-0" strokeWidth={active ? 2.2 : 1.8} />
                       {item.name}
                     </Link>
                   )
                 })}
               </nav>
               {session?.user && (
-                <div className="px-3 pt-2 flex-shrink-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+                <div className="px-3 pt-2 shrink-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
                   <div className="mb-2 border-t" style={{ borderColor: t.divider }} />
                   <button
                     onClick={() => { signOut({ redirect: false }).then(() => { window.location.href = '/auth' }) }}
-                    className="w-full flex items-center gap-3 rounded-lg px-3 py-3 text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50"
+                    className="w-full flex items-center gap-3 rounded-lg px-3 py-3 text-[14px] font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-red-500/50"
                     style={{ color: t.signoutDefault }}
                   >
-                    <LogOut className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={1.8} />
+                    <LogOut className="w-[18px] h-[18px] shrink-0" strokeWidth={1.8} />
                     Sign Out
                   </button>
                 </div>

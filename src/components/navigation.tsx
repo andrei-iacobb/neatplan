@@ -19,7 +19,7 @@ export function Navigation() {
             key={item.name}
             href={item.href}
             className={`
-              flex items-center gap-2 px-3 py-1.5 rounded transition-colors
+              flex items-center gap-2 px-3 py-1.5 rounded-sm transition-colors
               ${isActive
                 ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
                 : 'text-gray-400 hover:bg-teal-500/10 hover:text-teal-300'

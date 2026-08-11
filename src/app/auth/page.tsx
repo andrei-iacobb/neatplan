@@ -23,7 +23,7 @@ function AuthContent() {
             {/* Header Section */}
             <div className="p-8 pb-6 text-center relative">
               {/* Background glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent"></div>
+              <div className="absolute inset-0 bg-linear-to-b from-blue-500/5 to-transparent"></div>
               
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}

@@ -10,7 +10,7 @@ export default function Loading() {
           <Skeleton className="h-8" width={170} />
           <Skeleton className="h-4" width={310} />
         </div>
-        <Skeleton className="h-9 rounded-lg flex-shrink-0" width={100} />
+        <Skeleton className="h-9 rounded-lg shrink-0" width={100} />
       </div>
 
       <PageLoading cards={4} columns={2} header={false} label="Loading sites" />

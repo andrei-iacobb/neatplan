@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { connection, NextResponse } from 'next/server'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
 import { prisma } from '@/lib/db'
@@ -11,7 +11,6 @@ function ollamaTagsUrl(): string {
   return `${base}/api/tags`
 }
 
-export const dynamic = 'force-dynamic'
 
 const run = promisify(execFile)
 
@@ -22,6 +21,15 @@ const LATEST_TTL_MS = 5 * 60 * 1000
 const GITHUB_REPO = 'andrei-iacobb/neatplan'
 
 async function gitCurrent(): Promise<{ short: string | null; branch: string | null }> {
+  const imageSha = process.env.APP_GIT_SHA
+  const imageBranch = process.env.APP_GIT_BRANCH
+  if (imageSha && imageSha !== 'unknown') {
+    return {
+      short: imageSha.slice(0, 7),
+      branch: imageBranch && imageBranch !== 'unknown' ? imageBranch : null,
+    }
+  }
+
   try {
     const [{ stdout: short }, { stdout: branch }] = await Promise.all([
       run('git', ['rev-parse', '--short', 'HEAD'], { cwd: process.cwd(), timeout: 4000 }),
@@ -83,6 +91,7 @@ async function dbStatus() {
 }
 
 export async function GET() {
+  await connection()
   // System info (git build, AI status) is OP-only, matching the Settings System tab.
   const auth = await requireRole('OP')
   if ('error' in auth) return auth.error

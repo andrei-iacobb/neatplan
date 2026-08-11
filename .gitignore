@@ -20,8 +20,8 @@
 # production
 /build
 
-# document job uploads (temporary files)
-/data/document-jobs/
+# runtime data (document uploads and development-only SMTP credentials)
+/data/
 *.pem
 *.bak
 *.fix
@@ -42,7 +42,7 @@ yarn-error.log*
 # docker secrets
 secrets/
 
-# SMTP configuration (contains sensitive data)
+# Legacy SMTP configuration path (contains sensitive data)
 .smtp-config.json
 
 # generated prisma client

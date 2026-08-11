@@ -13,7 +13,7 @@ import {
   BedDouble, UtensilsCrossed, Presentation, DoorOpen,
   Sofa, Archive, ArrowRight, Sparkles,
 } from 'lucide-react'
-import { ScheduleFrequency, ScheduleStatus } from '@prisma/client'
+import { ScheduleFrequency, ScheduleStatus } from '@/generated/prisma/enums'
 import { getFrequencyLabel, getScheduleDisplayName } from '@/lib/schedule-utils'
 import { apiRequest } from '@/lib/url-utils'
 import { PageLoading, Spinner } from '@/components/ui/loading'
@@ -325,7 +325,7 @@ export default function RoomsPage() {
             <select
               value={siteFilter}
               onChange={(e) => setSiteFilter(e.target.value)}
-              className="px-3 py-2 rounded-lg text-[13px] font-medium outline-none transition-colors"
+              className="px-3 py-2 rounded-lg text-[13px] font-medium outline-hidden transition-colors"
               style={{ background: tc.tabInactiveBg, color: tc.tabInactiveText, border: `1px solid ${tc.inputBorder}` }}
               aria-label="Filter rooms by site"
             >
@@ -335,7 +335,7 @@ export default function RoomsPage() {
           )}
           <button
             onClick={() => setViewMode('SCHEDULES')}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97]"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97]"
             style={viewMode === 'SCHEDULES'
               ? { background: tc.tabActiveBg, color: tc.tabActiveText, border: `1px solid ${tc.tabActiveBorder}` }
               : { background: tc.tabInactiveBg, color: tc.tabInactiveText, border: '1px solid transparent' }
@@ -350,7 +350,7 @@ export default function RoomsPage() {
           {viewMode !== 'SCHEDULES' && (
             <button
               onClick={() => setShowForm(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97]"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97]"
               style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: `1px solid ${tc.btnPrimaryBorder}` }}
               onMouseEnter={(e) => { e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
               onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}
@@ -451,7 +451,7 @@ export default function RoomsPage() {
                   <div>
                     <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>Schedule</label>
                     <select value={selectedSchedule} onChange={(e) => handleScheduleSelection(e.target.value)}
-                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors"
                       style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
                       onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                       onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}>
@@ -467,7 +467,7 @@ export default function RoomsPage() {
                   <div>
                     <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>Room Type</label>
                     <select value={selectedRoomType} onChange={(e) => setSelectedRoomType(e.target.value)}
-                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors"
                       style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
                       onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                       onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}>
@@ -484,7 +484,7 @@ export default function RoomsPage() {
                       )}
                     </label>
                     <select value={selectedFrequency} onChange={(e) => setSelectedFrequency(e.target.value as ScheduleFrequency)}
-                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors"
                       style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
                       onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                       onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}>
@@ -517,7 +517,7 @@ export default function RoomsPage() {
                   <div>
                     <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>Schedule</label>
                     <select value={selectedSchedule} onChange={(e) => handleScheduleSelection(e.target.value)}
-                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors"
                       style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
                       onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                       onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}>
@@ -533,7 +533,7 @@ export default function RoomsPage() {
                   <div>
                     <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>Room</label>
                     <select value={selectedRoom?.id || ''} onChange={(e) => { const room = rooms.find(r => r.id === e.target.value); setSelectedRoom(room || null) }}
-                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors"
                       style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
                       onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                       onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}>
@@ -549,7 +549,7 @@ export default function RoomsPage() {
                       )}
                     </label>
                     <select value={selectedFrequency} onChange={(e) => setSelectedFrequency(e.target.value as ScheduleFrequency)}
-                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors"
                       style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
                       onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                       onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}>
@@ -595,7 +595,7 @@ export default function RoomsPage() {
               {canPickSite && (
                 <FormField label="Site" tc={tc}>
                   <select value={formData.siteId} onChange={(e) => setFormData(prev => ({ ...prev, siteId: e.target.value }))}
-                    className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                    className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors"
                     style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}>
                     <option value="">Select a site...</option>
                     {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -604,7 +604,7 @@ export default function RoomsPage() {
               )}
               <FormField label="Room Name" tc={tc}>
                 <input type="text" required value={formData.name} onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                  className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors"
                   style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
                   onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                   onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
@@ -612,7 +612,7 @@ export default function RoomsPage() {
               </FormField>
               <FormField label="Floor" tc={tc}>
                 <select value={formData.floor} onChange={(e) => setFormData(prev => ({ ...prev, floor: e.target.value }))}
-                  className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                  className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors"
                   style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}>
                   <option value="Ground Floor">Ground Floor</option>
                   <option value="Upstairs">Upstairs</option>
@@ -623,7 +623,7 @@ export default function RoomsPage() {
               </FormField>
               <FormField label="Description (Optional)" tc={tc}>
                 <textarea value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors resize-none"
+                  className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors resize-none"
                   style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
                   onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                   onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
@@ -670,7 +670,7 @@ export default function RoomsPage() {
               {canPickSite && (
                 <FormField label="Site" tc={tc}>
                   <select value={formData.siteId} onChange={(e) => setFormData(prev => ({ ...prev, siteId: e.target.value }))}
-                    className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                    className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors"
                     style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}>
                     <option value="">Select a site...</option>
                     {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -679,14 +679,14 @@ export default function RoomsPage() {
               )}
               <FormField label="Room Name" tc={tc}>
                 <input type="text" required value={formData.name} onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                  className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors"
                   style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
                   onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                   onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }} />
               </FormField>
               <FormField label="Floor" tc={tc}>
                 <select value={formData.floor} onChange={(e) => setFormData(prev => ({ ...prev, floor: e.target.value }))}
-                  className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+                  className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors"
                   style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}>
                   <option value="Ground Floor">Ground Floor</option>
                   <option value="Upstairs">Upstairs</option>
@@ -697,7 +697,7 @@ export default function RoomsPage() {
               </FormField>
               <FormField label="Description" tc={tc}>
                 <textarea value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors resize-none"
+                  className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors resize-none"
                   style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
                   onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                   onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
@@ -749,7 +749,7 @@ function FormField({ label, tc, children }: { label: string; tc: TC; children: R
 function RoomTypeSelect({ value, onChange, tc }: { value: string; onChange: (v: string) => void; tc: TC }) {
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors"
+      className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors"
       style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}>
       <option value="BEDROOM">Bedroom</option>
       <option value="OFFICE">Office</option>
@@ -833,7 +833,7 @@ function RoomCard({ room, tc, index, onEdit, showSite }: RoomCardProps) {
 
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: `${accent}${tc.iconBgAlpha}`, color: accent }}>
+          <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center" style={{ background: `${accent}${tc.iconBgAlpha}`, color: accent }}>
             {getRoomTypeIcon(room.type)}
           </div>
           <div className="min-w-0">
@@ -843,7 +843,7 @@ function RoomCard({ room, tc, index, onEdit, showSite }: RoomCardProps) {
             </p>
           </div>
         </div>
-        <button type="button" aria-label="Edit room" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(room) }} className="w-10 h-10 -m-[9px] rounded transition-colors flex-shrink-0 flex items-center justify-center"
+        <button type="button" aria-label="Edit room" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(room) }} className="w-10 h-10 -m-[9px] rounded-sm transition-colors shrink-0 flex items-center justify-center"
           style={{ color: tc.textMuted }}
           onMouseEnter={(e) => { e.currentTarget.style.color = tc.accentGreen }}
           onMouseLeave={(e) => { e.currentTarget.style.color = tc.textMuted }}>
@@ -871,7 +871,7 @@ function RoomCard({ room, tc, index, onEdit, showSite }: RoomCardProps) {
                   <span className="text-[10px] truncate mr-2" style={{ color: tc.textMuted }}>
                     {getScheduleDisplayName(schedule.schedule.title, schedule.frequency)}
                   </span>
-                  <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold flex-shrink-0"
+                  <span className="px-1.5 py-0.5 rounded-sm text-[9px] font-semibold shrink-0"
                     style={{ background: ss.bg, color: ss.text, border: `1px solid ${ss.border}` }}>
                     {getStatusLabel(computed)}
                   </span>

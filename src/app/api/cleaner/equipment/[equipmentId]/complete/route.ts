@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { ScheduleStatus } from '@prisma/client'
+import { ScheduleStatus } from '@/generated/prisma/enums'
 import { authOptions } from '@/lib/auth'
 import { canAccessSite, siteScopeWhere } from '@/lib/authz'
 import { prisma } from '@/lib/db'

@@ -13,8 +13,10 @@ import { motion } from "framer-motion"
 import { Eye, EyeOff, Mail, Lock } from "lucide-react"
 
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
+  // Plain usernames are allowed alongside emails (the server just matches the
+  // string), so no format or length rules here - the server verifies the hash.
+  email: z.string().min(1),
+  password: z.string().min(1),
   totpCode: z.string().optional(),
 })
 
@@ -59,7 +61,7 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
   async function onSubmit(data: LoginValues) {
     setIsLoading(true)
     setError(null)
-    
+
     try {
       const result = await signIn("credentials", {
         redirect: false,
@@ -104,7 +106,7 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
         className="space-y-5"
       >
         {/* Email Field */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1, duration: 0.3 }}
@@ -114,17 +116,17 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
             <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 z-10" />
             <Input
               {...form.register("email")}
-              placeholder="Email address"
-              type="email"
+              placeholder="Email or username"
+              type="text"
               autoCapitalize="none"
-              autoComplete="email"
+              autoComplete="username"
               autoCorrect="off"
               disabled={isLoading}
-              className="h-14 pl-12 pr-4 bg-gray-800/50 border border-gray-700/50 text-gray-100 placeholder:text-gray-400 focus:border-blue-500/70 focus:ring-2 focus:ring-blue-500/20 rounded-xl backdrop-blur-sm transition-all duration-200 hover:border-gray-600/70"
+              className="h-14 pl-12 pr-4 bg-gray-800/50 border border-gray-700/50 text-gray-100 placeholder:text-gray-400 focus:border-blue-500/70 focus:ring-2 focus:ring-blue-500/20 rounded-xl backdrop-blur-xs transition-all duration-200 hover:border-gray-600/70"
             />
           </div>
           {form.formState.errors.email && (
-            <motion.p 
+            <motion.p
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               className="text-sm text-red-400 font-medium"
@@ -135,7 +137,7 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
         </motion.div>
 
         {/* Password Field */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2, duration: 0.3 }}
@@ -150,7 +152,7 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
               autoCapitalize="none"
               autoComplete="current-password"
               disabled={isLoading}
-              className="h-14 pl-12 pr-12 bg-gray-800/50 border border-gray-700/50 text-gray-100 placeholder:text-gray-400 focus:border-blue-500/70 focus:ring-2 focus:ring-blue-500/20 rounded-xl backdrop-blur-sm transition-all duration-200 hover:border-gray-600/70"
+              className="h-14 pl-12 pr-12 bg-gray-800/50 border border-gray-700/50 text-gray-100 placeholder:text-gray-400 focus:border-blue-500/70 focus:ring-2 focus:ring-blue-500/20 rounded-xl backdrop-blur-xs transition-all duration-200 hover:border-gray-600/70"
             />
             <button
               type="button"
@@ -168,7 +170,7 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
             </button>
           </div>
           {form.formState.errors.password && (
-            <motion.p 
+            <motion.p
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               className="text-sm text-red-400 font-medium"
@@ -204,7 +206,7 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl backdrop-blur-sm"
+            className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl backdrop-blur-xs"
           >
             <p className="text-sm text-red-400 text-center font-medium">{error}</p>
           </motion.div>
@@ -219,7 +221,7 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
           <Button
             type="submit"
             disabled={isLoading || !ready}
-            className="w-full h-14 font-semibold bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white disabled:from-gray-600 disabled:to-gray-700 disabled:text-gray-400 rounded-xl transition-all duration-200 border-0 shadow-lg hover:shadow-blue-500/25 hover:scale-[1.02] active:scale-[0.98]"
+            className="w-full h-14 font-semibold bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white disabled:from-gray-600 disabled:to-gray-700 disabled:text-gray-400 rounded-xl transition-all duration-200 border-0 shadow-lg hover:shadow-blue-500/25 hover:scale-[1.02] active:scale-[0.98]"
           >
             {isLoading ? (
               <div className="flex items-center gap-2">
@@ -234,4 +236,4 @@ export function LoginForm({ onToggle, prefillEmail, returnTo }: LoginFormProps) 
       </form>
     </div>
   )
-} 
+}

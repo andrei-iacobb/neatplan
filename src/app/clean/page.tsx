@@ -83,6 +83,7 @@ interface Equipment {
   location?: string
   model?: string
   serialNumber?: string
+  assetCode?: string
   priority: 'OVERDUE' | 'DUE_TODAY' | 'UPCOMING' | 'COMPLETED'
   nextDue: string
   summary: EquipmentSummary
@@ -249,7 +250,7 @@ export default function CleanerDashboard() {
           {/* Header Skeleton */}
           <div className="mb-8">
             <div className="h-9 rounded-lg w-80 mb-2 animate-pulse" style={skelBar}></div>
-            <div className="h-5 rounded w-64 animate-pulse" style={skelBarFaint}></div>
+            <div className="h-5 rounded-sm w-64 animate-pulse" style={skelBarFaint}></div>
           </div>
 
           {/* Stats Cards Skeleton */}
@@ -258,10 +259,10 @@ export default function CleanerDashboard() {
               <div key={i} className="rounded-lg p-6" style={skelCard}>
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <div className="h-4 rounded w-20 mb-2 animate-pulse" style={skelBar}></div>
-                    <div className="h-8 rounded w-12 animate-pulse" style={skelBar}></div>
+                    <div className="h-4 rounded-sm w-20 mb-2 animate-pulse" style={skelBar}></div>
+                    <div className="h-8 rounded-sm w-12 animate-pulse" style={skelBar}></div>
                   </div>
-                  <div className="w-8 h-8 rounded animate-pulse" style={skelBar}></div>
+                  <div className="w-8 h-8 rounded-sm animate-pulse" style={skelBar}></div>
                 </div>
               </div>
             ))}
@@ -270,10 +271,10 @@ export default function CleanerDashboard() {
           {/* Search and Filters Skeleton */}
           <div className="rounded-lg p-6 mb-8" style={skelCard}>
             <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
-              <div className="h-10 rounded flex-1 animate-pulse" style={skelBar}></div>
+              <div className="h-10 rounded-sm flex-1 animate-pulse" style={skelBar}></div>
               <div className="flex gap-3">
                 {[...Array(4)].map((_, i) => (
-                  <div key={i} className="h-10 w-[140px] rounded animate-pulse" style={skelBar}></div>
+                  <div key={i} className="h-10 w-[140px] rounded-sm animate-pulse" style={skelBar}></div>
                 ))}
               </div>
             </div>
@@ -283,28 +284,28 @@ export default function CleanerDashboard() {
           <div className="space-y-8">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-6 h-6 rounded animate-pulse" style={skelBar}></div>
-                <div className="h-6 rounded w-40 animate-pulse" style={skelBar}></div>
+                <div className="w-6 h-6 rounded-sm animate-pulse" style={skelBar}></div>
+                <div className="h-6 rounded-sm w-40 animate-pulse" style={skelBar}></div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className="rounded-lg p-6 h-64" style={skelCard}>
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded animate-pulse" style={skelBar}></div>
+                        <div className="w-8 h-8 rounded-sm animate-pulse" style={skelBar}></div>
                         <div>
-                          <div className="h-6 rounded w-24 mb-2 animate-pulse" style={skelBar}></div>
-                          <div className="h-4 rounded w-32 animate-pulse" style={skelBarFaint}></div>
+                          <div className="h-6 rounded-sm w-24 mb-2 animate-pulse" style={skelBar}></div>
+                          <div className="h-4 rounded-sm w-32 animate-pulse" style={skelBarFaint}></div>
                         </div>
                       </div>
-                      <div className="w-5 h-5 rounded animate-pulse" style={skelBar}></div>
+                      <div className="w-5 h-5 rounded-sm animate-pulse" style={skelBar}></div>
                     </div>
 
                     <div className="space-y-2 mb-4">
                       {[...Array(2)].map((_, j) => (
                         <div key={j} className="flex items-center justify-between">
-                          <div className="h-4 rounded w-32 animate-pulse" style={skelBarFaint}></div>
-                          <div className="h-6 rounded w-20 animate-pulse" style={skelBarFaint}></div>
+                          <div className="h-4 rounded-sm w-32 animate-pulse" style={skelBarFaint}></div>
+                          <div className="h-6 rounded-sm w-20 animate-pulse" style={skelBarFaint}></div>
                         </div>
                       ))}
                     </div>
@@ -312,12 +313,12 @@ export default function CleanerDashboard() {
                     <div className="pt-4 mt-auto" style={{ borderTop: `1px solid ${tc.divider}` }}>
                       <div className="space-y-2">
                         <div className="flex justify-between">
-                          <div className="h-3 rounded w-24 animate-pulse" style={skelBarFaint}></div>
-                          <div className="h-3 rounded w-16 animate-pulse" style={skelBarFaint}></div>
+                          <div className="h-3 rounded-sm w-24 animate-pulse" style={skelBarFaint}></div>
+                          <div className="h-3 rounded-sm w-16 animate-pulse" style={skelBarFaint}></div>
                         </div>
                         <div className="flex justify-between">
-                          <div className="h-3 rounded w-20 animate-pulse" style={skelBarFaint}></div>
-                          <div className="h-3 rounded w-24 animate-pulse" style={skelBarFaint}></div>
+                          <div className="h-3 rounded-sm w-20 animate-pulse" style={skelBarFaint}></div>
+                          <div className="h-3 rounded-sm w-24 animate-pulse" style={skelBarFaint}></div>
                         </div>
                       </div>
                     </div>
@@ -949,7 +950,7 @@ function RoomCard({ room, index, priority }: RoomCardProps) {
               </div>
             </div>
           </div>
-          <ArrowRight className="w-5 h-5 flex-shrink-0" style={{ color: tc.textMuted }} />
+          <ArrowRight className="w-5 h-5 shrink-0" style={{ color: tc.textMuted }} />
         </div>
 
         {/* Schedules - Flexible content area */}
@@ -958,10 +959,10 @@ function RoomCard({ room, index, priority }: RoomCardProps) {
             <div key={schedule.id} className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <span className="truncate" style={{ color: tc.textSecondary }}>{schedule.scheduleType}</span>
-                <span className="text-xs flex-shrink-0" style={{ color: tc.textFaint }}>({schedule.tasksCount} tasks)</span>
+                <span className="text-xs shrink-0" style={{ color: tc.textFaint }}>({schedule.tasksCount} tasks)</span>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <span className="px-2 py-1 rounded text-xs border" style={statusChipStyle(tc, schedule.status)}>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="px-2 py-1 rounded-sm text-xs border" style={statusChipStyle(tc, schedule.status)}>
                   {schedule.status}
                 </span>
               </div>
@@ -1003,7 +1004,7 @@ function RoomCard({ room, index, priority }: RoomCardProps) {
         {/* Bottom-integrated progress bar */}
         <div className="mt-4 h-2 rounded-full overflow-hidden" style={{ background: tc.progressBg }}>
           <div
-            className="h-full rounded-full bg-gradient-to-r from-blue-500 to-teal-400"
+            className="h-full rounded-full bg-linear-to-r from-blue-500 to-teal-400"
             style={{ width: `${computeRoomProgressPercent(room)}%` }}
           />
         </div>
@@ -1115,7 +1116,14 @@ function EquipmentCard({ equipment, index, priority }: EquipmentCardProps) {
           <div className="flex items-center gap-3">
             <span className="text-2xl">{getEquipmentTypeIcon(equipment.type)}</span>
             <div>
-              <h3 className="text-lg font-semibold line-clamp-1" style={{ color: tc.textPrimary }}>{equipment.name}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold line-clamp-1" style={{ color: tc.textPrimary }}>{equipment.name}</h3>
+                {equipment.assetCode && (
+                  <span className="font-mono text-xs px-1.5 py-0.5 rounded-sm border border-green-500/30 bg-green-500/10 shrink-0" style={{ color: tc.accentGreen }}>
+                    {equipment.assetCode}
+                  </span>
+                )}
+              </div>
               {/* Both fields are optional and absent in practice - without the guard
                   this rendered a location pin next to an empty string. */}
               {(equipment.location || equipment.model) && (
@@ -1128,7 +1136,7 @@ function EquipmentCard({ equipment, index, priority }: EquipmentCardProps) {
               )}
             </div>
           </div>
-          <div className="bg-blue-500/10 px-2 py-1 rounded text-xs border border-blue-500/20" style={{ color: tc.accentBlue }}>
+          <div className="bg-blue-500/10 px-2 py-1 rounded-sm text-xs border border-blue-500/20" style={{ color: tc.accentBlue }}>
             Equipment
           </div>
         </div>
@@ -1139,10 +1147,10 @@ function EquipmentCard({ equipment, index, priority }: EquipmentCardProps) {
             <div key={schedule.id} className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <span className="truncate" style={{ color: tc.textSecondary }}>{schedule.scheduleType}</span>
-                <span className="text-xs flex-shrink-0" style={{ color: tc.textFaint }}>({schedule.tasksCount} tasks)</span>
+                <span className="text-xs shrink-0" style={{ color: tc.textFaint }}>({schedule.tasksCount} tasks)</span>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <span className="px-2 py-1 rounded text-xs border" style={statusChipStyle(tc, schedule.status)}>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="px-2 py-1 rounded-sm text-xs border" style={statusChipStyle(tc, schedule.status)}>
                   {schedule.status}
                 </span>
               </div>

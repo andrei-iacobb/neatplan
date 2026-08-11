@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAdmin, canAccessSite } from '@/lib/authz'
 import { calculateNextDueDate } from '@/lib/schedule-utils'
-import { ScheduleStatus } from '@prisma/client'
+import { ScheduleStatus } from '@/generated/prisma/enums'
 
 // PATCH /api/rooms/[id]/schedules/[scheduleId] - Admin marks a room schedule complete.
 // NOTE: the [scheduleId] path segment carries the RoomSchedule row id (the admin UI

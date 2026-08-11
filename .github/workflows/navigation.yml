@@ -1,0 +1,109 @@
+name: Instant navigation and offline
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: navigation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+  NEXT_TEST_MODE: "1"
+  PLAYWRIGHT_BASE_URL: http://127.0.0.1:3030
+  NEXT_PUBLIC_APP_BASE_URL: http://127.0.0.1:3030
+  DATABASE_URL: postgresql://neatplan_user:ci-only-postgres-password@127.0.0.1:5432/neatplan?schema=public
+  NEXTAUTH_URL: http://127.0.0.1:3030
+  CORS_ALLOWED_ORIGIN: http://127.0.0.1:3030
+  NEXTAUTH_SECRET: ci-only-nextauth-secret-00000000000000000000000000000000
+  SCHEDULER_ENABLED: "false"
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:15-bookworm
+        env:
+          POSTGRES_USER: neatplan_user
+          POSTGRES_DB: neatplan
+          POSTGRES_PASSWORD: ci-only-postgres-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U neatplan_user -d neatplan"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.19.0
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+
+      - name: Migrate and seed browser database
+        env:
+          NODE_ENV: test
+          SEED_ADMIN_PASSWORD: admin123
+          SEED_DIRECTOR_PASSWORD: director123
+          SEED_MANAGER_PASSWORD: manager123
+          SEED_CLEANER_PASSWORD: cleaner123
+        run: |
+          pnpm exec prisma migrate deploy
+          pnpm prisma:seed
+
+      - name: Build production server with navigation instrumentation
+        run: pnpm build
+
+      - name: Verify instant navigation and offline state
+        shell: bash
+        run: |
+          set -euo pipefail
+          log_file="${RUNNER_TEMP}/neatplan-standalone.log"
+          HOSTNAME=127.0.0.1 PORT=3030 pnpm start >"${log_file}" 2>&1 &
+          server_pid=$!
+          cleanup() {
+            kill "${server_pid}" 2>/dev/null || true
+            wait "${server_pid}" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          ready=0
+          for attempt in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:3030/demo >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "${ready}" -ne 1 ]; then
+            cat "${log_file}" >&2
+            exit 1
+          fi
+
+          pnpm exec playwright test \
+            tests/e2e/instant-navigation.spec.ts \
+            tests/e2e/dashboard-clicks.spec.ts \
+            --project=chromium
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: navigation-traces
+          path: |
+            test-results
+            ${{ runner.temp }}/neatplan-standalone.log
+          if-no-files-found: ignore
+          retention-days: 7

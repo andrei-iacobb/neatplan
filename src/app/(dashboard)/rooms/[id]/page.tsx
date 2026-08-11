@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import { useToast } from '@/components/ui/toast-context'
 import { useThemeColors } from '@/hooks/useThemeColors'
 import { Calendar, CheckCircle2, X, Trash2, Pencil, Sparkles } from 'lucide-react'
-import { ScheduleFrequency, ScheduleStatus } from '@prisma/client'
+import { ScheduleFrequency, ScheduleStatus } from '@/generated/prisma/enums'
 import { getFrequencyLabel, getScheduleDisplayName } from '@/lib/schedule-utils'
 import { apiRequest } from '@/lib/url-utils'
 import { fadeUp, enter } from '@/lib/motion'
@@ -296,7 +296,7 @@ export default function RoomDetailsPage() {
                   <select
                     value={selectedSchedule}
                     onChange={(e) => handleScheduleSelection(e.target.value)}
-                    className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors duration-150"
+                    className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors duration-150"
                     style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
                     onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                     onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
@@ -327,7 +327,7 @@ export default function RoomDetailsPage() {
                   <select
                     value={selectedFrequency}
                     onChange={(e) => setSelectedFrequency(e.target.value as ScheduleFrequency)}
-                    className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors duration-150"
+                    className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors duration-150"
                     style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
                     onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                     onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
@@ -427,7 +427,7 @@ export default function RoomDetailsPage() {
 
       {/* Edit Room Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center"
+        <div className="fixed inset-0 backdrop-blur-xs z-50 flex items-center justify-center"
           style={{ background: tc.modalOverlay }}>
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 8 }}
@@ -460,7 +460,7 @@ export default function RoomDetailsPage() {
                       type="text"
                       value={formData.name}
                       onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors duration-150"
+                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors duration-150"
                       style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
                       onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                       onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
@@ -474,7 +474,7 @@ export default function RoomDetailsPage() {
                     <select
                       value={formData.floor}
                       onChange={e => setFormData(prev => ({ ...prev, floor: e.target.value }))}
-                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors duration-150"
+                      className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors duration-150"
                       style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
                       onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                       onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
@@ -492,7 +492,7 @@ export default function RoomDetailsPage() {
                   <select
                     value={formData.type}
                     onChange={e => setFormData(prev => ({ ...prev, type: e.target.value }))}
-                    className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors duration-150"
+                    className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors duration-150"
                     style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
                     onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                     onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
@@ -516,7 +516,7 @@ export default function RoomDetailsPage() {
                   <textarea
                     value={formData.description}
                     onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    className="w-full rounded-lg px-3 py-2 text-[13px] outline-none transition-colors duration-150 resize-none"
+                    className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors duration-150 resize-none"
                     style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
                     onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                     onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}

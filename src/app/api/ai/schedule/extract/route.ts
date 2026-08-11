@@ -6,7 +6,6 @@ import {
   ScheduleExtractionError,
 } from '@/lib/schedule-extraction'
 
-export const runtime = 'nodejs'
 export const maxDuration = 120 // vision/text extraction can take a while
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB

@@ -1,8 +1,7 @@
-const { PrismaClient } = require('@prisma/client')
+import { prisma } from '../src/lib/db'
+import type { ScheduleFrequency } from '../src/generated/prisma/enums'
 
-const prisma = new PrismaClient()
-
-function calculateNextDueDate(frequency, startDate = new Date()) {
+function calculateNextDueDate(frequency: ScheduleFrequency, startDate = new Date()) {
   const nextDue = new Date(startDate)
   
   switch (frequency) {
@@ -20,6 +19,9 @@ function calculateNextDueDate(frequency, startDate = new Date()) {
       break
     case 'QUARTERLY':
       nextDue.setMonth(nextDue.getMonth() + 3)
+      break
+    case 'SEMIANNUAL':
+      nextDue.setMonth(nextDue.getMonth() + 6)
       break
     case 'YEARLY':
       nextDue.setFullYear(nextDue.getFullYear() + 1)
@@ -143,4 +145,4 @@ async function markAllRoomsCleaned() {
   }
 }
 
-markAllRoomsCleaned() 
+markAllRoomsCleaned()

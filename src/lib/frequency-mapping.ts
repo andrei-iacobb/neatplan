@@ -1,4 +1,4 @@
-import { ScheduleFrequency } from '@prisma/client'
+import { ScheduleFrequency } from '@/generated/prisma/enums'
 
 /**
  * Maps AI-detected frequency strings to ScheduleFrequency enum values
@@ -26,17 +26,30 @@ export function mapFrequencyStringToEnum(frequencyString: string | null): Schedu
     return ScheduleFrequency.BIWEEKLY
   }
   
-  // Monthly patterns
-  if (frequency.includes('monthly') || frequency.includes('every month') || 
-      frequency.includes('once a month') || frequency.includes('per month')) {
-    return ScheduleFrequency.MONTHLY
-  }
-  
+  // Quarterly and semiannual must precede monthly because phrases such as
+  // "three monthly" and "six monthly" also contain the generic "monthly" pattern.
   // Quarterly patterns
   if (frequency.includes('quarterly') || frequency.includes('every quarter') || 
       frequency.includes('every 3 months') || frequency.includes('three months') ||
+      frequency.includes('three monthly') || frequency.includes('3 monthly') ||
+      frequency.includes('3 months') ||
       frequency.includes('after vacancy') || frequency.includes('post-infection')) {
     return ScheduleFrequency.QUARTERLY
+  }
+
+  // Semiannual patterns
+  if (frequency.includes('six month') || frequency.includes('6 month') ||
+      frequency.includes('semi-annual') || frequency.includes('semiannual') ||
+      frequency.includes('bi-annual') || frequency.includes('biannual') ||
+      frequency.includes('twice a year') || frequency.includes('half-year') ||
+      frequency.includes('half year')) {
+    return ScheduleFrequency.SEMIANNUAL
+  }
+
+  // Monthly patterns
+  if (frequency.includes('monthly') || frequency.includes('every month') ||
+      frequency.includes('once a month') || frequency.includes('per month')) {
+    return ScheduleFrequency.MONTHLY
   }
   
   // Yearly patterns
@@ -92,4 +105,4 @@ export function inferFrequencyFromTasks(tasks: Array<{ frequency: string | null 
   }
   
   return mostCommon
-} 
+}

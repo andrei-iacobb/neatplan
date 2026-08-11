@@ -16,7 +16,7 @@ export default function Loading() {
     >
       {/* Back link and room identity */}
       <div className="flex items-center gap-4 mb-8">
-        <Skeleton className="h-10 w-10 rounded-lg flex-shrink-0" />
+        <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
         <div className="min-w-0 space-y-2">
           <Skeleton className="h-6" width={220} />
           <Skeleton className="h-4" width={180} />

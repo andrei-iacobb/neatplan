@@ -1,9 +1,8 @@
-const { PrismaClient } = require('@prisma/client')
-
-const prisma = new PrismaClient()
+import { prisma } from '../src/lib/db'
+import type { ScheduleFrequency } from '../src/generated/prisma/enums'
 
 // Simple frequency mapping function
-function mapFrequencyToEnum(frequencyString) {
+function mapFrequencyToEnum(frequencyString: string | null | undefined): ScheduleFrequency {
   if (!frequencyString) return 'WEEKLY'
   
   const frequency = frequencyString.toLowerCase().trim()
@@ -11,8 +10,9 @@ function mapFrequencyToEnum(frequencyString) {
   if (frequency.includes('daily')) return 'DAILY'
   if (frequency.includes('weekly')) return 'WEEKLY'
   if (frequency.includes('bi-weekly') || frequency.includes('biweekly')) return 'BIWEEKLY'
-  if (frequency.includes('monthly')) return 'MONTHLY'
   if (frequency.includes('quarterly')) return 'QUARTERLY'
+  if (frequency.includes('six month') || frequency.includes('semiannual')) return 'SEMIANNUAL'
+  if (frequency.includes('monthly')) return 'MONTHLY'
   if (frequency.includes('yearly') || frequency.includes('annually')) return 'YEARLY'
   
   return 'WEEKLY' // Default
@@ -89,4 +89,4 @@ async function demoAIFrequency() {
   }
 }
 
-demoAIFrequency() 
+demoAIFrequency()

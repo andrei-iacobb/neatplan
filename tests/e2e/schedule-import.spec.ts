@@ -35,43 +35,43 @@ test.describe('AI schedule import (real extraction)', () => {
 
     // Login as seeded admin
     await page.goto('/auth')
-    await page.getByPlaceholder('Email address').fill('admin@neatplan.com')
+    await page.getByPlaceholder('Email or username').fill('admin@neatplan.com', {
+      timeout: 30_000,
+    })
     await page.getByPlaceholder('Password').fill('admin123')
     await page.getByRole('button', { name: /sign in/i }).click()
     await page.waitForURL((u) => !u.pathname.startsWith('/auth'), { timeout: 60_000 })
 
-    // Schedule page -> Edit Mode -> import section.
-    // In dev mode the first click can land before React hydrates the button, so
-    // retry the toggle until the import section actually appears.
+    // Open the current create dialog and its document-assisted form.
     await page.goto('/schedule')
-    await page.waitForLoadState('networkidle')
-    const importHeading = page.getByText('Import from a document')
-    await expect(async () => {
-      if (!(await importHeading.isVisible())) {
-        await page
-          .getByRole('button', { name: 'Edit Mode', exact: true })
-          .click({ timeout: 2_000 })
-          .catch(() => {})
-      }
-      await expect(importHeading).toBeVisible({ timeout: 2_000 })
-    }).toPass({ timeout: 30_000 })
+    await page.getByRole('button', { name: 'New schedule', exact: true }).click()
+    const dialog = page.getByRole('dialog', { name: 'Create new schedule' })
+    await expect(dialog.getByText('Start from a document')).toBeVisible()
 
     // Upload the fixture through the hidden file input
-    await page.locator('input[type="file"]').setInputFiles(FIXTURE)
+    await dialog.locator('input[type="file"]').setInputFiles(FIXTURE)
 
     // Real extraction happens here - wait for the editable preview
-    const firstTask = page.getByLabel('Task 1 description')
-    await expect(firstTask).toBeVisible({ timeout: 240_000 })
-    await expect(firstTask).not.toHaveValue('')
+    const firstTask = dialog.getByLabel('Task 1 description')
+    await expect(firstTask).not.toHaveValue('', { timeout: 240_000 })
 
     // The fixture has 9 tasks; extraction must find a sensible number of them
-    const taskInputs = page.locator('input[aria-label$="description"]')
+    const taskInputs = dialog.locator('input[aria-label$="description"]')
     expect(await taskInputs.count()).toBeGreaterThanOrEqual(5)
 
     // Pin the title so save + cleanup are deterministic
-    await page.getByLabel('Schedule title').fill(EXPECTED_TITLE)
+    await dialog.getByLabel('Schedule title').fill(EXPECTED_TITLE)
+    const frequency = dialog.getByLabel('Frequency')
+    if ((await frequency.inputValue()) === '') {
+      await frequency.selectOption('WEEKLY')
+    }
 
-    await page.getByRole('button', { name: 'Save schedule' }).click()
+    const sites = dialog.getByRole('group', { name: 'Sites' })
+    if (await sites.isVisible()) {
+      await sites.getByRole('checkbox').first().check()
+    }
+
+    await dialog.getByRole('button', { name: 'Create schedule' }).click()
 
     // Saved schedule appears in the schedules list after refetch
     await expect(page.getByText(EXPECTED_TITLE).first()).toBeVisible({ timeout: 30_000 })

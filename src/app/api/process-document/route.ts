@@ -5,13 +5,12 @@ import sharp from 'sharp'
 import { getAIClient } from '@/lib/ai-provider'
 import { ocrImageToText, OcrBusyError, OcrUnavailableError } from '@/lib/ocr'
 import { requireAdmin } from '@/lib/authz'
+import { extractPdfText } from '@/lib/pdf'
 
 // Force dynamic behavior for the API route
-export const dynamic = 'force-dynamic'
 export const maxDuration = 300 // 5 minutes timeout
 
 // Define allowed methods
-export const runtime = 'nodejs'
 
 const CLEANING_KEYWORDS = [
   'clean', 'wipe', 'dust', 'vacuum', 'mop', 'wash', 'shampoo', 'polish',
@@ -100,10 +99,7 @@ async function processDocxFile(buffer: Buffer): Promise<string> {
 
 async function processPdfFile(buffer: Buffer): Promise<string> {
   try {
-    // Dynamic import of pdf-parse for PDF processing
-    const pdfParse = (await import('pdf-parse')).default
-    const pdfData = await pdfParse(buffer)
-    return pdfData.text
+    return await extractPdfText(buffer)
   } catch (error) {
     console.error('Error processing PDF file:', error)
     throw new Error('Failed to extract text from PDF file')

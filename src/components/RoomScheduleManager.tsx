@@ -203,6 +203,7 @@ export function RoomScheduleManager({ roomId, onUpdate }: RoomScheduleManagerPro
               <SelectItem value="BIWEEKLY">Bi-weekly</SelectItem>
               <SelectItem value="MONTHLY">Monthly</SelectItem>
               <SelectItem value="QUARTERLY">Quarterly</SelectItem>
+              <SelectItem value="SEMIANNUAL">Six Monthly</SelectItem>
               <SelectItem value="YEARLY">Yearly</SelectItem>
             </SelectContent>
           </Select>
@@ -256,4 +257,4 @@ export function RoomScheduleManager({ roomId, onUpdate }: RoomScheduleManagerPro
       </div>
     </div>
   )
-} 
+}

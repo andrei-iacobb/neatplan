@@ -1,5 +1,5 @@
 import { prisma } from '../src/lib/db'
-import { RoomType } from '@prisma/client'
+import { RoomType } from '../src/generated/prisma/enums'
 
 async function createRooms() {
   const rooms = []
@@ -34,4 +34,4 @@ async function createRooms() {
   }
 }
 
-createRooms() 
+createRooms()

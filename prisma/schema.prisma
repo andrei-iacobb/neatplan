@@ -1,45 +1,48 @@
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  runtime                = "nodejs"
+  moduleFormat           = "cjs"
+  generatedFileExtension = "ts"
+  importFileExtension    = "ts"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
-  id                         String                      @id @default(cuid())
-  email                      String                      @unique
-  notificationEmail          String? // Optional separate email for notifications
-  password                   String
-  name                       String?
-  createdAt                  DateTime                    @default(now())
-  updatedAt                  DateTime                    @updatedAt
-  isAdmin                    Boolean                     @default(false)
-  role                       UserRole                    @default(CLEANER)
+  id                              String                           @id @default(cuid())
+  email                           String                           @unique
+  notificationEmail               String? // Optional separate email for notifications
+  password                        String
+  name                            String?
+  createdAt                       DateTime                         @default(now())
+  updatedAt                       DateTime                         @updatedAt
+  isAdmin                         Boolean                          @default(false)
+  role                            UserRole                         @default(CLEANER)
   // Site membership. OP and DIRECTOR span every site (siteId null = all sites);
   // MANAGER and CLEANER are pinned to exactly one site.
-  siteId                     String?
-  site                       Site?                       @relation(fields: [siteId], references: [id], onDelete: SetNull)
-  tasks                      Task[]                      @relation("UserTasks")
-  sessions                   UserSession[]
-  roomScheduleCompletionLogs RoomScheduleCompletionLog[]
+  siteId                          String?
+  site                            Site?                            @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  tasks                           Task[]                           @relation("UserTasks")
+  sessions                        UserSession[]
+  roomScheduleCompletionLogs      RoomScheduleCompletionLog[]
   equipmentScheduleCompletionLogs EquipmentScheduleCompletionLog[]
-  roomCheckIns               RoomCheckIn[]
+  roomCheckIns                    RoomCheckIn[]
   // Account security fields
-  isBlocked                  Boolean                     @default(false)
-  forcePasswordChange        Boolean                     @default(false)
-  temporaryUnblockUntil      DateTime?
-  failedLoginCount           Int                         @default(0)
-  lastFailedLoginAt          DateTime?
-  settings                   Json?
-  totpSecret                 String?
-  totpEnabled                Boolean                     @default(false)
+  isBlocked                       Boolean                          @default(false)
+  forcePasswordChange             Boolean                          @default(false)
+  temporaryUnblockUntil           DateTime?
+  failedLoginCount                Int                              @default(0)
+  lastFailedLoginAt               DateTime?
+  settings                        Json?
+  totpSecret                      String?
+  totpEnabled                     Boolean                          @default(false)
   // Owner-level account: kept out of user listings and immutable to everyone else.
   // Authentication and authorization are unchanged - it is hidden, not privileged
   // beyond its role.
-  isHidden                   Boolean                     @default(false)
+  isHidden                        Boolean                          @default(false)
 
   @@index([siteId])
   @@map("users")
@@ -116,17 +119,21 @@ model RoomCheckIn {
 }
 
 model Equipment {
-  id          String              @id @default(cuid())
-  name        String
-  description String?
-  type        String              @default("OTHER")
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  siteId      String?
-  site        Site?               @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  schedules   EquipmentSchedule[]
+  id           String              @id @default(cuid())
+  name         String
+  description  String?
+  type         String              @default("OTHER")
+  assetCode    String?
+  model        String?
+  serialNumber String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  siteId       String?
+  site         Site?               @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  schedules    EquipmentSchedule[]
 
   @@unique([siteId, name])
+  @@unique([siteId, assetCode])
   @@index([siteId])
   @@map("equipment")
 }
@@ -313,6 +320,7 @@ enum ScheduleFrequency {
   BIWEEKLY
   MONTHLY
   QUARTERLY
+  SEMIANNUAL
   YEARLY
 }
 

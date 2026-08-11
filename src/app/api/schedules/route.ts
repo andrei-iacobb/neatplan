@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import type { ScheduleFrequency } from '@/generated/prisma/enums'
 import { requireAuth, requireAdmin, m2mSiteScopeWhere, resolveWriteSiteIds, visibleSiteRelationWhere, resolveReadSiteId, m2mReadSiteWhere } from '@/lib/authz'
 import { prisma } from '@/lib/db'
 
@@ -48,9 +49,9 @@ export async function POST(req: Request) {
     const { title, tasks, siteIds: requestedSiteIds, detectedFrequency, suggestedFrequency } = await req.json()
 
     // Only accept a valid enum value for the AI-suggested frequency.
-    const validFrequencies = ['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY']
+    const validFrequencies = ['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'QUARTERLY', 'SEMIANNUAL', 'YEARLY']
     const safeSuggested = typeof suggestedFrequency === 'string' && validFrequencies.includes(suggestedFrequency)
-      ? suggestedFrequency as import('@prisma/client').ScheduleFrequency
+      ? suggestedFrequency as ScheduleFrequency
       : null
 
     if (!title) {
