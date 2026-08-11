@@ -106,7 +106,9 @@ jobs:
           '
           docker exec "${web_id}" tesseract --version
 
-          docker cp tests/e2e/fixtures/cleaning-schedule.png "${web_id}:/tmp/cleaning-schedule.png"
+          docker exec --interactive "${web_id}" sh -c \
+            'cat > /tmp/cleaning-schedule.png' \
+            < tests/e2e/fixtures/cleaning-schedule.png
           docker exec "${web_id}" tesseract /tmp/cleaning-schedule.png stdout -l eng \
             | tee "${RUNNER_TEMP}/tesseract-output.txt"
           grep --ignore-case --extended-regexp --quiet \
