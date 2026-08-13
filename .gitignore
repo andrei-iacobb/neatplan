@@ -67,3 +67,9 @@ playwright-report/
 
 # Generated audit artifacts (large, with inline screenshots)
 ui-audit.html
+
+# Agent / Claude local files and session HTML
+.claude/
+**/CLAUDE.md
+**/AGENTS.md
+docs/*.html
