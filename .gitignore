@@ -72,4 +72,6 @@ ui-audit.html
 .claude/
 **/CLAUDE.md
 **/AGENTS.md
+**/instant-nav.rig.md
+**/.mcp.json
 docs/*.html
