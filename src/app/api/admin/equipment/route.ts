@@ -51,6 +51,9 @@ export async function GET(request: Request) {
         name: equip.name,
         description: equip.description,
         type: equip.type,
+        assetCode: equip.assetCode,
+        model: equip.model,
+        serialNumber: equip.serialNumber,
         siteId: equip.siteId,
         site: equip.site,
         createdAt: equip.createdAt,
@@ -97,7 +100,10 @@ export async function POST(request: Request) {
     const {
       name,
       description,
-      type
+      type,
+      assetCode,
+      model,
+      serialNumber
     } = body
 
     if (!name) {
@@ -115,12 +121,29 @@ export async function POST(request: Request) {
       )
     }
 
+    for (const [field, value] of Object.entries({ assetCode, model, serialNumber })) {
+      if (value !== undefined && value !== null && typeof value !== 'string') {
+        return NextResponse.json({ error: `${field} must be a string` }, { status: 400 })
+      }
+      if (typeof value === 'string' && value.length > 200) {
+        return NextResponse.json({ error: `${field} must be 200 characters or fewer` }, { status: 400 })
+      }
+    }
+
+    // Trim optional fields and treat empty strings as null
+    const trimmedAssetCode = assetCode?.trim() || null
+    const trimmedModel = model?.trim() || null
+    const trimmedSerialNumber = serialNumber?.trim() || null
+
     const equipment = await prisma.equipment.create({
       data: {
         name,
         description,
         type: type || 'OTHER',
         siteId,
+        assetCode: trimmedAssetCode,
+        model: trimmedModel,
+        serialNumber: trimmedSerialNumber,
       }
     })
 
@@ -132,6 +155,13 @@ export async function POST(request: Request) {
     if (error.code === 'P2002' && error.meta?.target?.includes('name')) {
       return NextResponse.json(
         { error: 'Equipment with this name already exists' },
+        { status: 409 }
+      )
+    }
+
+    if (error.code === 'P2002' && error.meta?.target?.includes('assetCode')) {
+      return NextResponse.json(
+        { error: 'Asset code already in use at this site' },
         { status: 409 }
       )
     }

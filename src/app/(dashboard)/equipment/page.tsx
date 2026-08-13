@@ -39,6 +39,7 @@ interface Equipment {
     status: string
     tasksCount: number
   }[]
+  assetCode?: string
 }
 
 interface Schedule {
@@ -57,6 +58,7 @@ enum ScheduleFrequency {
   BIWEEKLY = 'BIWEEKLY',
   MONTHLY = 'MONTHLY',
   QUARTERLY = 'QUARTERLY',
+  SEMIANNUAL = 'SEMIANNUAL',
   YEARLY = 'YEARLY'
 }
 
@@ -70,6 +72,9 @@ interface EquipmentFormData {
   description: string
   type: string
   siteId: string
+  assetCode?: string
+  model?: string
+  serialNumber?: string
 }
 
 interface Site {
@@ -138,6 +143,9 @@ export default function EquipmentPage() {
     description: '',
     type: 'OTHER',
     siteId: '',
+    assetCode: '',
+    model: '',
+    serialNumber: '',
   })
 
   useEffect(() => {
@@ -199,6 +207,9 @@ export default function EquipmentPage() {
       description: '',
       type: 'OTHER',
       siteId: '',
+      assetCode: '',
+      model: '',
+      serialNumber: '',
     })
   }
 
@@ -401,6 +412,9 @@ export default function EquipmentPage() {
       description: equip.description || '',
       type: equip.type,
       siteId: equip.siteId || '',
+      assetCode: equip.assetCode || '',
+      model: equip.model || '',
+      serialNumber: equip.serialNumber || '',
     })
     setShowEditModal(true)
   }
@@ -497,7 +511,7 @@ export default function EquipmentPage() {
             <select
               value={siteFilter}
               onChange={(e) => setSiteFilter(e.target.value)}
-              className="px-3 py-2 rounded-lg text-[13px] font-medium outline-none transition-colors"
+              className="px-3 py-2 rounded-lg text-[13px] font-medium outline-hidden transition-colors"
               style={{ background: tc.tabInactiveBg, color: tc.tabInactiveText, border: '1px solid ' + tc.inputBorder }}
               aria-label="Filter equipment by site"
             >
@@ -507,7 +521,7 @@ export default function EquipmentPage() {
           )}
           <button
             onClick={() => setViewMode('SCHEDULES')}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97]"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97]"
             style={viewMode === 'SCHEDULES'
               ? { background: tc.tabActiveBg, color: tc.tabActiveText, border: '1px solid ' + tc.tabActiveBorder }
               : { background: tc.tabInactiveBg, color: tc.tabInactiveText, border: '1px solid transparent' }
@@ -522,7 +536,7 @@ export default function EquipmentPage() {
           {viewMode !== 'SCHEDULES' && (
             <button
               onClick={() => { resetForm(); setShowAddModal(true) }}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97]"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97]"
               style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: '1px solid ' + tc.btnPrimaryBorder }}
               onMouseEnter={(e) => { e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
               onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}
@@ -544,7 +558,7 @@ export default function EquipmentPage() {
               placeholder="Search equipment..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg text-sm outline-none"
+              className="w-full pl-10 pr-4 py-2 rounded-lg text-sm outline-hidden"
               style={inputStyle}
             />
           </div>
@@ -552,7 +566,7 @@ export default function EquipmentPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-4 py-2 rounded-lg text-sm outline-none"
+            className="px-4 py-2 rounded-lg text-sm outline-hidden"
             style={selectStyle}
           >
             <option value="all">All Types</option>
@@ -592,7 +606,7 @@ export default function EquipmentPage() {
                   role="tab"
                   aria-selected={active}
                   onClick={() => setAssignMode(mode)}
-                  className="px-4 min-h-[36px] rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+                  className="px-4 min-h-[36px] rounded-lg text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50"
                   style={active ? {
                     background: tc.cardBg,
                     color: tc.textPrimary,
@@ -619,7 +633,7 @@ export default function EquipmentPage() {
                   <select
                     value={selectedSchedule}
                     onChange={(e) => handleScheduleSelection(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
                     style={selectStyle}
                   >
                     <option value="">Select Schedule</option>
@@ -640,7 +654,7 @@ export default function EquipmentPage() {
                       // A new type starts with everything ticked.
                       setExcludedEquipmentIds(new Set())
                     }}
-                    className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
                     style={selectStyle}
                   >
                     {equipmentTypes.map(type => (
@@ -656,7 +670,7 @@ export default function EquipmentPage() {
                   <select
                     value={selectedFrequency}
                     onChange={(e) => setSelectedFrequency(e.target.value as ScheduleFrequency)}
-                    className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
                     style={selectStyle}
                   >
                     <option value="DAILY">Daily</option>
@@ -664,6 +678,7 @@ export default function EquipmentPage() {
                     <option value="BIWEEKLY">Bi-weekly</option>
                     <option value="MONTHLY">Monthly</option>
                     <option value="QUARTERLY">Quarterly</option>
+                    <option value="SEMIANNUAL">Six Monthly</option>
                     <option value="YEARLY">Yearly</option>
                   </select>
                 </div>
@@ -705,7 +720,7 @@ export default function EquipmentPage() {
                             chosen.length === ofType.length ? new Set(ofType.map((e) => e.id)) : new Set()
                           )
                         }
-                        className="text-[12px] font-medium rounded px-2 py-1 shrink-0 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+                        className="text-[12px] font-medium rounded-sm px-2 py-1 shrink-0 whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50"
                         style={{ color: tc.accentGreen }}
                       >
                         {chosen.length === ofType.length ? 'Clear all' : 'Select all'}
@@ -729,7 +744,7 @@ export default function EquipmentPage() {
                                   return next
                                 })
                               }
-                              className="flex items-center gap-2 min-h-[40px] px-3 rounded-lg text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+                              className="flex items-center gap-2 min-h-[40px] px-3 rounded-lg text-[13px] transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50"
                               style={{
                                 // Selected pills stay neutral. They used to carry the same
                                 // mint as the primary button (0.08 vs 0.10 alpha of one
@@ -802,7 +817,7 @@ export default function EquipmentPage() {
                   <select
                     value={selectedSchedule}
                     onChange={(e) => handleScheduleSelection(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
                     style={selectStyle}
                   >
                     <option value="">Select Schedule</option>
@@ -822,7 +837,7 @@ export default function EquipmentPage() {
                       const equip = equipment.find(r => r.id === e.target.value)
                       setSelectedEquipment(equip || null)
                     }}
-                    className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
                     style={selectStyle}
                   >
                     <option value="">Select Equipment</option>
@@ -839,7 +854,7 @@ export default function EquipmentPage() {
                   <select
                     value={selectedFrequency}
                     onChange={(e) => setSelectedFrequency(e.target.value as ScheduleFrequency)}
-                    className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
                     style={selectStyle}
                   >
                     <option value="DAILY">Daily</option>
@@ -847,6 +862,7 @@ export default function EquipmentPage() {
                     <option value="BIWEEKLY">Bi-weekly</option>
                     <option value="MONTHLY">Monthly</option>
                     <option value="QUARTERLY">Quarterly</option>
+                    <option value="SEMIANNUAL">Six Monthly</option>
                     <option value="YEARLY">Yearly</option>
                   </select>
                 </div>
@@ -928,6 +944,11 @@ export default function EquipmentPage() {
                   <div>
                     <h3 className="text-base font-semibold" style={{ color: tc.textPrimary }}>{equip.name}</h3>
                   </div>
+                    {equip.assetCode && (
+                      <div className="text-xs font-mono px-2 py-1 rounded-sm mt-1" style={{ background: tc.surfaceBg, color: tc.accentGreen, border: `1px solid ${tc.accentGreen}` }}>
+                        {equip.assetCode}
+                      </div>
+                    )}
                 </div>
                 <div className="flex items-center gap-1">
                   <button
@@ -1057,7 +1078,7 @@ export default function EquipmentPage() {
                       <select
                         value={formData.siteId}
                         onChange={(e) => setFormData({ ...formData, siteId: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                        className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
                         style={selectStyle}
                       >
                         <option value="">Select a site...</option>
@@ -1074,7 +1095,7 @@ export default function EquipmentPage() {
                       required
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
                       style={inputStyle}
                       placeholder="Enter equipment name"
                     />
@@ -1087,7 +1108,7 @@ export default function EquipmentPage() {
                     <select
                       value={formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
                       style={selectStyle}
                     >
                       {equipmentTypes.map(type => (
@@ -1106,11 +1127,53 @@ export default function EquipmentPage() {
                       rows={3}
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-hidden resize-none"
                       style={inputStyle}
                       placeholder="Enter description"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
+                      Asset Code
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.assetCode || ''}
+                      onChange={(e) => setFormData({ ...formData, assetCode: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
+                      style={inputStyle}
+                      placeholder="e.g., HT-001, WC-042"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
+                      Model
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.model || ''}
+                      onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
+                      style={inputStyle}
+                      placeholder="Equipment model"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
+                      Serial Number
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.serialNumber || ''}
+                      onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
+                      style={inputStyle}
+                      placeholder="Serial number"
+                    />
+                  </div>
+
 
                   <div className="flex items-center justify-end gap-3 pt-4">
                     <button
@@ -1184,7 +1247,7 @@ export default function EquipmentPage() {
                       <select
                         value={formData.siteId}
                         onChange={(e) => setFormData({ ...formData, siteId: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                        className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
                         style={selectStyle}
                       >
                         <option value="">Select a site...</option>
@@ -1201,7 +1264,7 @@ export default function EquipmentPage() {
                       required
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
                       style={inputStyle}
                       placeholder="Enter equipment name"
                     />
@@ -1214,7 +1277,7 @@ export default function EquipmentPage() {
                     <select
                       value={formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
                       style={selectStyle}
                     >
                       {equipmentTypes.map(type => (
@@ -1233,11 +1296,53 @@ export default function EquipmentPage() {
                       rows={3}
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-hidden resize-none"
                       style={inputStyle}
                       placeholder="Enter description"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
+                      Asset Code
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.assetCode || ''}
+                      onChange={(e) => setFormData({ ...formData, assetCode: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
+                      style={inputStyle}
+                      placeholder="e.g., HT-001, WC-042"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
+                      Model
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.model || ''}
+                      onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
+                      style={inputStyle}
+                      placeholder="Equipment model"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
+                      Serial Number
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.serialNumber || ''}
+                      onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
+                      style={inputStyle}
+                      placeholder="Serial number"
+                    />
+                  </div>
+
 
                   <div className="flex items-center justify-end gap-3 pt-4">
                     <button

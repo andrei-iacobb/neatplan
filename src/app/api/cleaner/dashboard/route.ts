@@ -1,13 +1,13 @@
-import { NextResponse } from 'next/server'
+import { connection, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { siteScopeWhere } from '@/lib/authz'
 
 // Force dynamic rendering
-export const dynamic = 'force-dynamic'
 
 export async function GET() {
+  await connection()
   try {
     const session = await getServerSession(authOptions)
     
@@ -281,6 +281,7 @@ export async function GET() {
           id: equip.id,
           name: equip.name,
           type: equip.type,
+          assetCode: equip.assetCode,
           priority: equipmentPriority,
           nextDue: earliestDue.toISOString(),
           summary: {
@@ -370,4 +371,4 @@ function determineScheduleType(title: string, frequency: string): string {
   } else {
     return 'Standard Clean'
   }
-} 
+}

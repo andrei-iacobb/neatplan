@@ -72,7 +72,7 @@ export function CleaningTaskForm({ rooms, onCreated }: CleaningTaskFormProps) {
   }
 
   return (
-    <div className="grid gap-4 p-4 rounded-lg bg-black/20 backdrop-blur-sm border border-white/5">
+    <div className="grid gap-4 p-4 rounded-lg bg-black/20 backdrop-blur-xs border border-white/5">
       <h2 className="text-lg font-medium text-gray-100">Create Cleaning Task</h2>
       {error && (
         <p className="text-sm text-red-300">{error}</p>

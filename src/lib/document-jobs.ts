@@ -1,14 +1,16 @@
 import fs from 'fs/promises'
 import path from 'path'
 import sharp from 'sharp'
-import { Prisma } from '@prisma/client'
-import type { DocumentJob } from '@prisma/client'
+import { Prisma } from '@/generated/prisma/client'
+import type { DocumentJob } from '@/generated/prisma/client'
 import { prisma } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { getAIClient } from './ai-provider'
 import { ocrImageToText } from './ocr'
+import { extractPdfText } from './pdf'
 
-const JOBS_DIR = path.join(process.cwd(), 'data', 'document-jobs')
+const DATA_DIR = process.env.NEATPLAN_DATA_DIR || path.join(process.cwd(), 'data')
+const JOBS_DIR = path.join(DATA_DIR, 'document-jobs')
 const DOCUMENT_JOB_TIMEOUT_MS = 10 * 60 * 1000
 const STUCK_PROCESSING_TIMEOUT_MS = 15 * 60 * 1000
 
@@ -61,18 +63,12 @@ async function processDocxFile(buffer: Buffer): Promise<string> {
   return result.value
 }
 
-async function processPdfFile(buffer: Buffer): Promise<string> {
-  const pdfParse = (await import('pdf-parse')).default
-  const pdfData = await pdfParse(buffer)
-  return pdfData.text
-}
-
 export async function extractContentFromFile(
   buffer: Buffer,
   fileType: string
 ): Promise<{ content: string; processingMethod: string }> {
   if (fileType === 'application/pdf') {
-    const content = extractRelevantContent(await processPdfFile(buffer))
+    const content = extractRelevantContent(await extractPdfText(buffer))
     return { content, processingMethod: 'OCR' }
   }
 

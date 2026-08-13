@@ -18,7 +18,7 @@ function Avatar({ name, size = 'sm' }: { name: string, size?: 'sm' | 'md' }) {
 
   return (
     <div
-      className={`${sizeClasses[size]} rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-white select-none`}
+      className={`${sizeClasses[size]} rounded-full flex items-center justify-center shrink-0 font-semibold text-white select-none`}
       style={{ background: 'rgb(16,185,129)' }}
       aria-hidden="true"
     >

@@ -5,7 +5,6 @@ import { emailService } from '@/lib/email'
 import { prisma } from '@/lib/db'
 import { checkRateLimitByUserOrIp } from '@/lib/rate-limit'
 
-export const dynamic = 'force-dynamic'
 
 interface EmailRequest {
   type: 'task_reminder' | 'schedule_update' | 'system_alert' | 'completion_notice'
@@ -285,4 +284,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
-} 
+}

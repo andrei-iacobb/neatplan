@@ -79,6 +79,9 @@ export async function PUT(
       description,
       type,
       siteId,
+      assetCode,
+      model,
+      serialNumber,
     } = body
 
     if (!name) {
@@ -93,6 +96,19 @@ export async function PUT(
       return NextResponse.json({ error: 'You cannot move equipment to that site' }, { status: 403 })
     }
 
+    for (const [field, value] of Object.entries({ assetCode, model, serialNumber })) {
+      if (value !== undefined && value !== null && typeof value !== 'string') {
+        return NextResponse.json({ error: `${field} must be a string` }, { status: 400 })
+      }
+      if (typeof value === 'string' && value.length > 200) {
+        return NextResponse.json({ error: `${field} must be 200 characters or fewer` }, { status: 400 })
+      }
+    }
+
+    // Trim to null when submitted empty; leave undefined (= not submitted) untouched.
+    const normalize = (value: string | null | undefined) =>
+      value === undefined ? undefined : (value?.trim() || null)
+
     const equipment = await prisma.equipment.update({
       where: { id },
       data: {
@@ -100,6 +116,9 @@ export async function PUT(
         description,
         type: type || 'OTHER',
         ...(siteId !== undefined ? { siteId } : {}),
+        assetCode: normalize(assetCode),
+        model: normalize(model),
+        serialNumber: normalize(serialNumber),
       }
     })
 
@@ -111,6 +130,13 @@ export async function PUT(
     if (error.code === 'P2002' && error.meta?.target?.includes('name')) {
       return NextResponse.json(
         { error: 'Equipment with this name already exists' },
+        { status: 409 }
+      )
+    }
+
+    if (error.code === 'P2002' && error.meta?.target?.includes('assetCode')) {
+      return NextResponse.json(
+        { error: 'Asset code already in use at this site' },
         { status: 409 }
       )
     }

@@ -91,7 +91,7 @@ async function runOcr(buffer: Buffer): Promise<string> {
   const tesseractLang = process.env.TESSERACT_LANG || 'eng'
 
   return new Promise<string>((resolve, reject) => {
-    const child = execFile(
+    const child = execFile(/* turbopackIgnore: true */
       tesseractPath,
       ['stdin', 'stdout', '-l', tesseractLang],
       {

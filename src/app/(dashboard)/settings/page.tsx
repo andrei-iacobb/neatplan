@@ -197,7 +197,7 @@ export default function SettingsPage() {
 
       <div className="flex flex-col md:flex-row gap-6">
         {/* Sidebar Navigation */}
-        <motion.div {...fadeUp} transition={enter()} className="w-full md:w-56 flex-shrink-0">
+        <motion.div {...fadeUp} transition={enter()} className="w-full md:w-56 shrink-0">
           <div className="rounded-xl p-3 sticky top-6" style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}>
             <nav className="space-y-1">
               {tabs.map((tab) => (
@@ -246,7 +246,7 @@ export default function SettingsPage() {
                       type="text"
                       value={userProfile.name}
                       onChange={(e) => setUserProfile(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-lg text-[13px] outline-none transition-colors"
+                      className="w-full px-3 py-2 rounded-lg text-[13px] outline-hidden transition-colors"
                       style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
                       onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
                       onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
@@ -261,7 +261,7 @@ export default function SettingsPage() {
                     <input
                       type="email"
                       value={session?.user?.email || ''}
-                      className="w-full px-3 py-2 rounded-lg text-[13px] outline-none opacity-60"
+                      className="w-full px-3 py-2 rounded-lg text-[13px] outline-hidden opacity-60"
                       style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
                       placeholder="Enter your email"
                       disabled
@@ -277,7 +277,7 @@ export default function SettingsPage() {
                       type="email"
                       value={userProfile.notificationEmail}
                       onChange={(e) => setUserProfile(prev => ({ ...prev, notificationEmail: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-lg text-[13px] outline-none transition-colors"
+                      className="w-full px-3 py-2 rounded-lg text-[13px] outline-hidden transition-colors"
                       style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
                       onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
                       onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
@@ -300,7 +300,7 @@ export default function SettingsPage() {
                       Time Zone
                     </label>
                     <select
-                      className="w-full px-3 py-2 rounded-lg text-[13px] outline-none transition-colors"
+                      className="w-full px-3 py-2 rounded-lg text-[13px] outline-hidden transition-colors"
                       style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
                       onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
                       onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
@@ -321,7 +321,7 @@ export default function SettingsPage() {
                       value={userProfile.currentPassword}
                       onChange={(e) => setUserProfile(prev => ({ ...prev, currentPassword: e.target.value }))}
                       placeholder="Current password"
-                      className="px-3 py-2 rounded-lg text-[13px] outline-none transition-colors"
+                      className="px-3 py-2 rounded-lg text-[13px] outline-hidden transition-colors"
                       style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
                       onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
                       onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
@@ -331,7 +331,7 @@ export default function SettingsPage() {
                       value={userProfile.newPassword}
                       onChange={(e) => setUserProfile(prev => ({ ...prev, newPassword: e.target.value }))}
                       placeholder="New password"
-                      className="px-3 py-2 rounded-lg text-[13px] outline-none transition-colors"
+                      className="px-3 py-2 rounded-lg text-[13px] outline-hidden transition-colors"
                       style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
                       onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
                       onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
@@ -510,7 +510,7 @@ export default function SettingsPage() {
                     <select
                       value={settings.privacy.profileVisibility}
                       onChange={(e) => handleSettingChange('privacy', 'profileVisibility', e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg text-[13px] outline-none transition-colors"
+                      className="w-full px-3 py-2 rounded-lg text-[13px] outline-hidden transition-colors"
                       style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
                       onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
                       onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
@@ -590,7 +590,7 @@ export default function SettingsPage() {
                     <select
                       value={settings.system.sessionTimeout}
                       onChange={(e) => handleSettingChange('system', 'sessionTimeout', parseInt(e.target.value))}
-                      className="w-full px-3 py-2 rounded-lg text-[13px] outline-none transition-colors"
+                      className="w-full px-3 py-2 rounded-lg text-[13px] outline-hidden transition-colors"
                       style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
                       onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
                       onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}
@@ -609,7 +609,7 @@ export default function SettingsPage() {
                     <select
                       value={settings.system.language}
                       onChange={(e) => handleSettingChange('system', 'language', e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg text-[13px] outline-none transition-colors"
+                      className="w-full px-3 py-2 rounded-lg text-[13px] outline-hidden transition-colors"
                       style={{ background: tc.inputBg, border: '1px solid ' + tc.inputBorder, color: tc.inputText }}
                       onFocus={(e) => e.currentTarget.style.borderColor = tc.inputFocusBorder}
                       onBlur={(e) => e.currentTarget.style.borderColor = tc.inputBorder}

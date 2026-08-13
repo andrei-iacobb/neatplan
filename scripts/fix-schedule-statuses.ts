@@ -1,6 +1,4 @@
-const { PrismaClient } = require('@prisma/client')
-
-const prisma = new PrismaClient()
+import { prisma } from '../src/lib/db'
 
 async function fixScheduleStatuses() {
   try {
@@ -66,4 +64,4 @@ async function fixScheduleStatuses() {
   }
 }
 
-fixScheduleStatuses() 
+fixScheduleStatuses()

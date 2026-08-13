@@ -54,6 +54,7 @@ export async function GET(
       name: equipment.name,
       type: equipment.type,
       description: equipment.description,
+      assetCode: equipment.assetCode,
       schedules: equipment.schedules
         .map((equipmentSchedule) => ({
           id: equipmentSchedule.id,

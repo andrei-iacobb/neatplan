@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { ScheduleStatus } from '@prisma/client'
+import { ScheduleStatus } from '@/generated/prisma/enums'
 import { calculateNextDueDate } from '@/lib/schedule-utils'
 import { canAccessSite } from '@/lib/authz'
 

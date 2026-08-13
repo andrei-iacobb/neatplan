@@ -1,14 +1,25 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Use environment variables for dynamic configuration
+  allowedDevOrigins: ['127.0.0.1'],
+  cacheComponents: true,
+  partialPrefetching: true,
+  reactCompiler: true,
+  serverExternalPackages: ['pdf-parse'],
+  // Keep deterministic build metadata available to the client-rendered footer.
   env: {
-    CUSTOM_APP_URL: process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000',
+    NEXT_PUBLIC_COPYRIGHT_YEAR: String(new Date().getFullYear()),
   },
   
   // Configure output for deployment
   output: 'standalone',
 
   experimental: {
+    useOffline: true,
+    turbopackRustReactCompiler: true,
+    instantInsights: {
+      validationLevel: 'warning',
+    },
+    exposeTestingApiInProductionBuild: process.env.NEXT_TEST_MODE === '1',
     // Next already does this for lucide-react and date-fns by default, but not for
     // framer-motion - which the root layout pulls in via SettingsProvider, so it lands
     // in the first-load bundle of every route including the login screen.
@@ -22,28 +33,19 @@ const nextConfig = {
   
   // Configure images
   images: {
-    domains: ['localhost'],
-    // Add your production domains here
-    // domains: ['localhost', 'yourdomain.com'],
+    remotePatterns: [
+      { protocol: 'http', hostname: 'localhost' },
+    ],
   },
   
   // Ensure trailing slashes for consistent routing
   trailingSlash: false,
-  // Make ESLint more tolerant during build
-  eslint: {
-    // Only run ESLint on the src directory (ignore generated files)
-    dirs: ['src'],
-    // Don't fail the build on ESLint warnings
-    ignoreDuringBuilds: true,
-  },
-  // Make TypeScript more tolerant during build  
-  typescript: {
-    // Don't fail the build on TypeScript errors in generated files
-    ignoreBuildErrors: false,
-  },
   // Configure headers for better CORS handling and security
   async headers() {
     const allowedOrigin = process.env.CORS_ALLOWED_ORIGIN || process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    const scriptSources = process.env.NODE_ENV === 'development'
+      ? "'self' 'unsafe-inline' 'unsafe-eval' https://plausible.iacob.co.uk"
+      : "'self' 'unsafe-inline' https://plausible.iacob.co.uk"
 
     return [
       {
@@ -63,7 +65,7 @@ const nextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
           { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
-          { key: 'Content-Security-Policy', value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://plausible.iacob.co.uk; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://plausible.iacob.co.uk; frame-ancestors 'none';" },
+          { key: 'Content-Security-Policy', value: `default-src 'self'; script-src ${scriptSources}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://plausible.iacob.co.uk; frame-ancestors 'none';` },
         ],
       },
     ]

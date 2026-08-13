@@ -31,7 +31,7 @@ export default function ChangePasswordPage() {
       // Re-authenticate with new password to refresh the session/JWT flags immediately
       const email = session?.user?.email as string
       const path = (session?.user as any)?.isAdmin ? '/' : '/clean'
-      const base = process.env.NEXT_PUBLIC_APP_BASE_URL || process.env.CUSTOM_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')
+      const base = process.env.NEXT_PUBLIC_APP_BASE_URL || window.location.origin
       const callbackUrl = base ? `${base}${path}` : path
       await signIn('credentials', { redirect: true, email, password: newPassword, callbackUrl })
     } catch (e: any) {
@@ -48,21 +48,20 @@ export default function ChangePasswordPage() {
         {!mustChange && (
           <div>
             <label className="block text-gray-300 text-sm mb-1">Current password</label>
-            <input type="password" className="w-full p-2 rounded bg-gray-700 text-gray-100" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} />
+            <input type="password" className="w-full p-2 rounded-sm bg-gray-700 text-gray-100" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} />
           </div>
         )}
         <div>
           <label className="block text-gray-300 text-sm mb-1">New password</label>
-          <input type="password" className="w-full p-2 rounded bg-gray-700 text-gray-100" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
+          <input type="password" className="w-full p-2 rounded-sm bg-gray-700 text-gray-100" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
         </div>
         {error && <p className="text-red-400 text-sm">{error}</p>}
         {success && <p className="text-green-400 text-sm">Password changed. Redirecting…</p>}
-        <button disabled={loading} className="w-full py-2 bg-teal-600 hover:bg-teal-700 text-white rounded disabled:opacity-50">
+        <button disabled={loading} className="w-full py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-sm disabled:opacity-50">
           {loading ? 'Updating…' : 'Update password'}
         </button>
       </form>
     </div>
   )
 }
-
 

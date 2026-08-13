@@ -1,12 +1,19 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from '@/generated/prisma/client'
 
 const prismaClientSingleton = () => {
-  // The datasource URL is resolved from env("DATABASE_URL") declared in schema.prisma,
-  // lazily at connect/query time. Do NOT pass an explicit datasources.db.url here: when
-  // DATABASE_URL is unset (e.g. Next's build-time page-data collection, which has no .env),
-  // passing url: undefined makes the PrismaClient constructor throw
-  // (PrismaClientConstructorValidationError) and fails the production build.
+  // A pg PoolConfig is intentionally used instead of a connection-string overload.
+  // Its optional connectionString keeps build-time module evaluation safe when Next
+  // has no DATABASE_URL, while the first real query still fails closed. The explicit
+  // timeout preserves Prisma 6's bounded connection attempt; node-postgres defaults
+  // to waiting indefinitely.
+  const adapter = new PrismaPg({
+    connectionString: process.env.DATABASE_URL,
+    connectionTimeoutMillis: 5_000,
+  })
+
   return new PrismaClient({
+    adapter,
     log: process.env.NODE_ENV === 'production'
       ? ['error']
       : ['query', 'error', 'warn'],
@@ -14,7 +21,6 @@ const prismaClientSingleton = () => {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
   var prisma: undefined | ReturnType<typeof prismaClientSingleton>
 }
 

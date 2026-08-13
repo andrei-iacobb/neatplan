@@ -4,6 +4,7 @@ export enum ScheduleFrequency {
   BIWEEKLY = 'BIWEEKLY',
   MONTHLY = 'MONTHLY',
   QUARTERLY = 'QUARTERLY',
+  SEMIANNUAL = 'SEMIANNUAL',
   YEARLY = 'YEARLY'
 }
 
@@ -46,4 +47,4 @@ export interface RoomSchedule {
   createdAt: Date
   updatedAt: Date
   schedule: Schedule
-} 
+}

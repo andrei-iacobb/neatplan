@@ -41,7 +41,7 @@ const MIN_FOR_RECENTS = 26
 const ALL_SITES_LABEL = 'All sites'
 
 const FOCUS_RING =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-0'
+  'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-0'
 
 export interface SiteFilterProps {
   sites: SiteOption[]
@@ -83,7 +83,7 @@ export function SiteFilter({
             border: `1px solid ${tc.inputBorder}`,
           }}
         >
-          <Building2 className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
+          <Building2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
           <span className="truncate max-w-[220px]">{name}</span>
         </span>
         <span className="sr-only">Dashboard is showing {name}.</span>
@@ -135,7 +135,7 @@ function PillRow({
       <Pill
         active={selected === ALL_SITES}
         onClick={() => onSelect(ALL_SITES)}
-        icon={<Layers className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />}
+        icon={<Layers className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />}
       >
         {ALL_SITES_LABEL}
       </Pill>
@@ -395,10 +395,10 @@ function SitePopover({
           if (!open) e.currentTarget.style.background = tc.tabInactiveBg
         }}
       >
-        <Building2 className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
+        <Building2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
         <span className="truncate flex-1 text-left">{label}</span>
         <ChevronDown
-          className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
           aria-hidden="true"
         />
       </button>
@@ -424,7 +424,7 @@ function SitePopover({
                 className="flex items-center gap-2 px-3 py-2"
                 style={{ borderBottom: `1px solid ${tc.divider}` }}
               >
-                <Search className="w-3.5 h-3.5 flex-shrink-0" style={{ color: tc.textFaint }} aria-hidden="true" />
+                <Search className="w-3.5 h-3.5 shrink-0" style={{ color: tc.textFaint }} aria-hidden="true" />
                 <input
                   ref={searchRef}
                   value={query}
@@ -440,7 +440,7 @@ function SitePopover({
                   aria-autocomplete="list"
                   aria-label="Search sites"
                   placeholder="Search sites"
-                  className="w-full bg-transparent outline-none text-[13px]"
+                  className="w-full bg-transparent outline-hidden text-[13px]"
                   style={{ color: tc.inputText }}
                 />
               </div>
@@ -497,7 +497,7 @@ function SitePopover({
                   >
                     <span className="truncate flex-1">{row.name}</span>
                     {row.id === selected && (
-                      <Check className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
+                      <Check className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                     )}
                   </div>
                 </div>

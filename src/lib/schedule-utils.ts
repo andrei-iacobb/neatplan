@@ -1,4 +1,4 @@
-import { ScheduleFrequency } from '@prisma/client'
+import { ScheduleFrequency } from '@/generated/prisma/enums'
 
 /**
  * Add whole months to a date, clamping the day to the last valid day of the target month.
@@ -35,6 +35,9 @@ export function calculateNextDueDate(
     case 'QUARTERLY':
       addMonthsClamped(date, 3)
       break
+    case 'SEMIANNUAL':
+      addMonthsClamped(date, 6)
+      break
     case 'YEARLY':
       // Clamp Feb 29 -> Feb 28 in a non-leap target year.
       addMonthsClamped(date, 12)
@@ -62,6 +65,8 @@ export function getFrequencyLabel(frequency: ScheduleFrequency): string {
       return 'Monthly'
     case 'QUARTERLY':
       return 'Quarterly'
+    case 'SEMIANNUAL':
+      return 'Six Monthly'
     case 'YEARLY':
       return 'Yearly'
     // case 'CUSTOM':
@@ -74,7 +79,7 @@ export function getFrequencyLabel(frequency: ScheduleFrequency): string {
 export function getScheduleDisplayName(title: string, frequency?: ScheduleFrequency): string {
   // Clean up the title and extract meaningful parts
   const cleanTitle = title
-    .replace(/^(Daily|Weekly|Monthly|Quarterly|Yearly):\s*/i, '') // Remove frequency prefix
+    .replace(/^(Daily|Weekly|Monthly|Quarterly|Six Monthly|Yearly):\s*/i, '') // Remove frequency prefix
     .replace(/\s*-\s*(bedrooms?|communal|office|bathroom).*$/i, '') // Remove room type suffixes
     .replace(/\s*-\s*infection control.*$/i, '') // Remove infection control suffix
     .replace(/checklist$/i, '') // Remove checklist suffix
@@ -96,4 +101,4 @@ export function getScheduleDisplayName(title: string, frequency?: ScheduleFreque
   
   // Otherwise, just return the short title
   return shortTitle || title.slice(0, 20) + (title.length > 20 ? '...' : '')
-} 
+}

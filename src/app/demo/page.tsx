@@ -36,7 +36,7 @@ export default function DemoPage() {
   const [showDemoView, setShowDemoView] = useState(false)
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950 text-gray-100">
+    <main className="min-h-screen bg-linear-to-b from-gray-900 via-gray-900 to-gray-950 text-gray-100">
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
@@ -58,7 +58,7 @@ export default function DemoPage() {
           </p>
 
           <div className="mt-6">
-            <button onClick={() => setShowDemoView(true)} className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600/70 to-teal-500/70 text-white border border-blue-500/40 hover:from-blue-600 hover:to-teal-500 transition-colors text-sm" aria-label="Open demo view">
+            <button onClick={() => setShowDemoView(true)} className="px-4 py-2 rounded-lg bg-linear-to-r from-blue-600/70 to-teal-500/70 text-white border border-blue-500/40 hover:from-blue-600 hover:to-teal-500 transition-colors text-sm" aria-label="Open demo view">
               See Demo
             </button>
           </div>
@@ -83,7 +83,7 @@ export default function DemoPage() {
       {/* Inline Demo Modal */}
       {showDemoView && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowDemoView(false)} />
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-xs" onClick={() => setShowDemoView(false)} />
           <div className="relative max-w-5xl w-[92%] md:w-[80%] lg:w-[70%] max-h-[85vh] overflow-auto rounded-2xl border border-gray-700/60 bg-gray-900/90 backdrop-blur-md shadow-2xl p-4 md:p-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold">Demo View</h3>
@@ -241,7 +241,7 @@ function SimpleBars({ values, color = 'blue' }: { values: number[]; color?: 'blu
           initial={{ height: 0, opacity: 0.7 }}
           animate={{ height: `${Math.round((v / max) * 100)}%`, opacity: 1 }}
           transition={{ duration: 0.6, delay: i * 0.05 }}
-          className={`w-6 rounded-md bg-gradient-to-t ${colorClasses} border`}
+          className={`w-6 rounded-md bg-linear-to-t ${colorClasses} border`}
           title={`${v}%`}
         />
       ))}
@@ -466,7 +466,7 @@ function MockCleanerDashboard({ scenario }: { scenario: 'normal' | 'overdue' | '
                 initial={{ width: 0 }}
                 animate={{ width: `${item.progress}%` }}
                 transition={{ duration: 0.7, delay: i * 0.1 }}
-                className={`h-full rounded-full bg-gradient-to-r ${item.due === 'Overdue' ? 'from-rose-500 to-orange-400' : 'from-blue-500 to-teal-400'}`}
+                className={`h-full rounded-full bg-linear-to-r ${item.due === 'Overdue' ? 'from-rose-500 to-orange-400' : 'from-blue-500 to-teal-400'}`}
               />
             </div>
           </li>

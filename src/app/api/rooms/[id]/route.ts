@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuth, requireAdmin, canAccessSite } from '@/lib/authz'
 import { prisma } from '@/lib/db'
-import { RoomType } from '@prisma/client'
+import { RoomType } from '@/generated/prisma/enums'
 import * as z from 'zod'
 import { NextRequest } from 'next/server'
 
@@ -54,7 +54,7 @@ export async function PUT(
     console.error('Error updating room:', error)
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid room data', details: error.errors },
+        { error: 'Invalid room data', details: error.issues },
         { status: 400 }
       )
     }
@@ -126,4 +126,4 @@ export async function GET(
       { status: 500 }
     )
   }
-} 
+}

@@ -1,11 +1,10 @@
-import { NextResponse } from 'next/server'
+import { connection, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
-const startedAt = Date.now()
-
 export async function GET() {
+  await connection()
   const timestamp = new Date().toISOString()
-  const uptime = Math.floor((Date.now() - startedAt) / 1000)
+  const uptime = Math.floor(process.uptime())
 
   let dbStatus: 'healthy' | 'unhealthy' = 'unhealthy'
   let dbLatencyMs: number | null = null

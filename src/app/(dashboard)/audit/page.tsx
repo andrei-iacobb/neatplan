@@ -245,7 +245,7 @@ export default function AuditPage() {
           </p>
         </div>
         <button
-          className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0"
+          className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 whitespace-nowrap shrink-0"
           style={{
             background: tc.btnPrimaryBg,
             color: tc.btnPrimaryText,
@@ -284,7 +284,7 @@ export default function AuditPage() {
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="rounded-lg px-3 py-1.5 text-[13px] outline-none"
+              className="rounded-lg px-3 py-1.5 text-[13px] outline-hidden"
               style={{
                 background: tc.inputBg,
                 border: `1px solid ${tc.inputBorder}`,
@@ -302,7 +302,7 @@ export default function AuditPage() {
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="rounded-lg px-3 py-1.5 text-[13px] outline-none"
+              className="rounded-lg px-3 py-1.5 text-[13px] outline-hidden"
               style={{
                 background: tc.inputBg,
                 border: `1px solid ${tc.inputBorder}`,
@@ -319,7 +319,7 @@ export default function AuditPage() {
             <select
               value={selectedRoom}
               onChange={(e) => setSelectedRoom(e.target.value)}
-              className="rounded-lg px-3 py-1.5 text-[13px] outline-none min-w-[140px]"
+              className="rounded-lg px-3 py-1.5 text-[13px] outline-hidden min-w-[140px]"
               style={{
                 background: tc.inputBg,
                 border: `1px solid ${tc.inputBorder}`,
@@ -341,7 +341,7 @@ export default function AuditPage() {
             <select
               value={selectedUser}
               onChange={(e) => setSelectedUser(e.target.value)}
-              className="rounded-lg px-3 py-1.5 text-[13px] outline-none min-w-[140px]"
+              className="rounded-lg px-3 py-1.5 text-[13px] outline-hidden min-w-[140px]"
               style={{
                 background: tc.inputBg,
                 border: `1px solid ${tc.inputBorder}`,
@@ -370,7 +370,7 @@ export default function AuditPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by name, schedule..."
-                className="rounded-lg pl-8 pr-3 py-1.5 text-[13px] outline-none w-full"
+                className="rounded-lg pl-8 pr-3 py-1.5 text-[13px] outline-hidden w-full"
                 style={{
                   background: tc.inputBg,
                   border: `1px solid ${tc.inputBorder}`,
@@ -600,7 +600,7 @@ export default function AuditPage() {
                                       style={{ color: tc.textSecondary }}
                                     >
                                       <div
-                                        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                                        className="w-1.5 h-1.5 rounded-full shrink-0"
                                         style={{ background: tc.accentGreen }}
                                       />
                                       {typeof task === 'string' ? task : task.description || task.title || JSON.stringify(task)}

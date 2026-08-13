@@ -1,11 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { connection, NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { nestedSiteScopeWhere } from '@/lib/authz'
-import { ScheduleFrequency } from '@prisma/client'
+import { ScheduleFrequency } from '@/generated/prisma/enums'
 
-export const dynamic = 'force-dynamic'
 
 const FREQUENCY_DAYS: Record<ScheduleFrequency, number> = {
   DAILY: 1,
@@ -13,6 +12,7 @@ const FREQUENCY_DAYS: Record<ScheduleFrequency, number> = {
   BIWEEKLY: 14,
   MONTHLY: 30,
   QUARTERLY: 90,
+  SEMIANNUAL: 182,
   YEARLY: 365,
 }
 
@@ -23,6 +23,7 @@ const PERIOD_DAYS: Record<string, number> = {
 }
 
 export async function GET(request: NextRequest) {
+  await connection()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.isAdmin) {
