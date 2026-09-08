@@ -71,6 +71,48 @@ test('markers support pixel nudges, dragging and click-away deselection', async 
   await expect(page.getByText('Vertical position', { exact: true })).toHaveCount(0)
 })
 
+test('keyboard focus keeps a newly placed marker below the mobile header', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 })
+  await page.route('**/api/floor-plans', route => route.fulfill({ json: [{
+    ...plan, imageWidth: 980, imageHeight: 820, regions: [],
+  }] }))
+  await page.reload()
+  await page.getByRole('combobox', { name: 'Site', exact: true }).selectOption('mapped-site')
+  await expect(page.getByRole('heading', { name: plan.name, exact: true })).toBeVisible()
+
+  const roomSelect = page.getByRole('combobox', { name: 'Room to place', exact: true })
+  for (let presses = 0; presses < 20; presses++) {
+    await page.keyboard.press('Tab')
+    if (await roomSelect.evaluate(element => element === document.activeElement)) break
+  }
+  await expect(roomSelect).toBeFocused()
+  await page.keyboard.press('ArrowDown')
+  await expect(roomSelect).toHaveValue(room.id)
+  await page.keyboard.press('Tab')
+  await expect(page.getByRole('button', { name: 'Place in Centre', exact: true })).toBeFocused()
+  await page.keyboard.press('Enter')
+
+  const marker = page.getByRole('button', { name: room.name, exact: true })
+  await expect(marker).toHaveCount(1)
+  await page.keyboard.press('Shift+Tab')
+  await expect(roomSelect).toBeFocused()
+  await page.keyboard.press('Shift+Tab')
+  await expect(marker).toBeFocused()
+  const visibility = await marker.evaluate(element => {
+    const bounds = element.getBoundingClientRect()
+    const header = document.querySelector('header')
+    if (!header) throw new Error('Expected the mobile navigation header')
+    const hit = document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)
+    return {
+      top: bounds.top,
+      headerBottom: header.getBoundingClientRect().bottom,
+      receivesPointer: hit !== null && element.contains(hit),
+    }
+  })
+  expect(visibility.top).toBeGreaterThanOrEqual(visibility.headerBottom)
+  expect(visibility.receivesPointer).toBe(true)
+})
+
 test('a pending save locks edits and site changes until the saved draft is returned', async ({ page }) => {
   let finishSave: (() => void) | undefined
   const saveGate = new Promise<void>(resolve => { finishSave = resolve })
