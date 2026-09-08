@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { randomUUID } from 'node:crypto'
 import path from 'path'
 
 /**
@@ -13,7 +14,6 @@ import path from 'path'
  */
 
 const FIXTURE = path.join(__dirname, 'fixtures', 'cleaning-schedule.png')
-const EXPECTED_TITLE = 'Bedroom Deep Cleaning Schedule'
 
 async function ollamaReachable(): Promise<boolean> {
   try {
@@ -27,6 +27,7 @@ async function ollamaReachable(): Promise<boolean> {
 test.describe('AI schedule import (real extraction)', () => {
   test('upload image -> preview -> save -> visible in schedules', async ({ page }) => {
     test.setTimeout(300_000) // local model call can take a couple of minutes cold
+    const expectedTitle = `Bedroom Deep Cleaning Schedule ${randomUUID()}`
 
     const localAI = process.env.SCHEDULE_AI_PROVIDER !== 'openai'
     if (localAI && !(await ollamaReachable())) {
@@ -35,6 +36,7 @@ test.describe('AI schedule import (real extraction)', () => {
 
     // Login as seeded admin
     await page.goto('/auth')
+    await expect(page.getByRole('main')).toHaveCount(1)
     await page.getByPlaceholder('Email or username').fill('admin@neatplan.com', {
       timeout: 30_000,
     })
@@ -59,8 +61,8 @@ test.describe('AI schedule import (real extraction)', () => {
     const taskInputs = dialog.locator('input[aria-label$="description"]')
     expect(await taskInputs.count()).toBeGreaterThanOrEqual(5)
 
-    // Pin the title so save + cleanup are deterministic
-    await dialog.getByLabel('Schedule title').fill(EXPECTED_TITLE)
+    // Keep cleanup isolated from existing schedules and concurrent test runs.
+    await dialog.getByLabel('Schedule title').fill(expectedTitle)
     const frequency = dialog.getByLabel('Frequency')
     if ((await frequency.inputValue()) === '') {
       await frequency.selectOption('WEEKLY')
@@ -71,19 +73,35 @@ test.describe('AI schedule import (real extraction)', () => {
       await sites.getByRole('checkbox').first().check()
     }
 
-    await dialog.getByRole('button', { name: 'Create schedule' }).click()
+    try {
+      const [createdResponse] = await Promise.all([
+        page.waitForResponse(response =>
+          new URL(response.url()).pathname === '/api/schedules' && response.request().method() === 'POST'
+        ),
+        dialog.getByRole('button', { name: 'Create schedule' }).click(),
+      ])
+      expect(createdResponse.status()).toBe(200)
+      const created: unknown = await createdResponse.json()
+      expect(created).toMatchObject({ id: expect.any(String), title: expectedTitle })
 
-    // Saved schedule appears in the schedules list after refetch
-    await expect(page.getByText(EXPECTED_TITLE).first()).toBeVisible({ timeout: 30_000 })
-
-    // Cleanup: delete the created schedule via the API using the browser session
-    const schedules = await page.request.get('/api/schedules').then((r) => r.json())
-    const created = (Array.isArray(schedules) ? schedules : schedules.schedules || []).find(
-      (s: { id: string; title: string }) => s.title === EXPECTED_TITLE,
-    )
-    if (created) {
-      const del = await page.request.delete(`/api/schedules/${created.id}`)
-      expect(del.ok()).toBeTruthy()
+      // Saved schedule appears in the schedules list after refetch.
+      await expect(page.getByText(expectedTitle, { exact: true }).first()).toBeVisible({ timeout: 30_000 })
+    } finally {
+      const schedulesResponse = await page.request.get('/api/schedules')
+      expect(schedulesResponse.status()).toBe(200)
+      const schedules: unknown = await schedulesResponse.json()
+      if (!Array.isArray(schedules)) throw new Error('Schedule cleanup expected an array response')
+      const candidates: unknown[] = schedules
+      for (const candidate of candidates) {
+        if (
+          candidate === null || typeof candidate !== 'object' ||
+          !('title' in candidate) || candidate.title !== expectedTitle ||
+          !('id' in candidate) || typeof candidate.id !== 'string'
+        ) continue
+        const deleted = await page.request.delete(`/api/schedules/${encodeURIComponent(candidate.id)}`)
+        expect(deleted.status()).toBe(200)
+        expect(await deleted.json()).toEqual({ success: true })
+      }
     }
   })
 })
