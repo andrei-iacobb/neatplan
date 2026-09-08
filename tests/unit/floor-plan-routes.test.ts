@@ -59,6 +59,7 @@ const region = {
   label: 'Laundry', roomId: 'room-a', x: 0.1, y: 0.2, width: 0.2, height: 0.3,
 } satisfies FloorPlanRegionInput
 const transactionClient = {
+  room: { count: mocks.roomCount },
   floorPlan: {
     updateMany: mocks.updateMany,
     findUniqueOrThrow: mocks.findUniqueOrThrow,
@@ -375,7 +376,8 @@ describe('floor plan region integrity', () => {
     expect(mocks.roomCount).toHaveBeenCalledWith({
       where: { id: { in: ['room-other-site'] }, siteId: 'site-a' },
     })
-    expect(mocks.transaction).not.toHaveBeenCalled()
+    expect(mocks.transaction).toHaveBeenCalledTimes(1)
+    expect(mocks.updateMany).not.toHaveBeenCalled()
     expect(mocks.deleteRegions).not.toHaveBeenCalled()
   })
 
@@ -390,9 +392,39 @@ describe('floor plan region integrity', () => {
     }))
     expect(mocks.deleteRegions).not.toHaveBeenCalled()
     expect(mocks.createRegions).not.toHaveBeenCalled()
+    expect(mocks.transaction).toHaveBeenCalledTimes(1)
   })
 
-  it('returns a reload conflict when the database aborts a concurrent serializable save', async () => {
+  it('retries a rolled-back serialization failure without relaxing the submitted revision', async () => {
+    mocks.transaction.mockRejectedValueOnce(new Prisma.PrismaClientKnownRequestError('Write conflict', {
+      code: 'P2034', clientVersion: '7.9.1',
+    }))
+
+    const response = await saveRegions(jsonRequest('PUT', { revision: 1, regions: [region] }), context)
+
+    expect(response.status).toBe(200)
+    expect(mocks.transaction).toHaveBeenCalledTimes(2)
+    expect(mocks.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'plan-1', revision: 1 } }))
+    expect(mocks.createRegions).toHaveBeenCalledTimes(1)
+  })
+
+  it('rechecks room ownership after a rolled-back save instead of linking a transferred room', async () => {
+    mocks.roomCount.mockResolvedValueOnce(1).mockResolvedValueOnce(0)
+    mocks.updateMany.mockRejectedValueOnce(new Prisma.PrismaClientKnownRequestError('Write conflict', {
+      code: 'P2034', clientVersion: '7.9.1',
+    }))
+
+    const response = await saveRegions(jsonRequest('PUT', { revision: 1, regions: [region] }), context)
+
+    expect(response.status).toBe(400)
+    expect(mocks.transaction).toHaveBeenCalledTimes(2)
+    expect(mocks.roomCount).toHaveBeenCalledTimes(2)
+    expect(mocks.updateMany).toHaveBeenCalledTimes(1)
+    expect(mocks.deleteRegions).not.toHaveBeenCalled()
+    expect(mocks.createRegions).not.toHaveBeenCalled()
+  })
+
+  it('returns a reload conflict after three aborted serializable saves', async () => {
     mocks.transaction.mockRejectedValue(new Prisma.PrismaClientKnownRequestError('Write conflict', {
       code: 'P2034', clientVersion: '7.9.1',
     }))
@@ -400,6 +432,7 @@ describe('floor plan region integrity', () => {
     const response = await saveRegions(jsonRequest('PUT', { revision: 1, regions: [region] }), context)
 
     expect(response.status).toBe(409)
+    expect(mocks.transaction).toHaveBeenCalledTimes(3)
     expect(await response.json()).toEqual({
       error: 'This plan changed in another session. Reload it before saving.',
     })
