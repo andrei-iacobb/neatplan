@@ -114,6 +114,16 @@ jobs:
           grep --ignore-case --extended-regexp --quiet \
             'clean|daily|weekly|schedule' "${RUNNER_TEMP}/tesseract-output.txt"
 
+      - name: Verify floor plan storage survives container replacement
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose exec --no-TTY web sh -ec \
+            'printf persisted > /app/data/floor-plans/persistence-probe'
+          docker compose up --detach --no-deps --force-recreate web
+          docker compose exec --no-TTY web sh -ec \
+            'test "$(cat /app/data/floor-plans/persistence-probe)" = persisted; rm /app/data/floor-plans/persistence-probe'
+
       - name: Container state and logs
         if: always()
         run: |
