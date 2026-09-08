@@ -94,7 +94,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Choose the site this floor plan belongs to.' }, { status: 400 })
     }
     const site = await prisma.site.findFirst({
-      where: { id: siteId, ...siteScopeWhere(auth.user) },
+      where: { id: siteId },
       select: { id: true },
     })
     if (!site) return NextResponse.json({ error: 'Site not found.' }, { status: 404 })

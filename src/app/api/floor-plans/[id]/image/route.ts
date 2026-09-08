@@ -92,6 +92,8 @@ export async function PUT(request: Request, context: RouteContext<'/api/floor-pl
       return NextResponse.json({ error: 'This plan changed in another session. Reload it before replacing the image.' }, { status: 409 })
     }
 
+    // The database now owns these bytes, even if the response read fails.
+    newImagePath = null
     await removeFloorPlanImage(plan.imagePath)
     const updated = await prisma.floorPlan.findUniqueOrThrow({
       where: { id },
