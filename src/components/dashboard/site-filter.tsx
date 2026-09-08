@@ -47,7 +47,7 @@ export interface SiteFilterProps {
   sites: SiteOption[]
   selected: string
   onSelect: (value: string) => void
-  /** False for MANAGER and CLEANER - they get the chip, never the picker. */
+  /** False for site-pinned roles - they get the chip, never the picker. */
   canPick: boolean
   recents?: string[]
   className?: string

@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Match the theme selected in Settings, not the operating system independently. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /*
  * Keep the app's v3 design tokens and the subset of the v3 palette used by the
  * UI. Tailwind v4's P3 palette is intentionally more vivid; retaining these

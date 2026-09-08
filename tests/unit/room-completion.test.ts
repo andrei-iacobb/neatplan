@@ -2,12 +2,12 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 const {
   roomScheduleFindUnique,
-  roomScheduleUpdateMany,
+  roomScheduleFindMany,
   roomScheduleCompletionLogCreate,
   transaction,
 } = vi.hoisted(() => ({
   roomScheduleFindUnique: vi.fn(),
-  roomScheduleUpdateMany: vi.fn(),
+  roomScheduleFindMany: vi.fn(),
   roomScheduleCompletionLogCreate: vi.fn(),
   transaction: vi.fn(),
 }))
@@ -16,6 +16,7 @@ vi.mock('@/lib/db', () => ({
   prisma: {
     roomSchedule: {
       findUnique: roomScheduleFindUnique,
+      findMany: roomScheduleFindMany,
     },
     roomScheduleCompletionLog: {
       create: roomScheduleCompletionLogCreate,
@@ -52,6 +53,8 @@ describe('POST /api/cleaner/rooms/[roomId]/complete', () => {
       name: 'John Cleaner',
       email: 'cleaner@example.com',
       isAdmin: false,
+      role: 'CLEANER',
+      siteId: 'site-1',
     },
   }
 
@@ -95,6 +98,54 @@ describe('POST /api/cleaner/rooms/[roomId]/complete', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(getServerSession).mockResolvedValue(mockSession as any)
+  })
+
+  describe('role authorization', () => {
+    it('allows Head of Housekeeping through the cleaning role gate', async () => {
+      vi.mocked(getServerSession).mockResolvedValue({
+        user: {
+          ...mockSession.user,
+          id: 'head-1',
+          role: 'HEAD_OF_HOUSEKEEPING',
+          isAdmin: true,
+        },
+      } as any)
+
+      const response = await POST(
+        new Request('http://localhost', {
+          method: 'POST',
+          body: JSON.stringify({}),
+        }),
+        { params: Promise.resolve({ roomId: 'room-1' }) } as any,
+      )
+
+      expect((response as any).status).toBe(400)
+      expect(await (response as any).json()).toEqual({
+        error: 'Missing required fields: scheduleId, completedTasks',
+      })
+    })
+
+    it('keeps Manager out of the cleaning completion endpoint', async () => {
+      vi.mocked(getServerSession).mockResolvedValue({
+        user: {
+          ...mockSession.user,
+          id: 'manager-1',
+          role: 'MANAGER',
+          isAdmin: true,
+        },
+      } as any)
+
+      const response = await POST(
+        new Request('http://localhost', {
+          method: 'POST',
+          body: JSON.stringify({}),
+        }),
+        { params: Promise.resolve({ roomId: 'room-1' }) } as any,
+      )
+
+      expect((response as any).status).toBe(403)
+      expect(await (response as any).json()).toEqual({ error: 'Forbidden' })
+    })
   })
 
   describe('task validation', () => {
@@ -467,6 +518,133 @@ describe('POST /api/cleaner/rooms/[roomId]/complete', () => {
   })
 
   describe('valid completion flow', () => {
+    it('rejects a partial checklist without advancing the schedule or writing a sign-off', async () => {
+      roomScheduleFindUnique.mockResolvedValue(mockRoomSchedule)
+      const response = await POST(new Request('http://localhost', {
+        method: 'POST',
+        body: JSON.stringify({ ...validRequest, completedTasks: ['task-1'] }),
+      }), { params: Promise.resolve({ roomId: 'room-1' }) })
+
+      expect(response.status).toBe(400)
+      expect(await response.json()).toEqual({
+        error: 'Complete every task in each included schedule before signing off',
+      })
+      expect(transaction).not.toHaveBeenCalled()
+    })
+
+    it('rejects a merged row that leaves a source schedule partly unfinished', async () => {
+      roomScheduleFindUnique.mockResolvedValue(mockRoomSchedule)
+      roomScheduleFindMany.mockResolvedValue([{
+        ...mockRoomSchedule,
+        id: 'weekly-assignment',
+        schedule: { ...mockSchedule, tasks: [{ id: 'weekly-floor', description: 'Scrub floor' }] },
+      }])
+      const response = await POST(new Request('http://localhost', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...validRequest,
+          scheduleIds: ['schedule-1', 'weekly-assignment'],
+          completedTasks: [{ taskRefs: [
+            { scheduleId: 'schedule-1', taskId: 'task-1' },
+            { scheduleId: 'weekly-assignment', taskId: 'weekly-floor' },
+          ] }],
+        }),
+      }), { params: Promise.resolve({ roomId: 'room-1' }) })
+
+      expect(response.status).toBe(400)
+      expect(transaction).not.toHaveBeenCalled()
+    })
+
+    it('completes two underlying schedules from one merged checklist and signature', async () => {
+      const weeklyRoomSchedule = {
+        ...mockRoomSchedule,
+        id: 'room-schedule-2',
+        scheduleId: 'schedule-2',
+        frequency: 'WEEKLY',
+        schedule: {
+          id: 'schedule-2',
+          title: 'Weekly Conference Room Clean',
+          tasks: [{ id: 'task-3', description: 'Deep clean floor' }],
+        },
+      }
+      roomScheduleFindUnique.mockResolvedValue(mockRoomSchedule)
+      roomScheduleFindMany.mockResolvedValue([weeklyRoomSchedule])
+
+      const updateMany = vi.fn().mockResolvedValue({ count: 1 })
+      const createLog = vi.fn()
+        .mockResolvedValueOnce({ id: 'log-1' })
+        .mockResolvedValueOnce({ id: 'log-2' })
+      transaction.mockImplementation(async (callback) => callback({
+        roomSchedule: { updateMany },
+        roomScheduleCompletionLog: { create: createLog },
+      }))
+
+      const request = new Request('http://localhost', {
+        method: 'POST',
+        body: JSON.stringify({
+          scheduleIds: ['schedule-1', 'room-schedule-2'],
+          completedTasks: [
+            {
+              taskRefs: [
+                { scheduleId: 'schedule-1', taskId: 'task-1' },
+                { scheduleId: 'room-schedule-2', taskId: 'task-3' },
+              ],
+              notes: 'One floor clean covered both schedules',
+            },
+            {
+              taskRefs: [{ scheduleId: 'schedule-1', taskId: 'task-2' }],
+            },
+          ],
+          signature: validSignature,
+          signedName: 'John Cleaner',
+        }),
+      })
+
+      const response = await POST(request, {
+        params: Promise.resolve({ roomId: 'room-1' }),
+      } as any)
+      const body = await (response as any).json()
+
+      expect(body.success).toBe(true)
+      expect(body.completionIds).toEqual(['log-1', 'log-2'])
+      expect(updateMany).toHaveBeenCalledTimes(2)
+      expect(createLog).toHaveBeenCalledTimes(2)
+      expect(createLog.mock.calls[0][0].data.completedTasks).toEqual([
+        { taskId: 'task-1', notes: 'One floor clean covered both schedules' },
+        { taskId: 'task-2', notes: null },
+      ])
+      expect(createLog.mock.calls[1][0].data.completedTasks).toEqual([
+        { taskId: 'task-3', notes: 'One floor clean covered both schedules' },
+      ])
+      expect(createLog.mock.calls[0][0].data.signatureDataUrl).toBe(validSignature)
+      expect(createLog.mock.calls[1][0].data.signatureDataUrl).toBe(validSignature)
+    })
+
+    it('rejects a merged task reference to a schedule outside the submitted package', async () => {
+      roomScheduleFindUnique.mockResolvedValue(mockRoomSchedule)
+
+      const request = new Request('http://localhost', {
+        method: 'POST',
+        body: JSON.stringify({
+          scheduleIds: ['schedule-1'],
+          completedTasks: [{
+            taskRefs: [{ scheduleId: 'forged-schedule', taskId: 'task-1' }],
+          }],
+          signature: validSignature,
+          signedName: 'John Cleaner',
+        }),
+      })
+
+      const response = await POST(request, {
+        params: Promise.resolve({ roomId: 'room-1' }),
+      } as any)
+      const body = await (response as any).json()
+
+      expect((response as any).status).toBe(400)
+      expect(body.error).toContain('do not belong to this schedule')
+      expect(transaction).not.toHaveBeenCalled()
+    })
+
     it('writes normalized tasks plus sign-off fields to completion log', async () => {
       roomScheduleFindUnique.mockResolvedValue(mockRoomSchedule)
 
@@ -546,6 +724,7 @@ describe('POST /api/cleaner/rooms/[roomId]/complete', () => {
           ...validRequest,
           completedTasks: [
             { taskId: 'task-1', notes: longNotes },
+            { taskId: 'task-2' },
           ],
         }),
       })

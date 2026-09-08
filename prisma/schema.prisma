@@ -22,7 +22,7 @@ model User {
   isAdmin                         Boolean                          @default(false)
   role                            UserRole                         @default(CLEANER)
   // Site membership. OP and DIRECTOR span every site (siteId null = all sites);
-  // MANAGER and CLEANER are pinned to exactly one site.
+  // Site operational roles are pinned to exactly one site.
   siteId                          String?
   site                            Site?                            @relation(fields: [siteId], references: [id], onDelete: SetNull)
   tasks                           Task[]                           @relation("UserTasks")
@@ -30,6 +30,7 @@ model User {
   roomScheduleCompletionLogs      RoomScheduleCompletionLog[]
   equipmentScheduleCompletionLogs EquipmentScheduleCompletionLog[]
   roomCheckIns                    RoomCheckIn[]
+  createdFloorPlans               FloorPlan[]                      @relation("FloorPlanCreator")
   // Account security fields
   isBlocked                       Boolean                          @default(false)
   forcePasswordChange             Boolean                          @default(false)
@@ -60,6 +61,7 @@ model Site {
   equipment     Equipment[]
   cleaningTasks CleaningTask[]
   schedules     Schedule[]
+  floorPlans    FloorPlan[]
 
   @@map("sites")
 }
@@ -81,19 +83,21 @@ model Task {
 }
 
 model Room {
-  id                   String         @id @default(cuid())
+  id                   String            @id @default(cuid())
   name                 String
   description          String?
   floor                String?
-  type                 RoomType       @default(OTHER)
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
-  locationTokenVersion Int            @default(1)
+  type                 RoomType          @default(OTHER)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  locationTokenVersion Int               @default(1)
   siteId               String?
-  site                 Site?          @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  site                 Site?             @relation(fields: [siteId], references: [id], onDelete: Cascade)
   tasks                CleaningTask[]
   schedules            RoomSchedule[]
   checkIns             RoomCheckIn[]
+  floorPlanRegions     FloorPlanRegion[]
+  storedEquipment      Equipment[]       @relation("ServiceAreaEquipment")
 
   @@unique([siteId, name])
   @@index([siteId])
@@ -119,22 +123,25 @@ model RoomCheckIn {
 }
 
 model Equipment {
-  id           String              @id @default(cuid())
-  name         String
-  description  String?
-  type         String              @default("OTHER")
-  assetCode    String?
-  model        String?
-  serialNumber String?
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
-  siteId       String?
-  site         Site?               @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  schedules    EquipmentSchedule[]
+  id            String              @id @default(cuid())
+  name          String
+  description   String?
+  type          String              @default("OTHER")
+  assetCode     String?
+  model         String?
+  serialNumber  String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  siteId        String?
+  site          Site?               @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  serviceAreaId String?
+  serviceArea   Room?               @relation("ServiceAreaEquipment", fields: [serviceAreaId], references: [id], onDelete: SetNull)
+  schedules     EquipmentSchedule[]
 
   @@unique([siteId, name])
   @@unique([siteId, assetCode])
   @@index([siteId])
+  @@index([serviceAreaId])
   @@map("equipment")
 }
 
@@ -289,6 +296,52 @@ model EquipmentScheduleCompletionLog {
   @@map("equipment_schedule_completion_logs")
 }
 
+model FloorPlan {
+  id             String            @id @default(cuid())
+  name           String
+  floor          String
+  imagePath      String
+  imageMimeType  String
+  sourceFileName String
+  imageWidth     Int
+  imageHeight    Int
+  isPublished    Boolean           @default(false)
+  publishedAt    DateTime?
+  revision       Int               @default(1)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  siteId         String
+  site           Site              @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  createdById    String?
+  createdBy      User?             @relation("FloorPlanCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  regions        FloorPlanRegion[]
+
+  @@unique([siteId, floor])
+  @@index([siteId, isPublished])
+  @@index([createdById])
+  @@map("floor_plans")
+}
+
+model FloorPlanRegion {
+  id          String    @id @default(cuid())
+  label       String
+  x           Float
+  y           Float
+  width       Float
+  height      Float
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  floorPlanId String
+  floorPlan   FloorPlan @relation(fields: [floorPlanId], references: [id], onDelete: Cascade)
+  roomId      String?
+  room        Room?     @relation(fields: [roomId], references: [id], onDelete: SetNull)
+
+  @@unique([floorPlanId, roomId])
+  @@index([floorPlanId])
+  @@index([roomId])
+  @@map("floor_plan_regions")
+}
+
 enum TaskStatus {
   TODO
   IN_PROGRESS
@@ -312,6 +365,7 @@ enum RoomType {
   OTHER
   BEDROOM
   LOUNGE
+  SERVICE_AREA
 }
 
 enum ScheduleFrequency {
@@ -360,6 +414,7 @@ enum UserRole {
   OP
   DIRECTOR
   MANAGER
+  HEAD_OF_HOUSEKEEPING
   CLEANER
 }
 

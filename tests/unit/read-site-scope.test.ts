@@ -31,12 +31,14 @@ describe('resolveReadSiteId', () => {
   it('ignores the request entirely for a pinned role', () => {
     // The whole point: a MANAGER asking for someone else's site gets their own.
     expect(resolveReadSiteId(user('MANAGER', MAPLE), OTHER)).toBe(MAPLE)
+    expect(resolveReadSiteId(user('HEAD_OF_HOUSEKEEPING', MAPLE), OTHER)).toBe(MAPLE)
     expect(resolveReadSiteId(user('CLEANER', MAPLE), OTHER)).toBe(MAPLE)
     expect(resolveReadSiteId(user('MANAGER', MAPLE), 'all')).toBe(MAPLE)
   })
 
   it('fails closed when a pinned role has no site assigned', () => {
     expect(resolveReadSiteId(user('MANAGER', null))).toBe(NO_SITE)
+    expect(resolveReadSiteId(user('HEAD_OF_HOUSEKEEPING', null), MAPLE)).toBe(NO_SITE)
     expect(resolveReadSiteId(user('CLEANER', null), MAPLE)).toBe(NO_SITE)
   })
 

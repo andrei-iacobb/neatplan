@@ -15,7 +15,7 @@ export async function GET() {
 
     const now = new Date()
 
-    // Get overdue room schedules. MANAGERs only see their own site (via the room relation);
+    // Get overdue room schedules. Site-pinned roles only see their own site (via the room relation);
     // OP/DIRECTOR see every site.
     const overdueRoomSchedules = await prisma.roomSchedule.findMany({
       where: {
@@ -33,7 +33,7 @@ export async function GET() {
       },
     })
 
-    // Get overdue equipment schedules (scoped to the manager's site via the equipment relation).
+    // Get overdue equipment schedules (scoped through the equipment relation).
     const overdueEquipSchedules = await prisma.equipmentSchedule.findMany({
       where: {
         nextDue: { lt: now },

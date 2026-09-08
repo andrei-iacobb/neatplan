@@ -9,7 +9,7 @@ const roomSchema = z.object({
   name: z.string().min(1, 'Room name is required'),
   description: z.string().optional(),
   floor: z.string().optional(),
-  type: z.enum(['OFFICE', 'MEETING_ROOM', 'BATHROOM', 'KITCHEN', 'LOBBY', 'STORAGE', 'BEDROOM', 'LOUNGE', 'OTHER']),
+  type: z.enum(['OFFICE', 'MEETING_ROOM', 'BATHROOM', 'KITCHEN', 'LOBBY', 'STORAGE', 'BEDROOM', 'LOUNGE', 'SERVICE_AREA', 'OTHER']),
   siteId: z.string().optional()
 })
 

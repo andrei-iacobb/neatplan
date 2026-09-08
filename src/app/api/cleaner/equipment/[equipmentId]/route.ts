@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { canAccessSite, siteScopeWhere } from '@/lib/authz'
+import { canUseCleaningPortal } from '@/lib/roles'
 
 export async function GET(
   _request: Request,
@@ -14,9 +15,9 @@ export async function GET(
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    if (session.user.isAdmin) {
+    if (!canUseCleaningPortal(session.user.role)) {
       return NextResponse.json(
-        { error: 'Forbidden - Admin users should use the admin interface' },
+        { error: 'Forbidden' },
         { status: 403 }
       )
     }

@@ -9,7 +9,7 @@ const roomSchema = z.object({
   name: z.string().min(1, 'Room name is required'),
   description: z.string().optional(),
   floor: z.string().optional(),
-  type: z.enum(['OFFICE', 'MEETING_ROOM', 'BATHROOM', 'KITCHEN', 'LOBBY', 'STORAGE', 'BEDROOM', 'LOUNGE', 'OTHER']),
+  type: z.enum(['OFFICE', 'MEETING_ROOM', 'BATHROOM', 'KITCHEN', 'LOBBY', 'STORAGE', 'BEDROOM', 'LOUNGE', 'SERVICE_AREA', 'OTHER']),
   siteId: z.string().optional()
 })
 
@@ -22,7 +22,14 @@ export async function PUT(
     if ('error' in auth) return auth.error
     const { id } = await params
 
-    const existing = await prisma.room.findUnique({ where: { id }, select: { siteId: true } })
+    const existing = await prisma.room.findUnique({
+      where: { id },
+      select: {
+        siteId: true,
+        type: true,
+        _count: { select: { storedEquipment: true } },
+      },
+    })
     if (!existing || !canAccessSite(auth.user, existing.siteId)) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 })
     }
@@ -34,6 +41,17 @@ export async function PUT(
     // target site (managers are pinned, so they can never move a room off-site).
     if (siteId !== undefined && siteId !== existing.siteId && !canAccessSite(auth.user, siteId)) {
       return NextResponse.json({ error: 'You cannot move a room to that site' }, { status: 403 })
+    }
+
+    const targetSiteId = siteId !== undefined ? siteId : existing.siteId
+    const invalidatesInventory = existing._count.storedEquipment > 0 && (
+      type !== 'SERVICE_AREA' || targetSiteId !== existing.siteId
+    )
+    if (invalidatesInventory) {
+      return NextResponse.json(
+        { error: 'Move the stored equipment out of this service area before changing its type or site' },
+        { status: 409 }
+      )
     }
 
     const updatedRoom = await prisma.room.update({

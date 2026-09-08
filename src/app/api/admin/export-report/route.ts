@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     const completedAtFilter = Object.keys(dateFilter).length > 0 ? dateFilter : undefined
 
-    // MANAGERs may only export their own site's completions; OP/DIRECTOR export all sites.
+    // Site-pinned roles may only export their own site's completions; OP/DIRECTOR export all sites.
     const scoped = !canAccessAllSites(session.user.role)
 
     // Room completion logs

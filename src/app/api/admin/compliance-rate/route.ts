@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     from.setDate(from.getDate() - periodDays)
     from.setHours(0, 0, 0, 0)
 
-    // Get all active room schedules. MANAGERs are limited to their own site (reached via
+    // Get all active room schedules. Site-pinned roles are limited to their own site (reached via
     // the room relation); OP/DIRECTOR see every site.
     const roomSchedules = await prisma.roomSchedule.findMany({
       where: {

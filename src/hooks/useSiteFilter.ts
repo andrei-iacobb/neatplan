@@ -96,7 +96,7 @@ export interface SiteFilterState {
   selected: string
   selectedSite: SiteOption | null
   setSelected: (value: string) => void
-  /** OP and DIRECTOR choose; MANAGER and CLEANER are pinned by the server. */
+  /** OP and DIRECTOR choose; site-based operational roles are pinned by the server. */
   canPick: boolean
   /** Site ids most recently chosen, newest first. Only used past 25 sites. */
   recents: string[]

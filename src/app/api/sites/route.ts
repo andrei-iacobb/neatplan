@@ -13,7 +13,7 @@ const siteSchema = z.object({
 
 // GET /api/sites
 // Any authenticated user may list sites (so site dropdowns work everywhere).
-// OP/DIRECTOR see every site; MANAGER/CLEANER see only the one they are pinned to.
+// OP/DIRECTOR see every site; site-pinned roles see only their assigned site.
 export async function GET() {
   const auth = await requireAuth()
   if ('error' in auth) return auth.error

@@ -123,7 +123,8 @@ export const authOptions: AuthOptions = {
           email: user.email,
           name: user.name,
           role: (user as any).role,
-          // isAdmin is derived from the role hierarchy (management = anything but CLEANER)
+          // isAdmin means the role can reach the management surface. Head of
+          // Housekeeping also retains separate cleaning-portal access.
           // so authz never depends on a possibly-stale DB boolean.
           isAdmin: isManagementRole((user as any).role),
           siteId: (user as any).siteId ?? null,
@@ -259,4 +260,4 @@ export const authOptions: AuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === "development",
-} 
+}

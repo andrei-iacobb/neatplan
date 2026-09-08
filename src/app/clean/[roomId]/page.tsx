@@ -1,11 +1,10 @@
 "use client"
 
-import { useState, useEffect, useMemo, type CSSProperties } from 'react'
+import { useState, useEffect, useCallback, type CSSProperties } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
-  Loader2, 
   CheckCircle2, 
   Circle, 
   ArrowLeft, 
@@ -15,10 +14,8 @@ import {
   User,
   Save,
   CheckSquare,
-  AlertTriangle,
   RotateCcw,
   ChevronDown,
-  ChevronRight,
   AlertCircle
 } from 'lucide-react'
 import Link from 'next/link'
@@ -27,12 +24,14 @@ import { frequencyLabel } from '@/lib/schedule-frequency'
 import { useThemeColors } from '@/hooks/useThemeColors'
 import { PageLoading, Spinner } from '@/components/ui/loading'
 import { SignaturePad } from '@/components/cleaner/signature-pad'
+import { canUseCleaningPortal } from '@/lib/roles'
 
 interface ScheduleTask {
   id: string
   description: string
   frequency?: string
   additionalNotes?: string
+  taskRefs?: { scheduleId: string; taskId: string }[]
 }
 
 interface RoomSchedule {
@@ -44,6 +43,8 @@ interface RoomSchedule {
   tasks: ScheduleTask[]
   estimatedDuration: string
   completedToday?: boolean
+  scheduleIds?: string[]
+  sourceTitles?: string[]
 }
 
 interface Room {
@@ -53,10 +54,12 @@ interface Room {
   floor: string
   description?: string
   schedules: RoomSchedule[]
+  workPackage: RoomSchedule | null
 }
 
 interface CompletedTask {
   taskId: string
+  taskRefs: { scheduleId: string; taskId: string }[]
   notes?: string
 }
 
@@ -85,9 +88,7 @@ export default function CleanRoomPage() {
   const [error, setError] = useState<string | null>(null)
   const [notes, setNotes] = useState('')
   const [startTime, setStartTime] = useState<Date | null>(null)
-  const [expandedSchedules, setExpandedSchedules] = useState<Set<string>>(new Set())
-  // Sign-off state. Signatures are keyed per schedule so two open schedules cannot
-  // share one signature; the printed name is per-session.
+  // Sign-off state is keyed by the current work package; the printed name is per-session.
   const [signatures, setSignatures] = useState<Record<string, string | null>>({})
   const [signedName, setSignedName] = useState('')
   const [blockedScheduleId, setBlockedScheduleId] = useState<string | null>(null)
@@ -95,97 +96,17 @@ export default function CleanRoomPage() {
   // `error`, which unmounts the whole room and would throw away the ticked tasks.
   const [signOffError, setSignOffError] = useState<string | null>(null)
 
-  /*
-   * A cleaner works exactly one schedule at a time. The room opens on a single
-   * schedule - the most urgent one still outstanding - and the rest stay hidden
-   * until it is signed off. There is deliberately no picker: choosing between
-   * jobs is not the cleaner's decision, and offering both invited them to start
-   * one and drift to the other.
-   *
-   * Derived rather than stored so it cannot drift out of step with the ticks and
-   * the schedule data it is based on.
-   */
-  const activeScheduleId = useMemo(() => {
-    if (!room) return null
+  // The server combines every schedule due for this visit into one deterministic
+  // work package. Cleaners never choose between daily/weekly/deep-clean cards.
+  const visibleSchedules = room?.workPackage ? [room.workPackage] : []
 
-    /*
-     * A schedule with ticks against it is already underway, so it wins outright -
-     * re-ranking mid-clean would yank the page out from under them.
-     * Task keys are `${scheduleId}-${taskId}` and both halves are cuids, so the id
-     * has to be matched by prefix against the known schedules, not by splitting.
-     */
-    const keys = Array.from(completedTasks.keys())
-    const started = room.schedules.find(s => keys.some(k => k.startsWith(`${s.id}-`)))
-    if (started) return started.id
-
-    // Otherwise take the most pressing job that still needs doing: overdue first,
-    // then whatever falls due soonest. Anything already signed off today is not work.
-    const outstanding = room.schedules.filter(s => !s.completedToday)
-    if (outstanding.length === 0) return null
-
-    // Read `status`/`nextDue` straight off the schedule rather than calling
-    // getScheduleStatus, which is declared further down and would be in its TDZ here.
-    const urgency = (s: RoomSchedule) => (s.status === 'OVERDUE' ? 0 : 1)
-    return [...outstanding].sort((a, b) =>
-      urgency(a) - urgency(b) ||
-      new Date(a.nextDue).getTime() - new Date(b.nextDue).getTime()
-    )[0].id
-  }, [room, completedTasks])
-
-  const visibleSchedules = useMemo(() => {
-    if (!room) return []
-    return activeScheduleId
-      ? room.schedules.filter(s => s.id === activeScheduleId)
-      : room.schedules
-  }, [room, activeScheduleId])
-
-  // Pre-print the cleaner's name the way a paper sign-off sheet does; still editable.
-  useEffect(() => {
-    if (status === 'authenticated' && session?.user?.name && !signedName) {
-      setSignedName(session.user.name)
-    }
-  }, [status, session?.user?.name, signedName])
-
-  // Redirect admins away from cleaner interface
-  useEffect(() => {
-    if (status === 'authenticated' && session?.user?.isAdmin) {
-      router.replace('/')
-      return
-    }
-  }, [status, session, router])
-
-  useEffect(() => {
-    if (params.roomId && status === 'authenticated' && !session?.user?.isAdmin) {
-      fetchRoomData()
-      setStartTime(new Date())
-    }
-  }, [params.roomId, status, session])
-
-  // Auto-expand schedules that are due today, tomorrow, or overdue
-  useEffect(() => {
-    if (room?.schedules) {
-      const autoExpandIds = new Set<string>()
-      
-      room.schedules.forEach(schedule => {
-        const scheduleStatus = getScheduleStatus(schedule)
-        
-        // Auto-expand if overdue or pending (due within 48 hours)
-        if (scheduleStatus === 'OVERDUE' || scheduleStatus === 'PENDING') {
-          autoExpandIds.add(schedule.id)
-        }
-      })
-      
-      setExpandedSchedules(autoExpandIds)
-    }
-  }, [room])
-
-  const fetchRoomData = async () => {
+  const fetchRoomData = useCallback(async () => {
     try {
       setIsLoading(true)
       setError(null)
-      
+
       const response = await apiRequest(`/api/cleaner/rooms/${params.roomId}`)
-      
+
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error('Room not found')
@@ -201,7 +122,30 @@ export default function CleanRoomPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [params.roomId])
+
+  // Pre-print the cleaner's name the way a paper sign-off sheet does; still editable.
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.name && !signedName) {
+      setSignedName(session.user.name)
+    }
+  }, [status, session?.user?.name, signedName])
+
+  // Managers and higher use the management surface; Head of Housekeeping retains
+  // cleaning duties and may complete work here.
+  useEffect(() => {
+    if (status === 'authenticated' && !canUseCleaningPortal(session?.user?.role)) {
+      router.replace('/')
+      return
+    }
+  }, [status, session, router])
+
+  useEffect(() => {
+    if (params.roomId && status === 'authenticated' && canUseCleaningPortal(session?.user?.role)) {
+      fetchRoomData()
+      setStartTime(new Date())
+    }
+  }, [params.roomId, status, session?.user?.role, fetchRoomData])
 
   const handleTaskToggle = (scheduleId: string, taskId: string, task: ScheduleTask) => {
     setSignOffError(null)
@@ -211,7 +155,11 @@ export default function CleanRoomPage() {
       if (newMap.has(key)) {
         newMap.delete(key)
       } else {
-        newMap.set(key, { taskId, notes: '' })
+        newMap.set(key, {
+          taskId,
+          taskRefs: task.taskRefs ?? [{ scheduleId, taskId }],
+          notes: '',
+        })
       }
       return newMap
     })
@@ -221,8 +169,9 @@ export default function CleanRoomPage() {
     const key = `${scheduleId}-${taskId}`
     setCompletedTasks(prev => {
       const newMap = new Map(prev)
-      if (newMap.has(key)) {
-        newMap.set(key, { taskId, notes })
+      const current = newMap.get(key)
+      if (current) {
+        newMap.set(key, { ...current, notes })
       }
       return newMap
     })
@@ -241,9 +190,10 @@ export default function CleanRoomPage() {
   const getBlockers = (scheduleId: string) => {
     const blockers: { field: 'tasks' | 'signature' | 'name'; message: string }[] = []
 
-    const hasTask = Array.from(completedTasks.keys()).some(key => key.startsWith(`${scheduleId}-`))
-    if (!hasTask) {
-      blockers.push({ field: 'tasks', message: 'Tick at least one task you completed' })
+    const schedule = room?.workPackage?.id === scheduleId ? room.workPackage : null
+    const progress = schedule ? getCompletionProgress(schedule) : { completed: 0, total: 0 }
+    if (progress.total === 0 || progress.completed !== progress.total) {
+      blockers.push({ field: 'tasks', message: 'Tick every checklist task before signing off' })
     }
     if (!signatures[scheduleId]) {
       blockers.push({ field: 'signature', message: 'Sign in the box to confirm this room is done' })
@@ -258,7 +208,9 @@ export default function CleanRoomPage() {
   const handleCompleteSchedule = async (scheduleId: string) => {
     if (!room || !startTime) return
 
-    const schedule = room.schedules.find(s => s.id === scheduleId)
+    const schedule = room.workPackage?.id === scheduleId
+      ? room.workPackage
+      : room.schedules.find(s => s.id === scheduleId)
     if (!schedule) return
 
     const blockers = getBlockers(scheduleId)
@@ -283,13 +235,16 @@ export default function CleanRoomPage() {
 
     setBlockedScheduleId(null)
 
-    // Get completed tasks for this schedule
+    // Get completed merged rows for this work package. Each row carries the
+    // original task IDs it represents so the server can write one audit record
+    // per underlying schedule without asking the cleaner to repeat work.
     const scheduleCompletedTasks = Array.from(completedTasks.entries())
       .filter(([key]) => key.startsWith(`${scheduleId}-`))
-      .map(([key, value]) => ({
-        taskId: value.taskId,
-        notes: value.notes
+      .map(([, value]) => ({
+        taskRefs: value.taskRefs,
+        notes: value.notes,
       }))
+    const scheduleIds = schedule.scheduleIds ?? [schedule.id]
 
     setIsSubmitting(true)
     try {
@@ -302,7 +257,8 @@ export default function CleanRoomPage() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          scheduleId,
+          scheduleId: scheduleIds.length === 1 ? scheduleIds[0] : undefined,
+          scheduleIds,
           completedTasks: scheduleCompletedTasks,
           notes,
           duration,
@@ -344,16 +300,6 @@ export default function CleanRoomPage() {
     setSignOffError(null)
   }
 
-  const toggleScheduleExpansion = (scheduleId: string) => {
-    const newExpanded = new Set(expandedSchedules)
-    if (newExpanded.has(scheduleId)) {
-      newExpanded.delete(scheduleId)
-    } else {
-      newExpanded.add(scheduleId)
-    }
-    setExpandedSchedules(newExpanded)
-  }
-
   const getScheduleStatus = (schedule: RoomSchedule) => {
     if (schedule.status === 'COMPLETED') return 'COMPLETED'
     
@@ -372,15 +318,6 @@ export default function CleanRoomPage() {
     } else {
       return 'NOT_DUE_YET'
     }
-  }
-
-  const isScheduleDueToday = (schedule: RoomSchedule) => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const dueDate = new Date(schedule.nextDue)
-    dueDate.setHours(0, 0, 0, 0)
-    
-    return dueDate.getTime() === today.getTime()
   }
 
   const isScheduleUrgent = (schedule: RoomSchedule) => {
@@ -509,6 +446,7 @@ export default function CleanRoomPage() {
         <div className="flex items-center gap-4 mb-8">
           <Link
             href="/clean"
+            aria-label="Back to cleaner dashboard"
             className="transition-colors p-2 rounded-lg"
             style={{ color: tc.textMuted }}
             onMouseEnter={(e) => { e.currentTarget.style.color = tc.btnPrimaryText; e.currentTarget.style.background = tc.btnSecondaryHoverBg }}
@@ -564,11 +502,10 @@ export default function CleanRoomPage() {
           {visibleSchedules.map((schedule, scheduleIndex) => {
             const progress = getCompletionProgress(schedule)
             const progressPercentage = progress.total > 0 ? (progress.completed / progress.total) * 100 : 0
+            const canComplete = progress.total > 0 && progress.completed === progress.total
             // The claimed schedule stays open - collapsing it would leave a blank page.
-            const isActive = schedule.id === activeScheduleId
-            const isExpanded = isActive || expandedSchedules.has(schedule.id)
+            const isExpanded = true
             const actualStatus = schedule.completedToday ? 'COMPLETED' : getScheduleStatus(schedule)
-            const isDueToday = isScheduleDueToday(schedule)
             const isUrgent = isScheduleUrgent(schedule)
             const dueDateInfo = getDueDateDisplay(schedule)
             
@@ -583,24 +520,19 @@ export default function CleanRoomPage() {
               >
                 {/* Schedule Header - Always Visible */}
                 <div
-                  className={`p-4 transition-colors ${isActive ? '' : 'cursor-pointer'}`}
+                  className="p-4 transition-colors"
                   style={{ background: isUrgent ? tc.surfaceBg : 'transparent' }}
-                  onMouseEnter={(e) => { if (!isUrgent && !isActive) e.currentTarget.style.background = tc.hoverRow }}
+                  onMouseEnter={(e) => { if (!isUrgent) e.currentTarget.style.background = tc.hoverRow }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = isUrgent ? tc.surfaceBg : 'transparent' }}
-                  onClick={isActive ? undefined : () => toggleScheduleExpansion(schedule.id)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="flex items-center gap-2">
-                          {isExpanded ? (
-                            <ChevronDown className="w-4 h-4" style={{ color: tc.textMuted }} />
-                          ) : (
-                            <ChevronRight className="w-4 h-4" style={{ color: tc.textMuted }} />
-                          )}
+                          <ChevronDown className="w-4 h-4" style={{ color: tc.textMuted }} />
                           <h2
                             className="text-lg font-semibold"
-                            style={{ color: isUrgent ? tc.btnPrimaryText : tc.textSecondary }}
+                            style={{ color: tc.textPrimary }}
                           >
                             {schedule.title}
                           </h2>
@@ -623,11 +555,20 @@ export default function CleanRoomPage() {
                         <span style={{ color: tc.textMuted }}>•</span>
                         <div className="flex items-center gap-1" style={{ color: tc.textSecondary }}>
                           <Calendar className="w-3 h-3" />
-                          <span>{frequencyLabel(schedule.frequency)}</span>
+                          <span>
+                            {schedule.sourceTitles && schedule.sourceTitles.length > 1
+                              ? `${schedule.sourceTitles.length} schedules combined`
+                              : frequencyLabel(schedule.frequency)}
+                          </span>
                         </div>
                         <span style={{ color: tc.textMuted }}>•</span>
                         <span style={{ color: tc.textSecondary }}>Est. {schedule.estimatedDuration}</span>
                       </div>
+                      {schedule.sourceTitles && schedule.sourceTitles.length > 1 && (
+                        <p className="mt-2 text-xs leading-relaxed" style={{ color: tc.textMuted }}>
+                          Includes: {schedule.sourceTitles.join(' + ')}
+                        </p>
+                      )}
                     </div>
                     
                     <div className="flex items-center gap-3">
@@ -688,93 +629,88 @@ export default function CleanRoomPage() {
                               return (
                                 <motion.div
                                   key={task.id}
-                                  role="button"
-                                  tabIndex={0}
-                                  aria-pressed={isCompleted}
-                                  aria-label={`${isCompleted ? 'Mark incomplete' : 'Mark complete'}: ${task.description}`}
                                   initial={{ opacity: 0, x: -20 }}
                                   animate={{ opacity: 1, x: 0 }}
                                   transition={{ delay: taskIndex * 0.05 }}
-                                  whileHover={{ backgroundColor: isCompleted ? tc.btnPrimaryHoverBg : tc.cardHoverBg }}
-                                  onClick={() => handleTaskToggle(schedule.id, task.id, task)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                      e.preventDefault()
-                                      handleTaskToggle(schedule.id, task.id, task)
-                                    }
-                                  }}
-                                  className="p-4 rounded-lg border cursor-pointer transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[rgba(16,185,129,0.6)]"
+                                  className="rounded-lg border overflow-hidden"
                                   style={{
                                     backgroundColor: isCompleted ? tc.statusCompleted.bg : tc.surfaceBg,
                                     borderColor: isCompleted ? tc.statusCompleted.border : tc.cardBorder
                                   }}
                                 >
-                                  <div className="flex items-start gap-3">
-                                    <span
-                                      aria-hidden="true"
-                                      className="mt-1 transition-colors"
-                                      style={{ color: isCompleted ? tc.statusCompleted.text : tc.textMuted }}
-                                    >
-                                      {isCompleted ? (
-                                        <CheckCircle2 className="w-5 h-5" />
-                                      ) : (
-                                        <Circle className="w-5 h-5" />
-                                      )}
-                                    </span>
-
-                                    <div className="flex-1">
-                                      <p
-                                        className={`font-medium ${isCompleted ? 'line-through' : ''}`}
-                                        style={{ color: isCompleted ? tc.statusCompleted.text : tc.textPrimary }}
+                                  <motion.button
+                                    type="button"
+                                    aria-pressed={isCompleted}
+                                    aria-label={`${isCompleted ? 'Mark incomplete' : 'Mark complete'}: ${task.description}`}
+                                    whileHover={{ backgroundColor: isCompleted ? tc.btnPrimaryHoverBg : tc.cardHoverBg }}
+                                    onClick={() => handleTaskToggle(schedule.id, task.id, task)}
+                                    className="w-full p-4 text-left transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgba(16,185,129,0.6)]"
+                                  >
+                                    <span className="flex items-start gap-3">
+                                      <span
+                                        aria-hidden="true"
+                                        className="mt-1 transition-colors"
+                                        style={{ color: isCompleted ? tc.statusCompleted.text : tc.textMuted }}
                                       >
-                                        {task.description}
-                                      </p>
-
-                                      {task.additionalNotes && !isJunkNote(task.additionalNotes) && (
-                                        <p className="text-sm mt-1" style={{ color: tc.textMuted }}>
-                                          {task.additionalNotes}
-                                        </p>
-                                      )}
-
-                                      {task.frequency && task.frequency !== schedule.frequency && (
-                                        <span
-                                          className="text-xs px-2 py-1 rounded-sm mt-2 inline-block"
-                                          style={{ color: tc.tabActiveText, backgroundColor: tc.tabActiveBg }}
-                                        >
-                                          {task.frequency}
-                                        </span>
-                                      )}
-
-                                      {/* Task Notes */}
-                                      <AnimatePresence>
-                                        {isCompleted && (
-                                          <motion.div
-                                            initial={{ height: 0, opacity: 0 }}
-                                            animate={{ height: 'auto', opacity: 1 }}
-                                            exit={{ height: 0, opacity: 0 }}
-                                            className="mt-3"
-                                          >
-                                            <input
-                                              type="text"
-                                              placeholder="Add notes (optional)..."
-                                              value={completedTasks.get(taskKey)?.notes || ''}
-                                              onChange={(e) => handleTaskNotes(schedule.id, task.id, e.target.value)}
-                                              onClick={(e) => e.stopPropagation()}
-                                              onKeyDown={(e) => e.stopPropagation()}
-                                              onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
-                                              onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
-                                              className="w-full px-3 py-2 border rounded-sm text-sm placeholder:text-[rgb(var(--muted-foreground))] focus:outline-hidden"
-                                              style={{
-                                                backgroundColor: tc.inputBg,
-                                                borderColor: tc.inputBorder,
-                                                color: tc.inputText
-                                              }}
-                                            />
-                                          </motion.div>
+                                        {isCompleted ? (
+                                          <CheckCircle2 className="w-5 h-5" />
+                                        ) : (
+                                          <Circle className="w-5 h-5" />
                                         )}
-                                      </AnimatePresence>
-                                    </div>
-                                  </div>
+                                      </span>
+
+                                      <span className="flex-1">
+                                        <span
+                                          className={`block font-medium ${isCompleted ? 'line-through' : ''}`}
+                                          style={{ color: tc.textPrimary }}
+                                        >
+                                          {task.description}
+                                        </span>
+
+                                        {task.additionalNotes && !isJunkNote(task.additionalNotes) && (
+                                          <span className="block text-sm mt-1" style={{ color: tc.textMuted }}>
+                                            {task.additionalNotes}
+                                          </span>
+                                        )}
+
+                                        {task.frequency && task.frequency !== schedule.frequency && (
+                                          <span
+                                            className="text-xs px-2 py-1 rounded-sm mt-2 inline-block"
+                                            style={{ color: tc.tabActiveText, backgroundColor: tc.tabActiveBg }}
+                                          >
+                                            {task.frequency}
+                                          </span>
+                                        )}
+                                      </span>
+                                    </span>
+                                  </motion.button>
+
+                                  <AnimatePresence>
+                                    {isCompleted && (
+                                      <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className="px-4 pb-4"
+                                      >
+                                        <input
+                                          type="text"
+                                          aria-label={`Notes for ${task.description}`}
+                                          placeholder="Add notes (optional)..."
+                                          value={completedTasks.get(taskKey)?.notes || ''}
+                                          onChange={(e) => handleTaskNotes(schedule.id, task.id, e.target.value)}
+                                          onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
+                                          onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
+                                          className="w-full px-3 py-2 border rounded-sm text-sm placeholder:text-[rgb(var(--muted-foreground))] focus:outline-hidden"
+                                          style={{
+                                            backgroundColor: tc.inputBg,
+                                            borderColor: tc.inputBorder,
+                                            color: tc.inputText
+                                          }}
+                                        />
+                                      </motion.div>
+                                    )}
+                                  </AnimatePresence>
                                 </motion.div>
                               )
                             })}
@@ -860,20 +796,20 @@ export default function CleanRoomPage() {
                           <div className="flex gap-3">
                             <button
                               onClick={() => handleCompleteSchedule(schedule.id)}
-                              disabled={isSubmitting || progress.completed === 0}
+                              disabled={isSubmitting || !canComplete}
                               className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors ${
-                                progress.completed > 0 && !isSubmitting ? '' : 'cursor-not-allowed'
+                                canComplete && !isSubmitting ? '' : 'cursor-not-allowed'
                               }`}
                               style={
-                                progress.completed > 0 && !isSubmitting
+                                canComplete && !isSubmitting
                                   ? { background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: '1px solid ' + tc.btnPrimaryBorder }
                                   : { background: tc.btnSecondaryBg, color: tc.textMuted, border: '1px solid ' + tc.btnSecondaryBorder }
                               }
                               onMouseEnter={(e) => {
-                                if (progress.completed > 0 && !isSubmitting) e.currentTarget.style.background = tc.btnPrimaryHoverBg
+                                if (canComplete && !isSubmitting) e.currentTarget.style.background = tc.btnPrimaryHoverBg
                               }}
                               onMouseLeave={(e) => {
-                                if (progress.completed > 0 && !isSubmitting) e.currentTarget.style.background = tc.btnPrimaryBg
+                                if (canComplete && !isSubmitting) e.currentTarget.style.background = tc.btnPrimaryBg
                               }}
                             >
                               {isSubmitting ? (
@@ -884,7 +820,7 @@ export default function CleanRoomPage() {
                               ) : (
                                 <>
                                   <Save className="w-4 h-4" />
-                                  Complete Schedule ({progress.completed} tasks)
+                                  Complete Room ({progress.completed} tasks)
                                 </>
                               )}
                             </button>
@@ -918,11 +854,11 @@ export default function CleanRoomPage() {
         </AnimatePresence>
 
         {/* No Schedules */}
-        {room.schedules.length === 0 && (
+        {!room.workPackage && (
           <div className="text-center py-12">
             <CheckSquare className="w-16 h-16 mx-auto mb-4" style={{ color: tc.statusCompleted.text }} />
-            <h3 className="text-xl font-semibold mb-2" style={{ color: tc.textPrimary }}>No active schedules</h3>
-            <p className="mb-4" style={{ color: tc.textMuted }}>This room doesn't have any pending cleaning schedules.</p>
+            <h3 className="text-xl font-semibold mb-2" style={{ color: tc.textPrimary }}>Nothing else to clean</h3>
+            <p className="mb-4" style={{ color: tc.textMuted }}>Every schedule due for this room has been completed today.</p>
             <Link
               href="/clean"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors"

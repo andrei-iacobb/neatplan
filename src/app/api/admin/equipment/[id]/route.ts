@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSessionUser, canAccessSite } from '@/lib/authz'
 import { prisma } from '@/lib/db'
+import { findServiceAreaAtSite, normalizeServiceAreaId } from '@/lib/service-areas'
 
 export async function GET(
   request: Request,
@@ -65,7 +66,10 @@ export async function PUT(
       )
     }
 
-    const existing = await prisma.equipment.findUnique({ where: { id }, select: { siteId: true } })
+    const existing = await prisma.equipment.findUnique({
+      where: { id },
+      select: { siteId: true, serviceAreaId: true },
+    })
     if (!existing || !canAccessSite(user, existing.siteId)) {
       return NextResponse.json(
         { error: 'Equipment not found' },
@@ -96,6 +100,26 @@ export async function PUT(
       return NextResponse.json({ error: 'You cannot move equipment to that site' }, { status: 403 })
     }
 
+    const targetSiteId = siteId !== undefined ? siteId : existing.siteId
+    if (!targetSiteId) {
+      return NextResponse.json({ error: 'Equipment must belong to a site' }, { status: 400 })
+    }
+    const normalizedServiceAreaId = normalizeServiceAreaId(body.serviceAreaId)
+    if (body.serviceAreaId !== undefined && normalizedServiceAreaId === undefined) {
+      return NextResponse.json({ error: 'Service area is invalid' }, { status: 400 })
+    }
+    // Moving an item to another site unassigns its old cupboard unless the caller
+    // explicitly chooses a valid service area at the destination.
+    const targetServiceAreaId = normalizedServiceAreaId === undefined
+      ? (targetSiteId === existing.siteId ? existing.serviceAreaId : null)
+      : normalizedServiceAreaId
+    if (targetServiceAreaId && !(await findServiceAreaAtSite(targetServiceAreaId, targetSiteId))) {
+      return NextResponse.json(
+        { error: 'Choose a service area from the same site as this equipment' },
+        { status: 400 }
+      )
+    }
+
     for (const [field, value] of Object.entries({ assetCode, model, serialNumber })) {
       if (value !== undefined && value !== null && typeof value !== 'string') {
         return NextResponse.json({ error: `${field} must be a string` }, { status: 400 })
@@ -119,6 +143,7 @@ export async function PUT(
         assetCode: normalize(assetCode),
         model: normalize(model),
         serialNumber: normalize(serialNumber),
+        serviceAreaId: targetServiceAreaId,
       }
     })
 
@@ -210,4 +235,4 @@ export async function DELETE(
       { status: 500 }
     )
   }
-} 
+}

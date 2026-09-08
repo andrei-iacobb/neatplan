@@ -18,7 +18,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
       return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })
     }
 
-    // MANAGER/CLEANER can only create tasks for schedules linked to exactly their own site.
+    // Site-pinned roles can only create tasks for schedules linked to exactly their own site.
     // OP/DIRECTOR can create tasks for any schedule.
     if (!canMutateSchedule(auth.user, schedule)) {
       return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })

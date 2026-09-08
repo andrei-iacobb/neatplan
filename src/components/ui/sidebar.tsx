@@ -6,15 +6,17 @@ import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { usePathname } from "next/navigation"
 import {
-  Home, Calendar, CalendarDays, Settings, DoorOpen, LogOut, User, Wrench, ClipboardCheck, Menu, X, ChevronsRight, ChevronsLeft, Building2
+  Home, Calendar, CalendarDays, Settings, DoorOpen, LogOut, User, Wrench, ClipboardCheck, Menu, X, ChevronsRight, ChevronsLeft, Building2, Sparkles, MapPinned
 } from "lucide-react"
 import { Logo } from "@/components/ui/logo"
 import { useSettings } from "@/contexts/settings-context"
-import { canAccessAllSites } from "@/lib/roles"
+import { canAccessAllSites, canUseCleaningPortal } from "@/lib/roles"
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
+  { name: "Cleaning", href: "/clean", icon: Sparkles },
   { name: "Rooms", href: "/rooms", icon: DoorOpen },
+  { name: "Floor Plans", href: "/floor-plans", icon: MapPinned },
   { name: "Equipment", href: "/equipment", icon: Wrench },
   { name: "Diary", href: "/diary", icon: CalendarDays },
   { name: "Schedule", href: "/schedule", icon: Calendar },
@@ -43,11 +45,15 @@ export function Sidebar() {
   const collapseRef = useRef<NodeJS.Timeout | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
   const expanded = pinned || isExpanded
-  // MANAGER/CLEANER are pinned to a single site, so the multi-site "Sites"
-  // page is OP/DIRECTOR-only and hidden from their navigation.
-  const navItems = canAccessAllSites((session?.user as any)?.role)
-    ? navigation
-    : navigation.filter((item) => item.href !== '/sites')
+  const role = session?.user?.role
+  // Site-pinned roles do not get the multi-site page. Cleaning appears only for
+  // roles that can actually use that portal, so a Head of Housekeeping can move
+  // between operational work and management without a second account.
+  const navItems = navigation.filter((item) => {
+    if (item.href === '/sites') return canAccessAllSites(role)
+    if (item.href === '/clean') return canUseCleaningPortal(role)
+    return true
+  })
 
   useEffect(() => {
     setPinned(localStorage.getItem('neatplan-sidebar-pinned') === 'true')

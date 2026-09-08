@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { siteScopeWhere } from '@/lib/authz'
+import { canUseCleaningPortal } from '@/lib/roles'
+import { cleanerWorkPriority, combineCleanerWorkPriorities } from '@/lib/cleaner-work-priority'
 
 // Force dynamic rendering
 
@@ -18,16 +20,15 @@ export async function GET() {
       )
     }
 
-    // Only cleaners should access this endpoint
-    if (session.user.isAdmin) {
+    if (!canUseCleaningPortal(session.user.role)) {
       return NextResponse.json(
-        { error: 'Forbidden - Admin users should use the admin dashboard' },
+        { error: 'Forbidden' },
         { status: 403 }
       )
     }
 
-    // A CLEANER is pinned to a single site; they may only see rooms and equipment for that
-    // site. siteScopeWhere fails closed (matches nothing) if the cleaner has no site assigned.
+    // Cleaning roles are pinned to one site. siteScopeWhere fails closed when a
+    // user has no site assigned.
     const siteWhere = siteScopeWhere(session.user)
 
     const now = new Date()
@@ -64,6 +65,7 @@ export async function GET() {
     const equipment = await prisma.equipment.findMany({
       where: siteWhere,
       include: {
+        serviceArea: { select: { id: true, name: true, floor: true } },
         schedules: {
           include: {
             schedule: {
@@ -82,6 +84,34 @@ export async function GET() {
       orderBy: {
         name: 'asc'
       }
+    })
+
+    // Published plans are read alongside the existing room data. The plan never owns
+    // schedule state - each marker is decorated from transformedRooms below so the map
+    // and list cannot disagree about what is due.
+    const floorPlans = await prisma.floorPlan.findMany({
+      where: { ...siteWhere, isPublished: true },
+      orderBy: { floor: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        floor: true,
+        imageWidth: true,
+        imageHeight: true,
+        revision: true,
+        regions: {
+          orderBy: { createdAt: 'asc' },
+          select: {
+            id: true,
+            label: true,
+            x: true,
+            y: true,
+            width: true,
+            height: true,
+            room: { select: { id: true, name: true, floor: true, type: true } },
+          },
+        },
+      },
     })
 
     // Get completion stats for today from the completion logs (scoped to the cleaner's
@@ -135,7 +165,11 @@ export async function GET() {
         // COMPLETED even though they've been re-armed to PENDING)
         const overdueSchedules = allActiveSchedules.filter(s => {
           const nextDue = new Date(s.nextDue)
-          return s.status === 'PENDING' && !isCompletedToday(s) && nextDue < new Date(now.getTime() - 24 * 60 * 60 * 1000)
+          return s.status === 'OVERDUE' || (
+            s.status === 'PENDING' &&
+            !isCompletedToday(s) &&
+            nextDue < new Date(now.getTime() - 24 * 60 * 60 * 1000)
+          )
         })
 
         const dueTodaySchedules = allActiveSchedules.filter(s => {
@@ -158,16 +192,8 @@ export async function GET() {
         )
         
         // Determine room priority
-        let roomPriority: 'OVERDUE' | 'DUE_TODAY' | 'UPCOMING' | 'COMPLETED'
-        if (overdueSchedules.length > 0) {
-          roomPriority = 'OVERDUE'
-        } else if (dueTodaySchedules.length > 0) {
-          roomPriority = 'DUE_TODAY'
-        } else if (completedSchedules.length === allActiveSchedules.length && allActiveSchedules.length > 0) {
-          roomPriority = 'COMPLETED'
-        } else {
-          roomPriority = 'UPCOMING'
-        }
+        const roomPriority = cleanerWorkPriority(allActiveSchedules, now)
+        if (roomPriority === 'NO_WORK') return null
         
         // Calculate totals
         const totalTasks = allActiveSchedules.reduce((acc, schedule) => 
@@ -226,7 +252,11 @@ export async function GET() {
         // completed-today override for re-armed PENDING schedules)
         const overdueSchedules = allActiveSchedules.filter(s => {
           const nextDue = new Date(s.nextDue)
-          return s.status === 'PENDING' && !isCompletedToday(s) && nextDue < new Date(now.getTime() - 24 * 60 * 60 * 1000)
+          return s.status === 'OVERDUE' || (
+            s.status === 'PENDING' &&
+            !isCompletedToday(s) &&
+            nextDue < new Date(now.getTime() - 24 * 60 * 60 * 1000)
+          )
         })
 
         const dueTodaySchedules = allActiveSchedules.filter(s => {
@@ -249,16 +279,8 @@ export async function GET() {
         )
         
         // Determine equipment priority
-        let equipmentPriority: 'OVERDUE' | 'DUE_TODAY' | 'UPCOMING' | 'COMPLETED'
-        if (overdueSchedules.length > 0) {
-          equipmentPriority = 'OVERDUE'
-        } else if (dueTodaySchedules.length > 0) {
-          equipmentPriority = 'DUE_TODAY'
-        } else if (completedSchedules.length === allActiveSchedules.length && allActiveSchedules.length > 0) {
-          equipmentPriority = 'COMPLETED'
-        } else {
-          equipmentPriority = 'UPCOMING'
-        }
+        const equipmentPriority = cleanerWorkPriority(allActiveSchedules, now)
+        if (equipmentPriority === 'NO_WORK') return null
         
         // Calculate totals
         const totalTasks = allActiveSchedules.reduce((acc, schedule) => 
@@ -282,6 +304,7 @@ export async function GET() {
           name: equip.name,
           type: equip.type,
           assetCode: equip.assetCode,
+          serviceArea: equip.serviceArea,
           priority: equipmentPriority,
           nextDue: earliestDue.toISOString(),
           summary: {
@@ -328,10 +351,69 @@ export async function GET() {
       totalActiveEquipment: transformedEquipment.length
     }
 
+    const roomStatus = new Map(transformedRooms.map((room) => [room.id, room]))
+    const equipmentStatus = new Map(transformedEquipment.map((item) => [item.id, item]))
+    const equipmentByServiceArea = new Map<string, typeof equipment>()
+    equipment.forEach((item) => {
+      if (!item.serviceAreaId) return
+      const stored = equipmentByServiceArea.get(item.serviceAreaId) ?? []
+      stored.push(item)
+      equipmentByServiceArea.set(item.serviceAreaId, stored)
+    })
+    const publishedFloorPlans = floorPlans.map((plan) => ({
+      id: plan.id,
+      name: plan.name,
+      floor: plan.floor,
+      imageUrl: `/api/floor-plans/${plan.id}/image?v=${plan.revision}`,
+      imageWidth: plan.imageWidth,
+      imageHeight: plan.imageHeight,
+      // A deleted room leaves an orphaned manager marker by design. Do not expose a
+      // dead link to cleaners; the management editor flags it for relinking instead.
+      regions: plan.regions.flatMap((region) => {
+        if (!region.room) return []
+        const current = roomStatus.get(region.room.id)
+        const isServiceArea = region.room.type === 'SERVICE_AREA'
+        const storedEquipment = isServiceArea
+          ? (equipmentByServiceArea.get(region.room.id) ?? [])
+          : []
+        const storedWork = storedEquipment.flatMap((item) => {
+          const work = equipmentStatus.get(item.id)
+          return work ? [work] : []
+        })
+        const priority = isServiceArea
+          ? combineCleanerWorkPriorities([
+              current?.priority ?? 'NO_WORK',
+              ...storedWork.map((item) => item.priority),
+            ])
+          : (current?.priority ?? 'NO_WORK')
+        const totalTasks = (current?.summary.totalTasks ?? 0) +
+          storedWork.reduce((total, item) => total + item.summary.totalTasks, 0)
+        return [{
+          id: region.id,
+          label: region.label,
+          x: region.x,
+          y: region.y,
+          width: region.width,
+          height: region.height,
+          kind: isServiceArea ? 'SERVICE_AREA' : 'ROOM',
+          priority,
+          totalTasks,
+          itemCount: storedEquipment.length,
+          room: {
+            id: region.room.id,
+            name: region.room.name,
+            floor: region.room.floor || plan.floor,
+            type: region.room.type,
+          },
+        }]
+      }),
+    }))
+
     return NextResponse.json({
       rooms: transformedRooms,
       equipment: transformedEquipment, // NEW: Include equipment in response
-      stats
+      stats,
+      floorPlans: publishedFloorPlans,
     })
 
   } catch (error) {
@@ -344,8 +426,8 @@ export async function GET() {
 }
 
 // Helper functions (moved to bottom for cleaner code)
-function calculateEstimatedDuration(tasks: any[]): number {
-  return tasks.reduce((total, task) => total + (task.estimatedDuration || 5), 0)
+function calculateEstimatedDuration(tasks: readonly unknown[]): number {
+  return tasks.length * 5
 }
 
 function formatDuration(minutes: number): string {

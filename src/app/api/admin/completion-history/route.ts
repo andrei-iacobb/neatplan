@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // MANAGERs only see completions for their own site; OP/DIRECTOR see all sites.
+    // Site-pinned roles only see completions for their own site; OP/DIRECTOR see all sites.
     const scoped = !canAccessAllSites(session.user.role)
 
     const { searchParams } = new URL(request.url)

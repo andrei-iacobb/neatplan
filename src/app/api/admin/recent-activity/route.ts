@@ -19,7 +19,7 @@ export async function GET(request: Request) {
       )
     }
 
-    // MANAGERs see only their own site; OP/DIRECTOR span every site. The completion logs
+    // Site-pinned roles see only their own site; OP/DIRECTOR span every site. The completion logs
     // reach their site through roomSchedule.room / equipmentSchedule.equipment, and user
     // activity through the session's user. Left empty for site-spanning roles so the
     // existing behaviour (including orphaned "Deleted" logs) is preserved.

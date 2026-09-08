@@ -505,7 +505,8 @@ export default function RoomDetailsPage() {
                     <option value="LOBBY">Lobby</option>
                     <option value="STORAGE">Storage</option>
                     <option value="LOUNGE">Lounge</option>
-                    <option value="OTHER">Other</option>
+                    <option value="SERVICE_AREA">Service area (cleaning or equipment cupboard)</option>
+                    <option value="OTHER">Other area (hallway, stairs, etc.)</option>
                   </select>
                 </div>
 

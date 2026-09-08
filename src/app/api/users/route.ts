@@ -108,14 +108,14 @@ export async function POST(request: Request) {
       )
     }
 
-    // Resolve the site the new user belongs to. MANAGER/CLEANER must have one;
+    // Resolve the site the new user belongs to. Operational roles must have one;
     // OP/DIRECTOR span every site and are forced to null.
     let resolvedSiteId: string | null = null
     if (requiresSite(role)) {
       resolvedSiteId = resolveWriteSiteId(actor, siteId)
       if (!resolvedSiteId) {
         return NextResponse.json(
-          { error: 'A site is required for Manager and Cleaner roles' },
+          { error: 'A site is required for site-based roles' },
           { status: 400 }
         )
       }

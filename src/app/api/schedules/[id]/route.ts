@@ -22,7 +22,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
       return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })
     }
 
-    // MANAGER/CLEANER can only mutate schedules linked to exactly their own site.
+    // Site-pinned roles can only mutate schedules linked to exactly their own site.
     // OP/DIRECTOR can mutate any schedule.
     if (!canMutateSchedule(auth.user, existing)) {
       return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })
@@ -80,7 +80,7 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
       return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })
     }
 
-    // MANAGER/CLEANER can only mutate schedules linked to exactly their own site.
+    // Site-pinned roles can only mutate schedules linked to exactly their own site.
     // OP/DIRECTOR can mutate any schedule.
     if (!canMutateSchedule(auth.user, existing)) {
       return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })
@@ -132,7 +132,7 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
       return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })
     }
 
-    // MANAGER/CLEANER can only mutate schedules linked to exactly their own site.
+    // Site-pinned roles can only mutate schedules linked to exactly their own site.
     // OP/DIRECTOR can mutate any schedule.
     if (!canMutateSchedule(auth.user, existing)) {
       return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import type { ScheduleFrequency } from '@/generated/prisma/enums'
 import { requireAuth, requireAdmin, m2mSiteScopeWhere, resolveWriteSiteIds, visibleSiteRelationWhere, resolveReadSiteId, m2mReadSiteWhere } from '@/lib/authz'
 import { prisma } from '@/lib/db'
+import { createScheduleInputSchema } from '@/lib/schedule-import-validation'
 
 // Get all schedules
 export async function GET(request: Request) {
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     })
 
     return NextResponse.json(schedules)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching schedules:', error)
     return NextResponse.json(
       { error: 'Failed to fetch schedules' },
@@ -46,20 +46,30 @@ export async function POST(req: Request) {
     const auth = await requireAdmin()
     if ('error' in auth) return auth.error
 
-    const { title, tasks, siteIds: requestedSiteIds, detectedFrequency, suggestedFrequency } = await req.json()
-
-    // Only accept a valid enum value for the AI-suggested frequency.
-    const validFrequencies = ['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'QUARTERLY', 'SEMIANNUAL', 'YEARLY']
-    const safeSuggested = typeof suggestedFrequency === 'string' && validFrequencies.includes(suggestedFrequency)
-      ? suggestedFrequency as ScheduleFrequency
-      : null
-
-    if (!title) {
+    let body: unknown
+    try {
+      body = await req.json()
+    } catch {
       return NextResponse.json(
-        { error: 'Title is required' },
+        { error: 'Invalid schedule data' },
         { status: 400 }
       )
     }
+
+    const parsed = createScheduleInputSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Complete the title, frequency, site and at least one task before creating this schedule.' },
+        { status: 400 },
+      )
+    }
+    const {
+      title,
+      tasks,
+      siteIds: requestedSiteIds,
+      detectedFrequency,
+      suggestedFrequency,
+    } = parsed.data
 
     const siteIds = resolveWriteSiteIds(auth.user, requestedSiteIds)
     if (siteIds.length === 0) {
@@ -72,14 +82,14 @@ export async function POST(req: Request) {
     const schedule = await prisma.schedule.create({
       data: {
         title,
-        detectedFrequency: typeof detectedFrequency === 'string' ? detectedFrequency.slice(0, 100) : null,
-        suggestedFrequency: safeSuggested,
+        detectedFrequency: detectedFrequency ?? null,
+        suggestedFrequency,
         sites: { connect: siteIds.map((id) => ({ id })) },
         tasks: {
-          create: (tasks || []).map((t: any) => ({
-            description: String(t.description || '').slice(0, 1000),
-            frequency: t.frequency ? String(t.frequency).slice(0, 100) : null,
-            additionalNotes: t.additionalNotes ? String(t.additionalNotes).slice(0, 2000) : null,
+          create: tasks.map((task) => ({
+            description: task.description,
+            frequency: task.frequency ?? null,
+            additionalNotes: task.additionalNotes ?? null,
           }))
         }
       },
@@ -93,7 +103,7 @@ export async function POST(req: Request) {
     })
 
     return NextResponse.json(schedule)
-  } catch (error: any) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to create schedule' },
       { status: 500 }
