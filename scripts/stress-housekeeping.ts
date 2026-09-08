@@ -3,6 +3,7 @@ import { randomBytes, randomUUID } from 'node:crypto'
 import { readFile, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { hash } from 'bcryptjs'
+import sharp from 'sharp'
 import { prisma } from '../src/lib/db'
 import type { UserRole } from '../src/generated/prisma/enums'
 
@@ -34,6 +35,27 @@ function numberField(value: unknown, field: string): number {
   const result = record(value)[field]
   assert(typeof result === 'number' && Number.isFinite(result), `Expected numeric field ${field}`)
   return result
+}
+
+function floorPlanPdf() {
+  const drawing = '0.9 g 0 0 200 100 re f\n0 G 4 w 10 10 180 80 re S\n0 g 30 30 40 40 re f\n'
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 100] /Resources << >> /Contents 4 0 R >>',
+    `<< /Length ${Buffer.byteLength(drawing)} >>\nstream\n${drawing}endstream`,
+  ]
+  let pdf = '%PDF-1.4\n'
+  const offsets = [0]
+  for (const [index, object] of objects.entries()) {
+    offsets.push(Buffer.byteLength(pdf))
+    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`
+  }
+  const xref = Buffer.byteLength(pdf)
+  pdf += `xref\n0 ${offsets.length}\n0000000000 65535 f \n`
+  for (const offset of offsets.slice(1)) pdf += `${String(offset).padStart(10, '0')} 00000 n \n`
+  pdf += `trailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`
+  return new TextEncoder().encode(pdf)
 }
 
 function targets() {
@@ -108,6 +130,21 @@ class Client {
 
 type HttpResult = Awaited<ReturnType<Client['request']>>
 
+async function verifyRenderedImage(response: HttpResult, plan: unknown, label: string) {
+  expectStatus(response, 200, label)
+  assert.equal(response.contentType, 'image/png', `${label} must serve PNG`)
+  assert.deepEqual([...response.bytes.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10])
+  const image = sharp(response.bytes)
+  const metadata = await image.metadata()
+  assert.equal(metadata.format, 'png')
+  assert.equal(metadata.width, numberField(plan, 'imageWidth'), `${label} width must match its record`)
+  assert.equal(metadata.height, numberField(plan, 'imageHeight'), `${label} height must match its record`)
+  assert(metadata.width > 0 && metadata.width <= 2400 && metadata.height > 0 && metadata.height <= 2400)
+  const stats = await image.stats()
+  assert(stats.channels.slice(0, 3).some(channel => channel.max - channel.min > 100), `${label} must contain the fixture drawing`)
+  return { width: metadata.width, height: metadata.height }
+}
+
 function expectStatus(response: HttpResult, expected: number, label: string) {
   // Report only the error field, never credentials, cookies, or whole response bodies.
   const body = response.body
@@ -169,12 +206,12 @@ async function main() {
       id: `${runId}-room-b`, name: `${runId} Other laundry`, siteId: siteIds[1], type: 'SERVICE_AREA', floor: 'Ground',
     } })
     const png = await readFile(path.join(process.cwd(), 'tests/e2e/fixtures/cleaning-schedule.png'))
-    function uploadForm(siteId: string, floor = 'Ground') {
+    function uploadForm(siteId: string, floor = 'Ground', file = new File([new Uint8Array(png)], 'floor.png', { type: 'image/png' })) {
       const form = new FormData()
       form.set('name', `${runId} plan`)
       form.set('floor', floor)
       form.set('siteId', siteId)
-      form.set('file', new File([new Uint8Array(png)], 'floor.png', { type: 'image/png' }))
+      form.set('file', file)
       return form
     }
 
@@ -191,6 +228,24 @@ async function main() {
     expectStatus(await otherHead.request(`/api/floor-plans/${planId}/image`), 404, 'Other site draft access')
     checks.push('upload role and site isolation')
 
+    stage = 'PDF floor plan rendering'
+    const pdfUpload = await head.request('/api/floor-plans', {
+      method: 'POST', body: uploadForm(siteIds[0], 'PDF floor', new File([floorPlanPdf()], 'floor.pdf', { type: 'application/pdf' })),
+    })
+    expectStatus(pdfUpload, 201, 'PDF floor plan upload')
+    const pdfId = textField(pdfUpload.body, 'id')
+    assert.equal(textField(pdfUpload.body, 'sourceFileName'), 'floor.pdf')
+    assert.equal(textField(pdfUpload.body, 'imageMimeType'), 'image/png')
+    const pdfDimensions = await verifyRenderedImage(await head.request(`/api/floor-plans/${pdfId}/image`), pdfUpload.body, 'Rendered PDF image')
+    assert.deepEqual(pdfDimensions, { width: 2400, height: 1200 }, 'PDF rendering must preserve the 2:1 page dimensions')
+    const malformedPdf = await head.request('/api/floor-plans', {
+      method: 'POST', body: uploadForm(siteIds[0], 'Invalid PDF floor', new File(['%PDF-1.4\nnot a PDF document\n'], 'broken.pdf', { type: 'application/pdf' })),
+    })
+    expectStatus(malformedPdf, 400, 'Malformed PDF upload')
+    assert.equal(textField(malformedPdf.body, 'error'), 'The first PDF page could not be rendered.')
+    assert.equal(await prisma.floorPlan.count({ where: { siteId: siteIds[0], floor: 'Invalid PDF floor' } }), 0)
+    checks.push('PDF renders a nonblank PNG with matching dimensions', 'malformed PDF returns a friendly 400 without persistence')
+
     stage = 'floor plan revision races and publication'
     const planRoute = `/api/floor-plans/${planId}`
     const region = { label: 'Laundry', roomId: room.id, x: 0.1, y: 0.1, width: 0.2, height: 0.2 }
@@ -203,9 +258,7 @@ async function main() {
     expectStatus(await head.json(planRoute, 'PATCH', { action: 'publish', revision: 1 }), 409, 'Stale publication')
     expectStatus(await head.json(planRoute, 'PATCH', { action: 'publish', revision }), 200, 'Publish floor plan')
     const visible = await cleaner.request(`${planRoute}/image`)
-    expectStatus(visible, 200, 'Published cleaner image')
-    assert.equal(visible.contentType, 'image/png')
-    assert.deepEqual([...visible.bytes.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10])
+    const pngDimensions = await verifyRenderedImage(visible, uploaded.body, 'Published PNG image')
     expectStatus(await otherCleaner.request(`${planRoute}/image`), 404, 'Foreign published image')
     const published = await prisma.floorPlan.findUniqueOrThrow({ where: { id: planId } })
     const regionRace = await finishRequests(Array.from({ length: 8 }, (_, index) =>
@@ -323,7 +376,7 @@ async function main() {
     const load = { requests: 200, concurrency: 12, failures: failures.length, p50Ms: percentile(0.5), p95Ms: percentile(0.95), maxMs: percentile(1) }
     assert.equal(failures.length, 0, `Mixed reads failed: ${failures.slice(0, 5).join(', ')}`)
     checks.push('200 mixed reads preserve site boundaries')
-    receipt = { ok: true, checks, regionRace: { winners: 1, conflicts: 7 }, completionRace: { winners: 1, conflicts: 7, logs: logs.length }, load, elapsedMs: Math.round(performance.now() - started) }
+    receipt = { ok: true, checks, rendering: { png: pngDimensions, pdf: pdfDimensions }, regionRace: { winners: 1, conflicts: 7 }, completionRace: { winners: 1, conflicts: 7, logs: logs.length }, load, elapsedMs: Math.round(performance.now() - started) }
   } finally {
     const failedStage = stage
     stage = 'fixture cleanup'
