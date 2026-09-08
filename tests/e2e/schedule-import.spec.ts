@@ -51,7 +51,14 @@ test.describe('AI schedule import (real extraction)', () => {
     await expect(dialog.getByText('Start from a document')).toBeVisible()
 
     // Upload the fixture through the hidden file input
-    await dialog.locator('input[type="file"]').setInputFiles(FIXTURE)
+    const [extractionResponse] = await Promise.all([
+      page.waitForResponse(response =>
+        new URL(response.url()).pathname === '/api/ai/schedule/extract' && response.request().method() === 'POST',
+        { timeout: 240_000 },
+      ),
+      dialog.locator('input[type="file"]').setInputFiles(FIXTURE),
+    ])
+    expect(extractionResponse.status(), await extractionResponse.text()).toBe(200)
 
     // Real extraction happens here - wait for the editable preview
     const firstTask = dialog.getByLabel('Task 1 description')
