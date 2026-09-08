@@ -54,6 +54,8 @@ interface PrefillNotice {
   taskCount: number
   /** True when the extraction overwrote work the user had already typed. */
   replacedInput: boolean
+  /** Required metadata the model could not confirm from the source document. */
+  unresolvedFields: Array<'title' | 'frequency'>
 }
 
 const FREQUENCY_VALUES = new Set(FREQUENCY_OPTIONS.map((f) => f.value as string))
@@ -62,8 +64,8 @@ export function ScheduleCreateDialog({ onScheduleCreated, trigger }: ScheduleCre
   const tc = useThemeColors()
   const { data: session } = useSession()
   // OP/DIRECTOR span every site and pick which ones the schedule applies to;
-  // MANAGER/CLEANER are pinned, so the server forces their own site.
-  const canPickSite = canAccessAllSites((session?.user as any)?.role)
+  // Site-based operational roles are pinned, so the server forces their own site.
+  const canPickSite = canAccessAllSites(session?.user?.role)
   const fieldId = useId()
 
   const [open, setOpen] = useState(false)
@@ -90,8 +92,20 @@ export function ScheduleCreateDialog({ onScheduleCreated, trigger }: ScheduleCre
       try {
         const res = await apiRequest('/api/sites')
         if (!res.ok) return
-        const data = await res.json()
-        if (!cancelled) setSites(Array.isArray(data) ? data.map((s: any) => ({ id: s.id, name: s.name })) : [])
+        const data: unknown = await res.json()
+        if (!cancelled) {
+          setSites(
+            Array.isArray(data)
+              ? data.flatMap((site) =>
+                  typeof site === 'object' && site !== null &&
+                  'id' in site && typeof site.id === 'string' &&
+                  'name' in site && typeof site.name === 'string'
+                    ? [{ id: site.id, name: site.name }]
+                    : [],
+                )
+              : [],
+          )
+        }
       } catch {
         /* non-fatal: submit still validates that a site was chosen */
       }
@@ -145,14 +159,15 @@ export function ScheduleCreateDialog({ onScheduleCreated, trigger }: ScheduleCre
     const replacedInput =
       title.trim().length > 0 || frequency.length > 0 || tasks.some((t) => t.description.trim().length > 0)
 
-    setTitle(draft.title)
+    setTitle(draft.title ?? '')
     setDetectedFrequency(draft.detectedFrequency)
 
     // `suggestedFrequency` is the enum value; `detectedFrequency` is free text
     // and would not match any option, so it only ever becomes a hint.
-    if (draft.suggestedFrequency && FREQUENCY_VALUES.has(draft.suggestedFrequency)) {
-      setFrequency(draft.suggestedFrequency)
-    }
+    const importedFrequency = draft.suggestedFrequency && FREQUENCY_VALUES.has(draft.suggestedFrequency)
+      ? draft.suggestedFrequency
+      : ''
+    setFrequency(importedFrequency)
 
     const mapped = draft.tasks.map((t) => ({
       key: nextKey(),
@@ -163,7 +178,15 @@ export function ScheduleCreateDialog({ onScheduleCreated, trigger }: ScheduleCre
     setTasks(mapped.length > 0 ? mapped : [newTask()])
 
     setErrors({})
-    setPrefill({ fileName, taskCount: mapped.length, replacedInput })
+    const unresolvedFields = new Set(draft.unresolvedFields)
+    if (!draft.title?.trim()) unresolvedFields.add('title')
+    if (!importedFrequency) unresolvedFields.add('frequency')
+    setPrefill({
+      fileName,
+      taskCount: mapped.length,
+      replacedInput,
+      unresolvedFields: [...unresolvedFields],
+    })
   }
 
   const updateTask = (index: number, patch: Partial<DraftTask>) => {
@@ -242,8 +265,8 @@ export function ScheduleCreateDialog({ onScheduleCreated, trigger }: ScheduleCre
       }
       toast.success(`Schedule created with ${cleanTasks.length} task${cleanTasks.length === 1 ? '' : 's'}.`)
       closeAndRefresh()
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to create schedule.')
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create schedule.')
       setIsSaving(false)
     }
   }
@@ -253,6 +276,15 @@ export function ScheduleCreateDialog({ onScheduleCreated, trigger }: ScheduleCre
   const inputClass =
     'w-full px-3 py-2 rounded-lg text-[14px] outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50'
   const sectionLabelClass = 'text-[11px] font-semibold uppercase tracking-[0.06em]'
+  const unresolvedImportFields = prefill
+    ? prefill.unresolvedFields.filter((field) =>
+        field === 'title' ? title.trim().length === 0 : frequency.length === 0,
+      )
+    : []
+  const unresolvedImportLabels = unresolvedImportFields.map((field) =>
+    field === 'title' ? 'schedule title' : 'frequency',
+  )
+  const importReviewId = `${fieldId}-import-review`
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -291,21 +323,44 @@ export function ScheduleCreateDialog({ onScheduleCreated, trigger }: ScheduleCre
             </section>
 
             {prefill && (
-              <motion.p
-                {...fadeUp}
-                transition={transitionFast}
-                role="status"
-                aria-live="polite"
-                className="flex items-start gap-2 rounded-lg px-3 py-2 text-[12px] leading-relaxed"
-                style={{ background: tc.chipBg(true), color: tc.textSecondary }}
-              >
-                <Sparkles className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: tc.accentGreen }} />
-                <span>
-                  Filled in from <span style={{ color: tc.textPrimary }}>{prefill.fileName}</span> -{' '}
-                  {prefill.taskCount} task{prefill.taskCount === 1 ? '' : 's'} added
-                  {prefill.replacedInput ? ', replacing what you had typed' : ''}. Review and adjust below.
-                </span>
-              </motion.p>
+              <div className="space-y-2">
+                <motion.p
+                  {...fadeUp}
+                  transition={transitionFast}
+                  role="status"
+                  aria-live="polite"
+                  className="flex items-start gap-2 rounded-lg px-3 py-2 text-[12px] leading-relaxed"
+                  style={{ background: tc.chipBg(true), color: tc.textSecondary }}
+                >
+                  <Sparkles className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: tc.accentGreen }} />
+                  <span>
+                    Drafted from <span style={{ color: tc.textPrimary }}>{prefill.fileName}</span> -{' '}
+                    {prefill.taskCount} task{prefill.taskCount === 1 ? '' : 's'} added
+                    {prefill.replacedInput ? ', replacing what you had typed' : ''}. Review the details below.
+                  </span>
+                </motion.p>
+
+                {unresolvedImportFields.length > 0 && (
+                  <motion.div
+                    {...fadeUp}
+                    transition={transitionFast}
+                    id={importReviewId}
+                    role="alert"
+                    className="rounded-lg px-3 py-2.5 text-[12px] leading-relaxed"
+                    style={{
+                      background: tc.statusPending.bg,
+                      color: tc.statusPending.text,
+                      border: `1px solid ${tc.statusPending.border}`,
+                    }}
+                  >
+                    <p className="font-semibold">Review needed before import</p>
+                    <p className="mt-0.5">
+                      AI could not confirm {unresolvedImportLabels.join(' and ')}. Fill in the highlighted{' '}
+                      {unresolvedImportFields.length === 1 ? 'field' : 'fields'} before this schedule can be created.
+                    </p>
+                  </motion.div>
+                )}
+              </div>
             )}
 
             <div className="h-px" style={{ background: tc.divider }} aria-hidden="true" />
@@ -322,17 +377,31 @@ export function ScheduleCreateDialog({ onScheduleCreated, trigger }: ScheduleCre
                 </label>
                 <input
                   id={`${fieldId}-title`}
+                  name="title"
                   value={title}
                   onChange={(e) => {
                     clearError('title')
                     setTitle(e.target.value)
                   }}
                   disabled={isSaving}
-                  placeholder="e.g. Weekly Kitchen Deep Clean"
-                  aria-invalid={!!errors.title}
-                  aria-describedby={errors.title ? `${fieldId}-title-error` : undefined}
+                  maxLength={200}
+                  autoComplete="off"
+                  placeholder="e.g. Weekly Kitchen Deep Clean…"
+                  aria-invalid={!!errors.title || unresolvedImportFields.includes('title')}
+                  aria-describedby={
+                    [errors.title ? `${fieldId}-title-error` : null, unresolvedImportFields.includes('title') ? importReviewId : null]
+                      .filter(Boolean)
+                      .join(' ') || undefined
+                  }
                   className={inputClass}
-                  style={{ ...inputStyle, borderColor: errors.title ? tc.statusOverdue.text : tc.inputBorder }}
+                  style={{
+                    ...inputStyle,
+                    borderColor: errors.title
+                      ? tc.statusOverdue.text
+                      : unresolvedImportFields.includes('title')
+                        ? tc.statusPending.text
+                        : tc.inputBorder,
+                  }}
                 />
                 <FieldError id={`${fieldId}-title-error`} message={errors.title} color={tc.statusOverdue.text} />
               </div>
@@ -348,20 +417,33 @@ export function ScheduleCreateDialog({ onScheduleCreated, trigger }: ScheduleCre
                 </label>
                 <select
                   id={`${fieldId}-frequency`}
+                  name="suggestedFrequency"
                   value={frequency}
                   onChange={(e) => {
                     clearError('frequency')
                     setFrequency(e.target.value)
                   }}
                   disabled={isSaving}
-                  aria-invalid={!!errors.frequency}
+                  autoComplete="off"
+                  aria-invalid={!!errors.frequency || unresolvedImportFields.includes('frequency')}
                   aria-describedby={
-                    [errors.frequency ? `${fieldId}-frequency-error` : null, detectedFrequency ? `${fieldId}-frequency-hint` : null]
+                    [
+                      errors.frequency ? `${fieldId}-frequency-error` : null,
+                      detectedFrequency ? `${fieldId}-frequency-hint` : null,
+                      unresolvedImportFields.includes('frequency') ? importReviewId : null,
+                    ]
                       .filter(Boolean)
                       .join(' ') || undefined
                   }
                   className={inputClass}
-                  style={{ ...inputStyle, borderColor: errors.frequency ? tc.statusOverdue.text : tc.inputBorder }}
+                  style={{
+                    ...inputStyle,
+                    borderColor: errors.frequency
+                      ? tc.statusOverdue.text
+                      : unresolvedImportFields.includes('frequency')
+                        ? tc.statusPending.text
+                        : tc.inputBorder,
+                  }}
                 >
                   <option value="">Select a frequency…</option>
                   {FREQUENCY_OPTIONS.map((f) => (
@@ -405,19 +487,23 @@ export function ScheduleCreateDialog({ onScheduleCreated, trigger }: ScheduleCre
                       <div className="flex-1 min-w-0 space-y-1.5">
                         <input
                           data-task-description=""
+                          name={`tasks.${i}.description`}
                           value={task.description}
                           onChange={(e) => updateTask(i, { description: e.target.value })}
                           disabled={isSaving}
-                          placeholder="Task description"
+                          autoComplete="off"
+                          placeholder="Task description…"
                           aria-label={`Task ${i + 1} description`}
                           className="w-full px-2.5 py-1.5 rounded-md text-[13px] outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50"
                           style={inputStyle}
                         />
                         <input
+                          name={`tasks.${i}.additionalNotes`}
                           value={task.additionalNotes}
                           onChange={(e) => updateTask(i, { additionalNotes: e.target.value })}
                           disabled={isSaving}
-                          placeholder="Notes (optional)"
+                          autoComplete="off"
+                          placeholder="Notes (optional)…"
                           aria-label={`Task ${i + 1} notes`}
                           className="w-full px-2.5 py-1.5 rounded-md text-[12px] outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50"
                           style={inputStyle}
@@ -499,6 +585,7 @@ export function ScheduleCreateDialog({ onScheduleCreated, trigger }: ScheduleCre
                         >
                           <input
                             type="checkbox"
+                            name="siteIds"
                             checked={selectedSiteIds.includes(s.id)}
                             onChange={() => toggleSite(s.id)}
                             disabled={isSaving}
@@ -535,12 +622,13 @@ export function ScheduleCreateDialog({ onScheduleCreated, trigger }: ScheduleCre
             </button>
             <button
               type="submit"
-              disabled={isSaving}
+              disabled={isSaving || unresolvedImportFields.length > 0}
+              aria-describedby={unresolvedImportFields.length > 0 ? importReviewId : undefined}
               className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2.5 sm:py-2 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[0.97] disabled:opacity-60"
               style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: `1px solid ${tc.btnPrimaryBorder}` }}
             >
               {isSaving && <Spinner />}
-              {isSaving ? 'Creating…' : 'Create schedule'}
+              {isSaving ? 'Creating…' : unresolvedImportFields.length > 0 ? 'Resolve import details' : 'Create schedule'}
             </button>
           </div>
         </form>

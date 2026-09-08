@@ -1,20 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { fadeUp, enter } from '@/lib/motion'
 import {
-  Plus, Search, Filter, Edit, Trash2, Calendar, MapPin,
-  Wrench, AlertCircle, CheckCircle, Clock, Settings, X,
-  HeartHandshake, Sparkles, Box, Loader2, Check
+  Plus, Search, Filter, Edit, Trash2, Calendar,
+  Wrench, CheckCircle, X,
+  HeartHandshake, Sparkles, Box, Check, PackageOpen
 } from 'lucide-react'
 import { apiRequest } from '@/lib/url-utils'
 import { PageLoading, Spinner } from '@/components/ui/loading'
 import { useThemeColors } from '@/hooks/useThemeColors'
 import { useToast } from '@/components/ui/toast-context'
 import { canAccessAllSites } from '@/lib/roles'
+import type { PlacementSuggestion } from '@/lib/equipment-placement'
 
 interface Equipment {
   id: string
@@ -29,6 +30,8 @@ interface Equipment {
   updatedAt: string
   siteId?: string | null
   site?: { id: string; name: string } | null
+  serviceAreaId?: string | null
+  serviceArea?: { id: string; name: string; floor: string | null } | null
   scheduleCount: number
   totalTasks: number
   schedules: {
@@ -75,6 +78,7 @@ interface EquipmentFormData {
   assetCode?: string
   model?: string
   serialNumber?: string
+  serviceAreaId: string
 }
 
 interface Site {
@@ -82,17 +86,52 @@ interface Site {
   name: string
 }
 
+interface ServiceArea {
+  id: string
+  name: string
+  description?: string | null
+  floor?: string | null
+  siteId?: string | null
+}
+
 const equipmentTypeIcons: { [key: string]: React.ReactNode } = {
   RESIDENT_AID: <HeartHandshake className="w-6 h-6" />,
+  WHEELCHAIR: <HeartHandshake className="w-6 h-6" />,
+  PATIENT_LIFT: <Wrench className="w-6 h-6" />,
+  CLEANING_TROLLEY: <Sparkles className="w-6 h-6" />,
   CLEANING_EQUIPMENT: <Sparkles className="w-6 h-6" />,
   OTHER: <Box className="w-6 h-6" />
 }
 
 const equipmentTypes = [
   { value: 'RESIDENT_AID', label: 'Resident Aid' },
+  { value: 'WHEELCHAIR', label: 'Wheelchair' },
+  { value: 'PATIENT_LIFT', label: 'Patient Lift or Hoist' },
+  { value: 'CLEANING_TROLLEY', label: 'Cleaning Trolley' },
   { value: 'CLEANING_EQUIPMENT', label: 'Cleaning Equipment' },
   { value: 'OTHER', label: 'Other' }
 ]
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function isPlacementSuggestion(value: unknown): value is PlacementSuggestion {
+  if (!isRecord(value)) return false
+  const validType = value.suggestedType === 'RESIDENT_AID' || value.suggestedType === 'WHEELCHAIR' ||
+    value.suggestedType === 'PATIENT_LIFT' || value.suggestedType === 'CLEANING_TROLLEY' ||
+    value.suggestedType === 'CLEANING_EQUIPMENT' || value.suggestedType === 'OTHER'
+  const validCategory = value.category === 'CLEANING' || value.category === 'MOBILITY_AND_LIFTING' ||
+    value.category === 'RESIDENT_SUPPORT' || value.category === 'GENERAL'
+  const validConfidence = value.confidence === 'HIGH' || value.confidence === 'MEDIUM' || value.confidence === 'LOW'
+  const validSource = value.source === 'RULES' || value.source === 'AI'
+
+  return validType && validCategory && validConfidence && validSource &&
+    typeof value.suggestedTypeLabel === 'string' && typeof value.categoryLabel === 'string' &&
+    (typeof value.serviceAreaId === 'string' || value.serviceAreaId === null) &&
+    (typeof value.serviceAreaName === 'string' || value.serviceAreaName === null) &&
+    typeof value.reason === 'string' && typeof value.requiresReview === 'boolean'
+}
 
 type ThemeColors = ReturnType<typeof useThemeColors>
 
@@ -111,9 +150,10 @@ export default function EquipmentPage() {
   const tc = useThemeColors()
   const { showToast } = useToast()
   // OP/DIRECTOR span every site and pick which one equipment belongs to;
-  // MANAGER/CLEANER are pinned, so the server forces their site.
+  // Site-based operational roles are pinned, so the server forces their site.
   const canPickSite = canAccessAllSites((session?.user as any)?.role)
   const [sites, setSites] = useState<Site[]>([])
+  const [serviceAreas, setServiceAreas] = useState<ServiceArea[]>([])
   const [equipment, setEquipment] = useState<Equipment[]>([])
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -137,6 +177,12 @@ export default function EquipmentPage() {
   const [excludedEquipmentIds, setExcludedEquipmentIds] = useState<Set<string>>(new Set())
   const [isAssigning, setIsAssigning] = useState(false)
   const [hoveredCard, setHoveredCard] = useState<string | null>(null)
+  const [placementSuggestion, setPlacementSuggestion] = useState<PlacementSuggestion | null>(null)
+  const [isSuggestingPlacement, setIsSuggestingPlacement] = useState(false)
+  const placementRequestRef = useRef(0)
+  const placementBusyRef = useRef(false)
+  const storageChoiceVersionRef = useRef(0)
+  const categoryChoiceVersionRef = useRef(0)
 
   const [formData, setFormData] = useState<EquipmentFormData>({
     name: '',
@@ -146,6 +192,7 @@ export default function EquipmentPage() {
     assetCode: '',
     model: '',
     serialNumber: '',
+    serviceAreaId: '',
   })
 
   useEffect(() => {
@@ -169,10 +216,12 @@ export default function EquipmentPage() {
     if (status === 'authenticated') {
       Promise.all([
         apiRequest('/api/admin/equipment').then(res => res.json()),
-        apiRequest('/api/schedules').then(res => res.json())
-      ]).then(([equipmentData, schedulesData]) => {
+        apiRequest('/api/schedules').then(res => res.json()),
+        apiRequest('/api/rooms').then(res => res.json()),
+      ]).then(([equipmentData, schedulesData, roomsData]) => {
         setEquipment(equipmentData.equipment)
         setSchedules(schedulesData)
+        setServiceAreas(Array.isArray(roomsData) ? roomsData.filter((room: ServiceArea & { type?: string }) => room.type === 'SERVICE_AREA') : [])
         setIsLoading(false)
       }).catch(error => {
         console.error('Error fetching data:', error)
@@ -202,6 +251,12 @@ export default function EquipmentPage() {
   }, [successMessage])
 
   const resetForm = () => {
+    placementRequestRef.current += 1
+    placementBusyRef.current = false
+    storageChoiceVersionRef.current = 0
+    categoryChoiceVersionRef.current = 0
+    setPlacementSuggestion(null)
+    setIsSuggestingPlacement(false)
     setFormData({
       name: '',
       description: '',
@@ -210,7 +265,68 @@ export default function EquipmentPage() {
       assetCode: '',
       model: '',
       serialNumber: '',
+      serviceAreaId: '',
     })
+  }
+
+  const requestPlacementSuggestion = async (draft = formData, showMissingName = false) => {
+    const name = draft.name.trim()
+    const siteId = draft.siteId || session?.user?.siteId || ''
+    if (!name || !siteId || placementBusyRef.current) {
+      if (showMissingName && !name) showToast('Enter the equipment name first', 'error')
+      if (showMissingName && !siteId) showToast('Choose a site first', 'error')
+      return
+    }
+
+    const requestId = ++placementRequestRef.current
+    const storageVersion = storageChoiceVersionRef.current
+    const categoryVersion = categoryChoiceVersionRef.current
+    placementBusyRef.current = true
+    setIsSuggestingPlacement(true)
+    setPlacementSuggestion(null)
+    try {
+      const response = await apiRequest('/api/admin/equipment/suggest-placement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          description: draft.description || null,
+          type: draft.type,
+          siteId,
+        }),
+      })
+      const data: unknown = await response.json().catch(() => null)
+      if (!response.ok || !isPlacementSuggestion(data)) {
+        throw new Error(
+          isRecord(data) && typeof data.error === 'string'
+            ? data.error
+            : 'Could not suggest a storage location.',
+        )
+      }
+      if (requestId !== placementRequestRef.current) return
+
+      setPlacementSuggestion(data)
+      setFormData((current) => ({
+        ...current,
+        type:
+          categoryVersion === categoryChoiceVersionRef.current && current.type === 'OTHER' && data.confidence !== 'LOW'
+            ? data.suggestedType
+            : current.type,
+        serviceAreaId:
+          storageVersion === storageChoiceVersionRef.current && data.serviceAreaId
+            ? data.serviceAreaId
+            : current.serviceAreaId,
+      }))
+    } catch (error: unknown) {
+      if (requestId === placementRequestRef.current) {
+        showToast(error instanceof Error ? error.message : 'Could not suggest a storage location.', 'error')
+      }
+    } finally {
+      if (requestId === placementRequestRef.current) {
+        placementBusyRef.current = false
+        setIsSuggestingPlacement(false)
+      }
+    }
   }
 
   const fetchEquipment = async () => {
@@ -406,6 +522,11 @@ export default function EquipmentPage() {
   }
 
   const openEditModal = (equip: Equipment) => {
+    placementRequestRef.current += 1
+    placementBusyRef.current = false
+    storageChoiceVersionRef.current += 1
+    categoryChoiceVersionRef.current += 1
+    setPlacementSuggestion(null)
     setSelectedEquipment(equip)
     setFormData({
       name: equip.name,
@@ -415,6 +536,7 @@ export default function EquipmentPage() {
       assetCode: equip.assetCode || '',
       model: equip.model || '',
       serialNumber: equip.serialNumber || '',
+      serviceAreaId: equip.serviceAreaId || '',
     })
     setShowEditModal(true)
   }
@@ -427,14 +549,16 @@ export default function EquipmentPage() {
   const filteredEquipment = equipment.filter(equip => {
     const matchesSearch = equip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          equip.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (equip.model && equip.model.toLowerCase().includes(searchTerm.toLowerCase()))
+                         (equip.model && equip.model.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         (equip.serviceArea?.name.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
     const matchesType = typeFilter === 'all' || equip.type === typeFilter
     const matchesSite = !canPickSite || siteFilter === 'ALL' || equip.siteId === siteFilter
 
     return matchesSearch && matchesType && matchesSite
   })
 
-  const types = [...new Set(equipment.map(e => e.type))].sort()
+  const formSiteId = formData.siteId || session?.user?.siteId || ''
+  const availableServiceAreas = serviceAreas.filter((area) => area.siteId === formSiteId)
 
   if (status === 'loading' || isLoading) {
     return (
@@ -566,10 +690,11 @@ export default function EquipmentPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
+            aria-label="Filter by equipment category"
             className="px-4 py-2 rounded-lg text-sm outline-hidden"
             style={selectStyle}
           >
-            <option value="all">All Types</option>
+            <option value="all">All Categories</option>
             {equipmentTypes.map(type => (
               <option key={type.value} value={type.value}>
                 {type.label}
@@ -625,7 +750,7 @@ export default function EquipmentPage() {
           {assignMode === 'QUICK' && (
             <div className="rounded-xl p-6 mb-6" style={{ background: tc.cardBg, border: '1px solid ' + tc.cardBorder, boxShadow: tc.shadow }}>
               <h3 className="text-lg font-semibold mb-2" style={{ color: tc.textPrimary }}>Quick Assignment</h3>
-              <p className="text-sm mb-4" style={{ color: tc.textMuted }}>Pick a type to select its equipment, then untick anything that should not get this schedule</p>
+              <p className="text-sm mb-4" style={{ color: tc.textMuted }}>Pick a category to select its equipment, then untick anything that should not get this schedule</p>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
@@ -646,7 +771,7 @@ export default function EquipmentPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>Equipment Type</label>
+                  <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>Equipment Category</label>
                   <select
                     value={selectedEquipmentType}
                     onChange={(e) => {
@@ -977,13 +1102,20 @@ export default function EquipmentPage() {
               {/* Details */}
               <div className="space-y-1.5 mb-4">
                 <div className="text-sm">
-                  <span style={{ color: tc.textMuted }}>Type:</span>
+                        <span style={{ color: tc.textMuted }}>Category:</span>
                   <span className="ml-2" style={{ color: tc.textSecondary }}>{equip.type.replace('_', ' ')}</span>
                 </div>
                 {canPickSite && equip.site && (
                   <div className="text-sm">
                     <span style={{ color: tc.textMuted }}>Site:</span>
                     <span className="ml-2" style={{ color: tc.textSecondary }}>{equip.site.name}</span>
+                  </div>
+                )}
+                {equip.serviceArea && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <PackageOpen className="h-4 w-4" style={{ color: tc.accentGreen }} aria-hidden="true" />
+                    <span style={{ color: tc.textMuted }}>Stored in:</span>
+                    <span style={{ color: tc.textSecondary }}>{equip.serviceArea.name}{equip.serviceArea.floor ? ` · ${equip.serviceArea.floor}` : ''}</span>
                   </div>
                 )}
                 {equip.model && (
@@ -1061,23 +1193,34 @@ export default function EquipmentPage() {
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold" style={{ color: tc.textPrimary }}>Add New Equipment</h2>
                   <button
+                    type="button"
+                    aria-label="Close add equipment form"
                     onClick={() => setShowAddModal(false)}
-                    className="p-1 rounded-md transition-colors"
+                    className="p-1 rounded-md transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50"
                     style={{ color: tc.textMuted }}
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-5 h-5" aria-hidden="true" />
                   </button>
                 </div>
 
                 <form onSubmit={handleAddEquipment} className="space-y-4">
                   {canPickSite && (
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
+                      <label htmlFor="add-equipment-site" className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
                         Site *
                       </label>
                       <select
+                        id="add-equipment-site"
+                        name="siteId"
                         value={formData.siteId}
-                        onChange={(e) => setFormData({ ...formData, siteId: e.target.value })}
+                        onChange={(e) => {
+                          placementRequestRef.current += 1
+                          placementBusyRef.current = false
+                          storageChoiceVersionRef.current = 0
+                          setPlacementSuggestion(null)
+                          setIsSuggestingPlacement(false)
+                          setFormData({ ...formData, siteId: e.target.value, serviceAreaId: '' })
+                        }}
                         className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
                         style={selectStyle}
                       >
@@ -1087,27 +1230,59 @@ export default function EquipmentPage() {
                     </div>
                   )}
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
+                    <label htmlFor="add-equipment-name" className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
                       Name *
                     </label>
                     <input
+                      id="add-equipment-name"
+                      name="equipmentName"
                       type="text"
                       required
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      onChange={(e) => {
+                        placementRequestRef.current += 1
+                        placementBusyRef.current = false
+                        setPlacementSuggestion(null)
+                        setIsSuggestingPlacement(false)
+                        setFormData({
+                          ...formData,
+                          name: e.target.value,
+                          serviceAreaId: storageChoiceVersionRef.current === 0 ? '' : formData.serviceAreaId,
+                        })
+                      }}
+                      onBlur={() => {
+                        if (!formData.serviceAreaId && storageChoiceVersionRef.current === 0) {
+                          void requestPlacementSuggestion()
+                        }
+                      }}
+                      autoComplete="off"
+                      maxLength={200}
                       className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
                       style={inputStyle}
-                      placeholder="Enter equipment name"
+                      placeholder="e.g. Mobile hoist…"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
-                      Type
+                    <label htmlFor="add-equipment-category" className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
+                      Category
                     </label>
                     <select
+                      id="add-equipment-category"
+                      name="equipmentType"
                       value={formData.type}
-                      onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                      onChange={(e) => {
+                        placementRequestRef.current += 1
+                        placementBusyRef.current = false
+                        categoryChoiceVersionRef.current += 1
+                        setPlacementSuggestion(null)
+                        setIsSuggestingPlacement(false)
+                        setFormData({
+                          ...formData,
+                          type: e.target.value,
+                          serviceAreaId: storageChoiceVersionRef.current === 0 ? '' : formData.serviceAreaId,
+                        })
+                      }}
                       className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
                       style={selectStyle}
                     >
@@ -1117,6 +1292,48 @@ export default function EquipmentPage() {
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  <div>
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <label htmlFor="add-service-area" className="flex items-center gap-2 text-sm font-medium" style={{ color: tc.textSecondary }}>
+                        <PackageOpen className="h-4 w-4" aria-hidden="true" /> Stored in
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => void requestPlacementSuggestion(formData, true)}
+                        disabled={isSuggestingPlacement || !formData.name.trim() || !formSiteId}
+                        className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-[opacity,transform] hover:opacity-90 active:scale-[0.97] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50 disabled:opacity-50"
+                        style={{ background: tc.btnSecondaryBg, color: tc.btnSecondaryText, border: `1px solid ${tc.btnSecondaryBorder}` }}
+                      >
+                        {isSuggestingPlacement ? <Spinner size="sm" /> : <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />}
+                        {isSuggestingPlacement ? 'Finding Best Fit…' : 'Suggest Best Fit'}
+                      </button>
+                    </div>
+                    <select
+                      id="add-service-area"
+                      name="serviceAreaId"
+                      value={formData.serviceAreaId}
+                      onChange={(e) => {
+                        placementRequestRef.current += 1
+                        placementBusyRef.current = false
+                        storageChoiceVersionRef.current += 1
+                        setPlacementSuggestion(null)
+                        setIsSuggestingPlacement(false)
+                        setFormData({ ...formData, serviceAreaId: e.target.value })
+                      }}
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
+                      style={selectStyle}
+                    >
+                      <option value="">Mobile or unassigned</option>
+                      {availableServiceAreas.map((area) => (
+                        <option key={area.id} value={area.id}>{area.name}{area.floor ? ` · ${area.floor}` : ''}</option>
+                      ))}
+                    </select>
+                    <PlacementSuggestionNotice suggestion={placementSuggestion} tc={tc} />
+                    {!placementSuggestion && !isSuggestingPlacement && (
+                      <p className="mt-1.5 text-xs" style={{ color: tc.textMuted }}>The app suggests a category and best-fit service area. You can always change either choice.</p>
+                    )}
                   </div>
 
                   <div>
@@ -1226,27 +1443,38 @@ export default function EquipmentPage() {
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold" style={{ color: tc.textPrimary }}>Edit Equipment</h2>
                   <button
+                    type="button"
+                    aria-label="Close edit equipment form"
                     onClick={() => {
                       setShowEditModal(false)
                       setSelectedEquipment(null)
                       resetForm()
                     }}
-                    className="p-1 rounded-md transition-colors"
+                    className="p-1 rounded-md transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50"
                     style={{ color: tc.textMuted }}
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-5 h-5" aria-hidden="true" />
                   </button>
                 </div>
 
                 <form onSubmit={handleEditEquipment} className="space-y-4">
                   {canPickSite && (
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
+                      <label htmlFor="edit-equipment-site" className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
                         Site *
                       </label>
                       <select
+                        id="edit-equipment-site"
+                        name="siteId"
                         value={formData.siteId}
-                        onChange={(e) => setFormData({ ...formData, siteId: e.target.value })}
+                        onChange={(e) => {
+                          placementRequestRef.current += 1
+                          placementBusyRef.current = false
+                          storageChoiceVersionRef.current += 1
+                          setPlacementSuggestion(null)
+                          setIsSuggestingPlacement(false)
+                          setFormData({ ...formData, siteId: e.target.value, serviceAreaId: '' })
+                        }}
                         className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
                         style={selectStyle}
                       >
@@ -1256,27 +1484,46 @@ export default function EquipmentPage() {
                     </div>
                   )}
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
+                    <label htmlFor="edit-equipment-name" className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
                       Name *
                     </label>
                     <input
+                      id="edit-equipment-name"
+                      name="equipmentName"
                       type="text"
                       required
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      onChange={(e) => {
+                        placementRequestRef.current += 1
+                        placementBusyRef.current = false
+                        setPlacementSuggestion(null)
+                        setIsSuggestingPlacement(false)
+                        setFormData({ ...formData, name: e.target.value })
+                      }}
+                      autoComplete="off"
+                      maxLength={200}
                       className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
                       style={inputStyle}
-                      placeholder="Enter equipment name"
+                      placeholder="e.g. Mobile hoist…"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
-                      Type
+                    <label htmlFor="edit-equipment-category" className="block text-sm font-medium mb-2" style={{ color: tc.textSecondary }}>
+                      Category
                     </label>
                     <select
+                      id="edit-equipment-category"
+                      name="equipmentType"
                       value={formData.type}
-                      onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                      onChange={(e) => {
+                        placementRequestRef.current += 1
+                        placementBusyRef.current = false
+                        categoryChoiceVersionRef.current += 1
+                        setPlacementSuggestion(null)
+                        setIsSuggestingPlacement(false)
+                        setFormData({ ...formData, type: e.target.value })
+                      }}
                       className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
                       style={selectStyle}
                     >
@@ -1286,6 +1533,48 @@ export default function EquipmentPage() {
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  <div>
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <label htmlFor="edit-service-area" className="flex items-center gap-2 text-sm font-medium" style={{ color: tc.textSecondary }}>
+                        <PackageOpen className="h-4 w-4" aria-hidden="true" /> Stored in
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => void requestPlacementSuggestion(formData, true)}
+                        disabled={isSuggestingPlacement || !formData.name.trim() || !formSiteId}
+                        className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-[opacity,transform] hover:opacity-90 active:scale-[0.97] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50 disabled:opacity-50"
+                        style={{ background: tc.btnSecondaryBg, color: tc.btnSecondaryText, border: `1px solid ${tc.btnSecondaryBorder}` }}
+                      >
+                        {isSuggestingPlacement ? <Spinner size="sm" /> : <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />}
+                        {isSuggestingPlacement ? 'Finding Best Fit…' : 'Suggest Best Fit'}
+                      </button>
+                    </div>
+                    <select
+                      id="edit-service-area"
+                      name="serviceAreaId"
+                      value={formData.serviceAreaId}
+                      onChange={(e) => {
+                        placementRequestRef.current += 1
+                        placementBusyRef.current = false
+                        storageChoiceVersionRef.current += 1
+                        setPlacementSuggestion(null)
+                        setIsSuggestingPlacement(false)
+                        setFormData({ ...formData, serviceAreaId: e.target.value })
+                      }}
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-hidden"
+                      style={selectStyle}
+                    >
+                      <option value="">Mobile or unassigned</option>
+                      {availableServiceAreas.map((area) => (
+                        <option key={area.id} value={area.id}>{area.name}{area.floor ? ` · ${area.floor}` : ''}</option>
+                      ))}
+                    </select>
+                    <PlacementSuggestionNotice suggestion={placementSuggestion} tc={tc} />
+                    {!placementSuggestion && !isSuggestingPlacement && (
+                      <p className="mt-1.5 text-xs" style={{ color: tc.textMuted }}>Request a best fit, then keep it or choose another service area manually.</p>
+                    )}
                   </div>
 
                   <div>
@@ -1399,14 +1688,16 @@ export default function EquipmentPage() {
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-semibold" style={{ color: tc.textPrimary }}>Delete Equipment</h2>
                   <button
+                    type="button"
+                    aria-label="Close delete equipment confirmation"
                     onClick={() => {
                       setShowDeleteModal(false)
                       setSelectedEquipment(null)
                     }}
-                    className="p-1 rounded-md transition-colors"
+                    className="p-1 rounded-md transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50"
                     style={{ color: tc.textMuted }}
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-5 h-5" aria-hidden="true" />
                   </button>
                 </div>
 
@@ -1472,6 +1763,38 @@ export default function EquipmentPage() {
           </div>
         )}
       </AnimatePresence>
+    </div>
+  )
+}
+
+function PlacementSuggestionNotice({
+  suggestion,
+  tc,
+}: {
+  suggestion: PlacementSuggestion | null
+  tc: ThemeColors
+}) {
+  if (!suggestion) return null
+  const tone = suggestion.requiresReview ? tc.statusPending : tc.statusCompleted
+  const sourceLabel = suggestion.source === 'AI' ? 'AI suggestion' : 'Category match'
+  const placement = suggestion.serviceAreaName ?? 'No confident storage match'
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="mt-2 break-words rounded-lg px-3 py-2.5 text-xs leading-relaxed"
+      style={{ background: tone.bg, color: tone.text, border: `1px solid ${tone.border}` }}
+    >
+      <p className="font-semibold">
+        {sourceLabel}: {suggestion.suggestedTypeLabel} · {placement}
+      </p>
+      <p className="mt-0.5">
+        {suggestion.confidence.toLocaleLowerCase('en-GB')} confidence · {suggestion.reason}
+      </p>
+      {suggestion.requiresReview && (
+        <p className="mt-1 font-medium">Review the category and storage choice before saving.</p>
+      )}
     </div>
   )
 }

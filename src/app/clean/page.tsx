@@ -20,7 +20,9 @@ import {
   SortAsc,
   Building,
   Hash,
-  Layers
+  Layers,
+  List,
+  MapPinned
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -28,6 +30,8 @@ import { Button } from '@/components/ui/button'
 import { getScheduleDisplayName } from '@/lib/schedule-utils'
 import { apiRequest } from '@/lib/url-utils'
 import { AnimatePresence } from 'framer-motion'
+import { canUseCleaningPortal } from '@/lib/roles'
+import { CleanerFloorPlanView, type CleanerFloorPlan } from '@/components/cleaner/floor-plan-view'
 
 interface Schedule {
   id: string
@@ -74,13 +78,7 @@ interface Equipment {
   id: string
   name: string
   type: string
-  /*
-   * The Prisma Equipment model has no location/model/serialNumber columns and the
-   * cleaner dashboard API never sends them. They were typed as required strings,
-   * so search and sort-by-floor called .toLowerCase()/.localeCompare() on
-   * undefined and took the whole page down. Optional, and guarded at every use.
-   */
-  location?: string
+  serviceArea?: { id: string; name: string; floor: string | null } | null
   model?: string
   serialNumber?: string
   assetCode?: string
@@ -143,6 +141,7 @@ export default function CleanerDashboard() {
   const tc = useThemeColors()
   const [rooms, setRooms] = useState<Room[]>([])
   const [equipment, setEquipment] = useState<Equipment[]>([]) // NEW: Equipment state
+  const [floorPlans, setFloorPlans] = useState<CleanerFloorPlan[]>([])
   const [stats, setStats] = useState<Stats>({
     totalTasks: 0,
     completedToday: 0,
@@ -170,6 +169,7 @@ export default function CleanerDashboard() {
   const [sortBy, setSortBy] = useState('priority') // priority, name, floor, type
   const [view, setView] = useState<'priority' | 'organized'>('priority')
   const [displayMode, setDisplayMode] = useState<'rooms' | 'equipment' | 'both'>('both') // NEW: Display mode
+  const [dashboardView, setDashboardView] = useState<'map' | 'list'>('list')
 
   // Enable session tracking for cleaner users
   useSessionTracking({
@@ -184,8 +184,7 @@ export default function CleanerDashboard() {
     }
 
     if (status === 'authenticated') {
-      // Redirect admins away from cleaner interface
-      if (session?.user?.isAdmin) {
+      if (!canUseCleaningPortal(session?.user?.role)) {
         router.replace('/')
         return
       }
@@ -229,6 +228,9 @@ export default function CleanerDashboard() {
       const data = await response.json()
       setRooms(data.rooms)
       setEquipment(data.equipment)
+      const loadedFloorPlans = Array.isArray(data.floorPlans) ? data.floorPlans : []
+      setFloorPlans(loadedFloorPlans)
+      if (isInitialLoad && loadedFloorPlans.length > 0) setDashboardView('map')
       setStats(data.stats)
       setIsInitialLoad(false)
     } catch (err) {
@@ -421,10 +423,9 @@ export default function CleanerDashboard() {
     const needle = searchTerm.toLowerCase()
     const matchesSearch = equip.name.toLowerCase().includes(needle) ||
                          equip.type.toLowerCase().includes(needle) ||
-                         (equip.location?.toLowerCase().includes(needle) ?? false) ||
+                         (equip.serviceArea?.name.toLowerCase().includes(needle) ?? false) ||
                          (equip.model?.toLowerCase().includes(needle) ?? false)
-    // For equipment, location acts like floor for filtering
-    const matchesFloor = floorFilter === 'all' || equip.location === floorFilter
+    const matchesFloor = floorFilter === 'all' || equip.serviceArea?.floor === floorFilter
     const matchesType = typeFilter === 'all' || equip.type === typeFilter
     
     return matchesSearch && matchesFloor && matchesType
@@ -434,8 +435,8 @@ export default function CleanerDashboard() {
     switch (sortBy) {
       case 'name':
         return a.name.localeCompare(b.name)
-      case 'floor': // Use location for equipment
-        return (a.location ?? '').localeCompare(b.location ?? '')
+      case 'floor':
+        return (a.serviceArea?.floor ?? '').localeCompare(b.serviceArea?.floor ?? '')
       case 'type':
         return a.type.localeCompare(b.type)
       case 'priority':
@@ -461,7 +462,7 @@ export default function CleanerDashboard() {
     
     equipment.forEach(equip => {
       const key = sortBy === 'type' ? equip.type.replace('_', ' ')
-                : (equip.location || 'Unassigned') // location is optional; never key on undefined
+                : (equip.serviceArea?.name || 'Mobile or unassigned')
       
       if (!categories[key]) {
         categories[key] = []
@@ -475,9 +476,7 @@ export default function CleanerDashboard() {
   const equipmentCategories = categorizeEquipment(sortedEquipment)
 
   // NEW: Get unique values for equipment filters
-  // Equipment has no location column, so this collected a lone `undefined` and fed it
-  // to a SelectItem, which throws on a nullish value. Drop the empties.
-  const locations = [...new Set(equipment.map(e => e.location).filter((l): l is string => !!l))].sort()
+  const equipmentFloors = [...new Set(equipment.flatMap(e => e.serviceArea?.floor ? [e.serviceArea.floor] : []))].sort()
   const equipmentTypes = [...new Set(equipment.map(e => e.type))].sort()
 
   // NEW: Categorize equipment by priority for priority view
@@ -488,9 +487,9 @@ export default function CleanerDashboard() {
 
   // Combined unique values for filters (rooms + equipment)
   const allFilters = {
-    floors: displayMode === 'equipment' ? locations : 
+    floors: displayMode === 'equipment' ? equipmentFloors :
             displayMode === 'rooms' ? floors :
-            [...new Set([...floors, ...locations])].sort(),
+            [...new Set([...floors, ...equipmentFloors])].sort(),
     types: displayMode === 'equipment' ? equipmentTypes :
            displayMode === 'rooms' ? types :
            [...new Set([...types, ...equipmentTypes])].sort()
@@ -600,12 +599,64 @@ export default function CleanerDashboard() {
           </motion.div>
         </div>
 
+        {floorPlans.length > 0 && (
+          <div className="mb-5 flex justify-end" aria-label="Cleaner dashboard view">
+            <div className="flex rounded-xl p-1" style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}` }}>
+              <button
+                type="button"
+                onClick={() => setDashboardView('map')}
+                aria-pressed={dashboardView === 'map'}
+                className="flex min-h-11 items-center gap-2 rounded-lg px-4 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 active:scale-[0.97]"
+                style={dashboardView === 'map' ? { background: tc.tabActiveBg, color: tc.tabActiveText } : { color: tc.tabInactiveText }}
+              >
+                <MapPinned className="h-4 w-4" /> Floor plan
+              </button>
+              <button
+                type="button"
+                onClick={() => setDashboardView('list')}
+                aria-pressed={dashboardView === 'list'}
+                className="flex min-h-11 items-center gap-2 rounded-lg px-4 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 active:scale-[0.97]"
+                style={dashboardView === 'list' ? { background: tc.tabActiveBg, color: tc.tabActiveText } : { color: tc.tabInactiveText }}
+              >
+                <List className="h-4 w-4" /> Searchable list
+              </button>
+            </div>
+          </div>
+        )}
+
+        {dashboardView === 'map' && floorPlans.length > 0 && (
+          <>
+            <CleanerFloorPlanView plans={floorPlans} />
+            {sortedEquipment.some((item) => !item.serviceArea) && (
+              <section className="mb-8" aria-labelledby="map-equipment-title">
+                <div className="mb-4 flex items-center gap-3">
+                  <Layers className="h-6 w-6" style={{ color: tc.accentIndigo }} />
+                  <div>
+                    <h2 id="map-equipment-title" className="text-xl font-semibold" style={{ color: tc.textPrimary }}>Mobile equipment</h2>
+                    <p className="text-sm" style={{ color: tc.textMuted }}>Only mobile or unassigned items appear here. Stored equipment is inside its service area on the plan.</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {sortedEquipment.filter((item) => !item.serviceArea).map((item, index) => (
+                    <EquipmentCard
+                      key={item.id}
+                      equipment={item}
+                      index={index}
+                      priority={item.priority === 'OVERDUE' ? 'overdue' : item.priority === 'DUE_TODAY' ? 'today' : item.priority === 'COMPLETED' ? 'completed' : 'upcoming'}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
+        )}
+
         {/* Search and Filters */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.36 }}
-          className="rounded-lg p-6 mb-8"
+          className={`${dashboardView === 'map' ? 'hidden' : ''} rounded-lg p-6 mb-8`}
           style={{ background: tc.cardBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}
         >
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
@@ -719,7 +770,7 @@ export default function CleanerDashboard() {
         </motion.div>
 
         {/* Room Sections */}
-        <div className="space-y-8">
+        <div className={`${dashboardView === 'map' ? 'hidden' : ''} space-y-8`}>
           {view === 'priority' ? (
             <>
               {/* Priority View - Overdue, Today, Upcoming */}
@@ -1124,13 +1175,11 @@ function EquipmentCard({ equipment, index, priority }: EquipmentCardProps) {
                   </span>
                 )}
               </div>
-              {/* Both fields are optional and absent in practice - without the guard
-                  this rendered a location pin next to an empty string. */}
-              {(equipment.location || equipment.model) && (
+              {(equipment.serviceArea || equipment.model) && (
                 <div className="flex items-center gap-2 text-sm" style={{ color: tc.textMuted }}>
                   <MapPin className="w-3 h-3" />
-                  {equipment.location && <span>{equipment.location}</span>}
-                  {equipment.location && equipment.model && <span>•</span>}
+                  {equipment.serviceArea && <span>{equipment.serviceArea.name}</span>}
+                  {equipment.serviceArea && equipment.model && <span>•</span>}
                   {equipment.model && <span>{equipment.model}</span>}
                 </div>
               )}

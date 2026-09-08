@@ -117,7 +117,7 @@ export async function PUT(
         const resolved = resolveWriteSiteId(actor, requested)
         if (!resolved) {
           return NextResponse.json(
-            { error: 'A site is required for Manager and Cleaner roles' },
+            { error: 'A site is required for site-based roles' },
             { status: 400 }
           )
         }

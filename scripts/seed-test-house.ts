@@ -21,6 +21,7 @@ type RoomSpec = {
   name: string
   floor: string
   type: RoomType
+  description?: string
   // Several schedules on one room exercises the one-schedule-at-a-time lock.
   schedules: { title: string; frequency: ScheduleFrequency; status: ScheduleStatus; dueInDays: number }[]
 }
@@ -58,20 +59,42 @@ const ROOMS: RoomSpec[] = [
       { title: 'Assisted Bathroom Sanitisation', frequency: ScheduleFrequency.DAILY, status: ScheduleStatus.PENDING, dueInDays: 0 },
     ],
   },
+  {
+    name: 'Test Cleaning Cupboard', floor: 'Ground Floor', type: RoomType.SERVICE_AREA,
+    description: 'Cleaning trolley, mop system and consumables store.',
+    schedules: [],
+  },
+  {
+    name: 'Test Wheelchair & Hoist Cupboard', floor: 'Ground Floor', type: RoomType.SERVICE_AREA,
+    description: 'Resident mobility aids and lifting equipment store.',
+    schedules: [],
+  },
 ]
 
-const EQUIPMENT: { name: string; type: string; schedules: { title: string; frequency: ScheduleFrequency; status: ScheduleStatus; dueInDays: number }[] }[] = [
+const EQUIPMENT: { name: string; type: string; serviceArea: string; schedules: { title: string; frequency: ScheduleFrequency; status: ScheduleStatus; dueInDays: number }[] }[] = [
   {
-    name: 'Test Mobile Hoist', type: 'PATIENT_LIFT',
+    name: 'Test Mobile Hoist', type: 'PATIENT_LIFT', serviceArea: 'Test Wheelchair & Hoist Cupboard',
     schedules: [
       { title: 'Hoist and Sling Safety Check', frequency: ScheduleFrequency.WEEKLY, status: ScheduleStatus.OVERDUE, dueInDays: -3 },
       { title: 'Mobility Equipment Deep Clean', frequency: ScheduleFrequency.MONTHLY, status: ScheduleStatus.PENDING, dueInDays: 5 },
     ],
   },
   {
-    name: 'Test Cleaning Trolley', type: 'CLEANING_TROLLEY',
+    name: 'Test Cleaning Trolley', type: 'CLEANING_TROLLEY', serviceArea: 'Test Cleaning Cupboard',
     schedules: [
       { title: 'Cleaning Equipment Service', frequency: ScheduleFrequency.WEEKLY, status: ScheduleStatus.PENDING, dueInDays: 0 },
+    ],
+  },
+  {
+    name: 'Test Wheelchair', type: 'WHEELCHAIR', serviceArea: 'Test Wheelchair & Hoist Cupboard',
+    schedules: [
+      { title: 'Mobility Equipment Deep Clean', frequency: ScheduleFrequency.WEEKLY, status: ScheduleStatus.PENDING, dueInDays: 2 },
+    ],
+  },
+  {
+    name: 'Test Mop System', type: 'CLEANING_EQUIPMENT', serviceArea: 'Test Cleaning Cupboard',
+    schedules: [
+      { title: 'Cleaning Equipment Service', frequency: ScheduleFrequency.WEEKLY, status: ScheduleStatus.PENDING, dueInDays: 4 },
     ],
   },
 ]
@@ -84,7 +107,7 @@ async function main() {
   })
   console.log(`site: ${site.name} (${site.id})`)
 
-  // The schedule templates already exist from the main seed; reuse them rather than
+  // Reuse the operational demo templates rather than
   // creating near-duplicates that would clutter the schedule list.
   const titles = [...new Set([...ROOMS.flatMap(r => r.schedules), ...EQUIPMENT.flatMap(e => e.schedules)].map(s => s.title))]
   const templates = await prisma.schedule.findMany({ where: { title: { in: titles } } })
@@ -92,7 +115,7 @@ async function main() {
 
   const missing = titles.filter(t => !byTitle.has(t))
   if (missing.length) {
-    throw new Error(`Missing schedule templates: ${missing.join(', ')}. Run prisma/seed.ts first.`)
+    throw new Error(`Missing schedule templates: ${missing.join(', ')}. Run scripts/seed-demo-operations.ts in a disposable development database first; it replaces existing operational data.`)
   }
 
   // Make the templates available to this site so they can be assigned here.
@@ -104,8 +127,8 @@ async function main() {
   for (const spec of ROOMS) {
     const room = await prisma.room.upsert({
       where: { siteId_name: { siteId: site.id, name: spec.name } },
-      update: { floor: spec.floor, type: spec.type },
-      create: { name: spec.name, floor: spec.floor, type: spec.type, siteId: site.id },
+      update: { floor: spec.floor, type: spec.type, description: spec.description },
+      create: { name: spec.name, floor: spec.floor, type: spec.type, description: spec.description, siteId: site.id },
     })
     for (const s of spec.schedules) {
       const tpl = byTitle.get(s.title)!
@@ -122,10 +145,15 @@ async function main() {
   }
 
   for (const spec of EQUIPMENT) {
+    const serviceArea = await prisma.room.findUnique({
+      where: { siteId_name: { siteId: site.id, name: spec.serviceArea } },
+      select: { id: true },
+    })
+    if (!serviceArea) throw new Error(`Missing service area: ${spec.serviceArea}`)
     const equip = await prisma.equipment.upsert({
       where: { siteId_name: { siteId: site.id, name: spec.name } },
-      update: { type: spec.type },
-      create: { name: spec.name, type: spec.type, siteId: site.id, description: `${spec.name} for testing.` },
+      update: { type: spec.type, serviceAreaId: serviceArea.id },
+      create: { name: spec.name, type: spec.type, siteId: site.id, serviceAreaId: serviceArea.id, description: `${spec.name} for testing.` },
     })
     for (const s of spec.schedules) {
       const tpl = byTitle.get(s.title)!

@@ -27,6 +27,7 @@ import { frequencyLabel } from '@/lib/schedule-frequency'
 import { useThemeColors } from '@/hooks/useThemeColors'
 import { PageLoading, Spinner } from '@/components/ui/loading'
 import { SignaturePad } from '@/components/cleaner/signature-pad'
+import { canUseCleaningPortal } from '@/lib/roles'
 
 interface ScheduleTask {
   id: string
@@ -141,16 +142,17 @@ export default function CleanEquipmentPage() {
     }
   }, [status, session?.user?.name, signedName])
 
-  // Redirect admins away from cleaner interface
+  // Managers and higher use the management surface; Head of Housekeeping retains
+  // cleaning duties and may complete work here.
   useEffect(() => {
-    if (status === 'authenticated' && session?.user?.isAdmin) {
+    if (status === 'authenticated' && !canUseCleaningPortal(session?.user?.role)) {
       router.replace('/')
       return
     }
   }, [status, session, router])
 
   useEffect(() => {
-    if (params.equipmentId && status === 'authenticated' && !session?.user?.isAdmin) {
+    if (params.equipmentId && status === 'authenticated' && canUseCleaningPortal(session?.user?.role)) {
       fetchEquipmentData()
       setStartTime(new Date())
     }

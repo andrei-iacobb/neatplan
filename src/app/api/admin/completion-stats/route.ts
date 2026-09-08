@@ -26,7 +26,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // MANAGERs are limited to their own site; OP/DIRECTOR count across every site.
+    // Site-pinned roles are limited to their own site; OP/DIRECTOR count across every site.
     const user = session.user
     const scoped = !canAccessAllSites(user.role)
     const requestedSiteId = new URL(request.url).searchParams.get('site')

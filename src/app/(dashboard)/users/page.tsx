@@ -24,7 +24,7 @@ const userSchema = z.object({
       'Min 8 chars incl. uppercase, lowercase, number & special character'
     )
     .optional().or(z.literal('')),
-  role: z.enum(['OP', 'DIRECTOR', 'MANAGER', 'CLEANER']),
+  role: z.enum(['OP', 'DIRECTOR', 'MANAGER', 'HEAD_OF_HOUSEKEEPING', 'CLEANER']),
   siteId: z.string().optional().or(z.literal('')),
 }).superRefine((data, ctx) => {
   if (requiresSite(data.role) && !data.siteId) {

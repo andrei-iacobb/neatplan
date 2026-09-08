@@ -14,13 +14,14 @@ export interface ExtractedTask {
 }
 
 export interface DraftSchedule {
-  title: string
+  title: string | null
   /** Free text as written in the document, e.g. "every morning". Not an enum value. */
   detectedFrequency: string | null
   /** A ScheduleFrequency enum value, or null when the model could not map one. */
   suggestedFrequency: string | null
   area: string | null
   tasks: ExtractedTask[]
+  unresolvedFields: Array<'title' | 'frequency'>
 }
 
 interface ScheduleDropzoneProps {
@@ -34,9 +35,11 @@ interface ScheduleDropzoneProps {
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024
 
-async function safeJson(res: Response): Promise<any> {
-  const ct = res.headers.get('content-type') || ''
-  if (!ct.includes('application/json')) return null
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+async function safeJson(res: Response): Promise<unknown> {
   try {
     return await res.json()
   } catch {
@@ -78,30 +81,45 @@ export function ScheduleDropzone({ onExtracted, disabled = false }: ScheduleDrop
       formData.append('file', file)
       const res = await apiRequest('/api/ai/schedule/extract', { method: 'POST', body: formData })
       const data = await safeJson(res)
-      if (!res.ok) throw new Error(data?.error || 'Could not read that document.')
-      if (!data || !Array.isArray(data.tasks) || data.tasks.length === 0) {
+      const payload = isRecord(data) ? data : null
+      if (!res.ok) {
+        throw new Error(
+          typeof payload?.error === 'string' ? payload.error : 'Could not read that document.',
+        )
+      }
+      if (!payload || !Array.isArray(payload.tasks) || payload.tasks.length === 0) {
         throw new Error('No cleaning tasks were found in that document.')
       }
+      const extractedTasks = payload.tasks.flatMap((task) => {
+        if (!isRecord(task) || typeof task.description !== 'string' || !task.description.trim()) return []
+        return [{
+          description: task.description,
+          frequency: typeof task.frequency === 'string' ? task.frequency : null,
+          additionalNotes: typeof task.additionalNotes === 'string' ? task.additionalNotes : null,
+        }]
+      })
+      if (extractedTasks.length === 0) throw new Error('No cleaning tasks were found in that document.')
+
+      const rawUnresolvedFields = Array.isArray(payload.unresolvedFields) ? payload.unresolvedFields : []
       onExtracted(
         {
-          title: data.title || 'Cleaning Schedule',
-          detectedFrequency: data.detectedFrequency ?? null,
-          suggestedFrequency: data.suggestedFrequency ?? null,
-          area: data.area ?? null,
-          tasks: data.tasks.map((t: any) => ({
-            description: String(t.description ?? ''),
-            frequency: t.frequency ?? null,
-            additionalNotes: t.additionalNotes ?? null,
-          })),
+          title: typeof payload.title === 'string' && payload.title.trim() ? payload.title : null,
+          detectedFrequency: typeof payload.detectedFrequency === 'string' ? payload.detectedFrequency : null,
+          suggestedFrequency: typeof payload.suggestedFrequency === 'string' ? payload.suggestedFrequency : null,
+          area: typeof payload.area === 'string' ? payload.area : null,
+          unresolvedFields: rawUnresolvedFields.filter(
+            (field): field is 'title' | 'frequency' => field === 'title' || field === 'frequency',
+          ),
+          tasks: extractedTasks,
         },
         file.name,
       )
       toast.success(
-        `Found ${data.tasks.length} task${data.tasks.length === 1 ? '' : 's'} - the fields below are filled in.`,
+        `Found ${extractedTasks.length} task${extractedTasks.length === 1 ? '' : 's'} - the fields below are filled in.`,
       )
-    } catch (err: any) {
+    } catch (err: unknown) {
       setFileName(null)
-      toast.error(err.message || 'Failed to read the document.')
+      toast.error(err instanceof Error ? err.message : 'Failed to read the document.')
     } finally {
       busyRef.current = false
       setLoading(false)

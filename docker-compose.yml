@@ -103,6 +103,8 @@ services:
       migrate:
         condition: service_completed_successfully
     read_only: true
+    volumes:
+      - neatplan_uploads:/app/data/floor-plans
     tmpfs:
       - /tmp:rw,nosuid,nodev,noexec,size=512m,uid=1001,gid=1001,mode=1777
       - /app/data:rw,nosuid,nodev,noexec,size=512m,uid=1001,gid=1001,mode=0700
@@ -131,6 +133,7 @@ services:
 
 volumes:
   neatplan_data:
+  neatplan_uploads:
 
 networks:
   backend:

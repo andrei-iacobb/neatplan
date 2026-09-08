@@ -11,7 +11,7 @@ function AuthContent() {
   return (
     <>
       <WaveBackground />
-      <main className="min-h-screen flex items-center justify-center p-4 relative z-10">
+      <div className="min-h-screen flex items-center justify-center p-4 relative z-10">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -73,7 +73,7 @@ function AuthContent() {
             </p>
           </motion.div>
         </motion.div>
-      </main>
+      </div>
     </>
   )
 }
@@ -83,7 +83,7 @@ export default function AuthPage() {
     <Suspense fallback={
       <>
         <WaveBackground />
-        <main className="min-h-screen flex items-center justify-center p-4 relative z-10">
+        <div className="min-h-screen flex items-center justify-center p-4 relative z-10">
           <div className="w-full max-w-md">
             <div className="backdrop-blur-xl bg-gray-900/40 border border-gray-700/50 rounded-2xl shadow-2xl overflow-hidden animate-container">
               <div className="p-8 pb-6 text-center">
@@ -110,10 +110,10 @@ export default function AuthPage() {
               </div>
             </div>
           </div>
-        </main>
+        </div>
       </>
     }>
       <AuthContent />
     </Suspense>
   )
-} 
+}

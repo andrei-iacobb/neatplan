@@ -10,6 +10,8 @@ export default defineConfig([
     'out/**',
     'build/**',
     'dist/**',
+    'test-results/**',
+    'playwright-report/**',
     'node_modules/**',
     '**/generated/**',
     '**/prisma/generated/**',

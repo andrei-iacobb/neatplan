@@ -19,5 +19,5 @@ test('dashboard links are clickable', async ({ page }) => {
     await expect(page.getByRole('status', { name: 'Loading rooms' })).toBeVisible()
   })
 
-  await expect(page.getByRole('heading', { name: 'Room Management' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Rooms and Areas' })).toBeVisible()
 })

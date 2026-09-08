@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSchedulePrimaryFrequency, inferFrequencyFromTasks } from '@/lib/frequency-mapping'
+import { getSchedulePrimaryFrequency } from '@/lib/frequency-mapping'
 import { checkRateLimitByUserOrIp } from '@/lib/rate-limit'
 import { requireAdmin } from '@/lib/authz'
 
@@ -63,12 +63,13 @@ Return ONLY the JSON array, no markdown or extra text.`
 const ANALYSIS_PROMPT = `Analyze this cleaning document to extract metadata. Return JSON with this structure:
 
 {
-  "title": "Document title",
-  "type": "Type of cleaning (Daily, Deep, Infection Control, Post Vacancy, etc.)",
-  "frequency": "Main frequency (daily, weekly, monthly, quarterly, after vacancy, post-infection)",
-  "area": "Target area (bedrooms, bathrooms, communal, general)"
+  "title": "Document title, or null when it is not explicitly stated",
+  "type": "Type of cleaning when explicitly stated, otherwise null",
+  "frequency": "Explicit main frequency, otherwise null",
+  "area": "Explicit target area, otherwise null"
 }
 
+Do not infer metadata from task wording, layout, or assumptions. Use null whenever a value is absent or uncertain.
 Return ONLY valid JSON, no markdown.`
 
 const ENHANCED_CLEANING_KEYWORDS = [
@@ -423,19 +424,15 @@ export async function POST(req: Request) {
       )
     }
 
-    // Construct title from metadata
-    const titleParts = []
-    if (metadata?.title && metadata.title !== 'undefined') titleParts.push(metadata.title)
-    if (metadata?.type && metadata.type !== 'undefined') titleParts.push(metadata.type)
-    if (metadata?.area && metadata.area !== 'undefined' && metadata.area !== 'general') titleParts.push(metadata.area)
-    
-    const title = titleParts.length > 0 ? titleParts.join(' - ') : 'Cleaning Schedule'
+    const title = typeof metadata?.title === 'string' && metadata.title.trim()
+      ? metadata.title.trim()
+      : null
 
     // Process tasks for database
     const tasks = allTasks
       .filter(task => task.description && task.description.length > 3)
       .map((task: any) => ({
-        description: task.description || 'Cleaning task',
+        description: task.description,
         frequency: task.frequency || null,
         additionalNotes: [task.notes, task.estimatedDuration, task.area]
           .filter(Boolean)
@@ -450,11 +447,33 @@ export async function POST(req: Request) {
     }
 
     // Determine frequencies
-    const detectedFrequency = metadata?.frequency && metadata.frequency !== 'Not specified' 
-      ? metadata.frequency : null
-    const suggestedFrequency = detectedFrequency 
+    const detectedFrequency = typeof metadata?.frequency === 'string' &&
+      metadata.frequency.trim() &&
+      metadata.frequency.trim().toLowerCase() !== 'not specified'
+      ? metadata.frequency.trim()
+      : null
+    const suggestedFrequency = detectedFrequency
       ? getSchedulePrimaryFrequency(detectedFrequency)
-      : inferFrequencyFromTasks(tasks)
+      : null
+    const unresolvedFields = [
+      ...(!title ? ['title' as const] : []),
+      ...(!suggestedFrequency ? ['frequency' as const] : []),
+    ]
+
+    // This legacy endpoint used to create guessed records immediately. Fail closed
+    // when required metadata is unresolved and direct the operator to the reviewed
+    // importer, which keeps these fields blank and editable.
+    if (unresolvedFields.length > 0) {
+      return NextResponse.json(
+        {
+          error: `AI could not confirm ${unresolvedFields.join(' and ')}. Review the document in Schedules > New schedule before importing.`,
+          code: 'UNRESOLVED_IMPORT',
+          unresolvedFields,
+          preview: { title, detectedFrequency, suggestedFrequency, tasks },
+        },
+        { status: 422 },
+      )
+    }
 
     console.log('Creating schedule with detected frequency:', detectedFrequency, 'suggested:', suggestedFrequency)
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSessionUser, siteScopeWhere, resolveWriteSiteId, resolveReadSiteId, readSiteWhere } from '@/lib/authz'
 import { prisma } from '@/lib/db'
+import { findServiceAreaAtSite, normalizeServiceAreaId } from '@/lib/service-areas'
 
 export async function GET(request: Request) {
   try {
@@ -24,6 +25,7 @@ export async function GET(request: Request) {
       },
       include: {
         site: { select: { id: true, name: true } },
+        serviceArea: { select: { id: true, name: true, floor: true } },
         schedules: {
           include: {
             schedule: {
@@ -56,6 +58,8 @@ export async function GET(request: Request) {
         serialNumber: equip.serialNumber,
         siteId: equip.siteId,
         site: equip.site,
+        serviceAreaId: equip.serviceAreaId,
+        serviceArea: equip.serviceArea,
         createdAt: equip.createdAt,
         updatedAt: equip.updatedAt,
         scheduleCount: activeSchedules.length,
@@ -121,6 +125,17 @@ export async function POST(request: Request) {
       )
     }
 
+    const serviceAreaId = normalizeServiceAreaId(body.serviceAreaId)
+    if (body.serviceAreaId !== undefined && serviceAreaId === undefined) {
+      return NextResponse.json({ error: 'Service area is invalid' }, { status: 400 })
+    }
+    if (serviceAreaId && !(await findServiceAreaAtSite(serviceAreaId, siteId))) {
+      return NextResponse.json(
+        { error: 'Choose a service area from the same site as this equipment' },
+        { status: 400 }
+      )
+    }
+
     for (const [field, value] of Object.entries({ assetCode, model, serialNumber })) {
       if (value !== undefined && value !== null && typeof value !== 'string') {
         return NextResponse.json({ error: `${field} must be a string` }, { status: 400 })
@@ -144,6 +159,7 @@ export async function POST(request: Request) {
         assetCode: trimmedAssetCode,
         model: trimmedModel,
         serialNumber: trimmedSerialNumber,
+        serviceAreaId: serviceAreaId ?? null,
       }
     })
 

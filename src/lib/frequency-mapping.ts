@@ -3,76 +3,53 @@ import { ScheduleFrequency } from '@/generated/prisma/enums'
 /**
  * Maps AI-detected frequency strings to ScheduleFrequency enum values
  */
-export function mapFrequencyStringToEnum(frequencyString: string | null): ScheduleFrequency {
+export function mapFrequencyStringToEnum(frequencyString: string | null): ScheduleFrequency | null {
   if (!frequencyString) {
-    return ScheduleFrequency.WEEKLY // Default fallback
+    return null
   }
 
-  const frequency = frequencyString.toLowerCase().trim()
-  
-  // Daily patterns
-  if (frequency.includes('daily') || frequency.includes('every day') || frequency.includes('each day')) {
+  const frequency = frequencyString.toLowerCase().trim().replace(/\s+/g, ' ')
+
+  // Match complete, supported occurrences. Substring matching also accepted
+  // "not daily", "twice weekly" and "daily or weekly" as definite schedules.
+  if (/^(daily|every day|each day|once (a|per) day)$/.test(frequency)) {
     return ScheduleFrequency.DAILY
   }
-  
-  // Weekly patterns
-  if (frequency.includes('weekly') || frequency.includes('every week') || frequency.includes('once a week')) {
-    return ScheduleFrequency.WEEKLY
-  }
-  
-  // Bi-weekly patterns
-  if (frequency.includes('bi-weekly') || frequency.includes('biweekly') || 
-      frequency.includes('every two weeks') || frequency.includes('fortnightly')) {
+
+  if (/^(bi[ -]?weekly|every (two|2) weeks|fortnightly)$/.test(frequency)) {
     return ScheduleFrequency.BIWEEKLY
   }
-  
-  // Quarterly and semiannual must precede monthly because phrases such as
-  // "three monthly" and "six monthly" also contain the generic "monthly" pattern.
-  // Quarterly patterns
-  if (frequency.includes('quarterly') || frequency.includes('every quarter') || 
-      frequency.includes('every 3 months') || frequency.includes('three months') ||
-      frequency.includes('three monthly') || frequency.includes('3 monthly') ||
-      frequency.includes('3 months') ||
-      frequency.includes('after vacancy') || frequency.includes('post-infection')) {
+
+  if (/^(weekly|every week|each week|once (a|per) week)$/.test(frequency)) {
+    return ScheduleFrequency.WEEKLY
+  }
+
+  if (/^(quarterly|every quarter|(every )?(three|3) months|(three|3)[ -]monthly)$/.test(frequency)) {
     return ScheduleFrequency.QUARTERLY
   }
 
-  // Semiannual patterns
-  if (frequency.includes('six month') || frequency.includes('6 month') ||
-      frequency.includes('semi-annual') || frequency.includes('semiannual') ||
-      frequency.includes('bi-annual') || frequency.includes('biannual') ||
-      frequency.includes('twice a year') || frequency.includes('half-year') ||
-      frequency.includes('half year')) {
+  if (/^((every )?(six|6) months|(six|6)[ -]monthly|semi[ -]?annual(ly)?|bi[ -]?annual(ly)?|twice (a|per) year|half[ -]yearly)$/.test(frequency)) {
     return ScheduleFrequency.SEMIANNUAL
   }
 
-  // Monthly patterns
-  if (frequency.includes('monthly') || frequency.includes('every month') ||
-      frequency.includes('once a month') || frequency.includes('per month')) {
+  if (/^(monthly|every month|each month|once (a|per) month)$/.test(frequency)) {
     return ScheduleFrequency.MONTHLY
   }
-  
-  // Yearly patterns
-  if (frequency.includes('yearly') || frequency.includes('annually') || 
-      frequency.includes('every year') || frequency.includes('once a year')) {
+
+  if (/^(yearly|annual(ly)?|every year|each year|once (a|per) year)$/.test(frequency)) {
     return ScheduleFrequency.YEARLY
   }
-  
-  // Custom patterns - anything that doesn't fit standard frequencies
-  if (frequency.includes('as needed') || frequency.includes('when required') || 
-      frequency.includes('irregular') || frequency.includes('variable')) {
-    return ScheduleFrequency.WEEKLY // Default to weekly for custom frequencies
-  }
-  
-  // Default to weekly if we can't determine
-  return ScheduleFrequency.WEEKLY
+
+  // Import review owns ambiguous values. Guessing here previously made an
+  // unrecognised occurrence look confidently weekly.
+  return null
 }
 
 /**
  * Gets the primary frequency from a schedule's detected frequency string
  * This is used when the AI detects the main schedule frequency
  */
-export function getSchedulePrimaryFrequency(frequencyString: string | null): ScheduleFrequency {
+export function getSchedulePrimaryFrequency(frequencyString: string | null): ScheduleFrequency | null {
   return mapFrequencyStringToEnum(frequencyString)
 }
 
@@ -80,9 +57,9 @@ export function getSchedulePrimaryFrequency(frequencyString: string | null): Sch
  * Gets the most common frequency from schedule tasks
  * This analyzes all task frequencies to determine the best default for room assignment
  */
-export function inferFrequencyFromTasks(tasks: Array<{ frequency: string | null }>): ScheduleFrequency {
+export function inferFrequencyFromTasks(tasks: Array<{ frequency: string | null }>): ScheduleFrequency | null {
   if (!tasks || tasks.length === 0) {
-    return ScheduleFrequency.WEEKLY
+    return null
   }
 
   // Count frequency occurrences
@@ -90,19 +67,11 @@ export function inferFrequencyFromTasks(tasks: Array<{ frequency: string | null 
   
   tasks.forEach(task => {
     const freq = mapFrequencyStringToEnum(task.frequency)
+    if (!freq) return
     frequencyCount.set(freq, (frequencyCount.get(freq) || 0) + 1)
   })
   
-  // Return the most common frequency
-  let mostCommon: ScheduleFrequency = ScheduleFrequency.WEEKLY
-  let maxCount = 0
-  
-  for (const [freq, count] of frequencyCount.entries()) {
-    if (count > maxCount) {
-      maxCount = count
-      mostCommon = freq
-    }
-  }
-  
-  return mostCommon
+  const ranked = [...frequencyCount.entries()].sort((left, right) => right[1] - left[1])
+  if (ranked.length === 0 || (ranked[1] && ranked[0][1] === ranked[1][1])) return null
+  return ranked[0][0]
 }

@@ -4,6 +4,7 @@ export enum UserRole {
   OP = 'OP',
   DIRECTOR = 'DIRECTOR',
   MANAGER = 'MANAGER',
+  HEAD_OF_HOUSEKEEPING = 'HEAD_OF_HOUSEKEEPING',
   CLEANER = 'CLEANER'
 }
 

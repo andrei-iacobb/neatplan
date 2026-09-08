@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import type { NextRequest } from 'next/server'
+import { canUseCleaningPortal } from '@/lib/roles'
 
 // Array of public routes that don't require authentication
 const publicRoutes = ['/auth', '/api/auth', '/demo', '/api/health', '/api/readyz']
@@ -8,6 +9,7 @@ const publicRoutes = ['/auth', '/api/auth', '/demo', '/api/health', '/api/readyz
 // Routes that only admins can access
 const adminRoutes = [
   '/rooms',
+  '/floor-plans',
   '/settings',
   '/schedule',
   '/upload',
@@ -133,6 +135,7 @@ export async function proxy(request: NextRequest) {
   }
 
   const isAdmin = token.isAdmin as boolean
+  const canClean = canUseCleaningPortal(typeof token.role === 'string' ? token.role : null)
 
   // Check if the user is trying to access admin routes
   if (adminRoutes.some((route) => isPathWithin(path, route))) {
@@ -144,8 +147,8 @@ export async function proxy(request: NextRequest) {
 
   // Check if the user is trying to access cleaner routes
   if (cleanerRoutes.some((route) => isPathWithin(path, route))) {
-    if (isAdmin) {
-      // Redirect admin users to admin dashboard
+    if (!canClean) {
+      // Roles without cleaning duties use the management dashboard.
       return NextResponse.redirect(new URL('/', request.url))
     }
   }

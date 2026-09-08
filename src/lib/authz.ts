@@ -53,7 +53,7 @@ export async function requireAdmin(): Promise<Guarded> {
 
 /**
  * Require an authenticated user of at least `min` role in the hierarchy
- * (OP > DIRECTOR > MANAGER > CLEANER). Use for actions that must be limited
+ * (OP > DIRECTOR > MANAGER > HEAD_OF_HOUSEKEEPING > CLEANER). Use for actions that must be limited
  * above the management line, e.g. site CRUD or assigning Director/OP.
  */
 export async function requireRole(min: Role): Promise<Guarded> {
@@ -75,7 +75,7 @@ const NO_SITE = '__no_site__'
  * Prisma `where` fragment that limits a query on a model with a direct `siteId`
  * column (Room, Equipment, Schedule, CleaningTask) to the sites this user may see.
  *   - OP / DIRECTOR -> {} (all sites)
- *   - MANAGER / CLEANER -> { siteId: <their site> } (fails closed if unassigned)
+ *   - site-pinned roles -> { siteId: <their site> } (fails closed if unassigned)
  */
 export function siteScopeWhere(user: SessionUser): { siteId?: string } {
   if (canAccessAllSites(user.role)) return {}
@@ -133,7 +133,7 @@ export function canAccessSite(user: SessionUser, siteId: string | null | undefin
 
 /**
  * The siteId a create/write should be stamped with.
- *   - MANAGER / CLEANER -> forced to their own site (request value ignored)
+ *   - site-pinned roles -> forced to their own site (request value ignored)
  *   - OP / DIRECTOR -> the requested site (may be null; caller decides if required)
  */
 export function resolveWriteSiteId(user: SessionUser, requestedSiteId?: string | null): string | null {
@@ -145,7 +145,7 @@ export function resolveWriteSiteId(user: SessionUser, requestedSiteId?: string |
 
 /**
  * Prisma `where` fragment for a model that reaches sites through a many-to-many
- * relation (Schedule.sites). OP/DIRECTOR -> {} (all); MANAGER/CLEANER -> only
+ * relation (Schedule.sites). OP/DIRECTOR -> {} (all); site-pinned roles -> only
  * rows linked to their own site. Fails closed when a pinned user has no site.
  */
 export function m2mSiteScopeWhere(user: SessionUser, relation = 'sites'): Record<string, unknown> {
@@ -161,7 +161,7 @@ export function canAccessAnySite(user: SessionUser, siteIds: (string | null | un
 
 /**
  * `where` filter for INCLUDING a record's m2m `sites` relation without leaking
- * sites the caller can't see. A MANAGER/CLEANER who can reach a schedule shared
+ * sites the caller can't see. A site-pinned role that can reach a schedule shared
  * across sites must not learn the other sites' names, so their view of the
  * relation is narrowed to their own site. OP/DIRECTOR see all (undefined = no filter).
  */
@@ -172,7 +172,7 @@ export function visibleSiteRelationWhere(user: SessionUser): { id: string } | un
 
 /**
  * The set of siteIds a create/write should be linked to.
- *   - MANAGER / CLEANER -> forced to exactly their own site (request ignored)
+ *   - site-pinned roles -> forced to exactly their own site (request ignored)
  *   - OP / DIRECTOR -> the requested sites (deduped; may be empty - caller decides if required)
  */
 export function resolveWriteSiteIds(user: SessionUser, requestedSiteIds?: string[] | null): string[] {
@@ -184,7 +184,7 @@ export function resolveWriteSiteIds(user: SessionUser, requestedSiteIds?: string
  * Whether the user may mutate (write/delete) a schedule. Only applies to mutations;
  * read access uses canAccessAnySite.
  *
- * MANAGER/CLEANER may only mutate schedules linked to exactly ONE site (their own).
+ * Site-pinned management roles may only mutate schedules linked to exactly ONE site (their own).
  * If a schedule is shared across multiple sites, only OP/DIRECTOR may mutate it.
  *
  * This prevents a MANAGER pinned to site A from destroying operational data when
@@ -193,7 +193,7 @@ export function resolveWriteSiteIds(user: SessionUser, requestedSiteIds?: string
 export function canMutateSchedule(user: SessionUser, schedule: { sites: { id: string }[] }): boolean {
   if (canAccessAllSites(user.role)) return true
 
-  // MANAGER/CLEANER can only mutate if the schedule is linked to exactly their own site.
+  // Site-pinned roles can only mutate if the schedule is linked to exactly their own site.
   if (schedule.sites.length !== 1) return false
   return schedule.sites[0].id === user.siteId
 }

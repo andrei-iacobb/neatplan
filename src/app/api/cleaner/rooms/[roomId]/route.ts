@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { canAccessSite } from '@/lib/authz'
+import { canUseCleaningPortal } from '@/lib/roles'
+import { buildRoomWorkPackage } from '@/lib/combined-room-schedule'
 
 export async function GET(
   request: Request,
@@ -19,10 +21,9 @@ export async function GET(
       )
     }
 
-    // Only cleaners should access this endpoint
-    if (session.user.isAdmin) {
+    if (!canUseCleaningPortal(session.user.role)) {
       return NextResponse.json(
-        { error: 'Forbidden - Admin users should use the admin interface' },
+        { error: 'Forbidden' },
         { status: 403 }
       )
     }
@@ -39,7 +40,7 @@ export async function GET(
           include: {
             schedule: {
               include: {
-                tasks: true
+                tasks: { orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] }
               }
             }
           },
@@ -65,7 +66,7 @@ export async function GET(
       )
     }
 
-    // A CLEANER may only open rooms in their own site. Return 404 (not 403) so we don't
+    // A cleaning user may only open rooms in their own site. Return 404 (not 403) so we don't
     // leak the existence of rooms belonging to other sites.
     if (!canAccessSite(session.user, room.siteId)) {
       return NextResponse.json(
@@ -74,21 +75,18 @@ export async function GET(
       )
     }
 
-    // Transform data for cleaner interface
-    const transformedRoom = {
-      id: room.id,
-      name: room.name,
-      type: room.type,
-      floor: room.floor || 'Unknown Floor',
-      description: room.description,
-      schedules: room.schedules
-        .map(roomSchedule => ({
+    const now = new Date()
+    const startOfToday = new Date(now)
+    startOfToday.setHours(0, 0, 0, 0)
+
+    const schedules = room.schedules
+      .map(roomSchedule => ({
         id: roomSchedule.id,
         title: roomSchedule.schedule.title,
         frequency: roomSchedule.frequency,
         nextDue: roomSchedule.nextDue.toISOString(),
         status: roomSchedule.status,
-        completedToday: roomSchedule.lastCompleted && (new Date(roomSchedule.lastCompleted).setHours(0,0,0,0) === new Date().setHours(0,0,0,0)),
+        completedToday: roomSchedule.lastCompleted !== null && roomSchedule.lastCompleted >= startOfToday,
         estimatedDuration: calculateEstimatedDuration(roomSchedule.schedule.tasks),
         tasks: roomSchedule.schedule.tasks.map(task => ({
           id: task.id,
@@ -96,13 +94,24 @@ export async function GET(
           frequency: task.frequency,
           additionalNotes: task.additionalNotes
         }))
-        }))
-        .sort((a, b) => {
-          // Move completedToday to bottom
-          if (a.completedToday && !b.completedToday) return 1
-          if (!a.completedToday && b.completedToday) return -1
-          return 0
-        })
+      }))
+      .sort((a, b) => {
+        // Move completedToday to bottom
+        if (a.completedToday && !b.completedToday) return 1
+        if (!a.completedToday && b.completedToday) return -1
+        return 0
+      })
+
+    // Transform data for cleaner interface. Schedules remain available as source
+    // records, while workPackage is the single due-day checklist the cleaner sees.
+    const transformedRoom = {
+      id: room.id,
+      name: room.name,
+      type: room.type,
+      floor: room.floor || 'Unknown Floor',
+      description: room.description,
+      schedules,
+      workPackage: buildRoomWorkPackage(schedules, now),
     }
 
     return NextResponse.json(transformedRoom)
@@ -116,7 +125,7 @@ export async function GET(
   }
 }
 
-function calculateEstimatedDuration(tasks: any[]): string {
+function calculateEstimatedDuration(tasks: readonly unknown[]): string {
   if (tasks.length === 0) return '30min'
   
   // Simple estimation: 5 minutes per task with a minimum of 15 minutes
@@ -129,4 +138,4 @@ function calculateEstimatedDuration(tasks: any[]): string {
     const remainingMinutes = minutes % 60
     return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}min` : `${hours}h`
   }
-} 
+}

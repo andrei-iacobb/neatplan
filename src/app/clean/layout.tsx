@@ -3,9 +3,10 @@
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { LogOut, Settings, ChevronDown, Sparkles } from 'lucide-react'
+import { LogOut, Settings, ChevronDown, Sparkles, LayoutDashboard } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useThemeColors } from '@/hooks/useThemeColors'
+import { canUseCleaningPortal, isManagementRole } from '@/lib/roles'
 
 // Simple initial-in-circle avatar using the emerald brand accent
 function Avatar({ name, size = 'sm' }: { name: string, size?: 'sm' | 'md' }) {
@@ -56,8 +57,9 @@ export default function CleanLayout({
     }
   }, [])
 
-  // If admin user, redirect to admin dashboard
-  if (status === 'authenticated' && session?.user?.isAdmin) {
+  const role = session?.user?.role
+
+  if (status === 'authenticated' && !canUseCleaningPortal(role)) {
     router.replace('/')
     return null
   }
@@ -126,8 +128,21 @@ export default function CleanLayout({
 
                       {/* Menu Items */}
                       <div className="py-1">
+                        {isManagementRole(role) && (
+                          <Link
+                            href="/"
+                            onClick={() => setShowDropdown(false)}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
+                            style={{ color: tc.textSecondary }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = tc.hoverRow; e.currentTarget.style.color = tc.textPrimary }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = tc.textSecondary }}
+                          >
+                            <LayoutDashboard className="w-4 h-4" strokeWidth={1.5} />
+                            Management
+                          </Link>
+                        )}
                         <Link
-                          href="/clean/settings"
+                          href={isManagementRole(role) ? '/settings' : '/clean/settings'}
                           onClick={() => setShowDropdown(false)}
                           className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
                           style={{ color: tc.textSecondary }}

@@ -21,7 +21,7 @@ async function assertTaskAccess(actor: SessionUser, scheduleId: string, taskId: 
 }
 
 // Verify that the actor can mutate the task's schedule (must be linked to exactly
-// one site for MANAGER/CLEANER, or any site for OP/DIRECTOR). Returns a 404
+// one site for site-pinned roles, or any site for OP/DIRECTOR). Returns a 404
 // NextResponse when access denied (no existence leak), else null.
 async function assertTaskMutationAccess(actor: SessionUser, scheduleId: string): Promise<NextResponse | null> {
   const schedule = await prisma.schedule.findUnique({

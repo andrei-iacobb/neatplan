@@ -1,7 +1,7 @@
 import sharp from 'sharp'
 import * as z from 'zod'
 import type { ScheduleFrequency } from '@/generated/prisma/enums'
-import { getSchedulePrimaryFrequency, inferFrequencyFromTasks } from './frequency-mapping'
+import { getSchedulePrimaryFrequency } from './frequency-mapping'
 import { AIProviderUnavailableError, ensureAIProviderReady, getAIClient } from './ai-provider'
 import { ocrImageToText, OcrBusyError, OcrUnavailableError } from './ocr'
 import { extractPdfText } from './pdf'
@@ -13,11 +13,12 @@ export interface ExtractedScheduleTask {
 }
 
 export interface ExtractedSchedule {
-  title: string
+  title: string | null
   detectedFrequency: string | null
-  suggestedFrequency: ScheduleFrequency
+  suggestedFrequency: ScheduleFrequency | null
   area: string | null
   tasks: ExtractedScheduleTask[]
+  unresolvedFields: Array<'title' | 'frequency'>
 }
 
 export type ScheduleExtractionCode =
@@ -123,7 +124,7 @@ const modelTaskSchema = z
 
 const modelExtractionSchema = z
   .object({
-    title: z.string(),
+    title: z.string().nullable(),
     documentType: z.string().nullable(),
     frequency: z.string().nullable(),
     area: z.string().nullable(),
@@ -139,7 +140,7 @@ const scheduleExtractionJsonSchema = {
   required: ['title', 'documentType', 'frequency', 'area', 'tasks'],
   properties: {
     title: {
-      type: 'string',
+      type: ['string', 'null'],
     },
     documentType: {
       type: ['string', 'null'],
@@ -184,6 +185,8 @@ const SYSTEM_PROMPT = [
   'Extract every cleaning task you can find. Do not invent tasks.',
   'Capture per-task frequency, estimated duration, area or room, and special or compliance notes when present.',
   'Recognize frequencies such as daily, weekly, monthly, quarterly, annually, after vacancy or void, post-infection or infection control, and as required.',
+  'Only return a title or main frequency when it is explicitly stated in the document.',
+  'Never infer metadata from the file name, layout, task wording, or your own assumptions. Use null whenever a title or main frequency is absent or uncertain.',
 ].join(' ')
 
 function isBlankish(value: string | null | undefined): boolean {
@@ -264,23 +267,6 @@ function normalizeArea(value: string | null | undefined): string | null {
   }
 
   return normalized
-}
-
-function normalizeTitleCandidate(value: string | null | undefined): string | null {
-  return normalizeFreeText(value)
-}
-
-function buildFallbackTitle(documentType: string | null, area: string | null): string {
-  const parts = [documentType, area]
-    .map((part) => normalizeTitleCandidate(part))
-    .filter((part): part is string => Boolean(part))
-    .filter((part) => part.toLowerCase() !== 'general')
-
-  if (parts.length > 0) {
-    return parts.join(' - ').trim()
-  }
-
-  return 'Cleaning Schedule'
 }
 
 function normalizeTaskFrequency(value: string | null | undefined): string | null {
@@ -556,16 +542,21 @@ export async function extractScheduleFromDocument(params: {
 
     const detectedFrequency = normalizeDetectedFrequency(modelResult.frequency)
     const area = normalizeArea(modelResult.area)
-    const title = normalizeFreeText(modelResult.title) || buildFallbackTitle(modelResult.documentType, area)
+    const title = normalizeFreeText(modelResult.title)
+    const suggestedFrequency = detectedFrequency
+      ? getSchedulePrimaryFrequency(detectedFrequency)
+      : null
+    const unresolvedFields: ExtractedSchedule['unresolvedFields'] = []
+    if (!title) unresolvedFields.push('title')
+    if (!suggestedFrequency) unresolvedFields.push('frequency')
 
     return {
       title,
       detectedFrequency,
-      suggestedFrequency: detectedFrequency
-        ? getSchedulePrimaryFrequency(detectedFrequency)
-        : inferFrequencyFromTasks(tasks.map((task) => ({ frequency: task.frequency }))),
+      suggestedFrequency,
       area,
       tasks,
+      unresolvedFields,
     }
   } catch (error) {
     if (error instanceof ScheduleExtractionError) {

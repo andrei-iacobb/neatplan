@@ -16,7 +16,7 @@ env:
   NEXT_TEST_MODE: "1"
   PLAYWRIGHT_BASE_URL: http://127.0.0.1:3030
   NEXT_PUBLIC_APP_BASE_URL: http://127.0.0.1:3030
-  DATABASE_URL: postgresql://neatplan_user:ci-only-postgres-password@127.0.0.1:5432/neatplan?schema=public
+  DATABASE_URL: postgresql://neatplan_user:ci-only-postgres-password@127.0.0.1:5432/neatplan_stress?schema=public
   NEXTAUTH_URL: http://127.0.0.1:3030
   CORS_ALLOWED_ORIGIN: http://127.0.0.1:3030
   NEXTAUTH_SECRET: ci-only-nextauth-secret-00000000000000000000000000000000
@@ -31,12 +31,12 @@ jobs:
         image: postgres:15-bookworm
         env:
           POSTGRES_USER: neatplan_user
-          POSTGRES_DB: neatplan
+          POSTGRES_DB: neatplan_stress
           POSTGRES_PASSWORD: ci-only-postgres-password
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U neatplan_user -d neatplan"
+          --health-cmd "pg_isready -U neatplan_user -d neatplan_stress"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 12
@@ -62,6 +62,7 @@ jobs:
           SEED_CLEANER_PASSWORD: cleaner123
         run: |
           pnpm exec prisma migrate deploy
+          pnpm exec prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
           pnpm prisma:seed
 
       - name: Build production server with navigation instrumentation
@@ -93,7 +94,11 @@ jobs:
             exit 1
           fi
 
+          NODE_ENV=production pnpm exec tsx scripts/stress-housekeeping.ts
+
           pnpm exec playwright test \
+            tests/e2e/auth.spec.ts \
+            tests/e2e/floor-plan-editor.spec.ts \
             tests/e2e/instant-navigation.spec.ts \
             tests/e2e/dashboard-clicks.spec.ts \
             --project=chromium

@@ -11,7 +11,7 @@ import { useThemeColors } from '@/hooks/useThemeColors'
 import {
   Plus, X, Trash2, Building2, Calendar, Layers,
   BedDouble, UtensilsCrossed, Presentation, DoorOpen,
-  Sofa, Archive, ArrowRight, Sparkles,
+  Sofa, Archive, ArrowRight, Sparkles, PackageOpen,
 } from 'lucide-react'
 import { ScheduleFrequency, ScheduleStatus } from '@/generated/prisma/enums'
 import { getFrequencyLabel, getScheduleDisplayName } from '@/lib/schedule-utils'
@@ -64,7 +64,7 @@ export default function RoomsPage() {
   const tc = useThemeColors()
   const { data: session } = useSession()
   // OP/DIRECTOR span every site, so they pick which site a room belongs to and
-  // can filter the list by site. MANAGER/CLEANER are pinned - the server forces
+  // can filter the list by site. Site-based operational roles are pinned - the server forces
   // their site, so they never see a site picker.
   const canPickSite = canAccessAllSites((session?.user as any)?.role)
   const [sites, setSites] = useState<Site[]>([])
@@ -249,7 +249,7 @@ export default function RoomsPage() {
     )
   }
 
-  // OP/DIRECTOR can narrow the list to a single site; managers only ever see their own.
+  // OP/DIRECTOR can narrow the list to a single site; pinned roles only see their own.
   const visibleRooms = canPickSite && siteFilter !== 'ALL'
     ? rooms.filter(room => room.siteId === siteFilter)
     : rooms
@@ -272,10 +272,10 @@ export default function RoomsPage() {
       <div className="mb-10">
         <div className="flex items-center gap-2 mb-2">
           <Sparkles className="w-4 h-4" style={{ color: 'rgb(16,185,129)' }} />
-          <p className="text-[13px] font-medium tracking-wide uppercase" style={{ color: tc.accentLabel }}>Room Management</p>
+        <p className="text-[13px] font-medium tracking-wide uppercase" style={{ color: tc.accentLabel }}>Rooms and Areas</p>
         </div>
-        <h1 className="text-[32px] font-bold tracking-tight mb-1" style={{ color: tc.textPrimary }}>Room Management</h1>
-        <p className="text-[15px]" style={{ color: tc.textMuted }}>Manage your facility's rooms and their cleaning configurations</p>
+        <h1 className="text-[32px] font-bold tracking-tight mb-1" style={{ color: tc.textPrimary }}>Rooms and Areas</h1>
+        <p className="text-[15px]" style={{ color: tc.textMuted }}>Create rooms, hallways and service areas. Cleaning schedules stay independent, while service areas can also hold equipment.</p>
       </div>
 
       {/* Controls */}
@@ -356,7 +356,7 @@ export default function RoomsPage() {
               onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}
             >
               <Plus className="w-4 h-4" />
-              Add Room
+              Add Room or Area
             </button>
           )}
         </div>
@@ -583,8 +583,8 @@ export default function RoomsPage() {
             className="rounded-xl p-6 w-full max-w-md mx-4"
             style={{ background: tc.modalBg, border: `1px solid ${tc.cardBorder}`, boxShadow: tc.shadow }}>
             <div className="flex justify-between items-center mb-5">
-              <h2 className="text-[16px] font-semibold" style={{ color: tc.textPrimary }}>Add New Room</h2>
-              <button onClick={() => setShowForm(false)} className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
+              <h2 className="text-[16px] font-semibold" style={{ color: tc.textPrimary }}>Add Room or Area</h2>
+              <button onClick={() => setShowForm(false)} aria-label="Close add location form" className="w-7 h-7 rounded-md flex items-center justify-center transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50"
                 style={{ color: tc.textMuted }}
                 onMouseEnter={(e) => { e.currentTarget.style.color = tc.textSecondary; e.currentTarget.style.background = tc.hoverRow }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = tc.textMuted; e.currentTarget.style.background = 'transparent' }}>
@@ -602,13 +602,13 @@ export default function RoomsPage() {
                   </select>
                 </FormField>
               )}
-              <FormField label="Room Name" tc={tc}>
+              <FormField label="Name" tc={tc}>
                 <input type="text" required value={formData.name} onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full rounded-lg px-3 py-2 text-[13px] outline-hidden transition-colors"
                   style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
                   onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                   onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
-                  placeholder="e.g., Room 52" />
+                  placeholder="e.g. Room 52 or East Hallway…" />
               </FormField>
               <FormField label="Floor" tc={tc}>
                 <select value={formData.floor} onChange={(e) => setFormData(prev => ({ ...prev, floor: e.target.value }))}
@@ -618,7 +618,7 @@ export default function RoomsPage() {
                   <option value="Upstairs">Upstairs</option>
                 </select>
               </FormField>
-              <FormField label="Room Type" tc={tc}>
+              <FormField label="Location Type" tc={tc}>
                 <RoomTypeSelect value={formData.type} onChange={(v) => setFormData(prev => ({ ...prev, type: v }))} tc={tc} />
               </FormField>
               <FormField label="Description (Optional)" tc={tc}>
@@ -627,7 +627,7 @@ export default function RoomsPage() {
                   style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}`, color: tc.inputText }}
                   onFocus={(e) => { e.currentTarget.style.borderColor = tc.inputFocusBorder }}
                   onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
-                  rows={3} placeholder="Room description..." />
+                  rows={3} placeholder="Optional details about this room or area…" />
               </FormField>
               <div className="flex gap-3 pt-2" style={{ borderTop: `1px solid ${tc.divider}`, paddingTop: '16px' }}>
                 <button type="submit" disabled={isSubmitting}
@@ -635,7 +635,7 @@ export default function RoomsPage() {
                   style={{ background: tc.btnPrimaryBg, color: tc.btnPrimaryText, border: `1px solid ${tc.btnPrimaryBorder}` }}
                   onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = tc.btnPrimaryHoverBg }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = tc.btnPrimaryBg }}>
-                  {isSubmitting ? 'Creating...' : 'Create Room'}
+                  {isSubmitting ? 'Creating...' : 'Create Location'}
                 </button>
                 <button type="button" onClick={() => setShowForm(false)}
                   className="px-4 py-2 rounded-lg text-[13px] font-medium transition-colors"
@@ -659,7 +659,8 @@ export default function RoomsPage() {
             <div className="flex justify-between items-center mb-5">
               <h2 className="text-[16px] font-semibold" style={{ color: tc.textPrimary }}>Edit Room</h2>
               <button onClick={() => { setShowEditModal(false); setSelectedRoom(null) }}
-                className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
+                aria-label="Close edit location form"
+                className="w-7 h-7 rounded-md flex items-center justify-center transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/50"
                 style={{ color: tc.textMuted }}
                 onMouseEnter={(e) => { e.currentTarget.style.color = tc.textSecondary; e.currentTarget.style.background = tc.hoverRow }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = tc.textMuted; e.currentTarget.style.background = 'transparent' }}>
@@ -739,10 +740,10 @@ type TC = ReturnType<typeof useThemeColors>
 
 function FormField({ label, tc, children }: { label: string; tc: TC; children: React.ReactNode }) {
   return (
-    <div>
-      <label className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>{label}</label>
+    <label className="block">
+      <span className="block text-[12px] font-medium mb-1.5" style={{ color: tc.textSecondary }}>{label}</span>
       {children}
-    </div>
+    </label>
   )
 }
 
@@ -759,7 +760,8 @@ function RoomTypeSelect({ value, onChange, tc }: { value: string; onChange: (v: 
       <option value="LOBBY">Lobby</option>
       <option value="STORAGE">Storage</option>
       <option value="LOUNGE">Lounge</option>
-      <option value="OTHER">Other</option>
+      <option value="SERVICE_AREA">Service area (cleaning or equipment cupboard)</option>
+      <option value="OTHER">Other area (hallway, stairs, etc.)</option>
     </select>
   )
 }
@@ -773,6 +775,7 @@ function getRoomTypeIcon(type: string) {
     case 'MEETING_ROOM': return <Presentation className={c} />
     case 'LOUNGE': return <Sofa className={c} />
     case 'STORAGE': return <Archive className={c} />
+    case 'SERVICE_AREA': return <PackageOpen className={c} />
     default: return <DoorOpen className={c} />
   }
 }

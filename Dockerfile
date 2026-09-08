@@ -98,7 +98,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --chmod=0555 start.sh /usr/local/bin/neatplan-entrypoint
 
-RUN mkdir -p /app/data/document-jobs /app/.next/cache \
+RUN mkdir -p /app/data/document-jobs /app/data/floor-plans /app/.next/cache \
   && chown -R nextjs:nodejs /app/data /app/.next/cache
 
 USER nextjs
