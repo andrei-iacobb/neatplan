@@ -64,6 +64,8 @@ export async function PUT(
         floor,
         type: type as RoomType,
         ...(siteId !== undefined ? { siteId } : {}),
+        // Remove old-site map links atomically with the transfer.
+        ...(targetSiteId !== existing.siteId ? { floorPlanRegions: { deleteMany: {} } } : {}),
       },
     })
 

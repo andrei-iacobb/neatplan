@@ -4,8 +4,8 @@
  * initials, signatures and blank location fields are intentionally not imported.
  *
  * Existing room/equipment assignments are preserved. If a matching template is
- * already linked to the target site, its metadata and task list are replaced in
- * one transaction so the script is safe to rerun after correcting a checklist.
+ * linked exclusively to the target site, its metadata and task list are replaced
+ * in one transaction. Shared templates must be separated before importing.
  *
  * Run:
  *   pnpm import:cleaning-schedules -- --site "Risby Park"
@@ -426,7 +426,7 @@ function validateSpecs(): void {
   }
 }
 
-async function importSchedules(siteName: string): Promise<{ created: number; updated: number; taskCount: number }> {
+export async function importSchedules(siteName: string): Promise<{ created: number; updated: number; taskCount: number }> {
   return prisma.$transaction(async (tx) => {
     const site = await tx.site.findUnique({ where: { name: siteName }, select: { id: true } })
     if (!site) throw new Error(`Site not found: ${siteName}`)
@@ -434,11 +434,14 @@ async function importSchedules(siteName: string): Promise<{ created: number; upd
     let created = 0
     let updated = 0
     let taskCount = 0
+    const templates = []
 
+    // Check the entire batch before replacing tasks, including templates shared
+    // with another site later in the import order.
     for (const spec of CLEANING_SCHEDULES) {
       const existing = await tx.schedule.findMany({
         where: { title: spec.title, sites: { some: { id: site.id } } },
-        select: { id: true },
+        select: { id: true, sites: { select: { id: true } } },
         take: 2,
       })
 
@@ -446,15 +449,26 @@ async function importSchedules(siteName: string): Promise<{ created: number; upd
         throw new Error(`More than one "${spec.title}" schedule is linked to ${siteName}; resolve duplicates before importing.`)
       }
 
+      const template = existing[0]
+      if (template && (template.sites.length !== 1 || template.sites[0].id !== site.id)) {
+        throw new Error(
+          `Cannot import "${spec.title}" into ${siteName}: the existing template is shared with another site. ` +
+          'Separate it into site-specific templates before importing. No schedules were changed.',
+        )
+      }
+      templates.push({ spec, template })
+    }
+
+    for (const { spec, template } of templates) {
       const taskData = spec.tasks.map((task) => ({
         description: task.description,
         frequency: task.frequency ?? null,
         additionalNotes: task.additionalNotes ?? null,
       }))
 
-      if (existing[0]) {
+      if (template) {
         await tx.schedule.update({
-          where: { id: existing[0].id },
+          where: { id: template.id },
           data: {
             detectedFrequency: spec.detectedFrequency,
             suggestedFrequency: spec.suggestedFrequency,
@@ -502,11 +516,13 @@ async function main() {
   )
 }
 
-main()
-  .catch((error: unknown) => {
-    console.error(error instanceof Error ? error.message : error)
-    process.exitCode = 1
-  })
-  .finally(async () => {
-    await prisma.$disconnect()
-  })
+if (typeof require !== 'undefined' && require.main === module) {
+  main()
+    .catch((error: unknown) => {
+      console.error(error instanceof Error ? error.message : error)
+      process.exitCode = 1
+    })
+    .finally(async () => {
+      await prisma.$disconnect()
+    })
+}
