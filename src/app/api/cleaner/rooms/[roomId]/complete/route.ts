@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { Prisma } from '@/generated/prisma/client'
 import { ScheduleStatus } from '@/generated/prisma/enums'
 import { calculateNextDueDate } from '@/lib/schedule-utils'
 import { canAccessSite } from '@/lib/authz'
@@ -278,8 +279,10 @@ export async function POST(
       result = await prisma.$transaction(async (tx) => {
         const completionIds: string[] = []
         const nextDueDates: Date[] = []
+        const dueDatesBySchedule = new Map<string, Date>()
 
-        for (const requestedId of parsedScheduleIds) {
+        // Overlapping submissions must acquire row locks in the same order.
+        for (const requestedId of [...parsedScheduleIds].sort()) {
           const roomSchedule = schedulesById.get(requestedId)
           if (!roomSchedule) throw new ConcurrentCompletionError()
 
@@ -296,6 +299,13 @@ export async function POST(
           // Throwing rolls back earlier advances in this package. Returning a flag
           // here would commit a half-completed room under a concurrent double-submit.
           if (advanced.count === 0) throw new ConcurrentCompletionError()
+          dueDatesBySchedule.set(requestedId, nextDue)
+        }
+
+        for (const requestedId of parsedScheduleIds) {
+          const roomSchedule = schedulesById.get(requestedId)
+          const nextDue = dueDatesBySchedule.get(requestedId)
+          if (!roomSchedule || !nextDue) throw new ConcurrentCompletionError()
 
           const completionLog = await tx.roomScheduleCompletionLog.create({
             data: {
@@ -322,6 +332,12 @@ export async function POST(
         return NextResponse.json(
           { error: 'This room was just completed', duplicate: true },
           { status: 409 }
+        )
+      }
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') {
+        return NextResponse.json(
+          { error: 'This room changed during completion. Reload it before trying again.' },
+          { status: 409 },
         )
       }
       throw error

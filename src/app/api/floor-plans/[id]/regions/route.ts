@@ -80,7 +80,8 @@ export async function PUT(request: Request, context: RouteContext<'/api/floor-pl
 
     return NextResponse.json(updated)
   } catch (error) {
-    if (error instanceof StaleFloorPlanError) {
+    if (error instanceof StaleFloorPlanError ||
+      (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034')) {
       return NextResponse.json({ error: 'This plan changed in another session. Reload it before saving.' }, { status: 409 })
     }
     if (error instanceof Error && error.name === 'ZodError') {
