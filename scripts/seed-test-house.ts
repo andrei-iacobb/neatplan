@@ -107,7 +107,7 @@ async function main() {
   })
   console.log(`site: ${site.name} (${site.id})`)
 
-  // The schedule templates already exist from the main seed; reuse them rather than
+  // Reuse the operational demo templates rather than
   // creating near-duplicates that would clutter the schedule list.
   const titles = [...new Set([...ROOMS.flatMap(r => r.schedules), ...EQUIPMENT.flatMap(e => e.schedules)].map(s => s.title))]
   const templates = await prisma.schedule.findMany({ where: { title: { in: titles } } })
@@ -115,7 +115,7 @@ async function main() {
 
   const missing = titles.filter(t => !byTitle.has(t))
   if (missing.length) {
-    throw new Error(`Missing schedule templates: ${missing.join(', ')}. Run prisma/seed.ts first.`)
+    throw new Error(`Missing schedule templates: ${missing.join(', ')}. Run scripts/seed-demo-operations.ts in a disposable development database first; it replaces existing operational data.`)
   }
 
   // Make the templates available to this site so they can be assigned here.

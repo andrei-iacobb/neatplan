@@ -62,6 +62,7 @@ jobs:
           SEED_CLEANER_PASSWORD: cleaner123
         run: |
           pnpm exec prisma migrate deploy
+          pnpm exec prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
           pnpm prisma:seed
 
       - name: Build production server with navigation instrumentation
