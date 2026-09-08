@@ -3,8 +3,8 @@ import 'server-only'
 import { randomUUID } from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { PDFParse } from 'pdf-parse'
 import sharp from 'sharp'
+import { loadPdfParser } from '@/lib/pdf'
 
 const DATA_DIR = process.env.NEATPLAN_DATA_DIR || path.join(process.cwd(), 'data')
 const FLOOR_PLANS_DIR = path.join(DATA_DIR, 'floor-plans')
@@ -41,6 +41,7 @@ function hasSupportedMagicBytes(buffer: Buffer, claimedType: string): boolean {
 }
 
 async function renderPdfFirstPage(buffer: Buffer): Promise<Buffer> {
+  const { PDFParse } = await loadPdfParser()
   const parser = new PDFParse({ data: buffer })
   try {
     const screenshot = await parser.getScreenshot({

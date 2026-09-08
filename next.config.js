@@ -4,7 +4,7 @@ const nextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   reactCompiler: true,
-  serverExternalPackages: ['pdf-parse'],
+  serverExternalPackages: ['pdf-parse', '@napi-rs/canvas'],
   // Keep deterministic build metadata available to the client-rendered footer.
   env: {
     NEXT_PUBLIC_COPYRIGHT_YEAR: String(new Date().getFullYear()),
