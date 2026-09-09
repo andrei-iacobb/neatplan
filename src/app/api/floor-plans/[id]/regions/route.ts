@@ -7,18 +7,30 @@ import { saveFloorPlanRegionsSchema } from '@/lib/floor-plan-validation'
 class StaleFloorPlanError extends Error {}
 class InvalidFloorPlanRoomsError extends Error {}
 
-// PostgreSQL reports a serialization failure as SQLSTATE 40001. The query builder
-// turns that into P2034, but the raw locking read below reports the same failure as
-// P2010, and the driver adapter can throw it unwrapped, so match the SQLSTATE
-// anywhere in the cause chain instead of one Prisma code.
+// The pg adapter maps a PostgreSQL error to this shape before Prisma sees it.
+type MappedDriverError = { originalCode?: unknown; kind?: unknown }
+
+function isWriteConflict(cause: unknown): boolean {
+  if (cause === null || typeof cause !== 'object') return false
+  const mapped = cause as MappedDriverError
+  return mapped.kind === 'TransactionWriteConflict' || mapped.originalCode === '40001'
+}
+
+// PostgreSQL reports a serialization failure as SQLSTATE 40001. The query builder turns
+// that into P2034, but the raw locking read below arrives as P2010 carrying the adapter
+// error under `meta.driverAdapterError`, and the adapter error can also reach us
+// unwrapped with the mapping on its own `cause`. Recognise those shapes by the driver's
+// mapped code rather than by searching the message, so an unrelated database error stays
+// unknown and still answers 500.
 function isSerializationFailure(error: unknown): boolean {
-  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') return true
-  let current: unknown = error
-  for (let depth = 0; current instanceof Error && depth < 4; depth++) {
-    if (current.message.includes('40001') || current.message.includes('TransactionWriteConflict')) return true
-    current = (current as { cause?: unknown }).cause
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === 'P2034') return true
+    if (error.code !== 'P2010') return false
+    const adapterError = (error.meta as { driverAdapterError?: { cause?: unknown } } | undefined)?.driverAdapterError
+    // An adapter that attaches no mapped error still puts the raw SQLSTATE in the message.
+    return isWriteConflict(adapterError?.cause) || error.message.includes('Code: `40001`')
   }
-  return false
+  return error instanceof Error && isWriteConflict((error as { cause?: unknown }).cause)
 }
 
 export async function PUT(request: Request, context: RouteContext<'/api/floor-plans/[id]/regions'>) {

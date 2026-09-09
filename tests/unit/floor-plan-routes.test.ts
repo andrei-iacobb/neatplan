@@ -445,6 +445,83 @@ describe('floor plan region integrity', () => {
     expect(mocks.createRegions).not.toHaveBeenCalled()
   })
 
+  // Observed against Prisma 7.9.1 with @prisma/adapter-pg: a serialization failure on
+  // the raw locking read arrives as P2010 whose meta carries the adapter's mapped error,
+  // not as P2034. `cause` on that adapter error is a plain object, not an Error.
+  function rawWriteConflict() {
+    const adapterError = new Error('TransactionWriteConflict', {
+      cause: {
+        originalCode: '40001',
+        originalMessage: 'could not serialize access due to concurrent update',
+        kind: 'TransactionWriteConflict',
+      },
+    })
+    return new Prisma.PrismaClientKnownRequestError(
+      'Invalid `prisma.$queryRaw()` invocation:\n\nRaw query failed. Code: `40001`. ' +
+      'Message: `could not serialize access due to concurrent update`',
+      { code: 'P2010', clientVersion: '7.9.1', meta: { driverAdapterError: adapterError } },
+    )
+  }
+
+  it('retries the room lock when the conflict arrives as a raw P2010 instead of P2034', async () => {
+    mocks.lockRooms.mockRejectedValueOnce(rawWriteConflict())
+
+    const response = await saveRegions(jsonRequest('PUT', { revision: 1, regions: [region] }), context)
+
+    expect(response.status).toBe(200)
+    expect(mocks.transaction).toHaveBeenCalledTimes(2)
+    expect(mocks.lockRooms).toHaveBeenCalledTimes(2)
+    expect(mocks.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'plan-1', revision: 1 } }))
+  })
+
+  it('retries when the driver adapter error reaches the route unwrapped', async () => {
+    mocks.transaction.mockRejectedValueOnce(new Error('TransactionWriteConflict', {
+      cause: { originalCode: '40001', kind: 'TransactionWriteConflict' },
+    }))
+
+    const response = await saveRegions(jsonRequest('PUT', { revision: 1, regions: [region] }), context)
+
+    expect(response.status).toBe(200)
+    expect(mocks.transaction).toHaveBeenCalledTimes(2)
+  })
+
+  it('rechecks room ownership when the retried attempt followed a raw lock conflict', async () => {
+    mocks.lockRooms.mockRejectedValueOnce(rawWriteConflict()).mockResolvedValueOnce([])
+
+    const response = await saveRegions(jsonRequest('PUT', { revision: 1, regions: [region] }), context)
+
+    expect(response.status).toBe(400)
+    expect(mocks.transaction).toHaveBeenCalledTimes(2)
+    expect(mocks.updateMany).not.toHaveBeenCalled()
+    expect(mocks.createRegions).not.toHaveBeenCalled()
+  })
+
+  it('gives up after three raw lock conflicts without relaxing the revision', async () => {
+    mocks.lockRooms.mockRejectedValue(rawWriteConflict())
+
+    const response = await saveRegions(jsonRequest('PUT', { revision: 1, regions: [region] }), context)
+
+    expect(response.status).toBe(409)
+    expect(mocks.transaction).toHaveBeenCalledTimes(3)
+    expect(mocks.lockRooms).toHaveBeenCalledTimes(3)
+    expect(lockQuery(2).values).toEqual(['room-a', 'site-a'])
+    expect(mocks.updateMany).not.toHaveBeenCalled()
+  })
+
+  it('does not treat an unrelated raw failure as a conflict just because 40001 appears in its text', async () => {
+    mocks.lockRooms.mockRejectedValue(new Prisma.PrismaClientKnownRequestError(
+      'Invalid `prisma.$queryRaw()` invocation:\n\nRaw query failed. Code: `23505`. ' +
+      'Message: `duplicate key value violates unique constraint "rooms_pkey_40001"`',
+      { code: 'P2010', clientVersion: '7.9.1' },
+    ))
+
+    const response = await saveRegions(jsonRequest('PUT', { revision: 1, regions: [region] }), context)
+
+    expect(response.status).toBe(500)
+    expect(mocks.transaction).toHaveBeenCalledTimes(1)
+    expect(await response.json()).toEqual({ error: 'Could not save the marked rooms.' })
+  })
+
   it('returns a reload conflict after three aborted serializable saves', async () => {
     mocks.transaction.mockRejectedValue(new Prisma.PrismaClientKnownRequestError('Write conflict', {
       code: 'P2034', clientVersion: '7.9.1',
