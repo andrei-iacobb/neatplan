@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   updateMany: vi.fn(),
   siteFindFirst: vi.fn(),
-  roomCount: vi.fn(),
+  lockRooms: vi.fn(),
   deleteRegions: vi.fn(),
   createRegions: vi.fn(),
   transaction: vi.fn(),
@@ -33,7 +33,6 @@ vi.mock('@/lib/db', () => ({
       updateMany: mocks.updateMany,
     },
     site: { findFirst: mocks.siteFindFirst },
-    room: { count: mocks.roomCount },
     $transaction: mocks.transaction,
   },
 }))
@@ -53,13 +52,19 @@ import { PUT as saveRegions } from '@/app/api/floor-plans/[id]/regions/route'
 import { FloorPlanImageError } from '@/lib/floor-plan-images'
 
 const context = { params: Promise.resolve({ id: 'plan-1' }) }
+
+// The lock is a Prisma.sql fragment, so assert on the statement it sends.
+function lockQuery(call = 0) {
+  const [query] = mocks.lockRooms.mock.calls[call] as [Prisma.Sql]
+  return { sql: query.sql, values: query.values }
+}
 const oldImagePath = '/data/floor-plans/plan-1/old.png'
 const newImagePath = '/data/floor-plans/plan-1/new.png'
 const region = {
   label: 'Laundry', roomId: 'room-a', x: 0.1, y: 0.2, width: 0.2, height: 0.3,
 } satisfies FloorPlanRegionInput
 const transactionClient = {
-  room: { count: mocks.roomCount },
+  $queryRaw: mocks.lockRooms,
   floorPlan: {
     updateMany: mocks.updateMany,
     findUniqueOrThrow: mocks.findUniqueOrThrow,
@@ -104,7 +109,7 @@ beforeEach(() => {
   mocks.siteFindFirst.mockResolvedValue({ id: 'site-a' })
   mocks.create.mockResolvedValue({ id: 'plan-1', revision: 1 })
   mocks.updateMany.mockResolvedValue({ count: 1 })
-  mocks.roomCount.mockResolvedValue(1)
+  mocks.lockRooms.mockResolvedValue([{ id: 'room-a' }])
   mocks.processFile.mockResolvedValue({
     bytes: Buffer.from('processed image'), mimeType: 'image/png',
     width: 800, height: 600, sourceFileName: 'floor.png',
@@ -351,11 +356,10 @@ describe('floor plan image replacement failures', () => {
 
 describe('floor plan region integrity', () => {
   it('unpublishes a plan when its last region is removed', async () => {
-    mocks.roomCount.mockResolvedValue(0)
-
     const response = await saveRegions(jsonRequest('PUT', { revision: 1, regions: [] }), context)
 
     expect(response.status).toBe(200)
+    expect(mocks.lockRooms).not.toHaveBeenCalled()
     expect(mocks.updateMany).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({
         isPublished: false, publishedAt: null, revision: { increment: 1 },
@@ -366,19 +370,36 @@ describe('floor plan region integrity', () => {
   })
 
   it('rejects a linked room from another site before deleting any existing regions', async () => {
-    mocks.roomCount.mockResolvedValue(0)
+    mocks.lockRooms.mockResolvedValue([])
 
     const response = await saveRegions(jsonRequest('PUT', {
       revision: 1, regions: [{ ...region, roomId: 'room-other-site' }],
     }), context)
 
     expect(response.status).toBe(400)
-    expect(mocks.roomCount).toHaveBeenCalledWith({
-      where: { id: { in: ['room-other-site'] }, siteId: 'site-a' },
-    })
+    expect(lockQuery().values).toEqual(['room-other-site', 'site-a'])
     expect(mocks.transaction).toHaveBeenCalledTimes(1)
     expect(mocks.updateMany).not.toHaveBeenCalled()
     expect(mocks.deleteRegions).not.toHaveBeenCalled()
+  })
+
+  it('share locks every linked room in id order before claiming the revision', async () => {
+    mocks.lockRooms.mockResolvedValue([{ id: 'room-a' }, { id: 'room-b' }])
+
+    const response = await saveRegions(jsonRequest('PUT', {
+      revision: 1,
+      regions: [region, { ...region, roomId: 'room-b', label: 'Store', x: 0.5, y: 0.5 }],
+    }), context)
+
+    expect(response.status).toBe(200)
+    // FOR SHARE is what makes a transfer's siteId update wait for this save.
+    const { sql, values } = lockQuery()
+    expect(sql).toMatch(/FROM "rooms"/)
+    expect(sql).toMatch(/FOR SHARE/)
+    expect(sql).toMatch(/ORDER BY "id"/)
+    expect(values).toEqual(['room-a', 'room-b', 'site-a'])
+    expect(mocks.lockRooms.mock.invocationCallOrder[0])
+      .toBeLessThan(mocks.updateMany.mock.invocationCallOrder[0])
   })
 
   it('preserves existing regions when a concurrent editor has already claimed the revision', async () => {
@@ -409,7 +430,7 @@ describe('floor plan region integrity', () => {
   })
 
   it('rechecks room ownership after a rolled-back save instead of linking a transferred room', async () => {
-    mocks.roomCount.mockResolvedValueOnce(1).mockResolvedValueOnce(0)
+    mocks.lockRooms.mockResolvedValueOnce([{ id: 'room-a' }]).mockResolvedValueOnce([])
     mocks.updateMany.mockRejectedValueOnce(new Prisma.PrismaClientKnownRequestError('Write conflict', {
       code: 'P2034', clientVersion: '7.9.1',
     }))
@@ -418,7 +439,7 @@ describe('floor plan region integrity', () => {
 
     expect(response.status).toBe(400)
     expect(mocks.transaction).toHaveBeenCalledTimes(2)
-    expect(mocks.roomCount).toHaveBeenCalledTimes(2)
+    expect(mocks.lockRooms).toHaveBeenCalledTimes(2)
     expect(mocks.updateMany).toHaveBeenCalledTimes(1)
     expect(mocks.deleteRegions).not.toHaveBeenCalled()
     expect(mocks.createRegions).not.toHaveBeenCalled()

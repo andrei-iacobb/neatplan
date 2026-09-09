@@ -22,12 +22,24 @@ export async function PUT(request: Request, context: RouteContext<'/api/floor-pl
       return NextResponse.json({ error: 'Floor plan not found.' }, { status: 404 })
     }
 
+    // The schema rejects a room linked twice, so one row per id proves membership.
     const roomIds = input.regions.flatMap((region) => region.roomId ? [region.roomId] : [])
+    // Hold the linked rooms until this save commits, so a site transfer cannot
+    // land between the membership check and the region insert. FOR SHARE blocks
+    // an update of rooms."siteId"; id order keeps overlapping saves deadlock-free.
+    const lockLinkedRooms = roomIds.length === 0 ? null : Prisma.sql`
+      SELECT "id" FROM "rooms"
+      WHERE "id" IN (${Prisma.join(roomIds)}) AND "siteId" = ${plan.siteId}
+      ORDER BY "id"
+      FOR SHARE
+    `
+
     const save = () => prisma.$transaction(async (transaction) => {
-      // Recheck membership in every attempt so a concurrent room transfer cannot
-      // leave a marker pointing into another site.
-      const roomCount = await transaction.room.count({ where: { id: { in: roomIds }, siteId: plan.siteId } })
-      if (roomCount !== roomIds.length) throw new InvalidFloorPlanRoomsError()
+      // Relock and recheck membership on every attempt.
+      if (lockLinkedRooms) {
+        const linkedRooms = await transaction.$queryRaw<Array<{ id: string }>>(lockLinkedRooms)
+        if (linkedRooms.length !== roomIds.length) throw new InvalidFloorPlanRoomsError()
+      }
 
       const claimed = await transaction.floorPlan.updateMany({
         where: { id, revision: input.revision },
