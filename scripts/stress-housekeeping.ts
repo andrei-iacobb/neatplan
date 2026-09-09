@@ -161,6 +161,35 @@ function expectRace(results: HttpResult[], label: string) {
   }
 }
 
+type Deferred<T> = { promise: Promise<T>; resolve: (value: T) => void; reject: (reason: unknown) => void }
+
+function deferred<T>(): Deferred<T> {
+  let resolve!: (value: T) => void
+  let reject!: (reason: unknown) => void
+  const promise = new Promise<T>((settle, fail) => { resolve = settle; reject = fail })
+  return { promise, resolve, reject }
+}
+
+async function pollUntil<T>(read: () => Promise<T | null>, budgetMs: number, label: string) {
+  const deadline = performance.now() + budgetMs
+  for (;;) {
+    const value = await read()
+    if (value !== null) return value
+    assert(performance.now() < deadline, `${label} did not happen within ${budgetMs}ms`)
+    await new Promise(resolve => setTimeout(resolve, 20))
+  }
+}
+
+// Backends waiting on a lock this backend holds. Lets a race assert on observed
+// interleaving instead of trusting that two requests happened to overlap.
+async function backendsBlockedBy(pid: number) {
+  const rows = await prisma.$queryRaw<{ pid: number }[]>`
+    SELECT pid::int AS pid FROM pg_stat_activity
+    WHERE datname = current_database() AND ${pid}::int = ANY(pg_blocking_pids(pid))
+  `
+  return rows.length > 0 ? rows.map((row) => row.pid) : null
+}
+
 async function finishRequests(requests: Promise<HttpResult>[]) {
   // Let every mutation finish before a failed request can enter fixture cleanup.
   const results = await Promise.allSettled(requests)
@@ -274,6 +303,77 @@ async function main() {
     expectStatus(await cleaner.request(`${planRoute}/image`), 404, 'Edited plan becomes private draft')
     checks.push('published image isolation', 'eight concurrent region saves produce one update')
 
+    stage = 'room transfer during an in-flight region save'
+    // Holding the plan row parks the save just after its membership read. Old code
+    // rejected that safely: the roomId foreign key check raised a serialization
+    // conflict. A save that locks its rooms makes the transfer wait, and both finish.
+    const transferRoom = await prisma.room.create({ data: {
+      id: `${runId}-room-transfer`, name: `${runId} Transfer store`, siteId: siteIds[0], type: 'SERVICE_AREA', floor: 'PDF floor',
+    } })
+    expectStatus(await admin.request(`/api/rooms/${transferRoom.id}`), 200, 'Transfer room preload')
+    const pdfPlan = await prisma.floorPlan.findUniqueOrThrow({ where: { id: pdfId }, select: { revision: true } })
+    class ProbeRollback extends Error {}
+    const lockHeld = deferred<number>()
+    const releaseLock = deferred<void>()
+    let probeFailure: unknown = null
+    const probe = prisma.$transaction(async (transaction) => {
+      const [backend] = await transaction.$queryRaw<{ pid: number }[]>`SELECT pg_backend_pid()::int AS pid`
+      await transaction.$queryRaw`SELECT id FROM floor_plans WHERE id = ${pdfId} FOR UPDATE`
+      lockHeld.resolve(backend.pid)
+      await releaseLock.promise
+      // Roll back: the probe only ever holds a lock, it never writes.
+      throw new ProbeRollback()
+    }, { timeout: 30_000, maxWait: 5_000 }).catch((error: unknown) => {
+      if (error instanceof ProbeRollback) return
+      probeFailure = error
+      lockHeld.reject(error)
+    })
+    const inFlight: Promise<HttpResult>[] = []
+    let overlap = ''
+    try {
+      const probePid = await lockHeld.promise
+      inFlight.push(head.json(`/api/floor-plans/${pdfId}/regions`, 'PUT', {
+        revision: pdfPlan.revision,
+        regions: [{ label: 'Transferred store', roomId: transferRoom.id, x: 0.3, y: 0.3, width: 0.2, height: 0.2 }],
+      }))
+      const parked = await pollUntil(() => backendsBlockedBy(probePid), 2_000, 'Region save parking on the plan row')
+      assert.equal(parked.length, 1, 'Exactly one backend may wait on the probe lock')
+      let transferSettled = false
+      inFlight.push(admin.json(`/api/rooms/${transferRoom.id}`, 'PUT', {
+        name: transferRoom.name, floor: 'PDF floor', type: 'SERVICE_AREA', siteId: siteIds[1],
+      }).then((result) => { transferSettled = true; return result }))
+      // Either the transfer lands while the save is parked, or the save holds a row
+      // lock the transfer must wait for. The save's transaction times out after
+      // five seconds, so both budgets together (2s + 1.5s) stay under it.
+      overlap = await pollUntil(async () => {
+        if (await backendsBlockedBy(parked[0]) !== null) return 'transfer waits on the save'
+        return transferSettled ? 'transfer committed while the save was parked' : null
+      }, 1_500, 'Room transfer reaching the room row')
+    } finally {
+      releaseLock.resolve()
+      await probe
+      // Never enter cleanup, or the next assertion, with a live mutation in flight.
+      await Promise.allSettled(inFlight)
+    }
+    assert.equal(probeFailure, null, 'Plan row probe could not hold its lock')
+    const [transferSave, transferResult] = await finishRequests(inFlight)
+    assert.equal(overlap, 'transfer waits on the save',
+      'The transfer changed the room while the save was parked: the save does not lock the rooms it links')
+    expectStatus(transferResult, 200, 'Room transfer during region save')
+    // 400 stays acceptable: a separate serialization abort can retry after the
+    // transfer has committed, at which point the room really is not in this site.
+    assert([200, 400].includes(transferSave.status),
+      `Region save answered ${transferSave.status}; expected 200, or 400 on retry after the transfer ` +
+      '(409 = lost the room to a serialization failure instead of locking it, 500 = its transaction timed out)')
+    assert.equal((await prisma.room.findUniqueOrThrow({ where: { id: transferRoom.id } })).siteId, siteIds[1])
+    const pdfRegions = await prisma.floorPlanRegion.findMany({
+      where: { floorPlanId: pdfId }, select: { label: true, room: { select: { siteId: true } } },
+    })
+    const crossSite = pdfRegions.filter((entry) => entry.room !== null && entry.room.siteId !== siteIds[0])
+    assert.equal(crossSite.length, 0, `Floor plan kept ${crossSite.length} marker(s) linked to a room in another site`)
+    const transferRace = { overlap, saveStatus: transferSave.status, transferStatus: transferResult.status, markers: pdfRegions.length, crossSiteMarkers: crossSite.length }
+    checks.push('a mid-save room transfer waits on the save and leaves no cross-site marker')
+
     stage = 'combined completion fixtures'
     const due = new Date(Date.now() - 48 * 60 * 60 * 1000)
     async function schedule(suffix: string) {
@@ -376,7 +476,7 @@ async function main() {
     const load = { requests: 200, concurrency: 12, failures: failures.length, p50Ms: percentile(0.5), p95Ms: percentile(0.95), maxMs: percentile(1) }
     assert.equal(failures.length, 0, `Mixed reads failed: ${failures.slice(0, 5).join(', ')}`)
     checks.push('200 mixed reads preserve site boundaries')
-    receipt = { ok: true, checks, rendering: { png: pngDimensions, pdf: pdfDimensions }, regionRace: { winners: 1, conflicts: 7 }, completionRace: { winners: 1, conflicts: 7, logs: logs.length }, load, elapsedMs: Math.round(performance.now() - started) }
+    receipt = { ok: true, checks, rendering: { png: pngDimensions, pdf: pdfDimensions }, regionRace: { winners: 1, conflicts: 7 }, transferRace, completionRace: { winners: 1, conflicts: 7, logs: logs.length }, load, elapsedMs: Math.round(performance.now() - started) }
   } finally {
     const failedStage = stage
     stage = 'fixture cleanup'

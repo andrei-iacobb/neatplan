@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   updateMany: vi.fn(),
   siteFindFirst: vi.fn(),
-  roomCount: vi.fn(),
+  lockRooms: vi.fn(),
   deleteRegions: vi.fn(),
   createRegions: vi.fn(),
   transaction: vi.fn(),
@@ -33,7 +33,6 @@ vi.mock('@/lib/db', () => ({
       updateMany: mocks.updateMany,
     },
     site: { findFirst: mocks.siteFindFirst },
-    room: { count: mocks.roomCount },
     $transaction: mocks.transaction,
   },
 }))
@@ -53,12 +52,19 @@ import { PUT as saveRegions } from '@/app/api/floor-plans/[id]/regions/route'
 import { FloorPlanImageError } from '@/lib/floor-plan-images'
 
 const context = { params: Promise.resolve({ id: 'plan-1' }) }
+
+// The lock is a Prisma.sql fragment, so assert on the statement it sends.
+function lockQuery(call = 0) {
+  const [query] = mocks.lockRooms.mock.calls[call] as [Prisma.Sql]
+  return { sql: query.sql, values: query.values }
+}
 const oldImagePath = '/data/floor-plans/plan-1/old.png'
 const newImagePath = '/data/floor-plans/plan-1/new.png'
 const region = {
   label: 'Laundry', roomId: 'room-a', x: 0.1, y: 0.2, width: 0.2, height: 0.3,
 } satisfies FloorPlanRegionInput
 const transactionClient = {
+  $queryRaw: mocks.lockRooms,
   floorPlan: {
     updateMany: mocks.updateMany,
     findUniqueOrThrow: mocks.findUniqueOrThrow,
@@ -103,7 +109,7 @@ beforeEach(() => {
   mocks.siteFindFirst.mockResolvedValue({ id: 'site-a' })
   mocks.create.mockResolvedValue({ id: 'plan-1', revision: 1 })
   mocks.updateMany.mockResolvedValue({ count: 1 })
-  mocks.roomCount.mockResolvedValue(1)
+  mocks.lockRooms.mockResolvedValue([{ id: 'room-a' }])
   mocks.processFile.mockResolvedValue({
     bytes: Buffer.from('processed image'), mimeType: 'image/png',
     width: 800, height: 600, sourceFileName: 'floor.png',
@@ -350,11 +356,10 @@ describe('floor plan image replacement failures', () => {
 
 describe('floor plan region integrity', () => {
   it('unpublishes a plan when its last region is removed', async () => {
-    mocks.roomCount.mockResolvedValue(0)
-
     const response = await saveRegions(jsonRequest('PUT', { revision: 1, regions: [] }), context)
 
     expect(response.status).toBe(200)
+    expect(mocks.lockRooms).not.toHaveBeenCalled()
     expect(mocks.updateMany).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({
         isPublished: false, publishedAt: null, revision: { increment: 1 },
@@ -365,18 +370,36 @@ describe('floor plan region integrity', () => {
   })
 
   it('rejects a linked room from another site before deleting any existing regions', async () => {
-    mocks.roomCount.mockResolvedValue(0)
+    mocks.lockRooms.mockResolvedValue([])
 
     const response = await saveRegions(jsonRequest('PUT', {
       revision: 1, regions: [{ ...region, roomId: 'room-other-site' }],
     }), context)
 
     expect(response.status).toBe(400)
-    expect(mocks.roomCount).toHaveBeenCalledWith({
-      where: { id: { in: ['room-other-site'] }, siteId: 'site-a' },
-    })
-    expect(mocks.transaction).not.toHaveBeenCalled()
+    expect(lockQuery().values).toEqual(['room-other-site', 'site-a'])
+    expect(mocks.transaction).toHaveBeenCalledTimes(1)
+    expect(mocks.updateMany).not.toHaveBeenCalled()
     expect(mocks.deleteRegions).not.toHaveBeenCalled()
+  })
+
+  it('share locks every linked room in id order before claiming the revision', async () => {
+    mocks.lockRooms.mockResolvedValue([{ id: 'room-a' }, { id: 'room-b' }])
+
+    const response = await saveRegions(jsonRequest('PUT', {
+      revision: 1,
+      regions: [region, { ...region, roomId: 'room-b', label: 'Store', x: 0.5, y: 0.5 }],
+    }), context)
+
+    expect(response.status).toBe(200)
+    // FOR SHARE is what makes a transfer's siteId update wait for this save.
+    const { sql, values } = lockQuery()
+    expect(sql).toMatch(/FROM "rooms"/)
+    expect(sql).toMatch(/FOR SHARE/)
+    expect(sql).toMatch(/ORDER BY "id"/)
+    expect(values).toEqual(['room-a', 'room-b', 'site-a'])
+    expect(mocks.lockRooms.mock.invocationCallOrder[0])
+      .toBeLessThan(mocks.updateMany.mock.invocationCallOrder[0])
   })
 
   it('preserves existing regions when a concurrent editor has already claimed the revision', async () => {
@@ -390,9 +413,116 @@ describe('floor plan region integrity', () => {
     }))
     expect(mocks.deleteRegions).not.toHaveBeenCalled()
     expect(mocks.createRegions).not.toHaveBeenCalled()
+    expect(mocks.transaction).toHaveBeenCalledTimes(1)
   })
 
-  it('returns a reload conflict when the database aborts a concurrent serializable save', async () => {
+  it('retries a rolled-back serialization failure without relaxing the submitted revision', async () => {
+    mocks.transaction.mockRejectedValueOnce(new Prisma.PrismaClientKnownRequestError('Write conflict', {
+      code: 'P2034', clientVersion: '7.9.1',
+    }))
+
+    const response = await saveRegions(jsonRequest('PUT', { revision: 1, regions: [region] }), context)
+
+    expect(response.status).toBe(200)
+    expect(mocks.transaction).toHaveBeenCalledTimes(2)
+    expect(mocks.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'plan-1', revision: 1 } }))
+    expect(mocks.createRegions).toHaveBeenCalledTimes(1)
+  })
+
+  it('rechecks room ownership after a rolled-back save instead of linking a transferred room', async () => {
+    mocks.lockRooms.mockResolvedValueOnce([{ id: 'room-a' }]).mockResolvedValueOnce([])
+    mocks.updateMany.mockRejectedValueOnce(new Prisma.PrismaClientKnownRequestError('Write conflict', {
+      code: 'P2034', clientVersion: '7.9.1',
+    }))
+
+    const response = await saveRegions(jsonRequest('PUT', { revision: 1, regions: [region] }), context)
+
+    expect(response.status).toBe(400)
+    expect(mocks.transaction).toHaveBeenCalledTimes(2)
+    expect(mocks.lockRooms).toHaveBeenCalledTimes(2)
+    expect(mocks.updateMany).toHaveBeenCalledTimes(1)
+    expect(mocks.deleteRegions).not.toHaveBeenCalled()
+    expect(mocks.createRegions).not.toHaveBeenCalled()
+  })
+
+  // Observed against Prisma 7.9.1 with @prisma/adapter-pg: a serialization failure on
+  // the raw locking read arrives as P2010 whose meta carries the adapter's mapped error,
+  // not as P2034. `cause` on that adapter error is a plain object, not an Error.
+  function rawWriteConflict() {
+    const adapterError = new Error('TransactionWriteConflict', {
+      cause: {
+        originalCode: '40001',
+        originalMessage: 'could not serialize access due to concurrent update',
+        kind: 'TransactionWriteConflict',
+      },
+    })
+    return new Prisma.PrismaClientKnownRequestError(
+      'Invalid `prisma.$queryRaw()` invocation:\n\nRaw query failed. Code: `40001`. ' +
+      'Message: `could not serialize access due to concurrent update`',
+      { code: 'P2010', clientVersion: '7.9.1', meta: { driverAdapterError: adapterError } },
+    )
+  }
+
+  it('retries the room lock when the conflict arrives as a raw P2010 instead of P2034', async () => {
+    mocks.lockRooms.mockRejectedValueOnce(rawWriteConflict())
+
+    const response = await saveRegions(jsonRequest('PUT', { revision: 1, regions: [region] }), context)
+
+    expect(response.status).toBe(200)
+    expect(mocks.transaction).toHaveBeenCalledTimes(2)
+    expect(mocks.lockRooms).toHaveBeenCalledTimes(2)
+    expect(mocks.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'plan-1', revision: 1 } }))
+  })
+
+  it('retries when the driver adapter error reaches the route unwrapped', async () => {
+    mocks.transaction.mockRejectedValueOnce(new Error('TransactionWriteConflict', {
+      cause: { originalCode: '40001', kind: 'TransactionWriteConflict' },
+    }))
+
+    const response = await saveRegions(jsonRequest('PUT', { revision: 1, regions: [region] }), context)
+
+    expect(response.status).toBe(200)
+    expect(mocks.transaction).toHaveBeenCalledTimes(2)
+  })
+
+  it('rechecks room ownership when the retried attempt followed a raw lock conflict', async () => {
+    mocks.lockRooms.mockRejectedValueOnce(rawWriteConflict()).mockResolvedValueOnce([])
+
+    const response = await saveRegions(jsonRequest('PUT', { revision: 1, regions: [region] }), context)
+
+    expect(response.status).toBe(400)
+    expect(mocks.transaction).toHaveBeenCalledTimes(2)
+    expect(mocks.updateMany).not.toHaveBeenCalled()
+    expect(mocks.createRegions).not.toHaveBeenCalled()
+  })
+
+  it('gives up after three raw lock conflicts without relaxing the revision', async () => {
+    mocks.lockRooms.mockRejectedValue(rawWriteConflict())
+
+    const response = await saveRegions(jsonRequest('PUT', { revision: 1, regions: [region] }), context)
+
+    expect(response.status).toBe(409)
+    expect(mocks.transaction).toHaveBeenCalledTimes(3)
+    expect(mocks.lockRooms).toHaveBeenCalledTimes(3)
+    expect(lockQuery(2).values).toEqual(['room-a', 'site-a'])
+    expect(mocks.updateMany).not.toHaveBeenCalled()
+  })
+
+  it('does not treat an unrelated raw failure as a conflict just because 40001 appears in its text', async () => {
+    mocks.lockRooms.mockRejectedValue(new Prisma.PrismaClientKnownRequestError(
+      'Invalid `prisma.$queryRaw()` invocation:\n\nRaw query failed. Code: `23505`. ' +
+      'Message: `duplicate key value violates unique constraint "rooms_pkey_40001"`',
+      { code: 'P2010', clientVersion: '7.9.1' },
+    ))
+
+    const response = await saveRegions(jsonRequest('PUT', { revision: 1, regions: [region] }), context)
+
+    expect(response.status).toBe(500)
+    expect(mocks.transaction).toHaveBeenCalledTimes(1)
+    expect(await response.json()).toEqual({ error: 'Could not save the marked rooms.' })
+  })
+
+  it('returns a reload conflict after three aborted serializable saves', async () => {
     mocks.transaction.mockRejectedValue(new Prisma.PrismaClientKnownRequestError('Write conflict', {
       code: 'P2034', clientVersion: '7.9.1',
     }))
@@ -400,6 +530,7 @@ describe('floor plan region integrity', () => {
     const response = await saveRegions(jsonRequest('PUT', { revision: 1, regions: [region] }), context)
 
     expect(response.status).toBe(409)
+    expect(mocks.transaction).toHaveBeenCalledTimes(3)
     expect(await response.json()).toEqual({
       error: 'This plan changed in another session. Reload it before saving.',
     })

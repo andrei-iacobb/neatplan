@@ -32,6 +32,9 @@ overrides:
   'brace-expansion@<2': '1.1.18'
   'brace-expansion@>=5 <6': '5.0.9'
   'esbuild@>=0.27.3 <0.28.1': '0.28.2'
+  # js-yaml only enters the tree through @eslint/eslintrc, whose ^4.3.0 range keeps
+  # resolving 4.3.1, where maxTotalMergeKeys fails to bound CPU on empty merge sources.
+  'js-yaml@<4.3.2': '4.3.2'
   form-data: '>=4.0.6'
   postcss: '8.5.26'
   nanoid: '3.3.18'

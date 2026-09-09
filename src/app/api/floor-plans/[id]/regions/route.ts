@@ -5,6 +5,33 @@ import { canAccessSite, requireRole } from '@/lib/authz'
 import { saveFloorPlanRegionsSchema } from '@/lib/floor-plan-validation'
 
 class StaleFloorPlanError extends Error {}
+class InvalidFloorPlanRoomsError extends Error {}
+
+// The pg adapter maps a PostgreSQL error to this shape before Prisma sees it.
+type MappedDriverError = { originalCode?: unknown; kind?: unknown }
+
+function isWriteConflict(cause: unknown): boolean {
+  if (cause === null || typeof cause !== 'object') return false
+  const mapped = cause as MappedDriverError
+  return mapped.kind === 'TransactionWriteConflict' || mapped.originalCode === '40001'
+}
+
+// PostgreSQL reports a serialization failure as SQLSTATE 40001. The query builder turns
+// that into P2034, but the raw locking read below arrives as P2010 carrying the adapter
+// error under `meta.driverAdapterError`, and the adapter error can also reach us
+// unwrapped with the mapping on its own `cause`. Recognise those shapes by the driver's
+// mapped code rather than by searching the message, so an unrelated database error stays
+// unknown and still answers 500.
+function isSerializationFailure(error: unknown): boolean {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === 'P2034') return true
+    if (error.code !== 'P2010') return false
+    const adapterError = (error.meta as { driverAdapterError?: { cause?: unknown } } | undefined)?.driverAdapterError
+    // An adapter that attaches no mapped error still puts the raw SQLSTATE in the message.
+    return isWriteConflict(adapterError?.cause) || error.message.includes('Code: `40001`')
+  }
+  return error instanceof Error && isWriteConflict((error as { cause?: unknown }).cause)
+}
 
 export async function PUT(request: Request, context: RouteContext<'/api/floor-plans/[id]/regions'>) {
   const auth = await requireRole('HEAD_OF_HOUSEKEEPING')
@@ -21,13 +48,25 @@ export async function PUT(request: Request, context: RouteContext<'/api/floor-pl
       return NextResponse.json({ error: 'Floor plan not found.' }, { status: 404 })
     }
 
+    // The schema rejects a room linked twice, so one row per id proves membership.
     const roomIds = input.regions.flatMap((region) => region.roomId ? [region.roomId] : [])
-    const roomCount = await prisma.room.count({ where: { id: { in: roomIds }, siteId: plan.siteId } })
-    if (roomCount !== roomIds.length) {
-      return NextResponse.json({ error: 'One or more selected rooms do not belong to this site.' }, { status: 400 })
-    }
+    // Hold the linked rooms until this save commits, so a site transfer cannot
+    // land between the membership check and the region insert. FOR SHARE blocks
+    // an update of rooms."siteId"; id order keeps overlapping saves deadlock-free.
+    const lockLinkedRooms = roomIds.length === 0 ? null : Prisma.sql`
+      SELECT "id" FROM "rooms"
+      WHERE "id" IN (${Prisma.join(roomIds)}) AND "siteId" = ${plan.siteId}
+      ORDER BY "id"
+      FOR SHARE
+    `
 
-    const updated = await prisma.$transaction(async (transaction) => {
+    const save = () => prisma.$transaction(async (transaction) => {
+      // Relock and recheck membership on every attempt.
+      if (lockLinkedRooms) {
+        const linkedRooms = await transaction.$queryRaw<Array<{ id: string }>>(lockLinkedRooms)
+        if (linkedRooms.length !== roomIds.length) throw new InvalidFloorPlanRoomsError()
+      }
+
       const claimed = await transaction.floorPlan.updateMany({
         where: { id, revision: input.revision },
         data: {
@@ -78,10 +117,23 @@ export async function PUT(request: Request, context: RouteContext<'/api/floor-pl
       })
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
 
-    return NextResponse.json(updated)
+    // Serializable transactions can conflict even when editors touch different
+    // plans. Retry only rolled-back database conflicts, at most three attempts.
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return NextResponse.json(await save())
+      } catch (error) {
+        if (attempt >= 2 || !isSerializationFailure(error)) throw error
+        // Re-entering immediately tends to hit the same conflict, so back off a
+        // little, with jitter so concurrent editors do not line up again.
+        await new Promise((resolve) => setTimeout(resolve, 20 * (attempt + 1) + Math.random() * 20))
+      }
+    }
   } catch (error) {
-    if (error instanceof StaleFloorPlanError ||
-      (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034')) {
+    if (error instanceof InvalidFloorPlanRoomsError) {
+      return NextResponse.json({ error: 'One or more selected rooms do not belong to this site.' }, { status: 400 })
+    }
+    if (error instanceof StaleFloorPlanError || isSerializationFailure(error)) {
       return NextResponse.json({ error: 'This plan changed in another session. Reload it before saving.' }, { status: 409 })
     }
     if (error instanceof Error && error.name === 'ZodError') {
