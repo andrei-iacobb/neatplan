@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db'
 import { siteScopeWhere } from '@/lib/authz'
 import { canUseCleaningPortal } from '@/lib/roles'
 import { cleanerWorkPriority, combineCleanerWorkPriorities } from '@/lib/cleaner-work-priority'
+import { buildRoomWorkPackage } from '@/lib/combined-room-schedule'
 
 // Force dynamic rendering
 
@@ -45,7 +46,7 @@ export async function GET() {
           include: {
             schedule: {
               include: {
-                tasks: true
+                tasks: { orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] }
               }
             }
           },
@@ -195,15 +196,25 @@ export async function GET() {
         const roomPriority = cleanerWorkPriority(allActiveSchedules, now)
         if (roomPriority === 'NO_WORK') return null
         
-        // Calculate totals
-        const totalTasks = allActiveSchedules.reduce((acc, schedule) => 
-          acc + (schedule.schedule.tasks?.length || 0), 0
-        )
-        
-        const totalEstimatedMinutes = allActiveSchedules.reduce((acc, schedule) => 
-          acc + calculateEstimatedDuration(schedule.schedule.tasks || []), 0
-        )
-        
+        // Card and map totals come from the work package the room checklist
+        // renders, so they count the work due on this visit rather than every
+        // active schedule.
+        const checklistSchedules = allActiveSchedules
+          .filter(roomSchedule =>
+            roomSchedule.status === 'PENDING' ||
+            roomSchedule.status === 'OVERDUE' ||
+            (roomSchedule.lastCompleted !== null && roomSchedule.lastCompleted >= today))
+          .map(roomSchedule => ({
+            id: roomSchedule.id,
+            title: roomSchedule.schedule.title,
+            frequency: roomSchedule.frequency,
+            nextDue: roomSchedule.nextDue.toISOString(),
+            status: roomSchedule.status,
+            completedToday: roomSchedule.lastCompleted !== null && roomSchedule.lastCompleted >= today,
+            tasks: roomSchedule.schedule.tasks,
+          }))
+        const workPackage = buildRoomWorkPackage(checklistSchedules, now)
+
         const nextDueDates = allActiveSchedules
           .filter(s => s.status === 'PENDING')
           .map(s => new Date(s.nextDue))
@@ -221,8 +232,8 @@ export async function GET() {
           nextDue: earliestDue.toISOString(),
           summary: {
             totalSchedules: allActiveSchedules.length,
-            totalTasks: totalTasks,
-            estimatedDuration: formatDuration(totalEstimatedMinutes),
+            totalTasks: workPackage?.tasks.length ?? 0,
+            estimatedDuration: workPackage?.estimatedDuration ?? '0min',
             overdueCount: overdueSchedules.length,
             pendingCount: pendingSchedules.length,
             completedCount: completedSchedules.length
