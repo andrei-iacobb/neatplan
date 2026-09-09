@@ -336,15 +336,15 @@ async function main() {
         revision: pdfPlan.revision,
         regions: [{ label: 'Transferred store', roomId: transferRoom.id, x: 0.3, y: 0.3, width: 0.2, height: 0.2 }],
       }))
-      const parked = await pollUntil(() => backendsBlockedBy(probePid), 5_000, 'Region save parking on the plan row')
+      const parked = await pollUntil(() => backendsBlockedBy(probePid), 2_000, 'Region save parking on the plan row')
       assert.equal(parked.length, 1, 'Exactly one backend may wait on the probe lock')
       let transferSettled = false
       inFlight.push(admin.json(`/api/rooms/${transferRoom.id}`, 'PUT', {
         name: transferRoom.name, floor: 'PDF floor', type: 'SERVICE_AREA', siteId: siteIds[1],
       }).then((result) => { transferSettled = true; return result }))
-      // Either the transfer lands while the save is parked, or the fixed save holds
-      // a row lock the transfer must wait for. The save route's transaction times
-      // out after five seconds, so keep this window short.
+      // Either the transfer lands while the save is parked, or the save holds a row
+      // lock the transfer must wait for. The save's transaction times out after
+      // five seconds, so both budgets together (2s + 1.5s) stay under it.
       overlap = await pollUntil(async () => {
         if (await backendsBlockedBy(parked[0]) !== null) return 'transfer waits on the save'
         return transferSettled ? 'transfer committed while the save was parked' : null
@@ -363,7 +363,8 @@ async function main() {
     // 400 stays acceptable: a separate serialization abort can retry after the
     // transfer has committed, at which point the room really is not in this site.
     assert([200, 400].includes(transferSave.status),
-      `Region save answered ${transferSave.status}; 409 means it lost the room to a serialization failure instead of locking it`)
+      `Region save answered ${transferSave.status}; expected 200, or 400 on retry after the transfer ` +
+      '(409 = lost the room to a serialization failure instead of locking it, 500 = its transaction timed out)')
     assert.equal((await prisma.room.findUniqueOrThrow({ where: { id: transferRoom.id } })).siteId, siteIds[1])
     const pdfRegions = await prisma.floorPlanRegion.findMany({
       where: { floorPlanId: pdfId }, select: { label: true, room: { select: { siteId: true } } },
