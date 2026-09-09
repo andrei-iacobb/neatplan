@@ -7,6 +7,20 @@ import { saveFloorPlanRegionsSchema } from '@/lib/floor-plan-validation'
 class StaleFloorPlanError extends Error {}
 class InvalidFloorPlanRoomsError extends Error {}
 
+// PostgreSQL reports a serialization failure as SQLSTATE 40001. The query builder
+// turns that into P2034, but the raw locking read below reports the same failure as
+// P2010, and the driver adapter can throw it unwrapped, so match the SQLSTATE
+// anywhere in the cause chain instead of one Prisma code.
+function isSerializationFailure(error: unknown): boolean {
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') return true
+  let current: unknown = error
+  for (let depth = 0; current instanceof Error && depth < 4; depth++) {
+    if (current.message.includes('40001') || current.message.includes('TransactionWriteConflict')) return true
+    current = (current as { cause?: unknown }).cause
+  }
+  return false
+}
+
 export async function PUT(request: Request, context: RouteContext<'/api/floor-plans/[id]/regions'>) {
   const auth = await requireRole('HEAD_OF_HOUSEKEEPING')
   if ('error' in auth) return auth.error
@@ -97,18 +111,17 @@ export async function PUT(request: Request, context: RouteContext<'/api/floor-pl
       try {
         return NextResponse.json(await save())
       } catch (error) {
-        if (attempt >= 2 ||
-          !(error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034')) {
-          throw error
-        }
+        if (attempt >= 2 || !isSerializationFailure(error)) throw error
+        // Re-entering immediately tends to hit the same conflict, so back off a
+        // little, with jitter so concurrent editors do not line up again.
+        await new Promise((resolve) => setTimeout(resolve, 20 * (attempt + 1) + Math.random() * 20))
       }
     }
   } catch (error) {
     if (error instanceof InvalidFloorPlanRoomsError) {
       return NextResponse.json({ error: 'One or more selected rooms do not belong to this site.' }, { status: 400 })
     }
-    if (error instanceof StaleFloorPlanError ||
-      (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034')) {
+    if (error instanceof StaleFloorPlanError || isSerializationFailure(error)) {
       return NextResponse.json({ error: 'This plan changed in another session. Reload it before saving.' }, { status: 409 })
     }
     if (error instanceof Error && error.name === 'ZodError') {
