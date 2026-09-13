@@ -3,6 +3,7 @@ import { emailService } from '@/lib/email'
 import { cleanupStaleSessions } from '@/lib/session-cleanup'
 import { logger } from '@/lib/logger'
 import { runWeeklyDigest } from '@/lib/digest/send'
+import { pushToUsers } from '@/lib/push/server'
 
 export type ScheduleCheckResult = {
   roomCount: number
@@ -14,6 +15,7 @@ export type ScheduleCheckResult = {
   emailsFailed: number
   digestsSent: number
   digestsFailed: number
+  pushesSent: number
 }
 
 /**
@@ -118,6 +120,7 @@ export async function runScheduleCheck(): Promise<ScheduleCheckResult> {
 
   let emailsSent = 0
   let emailsFailed = 0
+  let pushesSent = 0
 
   // Send email alerts if any items were newly marked overdue. Route to everyone who can act
   // on the affected site(s): all OP and DIRECTOR users span every site, plus the MANAGER(s)
@@ -147,6 +150,33 @@ export async function runScheduleCheck(): Promise<ScheduleCheckResult> {
         emailsFailed++
         logger.error('Failed to send overdue-schedule alert email', err)
       }
+    }
+
+    /*
+     * The same alert, to whoever has consented on a device. Push goes only to
+     * browsers that were explicitly subscribed, so there is nothing to opt out
+     * of here separately - no subscription means no notification.
+     *
+     * Isolated from the email loop above: push being unconfigured, or a push
+     * service being down, must not cost anybody their email.
+     */
+    try {
+      const pushed = await pushToUsers(
+        recipients.map((recipient) => recipient.id),
+        {
+          title: 'Work is overdue',
+          body: `${roomCount} room and ${equipmentCount} equipment schedule${
+            roomCount + equipmentCount === 1 ? '' : 's'
+          } just went overdue.`,
+          url: '/diary',
+          // One tag, so a second alert replaces the first rather than stacking
+          // a tray full of them.
+          tag: 'neatplan-overdue',
+        }
+      )
+      pushesSent = pushed.sent
+    } catch (err) {
+      logger.error('[push] overdue notification failed', err)
     }
   }
 
@@ -179,5 +209,6 @@ export async function runScheduleCheck(): Promise<ScheduleCheckResult> {
     emailsFailed,
     digestsSent,
     digestsFailed,
+    pushesSent,
   }
 }

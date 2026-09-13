@@ -33,6 +33,7 @@ model User {
   createdFloorPlans               FloorPlan[]                      @relation("FloorPlanCreator")
   uploadedEquipmentPhotos         EquipmentPhoto[]                 @relation("EquipmentPhotoUploader")
   weeklyDigestDeliveries          WeeklyDigestDelivery[]
+  pushSubscriptions               PushSubscription[]
   // Account security fields
   isBlocked                       Boolean                          @default(false)
   forcePasswordChange             Boolean                          @default(false)
@@ -222,6 +223,35 @@ enum DigestDeliveryStatus {
   PENDING
   SENT
   FAILED
+}
+
+/// A browser push subscription, one per device a person has consented on.
+///
+/// Consent is per browser, not per account: a manager who allows notifications
+/// on the office desktop has said nothing about the tablet on the trolley. Each
+/// endpoint is therefore its own row, and revoking one leaves the others alone.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// The push service URL the browser issued. Unique, because the same browser
+  /// re-subscribing must update its row rather than accumulate duplicates.
+  endpoint  String   @unique
+  /// The browser's public key and auth secret for payload encryption. These are
+  /// useless without the endpoint and the server's own private VAPID key, but
+  /// they are still per-device secrets and are never sent back to any client.
+  p256dh    String
+  auth      String
+  /// For an operator working out which row is which device. Truncated on write.
+  userAgent String?
+  createdAt DateTime @default(now())
+  lastUsedAt DateTime?
+  /// Consecutive delivery failures. A subscription the push service rejects as
+  /// gone is deleted outright; this counts the softer failures.
+  failureCount Int   @default(0)
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }
 
 model CleaningTask {

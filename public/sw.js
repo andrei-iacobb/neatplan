@@ -1,4 +1,4 @@
-const CACHE = 'neatplan-shell-v2'
+const CACHE = 'neatplan-shell-v3'
 const SHELL = ['/', '/auth', '/clean']
 
 self.addEventListener('install', (event) => {
@@ -24,5 +24,81 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(
     caches.match(event.request).then((hit) => hit || fetch(event.request))
+  )
+})
+
+/*
+ * Push notifications.
+ *
+ * The payload is encrypted end to end by the push service, so this is the first
+ * point at which it is readable. It is still parsed defensively: a malformed or
+ * empty push must show something rather than throwing inside the worker, where
+ * nobody would ever see the error.
+ */
+self.addEventListener('push', (event) => {
+  let payload = {}
+  try {
+    payload = event.data ? event.data.json() : {}
+  } catch {
+    payload = {}
+  }
+
+  const title = payload.title || 'NeatPlan'
+  const options = {
+    body: payload.body || 'There is an update waiting in NeatPlan.',
+    icon: '/assets/logos/logo-192.png',
+    badge: '/assets/logos/logo-192.png',
+    // A tag replaces an earlier notification with the same one, so five overdue
+    // alerts do not become five entries in the tray.
+    tag: payload.tag || 'neatplan',
+    data: { url: payload.url || '/' },
+    // Work due today is worth a buzz; a silent notification on a trolley tablet
+    // is one nobody looks at.
+    requireInteraction: false,
+  }
+
+  event.waitUntil(self.registration.showNotification(title, options))
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+
+  const target = (event.notification.data && event.notification.data.url) || '/'
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      // Focus a tab that is already open rather than opening a second one. A
+      // cleaner with four NeatPlan tabs is a cleaner who has lost their place.
+      for (const client of clients) {
+        if ('focus' in client) {
+          client.navigate(target)
+          return client.focus()
+        }
+      }
+      return self.clients.openWindow(target)
+    })
+  )
+})
+
+/*
+ * A push service can rotate a subscription without being asked. Without this the
+ * old endpoint quietly stops working and the user believes they are still
+ * subscribed.
+ */
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(
+    self.registration.pushManager
+      .subscribe(event.oldSubscription ? event.oldSubscription.options : undefined)
+      .then((subscription) =>
+        fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(subscription.toJSON()),
+        })
+      )
+      .catch(() => {
+        // Nothing useful to do from here. The settings page re-checks on load
+        // and will offer to subscribe again.
+      })
   )
 })
