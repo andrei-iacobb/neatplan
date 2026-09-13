@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, type CSSProperties } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
@@ -79,6 +79,12 @@ function isJunkNote(note: string): boolean {
 export default function CleanRoomPage() {
   const params = useParams()
   const router = useRouter()
+  // Present when the cleaner arrived by scanning the door label. It is carried
+  // through to the completion so the record can say the room was identified by
+  // scan rather than picked from a list - see the note in the complete route
+  // about why that is a description and not a permission.
+  const searchParams = useSearchParams()
+  const checkInId = searchParams.get('checkIn')
   const { data: session, status } = useSession()
   const tc = useThemeColors()
   const [room, setRoom] = useState<Room | null>(null)
@@ -263,7 +269,8 @@ export default function CleanRoomPage() {
           notes,
           duration,
           signature: signatures[scheduleId],
-          signedName: signedName.trim()
+          signedName: signedName.trim(),
+          checkInId
         })
       })
 
