@@ -376,6 +376,7 @@ export async function POST(
               signedName: signOff.signedName,
               signedAt: now,
               roomName: roomSchedule.room?.name ?? null,
+              siteId: roomSchedule.room?.siteId ?? null,
               scheduleTitle: roomSchedule.schedule?.title ?? null,
               verificationMethod: checkIn?.method ?? VerificationMethod.MANUAL,
               checkedInAt: checkIn?.checkedInAt ?? null,

@@ -32,6 +32,7 @@ model User {
   roomCheckIns                    RoomCheckIn[]
   createdFloorPlans               FloorPlan[]                      @relation("FloorPlanCreator")
   uploadedEquipmentPhotos         EquipmentPhoto[]                 @relation("EquipmentPhotoUploader")
+  completionPhotos                CompletionPhoto[]
   weeklyDigestDeliveries          WeeklyDigestDelivery[]
   pushSubscriptions               PushSubscription[]
   // Account security fields
@@ -370,6 +371,8 @@ model RoomScheduleCompletionLog {
   signatureDataUrl   String?
   signedName         String?
   signedAt           DateTime?
+  siteId             String?
+  photos             CompletionPhoto[] @relation("RoomCompletionPhotos")
 
   @@index([roomScheduleId])
   @@index([completedAt])
@@ -398,11 +401,34 @@ model EquipmentScheduleCompletionLog {
   signatureDataUrl    String?
   signedName          String?
   signedAt            DateTime?
+  siteId              String?
+  photos              CompletionPhoto[] @relation("EquipmentCompletionPhotos")
 
   @@index([equipmentScheduleId])
   @@index([completedAt])
   @@index([completedByUserId])
   @@map("equipment_schedule_completion_logs")
+}
+
+model CompletionPhoto {
+  id            String   @id @default(cuid())
+  batchId       String
+  position      Int
+  siteId        String?
+  uploadedById  String?
+  uploadedBy    User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  imagePath     String
+  width         Int
+  height        Int
+  byteSize      Int
+  caption       String?
+  createdAt     DateTime @default(now())
+  roomLogs      RoomScheduleCompletionLog[] @relation("RoomCompletionPhotos")
+  equipmentLogs EquipmentScheduleCompletionLog[] @relation("EquipmentCompletionPhotos")
+
+  @@unique([batchId, position])
+  @@index([siteId])
+  @@map("completion_photos")
 }
 
 model FloorPlan {
