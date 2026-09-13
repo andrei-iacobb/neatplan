@@ -32,6 +32,7 @@ model User {
   roomCheckIns                    RoomCheckIn[]
   createdFloorPlans               FloorPlan[]                      @relation("FloorPlanCreator")
   uploadedEquipmentPhotos         EquipmentPhoto[]                 @relation("EquipmentPhotoUploader")
+  weeklyDigestDeliveries          WeeklyDigestDelivery[]
   // Account security fields
   isBlocked                       Boolean                          @default(false)
   forcePasswordChange             Boolean                          @default(false)
@@ -181,6 +182,43 @@ model EquipmentPhoto {
 
   @@index([equipmentId, sortOrder])
   @@map("equipment_photos")
+}
+
+/// One weekly digest delivery to one person.
+///
+/// The unique constraint on (userId, weekStart) IS the idempotency: a scheduler
+/// tick every fifteen minutes, a container restart, and an external cron all
+/// hitting the same Monday must produce one email, not dozens. A failed attempt
+/// leaves a row behind so the next tick can retry it rather than giving up on
+/// the week in silence.
+model WeeklyDigestDelivery {
+  id        String               @id @default(cuid())
+  userId    String
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// The Monday that opens the covered week, as a LOCAL calendar day in the
+  /// site's timezone. Stored as text because it is a calendar day, not an
+  /// instant - a timestamp would drag a timezone back into the key and make the
+  /// same week hash differently either side of a clock change.
+  weekStart String
+  status    DigestDeliveryStatus @default(SENT)
+  /// Why the last attempt failed, for an operator reading the table.
+  error     String?
+  attempts  Int                  @default(1)
+  /// Counts carried in the delivered digest, so what was sent can be reasoned
+  /// about later without rebuilding it.
+  dueCount      Int              @default(0)
+  overdueCount  Int              @default(0)
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  @@unique([userId, weekStart])
+  @@index([weekStart])
+  @@map("weekly_digest_deliveries")
+}
+
+enum DigestDeliveryStatus {
+  SENT
+  FAILED
 }
 
 model CleaningTask {

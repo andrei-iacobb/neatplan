@@ -251,6 +251,47 @@ class EmailService {
     })
   }
 
+  /**
+   * Send an already-rendered message.
+   *
+   * The templated helpers above cover the fixed notification types. The weekly
+   * digest builds its own body from live data, so it needs a way in that does
+   * not require inventing a template slot for every future message.
+   *
+   * Returns false rather than throwing when mail is not configured, which is the
+   * same contract the templated senders have: a self-hosted deployment with no
+   * SMTP server should skip notifications, not fail the job that triggered them.
+   */
+  async sendRawEmail(message: {
+    to: string
+    subject: string
+    html: string
+    text?: string
+  }): Promise<boolean> {
+    if (!this.isConfigured || !this.transporter) {
+      console.warn('Email service not configured, skipping notification')
+      return false
+    }
+
+    try {
+      const info = await this.transporter.sendMail({
+        from: process.env.SMTP_FROM || 'NeatPlan <noreply@neatplan.com>',
+        to: message.to,
+        subject: message.subject,
+        html: message.html,
+        text: message.text,
+      })
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Email sent:', nodemailer.getTestMessageUrl(info))
+      }
+      return true
+    } catch (error) {
+      console.error('Failed to send email:', error)
+      return false
+    }
+  }
+
   isReady(): boolean {
     return this.isConfigured
   }
