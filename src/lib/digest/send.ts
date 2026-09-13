@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { prisma } from '@/lib/db'
+import { Prisma } from '@/generated/prisma/client'
 import { logger } from '@/lib/logger'
 import { emailService } from '@/lib/email'
 import { buildDigest, digestRecipients, type DigestRecipient } from './build'
@@ -10,14 +11,33 @@ import { digestIsDue, digestWeek, DIGEST_TIMEZONE } from './week'
 /**
  * Sending the weekly digest.
  *
- * Three things make this safe to run on a fifteen-minute timer:
+ * Safe to run on a fifteen-minute timer, and safe to run twice at once - which
+ * it will be, because the in-process scheduler and the external cron endpoint
+ * both call it and nothing stops them landing in the same minute.
  *
- *   1. It only sends to people who switched it on. Off by default, no exceptions.
- *   2. One row per person per week, with a unique constraint behind it, so a
- *      restart or an overlapping external cron cannot send twice.
- *   3. A failed attempt records the failure and leaves the row retryable, rather
- *      than marking the week done and losing it.
+ * The delivery row is CLAIMED before the send, not written after it. An earlier
+ * version did the opposite, reasoning that a crash between claiming and sending
+ * would lose somebody's week. It would - but writing afterwards means two
+ * concurrent runners both find no row, both send, and only then write. Two real
+ * emails to a manager is a worse failure than one late one, and the claim is the
+ * only thing that can prevent it.
+ *
+ * The crash case is handled instead by the claim being reclaimable: a row left
+ * PENDING by a process that died becomes available again after STALE_CLAIM_MINUTES.
+ *
+ * What remains is a genuine at-least-once window: if the send succeeds and the
+ * status write then fails, the row stays PENDING and a later tick resends. That
+ * is a narrow window - a database failing in the moment between two adjacent
+ * statements - and it is the honest trade. It is not hidden.
  */
+
+/**
+ * How long a claim can sit unfinished before another runner may take it.
+ *
+ * Long enough that a transient database problem resolves before a retry is
+ * attempted, short enough that a crashed Monday send still goes out on Monday.
+ */
+const STALE_CLAIM_MINUTES = 60
 
 export interface DigestSendResult {
   considered: number
@@ -55,6 +75,44 @@ function appUrl(): string | null {
   }
 }
 
+/**
+ * Take exclusive ownership of one person's week, or report that somebody else
+ * has it.
+ *
+ * Two ways to win it. Creating the row outright is the common path; the unique
+ * constraint on (userId, weekStart) means exactly one concurrent runner can do
+ * that and the rest get P2002. Failing that, an existing row may be taken over
+ * if it FAILED, or if it has been PENDING longer than the stale window - which
+ * means whoever claimed it died before finishing.
+ *
+ * `updateMany` with the condition in the WHERE is what makes the takeover
+ * atomic: two runners racing for the same stale row produce one count of 1 and
+ * one count of 0.
+ */
+async function claimWeek(userId: string, weekStart: string, staleBefore: Date): Promise<boolean> {
+  try {
+    await prisma.weeklyDigestDelivery.create({
+      data: { userId, weekStart, status: 'PENDING' },
+    })
+    return true
+  } catch (error) {
+    const isConflict =
+      error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002'
+    if (!isConflict) throw error
+  }
+
+  const takeover = await prisma.weeklyDigestDelivery.updateMany({
+    where: {
+      userId,
+      weekStart,
+      OR: [{ status: 'FAILED' }, { status: 'PENDING', updatedAt: { lt: staleBefore } }],
+    },
+    data: { status: 'PENDING', attempts: { increment: 1 }, error: null },
+  })
+
+  return takeover.count === 1
+}
+
 export interface RunDigestOptions {
   now?: Date
   timeZone?: string
@@ -86,20 +144,8 @@ export async function runWeeklyDigest({
     return { considered: 0, sent: 0, skipped: 0, failed: 0, due: true }
   }
 
-  const alreadyHandled = await prisma.weeklyDigestDelivery.findMany({
-    where: {
-      weekStart: week.key,
-      userId: { in: recipients.map((recipient) => recipient.id) },
-    },
-    select: { userId: true, status: true },
-  })
-
-  // A previous FAILED attempt is retried; a SENT one is never repeated.
-  const settled = new Set(
-    alreadyHandled.filter((row) => row.status === 'SENT').map((row) => row.userId)
-  )
-
   const url = appUrl()
+  const staleBefore = new Date(now.getTime() - STALE_CLAIM_MINUTES * 60_000)
   let sent = 0
   let failed = 0
   let skipped = 0
@@ -109,10 +155,16 @@ export async function runWeeklyDigest({
   const bySite = new Map<string, Awaited<ReturnType<typeof buildDigest>>>()
 
   for (const recipient of recipients) {
-    if (settled.has(recipient.id)) {
+    const claimed = await claimWeek(recipient.id, week.key, staleBefore)
+    if (!claimed) {
+      // Already sent, or another runner is sending it right now. Either way this
+      // run must not send it again.
       skipped++
       continue
     }
+
+    let delivered = false
+    let failure: string | null = null
 
     try {
       let content = bySite.get(recipient.siteId)
@@ -122,60 +174,43 @@ export async function runWeeklyDigest({
       }
 
       const message = renderDigest(content, url)
-      const delivered = await transport(recipient, message)
+      delivered = await transport(recipient, message)
+      if (!delivered) failure = 'The mail service reported the send as unsuccessful.'
 
-      /*
-       * Claiming the week happens AFTER the send, deliberately. Claiming first
-       * would mean a crash between the claim and the send loses that person's
-       * digest for the week with no way to notice. A duplicate is the lesser
-       * failure than a silent miss, and the unique constraint keeps the window
-       * to a single in-flight send.
-       */
-      await prisma.weeklyDigestDelivery.upsert({
+      await prisma.weeklyDigestDelivery.update({
         where: { userId_weekStart: { userId: recipient.id, weekStart: week.key } },
-        create: {
-          userId: recipient.id,
-          weekStart: week.key,
+        data: {
           status: delivered ? 'SENT' : 'FAILED',
-          error: delivered ? null : 'The mail service reported the send as unsuccessful.',
-          dueCount: content.due.length,
-          overdueCount: content.overdue.length,
-        },
-        update: {
-          status: delivered ? 'SENT' : 'FAILED',
-          error: delivered ? null : 'The mail service reported the send as unsuccessful.',
-          attempts: { increment: 1 },
+          error: failure,
           dueCount: content.due.length,
           overdueCount: content.overdue.length,
         },
       })
-
-      if (delivered) sent++
-      else failed++
     } catch (error) {
-      failed++
       // One bad recipient must not cost everyone else their digest.
+      failure = error instanceof Error ? error.message.slice(0, 500) : 'Unknown error'
       logger.error('[digest] failed to send weekly digest', error)
 
       await prisma.weeklyDigestDelivery
-        .upsert({
+        .update({
           where: { userId_weekStart: { userId: recipient.id, weekStart: week.key } },
-          create: {
-            userId: recipient.id,
-            weekStart: week.key,
-            status: 'FAILED',
-            error: error instanceof Error ? error.message.slice(0, 500) : 'Unknown error',
-          },
-          update: {
-            status: 'FAILED',
-            error: error instanceof Error ? error.message.slice(0, 500) : 'Unknown error',
-            attempts: { increment: 1 },
-          },
+          /*
+           * Only ever recorded as FAILED when the send itself did not succeed.
+           * Marking a delivered digest FAILED would make it retryable and send
+           * the same person a second copy - the exact thing the claim exists to
+           * prevent.
+           */
+          data: delivered
+            ? { status: 'SENT', error: null }
+            : { status: 'FAILED', error: failure },
         })
-        // Recording the failure is best effort; if the database is what broke,
-        // the next tick will try the whole thing again anyway.
+        // Best effort. If the database is what broke, the claim stays PENDING
+        // and becomes retryable on its own after the stale window.
         .catch(() => undefined)
     }
+
+    if (delivered) sent++
+    else failed++
   }
 
   return { considered: recipients.length, sent, skipped, failed, due: true }

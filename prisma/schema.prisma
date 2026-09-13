@@ -200,7 +200,7 @@ model WeeklyDigestDelivery {
   /// instant - a timestamp would drag a timezone back into the key and make the
   /// same week hash differently either side of a clock change.
   weekStart String
-  status    DigestDeliveryStatus @default(SENT)
+  status    DigestDeliveryStatus @default(PENDING)
   /// Why the last attempt failed, for an operator reading the table.
   error     String?
   attempts  Int                  @default(1)
@@ -217,6 +217,9 @@ model WeeklyDigestDelivery {
 }
 
 enum DigestDeliveryStatus {
+  /// Claimed by a runner that has not finished sending yet. A row stuck here is
+  /// a process that died mid-send; it becomes retryable after a stale window.
+  PENDING
   SENT
   FAILED
 }

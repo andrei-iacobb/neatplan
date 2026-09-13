@@ -191,3 +191,37 @@ describe('when a digest becomes due', () => {
     expect(digestIsDue(new Date('2026-01-12T06:30:00Z'), LONDON)).toBe(false)
   })
 })
+
+describe('a zone whose clocks change at midnight', () => {
+  // A few zones skip 00:00-00:59 entirely on their spring-forward day, so local
+  // midnight does not exist. Getting this wrong lands a whole day out, not an
+  // hour - the week window would then cover the wrong seven days.
+  const SANTIAGO = 'America/Santiago'
+
+  it('stays on the requested calendar day when midnight does not exist', () => {
+    // Santiago springs forward at 24:00 on the first Saturday of September.
+    for (const day of [5, 6, 7, 8]) {
+      const midnight = localMidnightUtc(2026, 9, day, SANTIAGO)
+      const parts = localParts(midnight, SANTIAGO)
+
+      expect(`${parts.month}-${parts.day}`, `Sept ${day}`).toBe(`9-${day}`)
+    }
+  })
+
+  it('never returns an instant on the previous day', () => {
+    // The specific failure the second correction could produce: overshooting
+    // back across the transition to 23:00 the day before.
+    for (const day of [5, 6, 7, 8]) {
+      const parts = localParts(localMidnightUtc(2026, 9, day, SANTIAGO), SANTIAGO)
+      expect(parts.day, `Sept ${day}`).not.toBe(day - 1)
+    }
+  })
+
+  it('keeps the week boundaries on the right days there too', () => {
+    const week = digestWeek(new Date('2026-09-09T15:00:00Z'), SANTIAGO)
+    const start = localParts(week.start, SANTIAGO)
+
+    expect(start.weekday).toBe(1)
+    expect(week.key).toMatch(/^2026-09-0[78]$/)
+  })
+})

@@ -101,20 +101,44 @@ export function localMidnightUtc(
 
   const corrected = new Date(guess.getTime() + (wantedAsUtc - seenAsUtc))
 
-  /*
-   * On a spring-forward day local midnight may not exist at all in some zones
-   * (not in Europe/London, where the change is at 01:00, but this is meant to be
-   * usable elsewhere). The correction can then land an hour off; a second pass
-   * settles it, and if it still disagrees the guess is returned rather than
-   * looping.
-   */
   const check = localParts(corrected, timeZone)
   if (check.year === year && check.month === month && check.day === day && check.hour === 0) {
     return corrected
   }
 
+  /*
+   * One correction is exact for every zone whose offset is constant across the
+   * boundary. It is not when the clocks change AT local midnight - a few zones
+   * do this, and 00:00 then does not exist at all on that date.
+   *
+   * A second pass is attempted, but its result is CHECKED rather than trusted.
+   * Applying the same correction blindly overshoots straight back across the
+   * transition and lands on the previous day, which is a whole day wrong rather
+   * than an hour - far worse than the problem it was meant to solve.
+   *
+   * When neither pass lands on local midnight, the first correction is returned:
+   * it is the closest real instant to the midnight that did not happen, and it
+   * is on the right date.
+   */
   const checkAsUtc = Date.UTC(check.year, check.month - 1, check.day, check.hour, check.minute)
-  return new Date(corrected.getTime() + (wantedAsUtc - checkAsUtc))
+  const second = new Date(corrected.getTime() + (wantedAsUtc - checkAsUtc))
+  const secondCheck = localParts(second, timeZone)
+
+  if (
+    secondCheck.year === year &&
+    secondCheck.month === month &&
+    secondCheck.day === day &&
+    secondCheck.hour === 0
+  ) {
+    return second
+  }
+
+  // Prefer whichever of the two is at least on the right calendar day.
+  if (check.year === year && check.month === month && check.day === day) return corrected
+  if (secondCheck.year === year && secondCheck.month === month && secondCheck.day === day) {
+    return second
+  }
+  return corrected
 }
 
 export interface DigestWeek {
