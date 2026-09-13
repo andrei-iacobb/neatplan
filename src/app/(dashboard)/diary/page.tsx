@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { getFrequencyLabel } from '@/lib/schedule-utils'
 import Link from 'next/link'
+import { ExportMenu } from '@/components/export/export-menu'
 
 interface DiaryItem {
   id: string
@@ -158,12 +159,20 @@ export default function DiaryPage() {
             Cleaning Diary
           </h1>
         </div>
-        {isSwitching && (
-          <p className="text-[14px] leading-snug sm:text-right flex items-center gap-2 sm:justify-end" style={{ color: tc.textMuted }}>
-            <Spinner className="w-[14px] h-[14px]" />
-            Updating{site.selectedSite ? ` for ${site.selectedSite.name}` : ''}
-          </p>
-        )}
+        <div className="flex items-center gap-3 sm:justify-end">
+          {isSwitching && (
+            <p className="text-[14px] leading-snug flex items-center gap-2" style={{ color: tc.textMuted }}>
+              <Spinner className="w-[14px] h-[14px]" />
+              Updating{site.selectedSite ? ` for ${site.selectedSite.name}` : ''}
+            </p>
+          )}
+          {/* Exports the week on screen, plus everything still overdue. */}
+          <ExportMenu
+            dataset="diary"
+            size="sm"
+            filters={{ site: site.selected, date: currentWeekStart.toISOString().slice(0, 10) }}
+          />
+        </div>
       </header>
 
       <SiteFilter

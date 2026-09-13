@@ -17,6 +17,7 @@ import { ScheduleFrequency, ScheduleStatus } from '@/generated/prisma/enums'
 import { getFrequencyLabel, getScheduleDisplayName } from '@/lib/schedule-utils'
 import { apiRequest } from '@/lib/url-utils'
 import { PageLoading, Spinner } from '@/components/ui/loading'
+import { ExportMenu } from '@/components/export/export-menu'
 
 interface Room {
   id: string
@@ -269,13 +270,21 @@ export default function RoomsPage() {
   return (
     <div className="max-w-[1100px] mx-auto relative z-10 pb-8">
       {/* Header */}
-      <div className="mb-10">
-        <div className="flex items-center gap-2 mb-2">
-          <Sparkles className="w-4 h-4" style={{ color: 'rgb(16,185,129)' }} />
-        <p className="text-[13px] font-medium tracking-wide uppercase" style={{ color: tc.accentLabel }}>Rooms and Areas</p>
+      <div className="mb-10 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="w-4 h-4" style={{ color: 'rgb(16,185,129)' }} />
+            <p className="text-[13px] font-medium tracking-wide uppercase" style={{ color: tc.accentLabel }}>Rooms and Areas</p>
+          </div>
+          <h1 className="text-[32px] font-bold tracking-tight mb-1" style={{ color: tc.textPrimary }}>Rooms and Areas</h1>
+          <p className="text-[15px]" style={{ color: tc.textMuted }}>Create rooms, hallways and service areas. Cleaning schedules stay independent, while service areas can also hold equipment.</p>
         </div>
-        <h1 className="text-[32px] font-bold tracking-tight mb-1" style={{ color: tc.textPrimary }}>Rooms and Areas</h1>
-        <p className="text-[15px]" style={{ color: tc.textMuted }}>Create rooms, hallways and service areas. Cleaning schedules stay independent, while service areas can also hold equipment.</p>
+        {/* Exports carry the filters on screen and cover every matching room,
+            not just the floor currently in view. */}
+        <ExportMenu
+          dataset="rooms"
+          filters={{ site: siteFilter, floor: viewMode === 'BEDROOMS' ? selectedFloor : null }}
+        />
       </div>
 
       {/* Controls */}

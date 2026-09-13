@@ -9,7 +9,6 @@ import { apiRequest } from '@/lib/url-utils'
 import { ListLoading } from '@/components/ui/loading'
 import {
   Sparkles,
-  Download,
   ChevronDown,
   ChevronUp,
   ChevronLeft,
@@ -20,6 +19,7 @@ import {
   Users,
   Search,
 } from 'lucide-react'
+import { ExportMenu } from '@/components/export/export-menu'
 
 interface CompletionItem {
   id: string
@@ -184,15 +184,6 @@ export default function AuditPage() {
     setPage(1)
   }, [dateFrom, dateTo, selectedRoom, selectedUser, searchQuery])
 
-  const handleExport = () => {
-    const params = new URLSearchParams()
-    if (dateFrom) params.set('dateFrom', dateFrom)
-    if (dateTo) params.set('dateTo', dateTo)
-    if (selectedRoom) params.set('roomId', selectedRoom)
-    if (selectedUser) params.set('userId', selectedUser)
-    window.open(`/api/admin/export-report?${params.toString()}`, '_blank')
-  }
-
   const formatDate = (iso: string) => {
     const d = new Date(iso)
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -244,24 +235,19 @@ export default function AuditPage() {
             Track and verify that cleaning schedules are completed on time
           </p>
         </div>
-        <button
-          className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 whitespace-nowrap shrink-0"
-          style={{
-            background: tc.btnPrimaryBg,
-            color: tc.btnPrimaryText,
-            border: `1px solid ${tc.btnPrimaryBorder}`,
+        {/* The search box below filters only the page on screen; the export
+            applies it server-side across every matching completion. */}
+        <ExportMenu
+          dataset="completions"
+          className="shrink-0"
+          filters={{
+            dateFrom,
+            dateTo,
+            roomId: selectedRoom,
+            userId: selectedUser,
+            q: searchQuery,
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = tc.btnPrimaryHoverBg
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = tc.btnPrimaryBg
-          }}
-          onClick={handleExport}
-        >
-          <Download className="w-4 h-4" />
-          Export CSV
-        </button>
+        />
       </div>
 
       {/* Filter Bar */}

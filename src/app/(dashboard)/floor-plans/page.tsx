@@ -20,6 +20,7 @@ import {
 import { apiRequest } from '@/lib/url-utils'
 import { canAccessAllSites } from '@/lib/roles'
 import { useToast } from '@/components/ui/toast-context'
+import { ExportMenu } from '@/components/export/export-menu'
 
 type Site = { id: string; name: string }
 type Room = { id: string; name: string; floor: string | null; type: string; siteId: string | null }
@@ -431,6 +432,7 @@ export default function FloorPlansPage() {
           <p className="mt-1 max-w-2xl text-[14px] text-[rgb(var(--text-muted))]">Upload one plan per floor, mark its rooms, then publish it as the cleaner&apos;s visual work list.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <ExportMenu dataset="floor-plans" size="sm" filters={{ site: siteId }} />
           {canPickSite && (
             <label className="flex items-center gap-2 text-[13px] font-medium">
               <span>Site</span>

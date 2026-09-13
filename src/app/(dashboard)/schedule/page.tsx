@@ -11,6 +11,7 @@ import { ToastProvider } from '@/components/ui/toast-context'
 import { apiRequest } from '@/lib/url-utils'
 import { fadeUp, enter } from '@/lib/motion'
 import { ListLoading } from '@/components/ui/loading'
+import { ExportMenu } from '@/components/export/export-menu'
 
 function SchedulePageContent() {
   const tc = useThemeColors()
@@ -50,7 +51,8 @@ function SchedulePageContent() {
           <h1 className="text-[32px] font-bold tracking-tight mb-1" style={{ color: tc.textPrimary }}>Cleaning Schedule</h1>
           <p className="text-[15px]" style={{ color: tc.textMuted }}>Click any schedule to edit its title, frequency and tasks</p>
         </div>
-        <div className="shrink-0">
+        <div className="shrink-0 flex items-center gap-2">
+          <ExportMenu dataset="schedules" />
           <ScheduleCreateDialog onScheduleCreated={fetchSchedules} />
         </div>
       </div>
