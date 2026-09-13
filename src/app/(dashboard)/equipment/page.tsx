@@ -1095,6 +1095,10 @@ export default function EquipmentPage() {
                     onMouseEnter={(e) => (e.currentTarget.style.color = tc.accentGreen)}
                     onMouseLeave={(e) => (e.currentTarget.style.color = tc.textMuted)}
                     title="Edit equipment"
+                    // Icon-only, so it needs a name of its own - and naming the
+                    // item means a screen reader says which row is being edited
+                    // rather than reading "Edit equipment" forty times.
+                    aria-label={`Edit ${equip.name}`}
                   >
                     <Edit className="w-4 h-4" />
                   </button>
@@ -1105,6 +1109,7 @@ export default function EquipmentPage() {
                     onMouseEnter={(e) => (e.currentTarget.style.color = tc.accentRed)}
                     onMouseLeave={(e) => (e.currentTarget.style.color = tc.textMuted)}
                     title="Delete equipment"
+                    aria-label={`Delete ${equip.name}`}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

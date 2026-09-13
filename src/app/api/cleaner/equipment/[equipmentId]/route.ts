@@ -29,6 +29,14 @@ export async function GET(
         ...siteScopeWhere(session.user),
       },
       include: {
+        // The first identification photo, so a cleaner can see WHICH of four
+        // identical hoists this is before starting on it. imagePath is a server
+        // path and is never selected.
+        photos: {
+          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+          take: 1,
+          select: { id: true, caption: true },
+        },
         schedules: {
           include: {
             schedule: { include: { tasks: true } },
@@ -56,6 +64,10 @@ export async function GET(
       type: equipment.type,
       description: equipment.description,
       assetCode: equipment.assetCode,
+      photoUrl: equipment.photos[0]
+        ? `/api/admin/equipment/${equipment.id}/photos/${equipment.photos[0].id}/image`
+        : null,
+      photoCaption: equipment.photos[0]?.caption ?? null,
       schedules: equipment.schedules
         .map((equipmentSchedule) => ({
           id: equipmentSchedule.id,
