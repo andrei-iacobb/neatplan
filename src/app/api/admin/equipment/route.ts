@@ -26,6 +26,11 @@ export async function GET(request: Request) {
       include: {
         site: { select: { id: true, name: true } },
         serviceArea: { select: { id: true, name: true, floor: true } },
+        photos: {
+          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+          take: 1,
+          select: { id: true },
+        },
         schedules: {
           include: {
             schedule: {
@@ -62,6 +67,9 @@ export async function GET(request: Request) {
         serviceArea: equip.serviceArea,
         createdAt: equip.createdAt,
         updatedAt: equip.updatedAt,
+        photoUrl: equip.photos[0]
+          ? `/api/admin/equipment/${equip.id}/photos/${equip.photos[0].id}/image`
+          : null,
         scheduleCount: activeSchedules.length,
         totalTasks,
         schedules: activeSchedules.map(equipmentSchedule => ({
