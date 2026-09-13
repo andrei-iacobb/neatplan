@@ -1,16 +1,33 @@
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@/generated/prisma/client'
 
-// prisma-client-js honored the ?schema= URL param, but the pg driver adapter
-// ignores it and queries the default search_path (public). Production tables
-// live in a named schema, so thread it through to the adapter explicitly.
-const schemaFromUrl = (url: string | undefined) => {
-  if (!url) return undefined
+const databaseConfig = (connectionString: string | undefined) => {
+  if (!connectionString) return { connectionString }
+  let url: URL
   try {
-    return new URL(url).searchParams.get('schema') ?? undefined
+    url = new URL(connectionString)
   } catch {
-    return undefined
+    return { connectionString }
   }
+  const schema = url.searchParams.get('schema')
+  if (!schema) return { connectionString }
+  // The adapter interpolates schema names in ORM SQL. Restrict names to the
+  // identifier subset it handles safely; PostgreSQL truncates identifiers at 63 bytes.
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(schema) || schema.length > 63) {
+    throw new Error('The database schema must start with a letter or underscore, contain only letters, digits or underscores, and be at most 63 characters.')
+  }
+
+  // Prisma qualifies ORM queries, but raw SQL uses the connection search_path.
+  // Set it in the startup packet so every pooled connection is ready before its
+  // first query. Quotes preserve mixed-case schema names.
+  const searchPath = `"${schema}"`
+  const previousOptions = url.searchParams.getAll('options').at(-1) || process.env.PGOPTIONS
+  const options = [previousOptions, `-c search_path=${searchPath}`].filter(Boolean).join(' ')
+
+  // pg merges URL parameters over PoolConfig. Move existing options out of the
+  // URL or they would overwrite our search_path while leaving ORM queries valid.
+  url.searchParams.delete('options')
+  return { connectionString: url.toString(), schema, options }
 }
 
 const prismaClientSingleton = () => {
@@ -19,10 +36,10 @@ const prismaClientSingleton = () => {
   // has no DATABASE_URL, while the first real query still fails closed. The explicit
   // timeout preserves Prisma 6's bounded connection attempt; node-postgres defaults
   // to waiting indefinitely.
-  const schema = schemaFromUrl(process.env.DATABASE_URL)
+  const { schema, ...connection } = databaseConfig(process.env.DATABASE_URL)
   const adapter = new PrismaPg(
     {
-      connectionString: process.env.DATABASE_URL,
+      ...connection,
       connectionTimeoutMillis: 5_000,
     },
     schema ? { schema } : undefined,

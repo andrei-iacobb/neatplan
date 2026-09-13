@@ -97,6 +97,9 @@ services:
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_PASS_FILE: ${SMTP_PASS_FILE:-}
       SMTP_FROM: ${SMTP_FROM:-}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-}
     depends_on:
       db:
         condition: service_healthy
@@ -104,10 +107,10 @@ services:
         condition: service_completed_successfully
     read_only: true
     volumes:
+      - neatplan_files:/app/data
       - neatplan_uploads:/app/data/floor-plans
     tmpfs:
       - /tmp:rw,nosuid,nodev,noexec,size=512m,uid=1001,gid=1001,mode=1777
-      - /app/data:rw,nosuid,nodev,noexec,size=512m,uid=1001,gid=1001,mode=0700
       - /app/.next/cache:rw,nosuid,nodev,size=256m,uid=1001,gid=1001,mode=0750
     cap_drop:
       - ALL
@@ -134,6 +137,7 @@ services:
 volumes:
   neatplan_data:
   neatplan_uploads:
+  neatplan_files:
 
 networks:
   backend:

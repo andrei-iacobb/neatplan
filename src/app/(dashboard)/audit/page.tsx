@@ -20,6 +20,7 @@ import {
   Search,
 } from 'lucide-react'
 import { ExportMenu } from '@/components/export/export-menu'
+import { CompletionPhotoGallery, type CompletionPhoto } from '@/components/cleaner/completion-photo-gallery'
 
 interface CompletionItem {
   id: string
@@ -34,6 +35,7 @@ interface CompletionItem {
   completedBy: { name: string | null; email: string } | null
   completedTasks: any
   totalTasks: number
+  photos: CompletionPhoto[]
   notes: string | null
 }
 
@@ -548,11 +550,19 @@ export default function AuditPage() {
                           </p>
                         </td>
                         <td className="px-4 py-3">
-                          {isExpanded ? (
-                            <ChevronUp className="w-4 h-4" style={{ color: tc.textMuted }} />
-                          ) : (
-                            <ChevronDown className="w-4 h-4" style={{ color: tc.textMuted }} />
-                          )}
+                          <button
+                            type="button"
+                            aria-expanded={isExpanded}
+                            aria-label={`${isExpanded ? 'Hide' : 'Show'} completion details for ${item.itemName}`}
+                            className="flex min-h-12 min-w-12 items-center justify-center rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2"
+                            onClick={event => { event.stopPropagation(); setExpandedId(isExpanded ? null : item.id) }}
+                          >
+                            {isExpanded ? (
+                              <ChevronUp className="w-4 h-4" style={{ color: tc.textMuted }} />
+                            ) : (
+                              <ChevronDown className="w-4 h-4" style={{ color: tc.textMuted }} />
+                            )}
+                          </button>
                         </td>
                       </tr>
                       {isExpanded && (
@@ -598,6 +608,7 @@ export default function AuditPage() {
                                   No task details recorded.
                                 </p>
                               )}
+                              <CompletionPhotoGallery photos={item.photos ?? []} itemName={item.itemName} />
                               {item.notes && (
                                 <div className="mt-3 pt-2" style={{ borderTop: `1px solid ${tc.tableDivider}` }}>
                                   <p

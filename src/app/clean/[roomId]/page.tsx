@@ -24,6 +24,7 @@ import { frequencyLabel } from '@/lib/schedule-frequency'
 import { useThemeColors } from '@/hooks/useThemeColors'
 import { PageLoading, Spinner } from '@/components/ui/loading'
 import { SignaturePad } from '@/components/cleaner/signature-pad'
+import { CompletionPhotoPicker, CompletionPhotoRecovery, useCompletionPhotos } from '@/components/cleaner/completion-photo-picker'
 import { canUseCleaningPortal } from '@/lib/roles'
 import { EarlyWorkPicker } from '@/components/cleaner/early-work-picker'
 
@@ -105,6 +106,7 @@ export default function CleanRoomPage() {
   const checkInId = searchParams.get('checkIn')
   const { data: session, status } = useSession()
   const tc = useThemeColors()
+  const photos = useCompletionPhotos('room')
   const [room, setRoom] = useState<Room | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [completedTasks, setCompletedTasks] = useState<Map<string, CompletedTask>>(new Map())
@@ -236,7 +238,7 @@ export default function CleanRoomPage() {
   }
 
   const handleCompleteSchedule = async (scheduleId: string) => {
-    if (!room || !startTime) return
+    if (!room || !startTime || isSubmitting || photos.pending) return
 
     const schedule = room.workPackage?.id === scheduleId
       ? room.workPackage
@@ -310,8 +312,9 @@ export default function CleanRoomPage() {
         throw new Error(errorData.error || 'Failed to complete schedule')
       }
 
-      // Show success and redirect
-      router.push('/clean?completed=true')
+      if (await photos.attach(scheduleId, response)) {
+        router.push('/clean?completed=true')
+      }
     } catch (err) {
       console.error('Error completing schedule:', err)
       // Keep the cleaner on the page with their ticks and signature intact so they can
@@ -468,6 +471,10 @@ export default function CleanRoomPage() {
       case 'PAUSED': return 'Paused'
       default: return status
     }
+  }
+
+  if (photos.pending) {
+    return <CompletionPhotoRecovery photos={photos} onContinue={() => router.push('/clean?completed=true')} />
   }
 
   return (
@@ -769,6 +776,12 @@ export default function CleanRoomPage() {
                               }}
                             />
                           </div>
+
+                          <CompletionPhotoPicker
+                            value={photos.drafts[schedule.id]}
+                            onChange={draft => photos.setDraft(schedule.id, draft)}
+                            disabled={isSubmitting}
+                          />
 
                           {/* Sign-off. A completion is a compliance record, so the cleaner
                               puts their name and signature to it before it can be filed. */}

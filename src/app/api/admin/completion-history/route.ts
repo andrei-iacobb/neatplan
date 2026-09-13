@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { canAccessAllSites } from '@/lib/roles'
 import { siteScopeWhere } from '@/lib/authz'
+import { completionPhotoSelect, publicCompletionPhoto } from '@/lib/completion-photos'
 
 
 export async function GET(request: NextRequest) {
@@ -49,13 +50,17 @@ export async function GET(request: NextRequest) {
     if (roomId) roomWhere.roomSchedule = { roomId }
     if (userId) roomWhere.completedByUserId = userId
     if (scoped) {
-      roomWhere.roomSchedule = { ...(roomWhere.roomSchedule ?? {}), room: siteScopeWhere(session.user) }
+      roomWhere.OR = [
+        siteScopeWhere(session.user),
+        { siteId: null, roomSchedule: { room: siteScopeWhere(session.user) } },
+      ]
     }
 
     const [roomLogs, roomTotal] = await Promise.all([
       prisma.roomScheduleCompletionLog.findMany({
         where: roomWhere,
         include: {
+          photos: { where: siteScopeWhere(session.user), select: completionPhotoSelect, orderBy: { createdAt: 'asc' } },
           roomSchedule: {
             include: {
               room: { select: { id: true, name: true, floor: true, type: true } },
@@ -73,7 +78,10 @@ export async function GET(request: NextRequest) {
     // Equipment completion logs (excluded when filtering by room or user - no such linkage)
     const equipWhere: any = {}
     if (completedAtFilter) equipWhere.completedAt = completedAtFilter
-    if (scoped) equipWhere.equipmentSchedule = { equipment: siteScopeWhere(session.user) }
+    if (scoped) equipWhere.OR = [
+      siteScopeWhere(session.user),
+      { siteId: null, equipmentSchedule: { equipment: siteScopeWhere(session.user) } },
+    ]
 
     const skipEquip = Boolean(roomId) || Boolean(userId)
     const [equipLogs, equipTotal] = skipEquip
@@ -82,6 +90,7 @@ export async function GET(request: NextRequest) {
           prisma.equipmentScheduleCompletionLog.findMany({
             where: equipWhere,
             include: {
+              photos: { where: siteScopeWhere(session.user), select: completionPhotoSelect, orderBy: { createdAt: 'asc' } },
               equipmentSchedule: {
                 include: {
                   equipment: { select: { id: true, name: true, type: true } },
@@ -114,6 +123,7 @@ export async function GET(request: NextRequest) {
       completedTasks: log.completedTasks,
       totalTasks: log.roomSchedule?.schedule?.tasks.length ?? null,
       notes: log.notes,
+      photos: log.photos.map(publicCompletionPhoto),
     }))
 
     const equipItems = equipLogs.map((log) => ({
@@ -130,6 +140,7 @@ export async function GET(request: NextRequest) {
       completedTasks: log.completedTasks,
       totalTasks: log.equipmentSchedule?.schedule?.tasks.length ?? null,
       notes: log.notes,
+      photos: log.photos.map(publicCompletionPhoto),
     }))
 
     // Merge the (already per-source capped) items, sort by completedAt desc, and slice the

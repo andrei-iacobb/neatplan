@@ -147,6 +147,7 @@ export async function POST(
           notes: notes || null,
           completedAt: now,
           equipmentName: equipmentSchedule.equipment.name,
+          siteId: equipmentSchedule.equipment.siteId,
           scheduleTitle: equipmentSchedule.schedule.title,
           // The log is the compliance record, so the sign-off has to land in it -
           // validating the signature and discarding it would leave the record unsigned.
