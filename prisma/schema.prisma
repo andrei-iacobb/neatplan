@@ -31,6 +31,7 @@ model User {
   equipmentScheduleCompletionLogs EquipmentScheduleCompletionLog[]
   roomCheckIns                    RoomCheckIn[]
   createdFloorPlans               FloorPlan[]                      @relation("FloorPlanCreator")
+  uploadedEquipmentPhotos         EquipmentPhoto[]                 @relation("EquipmentPhotoUploader")
   // Account security fields
   isBlocked                       Boolean                          @default(false)
   forcePasswordChange             Boolean                          @default(false)
@@ -141,12 +142,45 @@ model Equipment {
   serviceAreaId String?
   serviceArea   Room?               @relation("ServiceAreaEquipment", fields: [serviceAreaId], references: [id], onDelete: SetNull)
   schedules     EquipmentSchedule[]
+  photos        EquipmentPhoto[]
 
   @@unique([siteId, name])
   @@unique([siteId, assetCode])
   @@index([siteId])
   @@index([serviceAreaId])
   @@map("equipment")
+}
+
+/// Identification photos for a piece of equipment: what it looks like, where its
+/// serial plate is, which of the four identical hoists this one is.
+///
+/// These are NOT evidence that a clean happened. They describe the asset, not the
+/// work, and nothing about completing a schedule reads them. Keeping that
+/// distinction is the point: a photo attached to a completion would be a
+/// compliance record with all the retention and consent that implies, whereas
+/// this is a picture of a hoover.
+model EquipmentPhoto {
+  id          String    @id @default(cuid())
+  equipmentId String
+  equipment   Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  /// Path on the server's data volume. Never sent to a client - the image is
+  /// served through an authorised route that checks the site first.
+  imagePath   String
+  mimeType    String
+  width       Int
+  height      Int
+  /// Bytes on disk, so a listing can show size without stat-ing every file.
+  byteSize    Int
+  caption     String?
+  /// Lowest sorts first; the first photo is the one shown as the thumbnail.
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  uploadedById String?
+  uploadedBy   User?    @relation("EquipmentPhotoUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([equipmentId, sortOrder])
+  @@map("equipment_photos")
 }
 
 model CleaningTask {
