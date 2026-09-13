@@ -22,6 +22,7 @@ import {
   AlertCircle
 } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { apiRequest } from '@/lib/url-utils'
 import { frequencyLabel } from '@/lib/schedule-frequency'
 import { useThemeColors } from '@/hooks/useThemeColors'
@@ -53,6 +54,9 @@ interface Equipment {
   type: string
   description?: string
   assetCode?: string
+  /** First identification photo, when one has been added. Optional throughout. */
+  photoUrl?: string | null
+  photoCaption?: string | null
   schedules: EquipmentSchedule[]
 }
 
@@ -503,7 +507,24 @@ export default function CleanEquipmentPage() {
             <ArrowLeft className="w-6 h-6" />
           </Link>
           <div className="flex items-center gap-3 min-w-0">
-            <Wrench className="w-8 h-8 shrink-0" style={{ color: tc.btnPrimaryText }} />
+            {/* The photo answers "is this the right machine?" before any of the
+                task list matters. Falls back to the icon when there is none -
+                photos are optional and most items will not have one. */}
+            {equipment.photoUrl ? (
+              <Image
+                src={equipment.photoUrl}
+                alt={equipment.photoCaption ?? `Photo of ${equipment.name}`}
+                width={56}
+                height={56}
+                className="h-14 w-14 shrink-0 rounded-lg object-cover"
+                style={{ border: `1px solid ${tc.cardBorder}` }}
+                // Served from a site-scoped authorised route, so it does not go
+                // through the optimiser.
+                unoptimized
+              />
+            ) : (
+              <Wrench className="w-8 h-8 shrink-0" style={{ color: tc.btnPrimaryText }} />
+            )}
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-xl sm:text-2xl font-bold break-words" style={{ color: tc.textPrimary }}>{equipment.name}</h1>
