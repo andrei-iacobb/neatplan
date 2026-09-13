@@ -133,6 +133,58 @@ test.describe('what the server reports', () => {
     }
   })
 
+  test('refuses an endpoint the server would then be made to call', async ({ page }) => {
+    await login(page)
+    test.skip(!(await pushIsConfigured(page)), 'push needs VAPID keys on this deployment')
+
+    // A stored endpoint is a URL the scheduler POSTs to on a timer, unprompted,
+    // and retries on failure. An unrestricted one is a persistent outbound
+    // beacon aimed wherever the submitter chose.
+    for (const endpoint of [
+      'http://169.254.169.254/latest/meta-data/',
+      'https://127.0.0.1/admin',
+      'https://10.0.0.5/internal',
+      'https://attacker.example/collect',
+      'https://fcm.googleapis.com.attacker.example/send',
+      'http://fcm.googleapis.com/fcm/send/x',
+    ]) {
+      const response = await page.request.post('/api/push/subscribe', {
+        data: { endpoint, keys: { p256dh: 'BJtest', auth: 'authsecret' } },
+      })
+      expect(response.status(), endpoint).toBe(400)
+    }
+
+    // And none of them were stored.
+    expect((await (await page.request.get('/api/push/subscribe')).json()).devices).toBe(0)
+  })
+
+  test('will not let one account take over another device subscription', async ({ page, browser }) => {
+    await login(page)
+    test.skip(!(await pushIsConfigured(page)), 'push needs VAPID keys on this deployment')
+
+    const endpoint = `https://fcm.googleapis.com/fcm/send/takeover-${Date.now()}`
+    await page.request.post('/api/push/subscribe', {
+      data: { endpoint, keys: { p256dh: 'BJoriginal', auth: 'originalauth' } },
+    })
+
+    const otherContext = await browser.newContext()
+    const otherPage = await otherContext.newPage()
+    await login(otherPage, 'cleaner')
+
+    // Knowing the endpoint alone must not be enough: it would silence the owner
+    // AND route the taker's alerts to the owner's device.
+    const stolen = await otherPage.request.post('/api/push/subscribe', {
+      data: { endpoint, keys: { p256dh: 'BJdifferent', auth: 'differentauth' } },
+    })
+    expect(stolen.status()).toBe(409)
+
+    // The original owner still has it.
+    expect((await (await page.request.get('/api/push/subscribe')).json()).devices).toBe(1)
+
+    await otherContext.close()
+    await page.request.delete('/api/push/subscribe')
+  })
+
   test('lets anyone remove their own subscriptions without error', async ({ page }) => {
     await login(page, 'cleaner')
 
@@ -219,6 +271,16 @@ test.describe('the service worker', () => {
     // A push service can rotate a subscription unprompted; without this the
     // endpoint silently dies while the user believes they are subscribed.
     expect(source).toContain("addEventListener('pushsubscriptionchange'")
+  })
+
+  test('only ever navigates somewhere on this origin', async ({ page }) => {
+    const source = await (await page.request.get('/sw.js')).text()
+
+    // A payload is only attacker-influenced if the VAPID key is already
+    // compromised, but navigating to whatever a push says is not a capability
+    // worth keeping for that day.
+    expect(source).toContain('function safePath')
+    expect(source).toContain("startsWith('//')")
   })
 
   test('points its notification icon at an asset that exists', async ({ page }) => {

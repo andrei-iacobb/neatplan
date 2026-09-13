@@ -1,4 +1,4 @@
-const CACHE = 'neatplan-shell-v3'
+const CACHE = 'neatplan-shell-v4'
 const SHELL = ['/', '/auth', '/clean']
 
 self.addEventListener('install', (event) => {
@@ -35,6 +35,14 @@ self.addEventListener('fetch', (event) => {
  * empty push must show something rather than throwing inside the worker, where
  * nobody would ever see the error.
  */
+/** A same-origin path, or '/' - never an absolute, javascript: or data: URL. */
+function safePath(value) {
+  if (typeof value !== 'string') return '/'
+  // A leading double slash is protocol-relative and would leave the origin.
+  if (!value.startsWith('/') || value.startsWith('//')) return '/'
+  return value
+}
+
 self.addEventListener('push', (event) => {
   let payload = {}
   try {
@@ -51,7 +59,10 @@ self.addEventListener('push', (event) => {
     // A tag replaces an earlier notification with the same one, so five overdue
     // alerts do not become five entries in the tray.
     tag: payload.tag || 'neatplan',
-    data: { url: payload.url || '/' },
+    // Only a path on this origin. A payload is only attacker-influenced if the
+    // VAPID key or a device's keys are already compromised, but navigating to
+    // whatever a push says is not a capability worth keeping for that day.
+    data: { url: safePath(payload.url) },
     // Work due today is worth a buzz; a silent notification on a trolley tablet
     // is one nobody looks at.
     requireInteraction: false,
@@ -63,7 +74,7 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
 
-  const target = (event.notification.data && event.notification.data.url) || '/'
+  const target = safePath(event.notification.data && event.notification.data.url)
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {

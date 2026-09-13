@@ -3,6 +3,8 @@ import * as z from 'zod'
 import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/authz'
 import { pushConfigured, vapidPublicKey } from '@/lib/push/server'
+import { checkPushEndpoint } from '@/lib/push/endpoints'
+import { logger } from '@/lib/logger'
 
 /**
  * Browser push subscriptions.
@@ -66,15 +68,58 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'That subscription could not be read.' }, { status: 400 })
   }
 
+  /*
+   * The endpoint is a URL this server will POST to later, on a timer, without
+   * being asked again. Checked before it is stored rather than before it is
+   * used, so a rejected one never reaches the database at all.
+   */
+  const endpointCheck = checkPushEndpoint(parsed.endpoint)
+  if (!endpointCheck.ok) {
+    return NextResponse.json({ error: endpointCheck.reason }, { status: 400 })
+  }
+
   const userAgent = request.headers.get('user-agent')?.slice(0, 200) ?? null
 
   /*
-   * Keyed on the endpoint, which is unique per browser. A device re-subscribing
-   * - which browsers do on their own schedule - updates its row rather than
-   * adding another, so nobody ends up receiving the same notification five
-   * times. The update also re-points the row at the current user, which is what
-   * should happen when a shared tablet changes hands.
+   * Keyed on the endpoint, which is unique per browser, so a device
+   * re-subscribing - which browsers do on their own schedule - updates its row
+   * rather than adding another and receiving every notification twice.
    */
+  const existing = await prisma.pushSubscription.findUnique({
+    where: { endpoint: parsed.endpoint },
+    select: { userId: true, p256dh: true, auth: true },
+  })
+
+  /*
+   * A row belonging to somebody else may only be taken over by a caller that can
+   * present the browser's own key material.
+   *
+   * The legitimate case is a shared trolley tablet changing hands: the previous
+   * cleaner signs out, the next signs in, and the one subscription that browser
+   * holds should now be theirs. That browser still has the same p256dh and auth,
+   * so it passes.
+   *
+   * Without the check, an endpoint alone would be enough to take it: the
+   * attacker silences the other person AND has their own alerts delivered to
+   * that person's device. An endpoint is not a secret to anyone who has seen it,
+   * so "hard to obtain" is not a boundary worth relying on.
+   */
+  if (existing && existing.userId !== auth.user.id) {
+    const sameDevice =
+      existing.p256dh === parsed.keys.p256dh && existing.auth === parsed.keys.auth
+
+    if (!sameDevice) {
+      return NextResponse.json(
+        { error: 'That subscription belongs to another device.' },
+        { status: 409 }
+      )
+    }
+
+    // A handover is legitimate but worth being able to see afterwards. No
+    // endpoint or key material in the line - both are per-device secrets.
+    logger.info(`[push] subscription reassigned to ${auth.user.id} on a shared device`)
+  }
+
   await prisma.pushSubscription.upsert({
     where: { endpoint: parsed.endpoint },
     create: {
