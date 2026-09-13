@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { canAccessSite } from '@/lib/authz'
 import { canUseCleaningPortal } from '@/lib/roles'
-import { buildRoomWorkPackage } from '@/lib/combined-room-schedule'
+import { buildRoomWorkPackage, schedulesAvailableEarly } from '@/lib/combined-room-schedule'
 
 export async function GET(
   request: Request,
@@ -29,6 +29,20 @@ export async function GET(
     }
 
     const { roomId } = params
+
+    /*
+     * Schedules the cleaner has chosen to bring forward on this visit.
+     *
+     * Carried in the query rather than stored: it is a decision about THIS visit,
+     * not a change to the schedule, and it should not survive walking away. Ids
+     * that are not outstanding, or are already due, are ignored by the builder.
+     */
+    const alsoDoing = (new URL(request.url).searchParams.get('also') ?? '')
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean)
+      // A bound, so a crafted URL cannot make the merge quadratic.
+      .slice(0, 20)
 
     // Get room with active schedules and tasks
     const room = await prisma.room.findUnique({
@@ -111,7 +125,20 @@ export async function GET(
       floor: room.floor || 'Unknown Floor',
       description: room.description,
       schedules,
-      workPackage: buildRoomWorkPackage(schedules, now),
+      workPackage: buildRoomWorkPackage(schedules, now, alsoDoing),
+      /*
+       * Offered, not imposed. These are outstanding schedules that are NOT due
+       * yet, each with its real next due date so the cleaner can judge whether
+       * bringing it forward makes sense.
+       */
+      availableEarly: schedulesAvailableEarly(schedules, now).map((schedule) => ({
+        id: schedule.id,
+        title: schedule.title,
+        frequency: schedule.frequency,
+        nextDue: schedule.nextDue,
+        taskCount: schedule.tasks.length,
+        estimatedDuration: schedule.estimatedDuration,
+      })),
     }
 
     return NextResponse.json(transformedRoom)
