@@ -27,10 +27,17 @@ export function startScheduler(): void {
     running = true
     try {
       const result = await runScheduleCheck()
-      if (result.totalOverdue > 0 || result.emailsFailed > 0 || result.sessionsCleaned > 0) {
+      if (
+        result.totalOverdue > 0 ||
+        result.emailsFailed > 0 ||
+        result.sessionsCleaned > 0 ||
+        result.digestsSent > 0 ||
+        result.digestsFailed > 0
+      ) {
         logger.info(
           `[scheduler] overdue=${result.totalOverdue} emailsSent=${result.emailsSent} ` +
-            `emailsFailed=${result.emailsFailed} sessionsCleaned=${result.sessionsCleaned}`
+            `emailsFailed=${result.emailsFailed} sessionsCleaned=${result.sessionsCleaned} ` +
+            `digestsSent=${result.digestsSent} digestsFailed=${result.digestsFailed}`
         )
       }
     } catch (err) {

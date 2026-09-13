@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db'
 import { emailService } from '@/lib/email'
 import { cleanupStaleSessions } from '@/lib/session-cleanup'
 import { logger } from '@/lib/logger'
+import { runWeeklyDigest } from '@/lib/digest/send'
 
 export type ScheduleCheckResult = {
   roomCount: number
@@ -11,6 +12,8 @@ export type ScheduleCheckResult = {
   sessionsCleaned: number
   emailsSent: number
   emailsFailed: number
+  digestsSent: number
+  digestsFailed: number
 }
 
 /**
@@ -147,5 +150,34 @@ export async function runScheduleCheck(): Promise<ScheduleCheckResult> {
     }
   }
 
-  return { roomCount, equipmentCount, totalOverdue, rearmedRoomSchedules, sessionsCleaned, emailsSent, emailsFailed }
+  /*
+   * The weekly digest rides on the same tick rather than bringing its own timer.
+   * It is safe to call every fifteen minutes: it does nothing before the send
+   * hour on Monday, and the unique delivery row means the week can only be sent
+   * once however many times this runs.
+   *
+   * A digest failure must never affect the overdue sweep above, which is the
+   * part that keeps schedule state correct - so it is isolated entirely.
+   */
+  let digestsSent = 0
+  let digestsFailed = 0
+  try {
+    const digest = await runWeeklyDigest()
+    digestsSent = digest.sent
+    digestsFailed = digest.failed
+  } catch (err) {
+    logger.error('[digest] weekly digest run failed', err)
+  }
+
+  return {
+    roomCount,
+    equipmentCount,
+    totalOverdue,
+    rearmedRoomSchedules,
+    sessionsCleaned,
+    emailsSent,
+    emailsFailed,
+    digestsSent,
+    digestsFailed,
+  }
 }
