@@ -1,3 +1,4 @@
+import { plannedAssigneeSnapshot } from '@/lib/work-assignments/server'
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { ScheduleStatus } from '@/generated/prisma/enums'
@@ -130,6 +131,7 @@ export async function POST(
 
     const nextDue = calculateNextDueDate(equipmentSchedule.frequency, now)
     const result = await prisma.$transaction(async (tx) => {
+      const assignmentSnapshot = await plannedAssigneeSnapshot(tx, 'equipment', equipmentId, equipmentSchedule.equipment.siteId, now)
       const advanced = await tx.equipmentSchedule.updateMany({
         where: { id: scheduleId, lastCompleted: equipmentSchedule.lastCompleted },
         data: {
@@ -142,6 +144,7 @@ export async function POST(
 
       const completionLog = await tx.equipmentScheduleCompletionLog.create({
         data: {
+          ...assignmentSnapshot,
           equipmentScheduleId: scheduleId,
           completedTasks: verifiedTasks,
           notes: notes || null,

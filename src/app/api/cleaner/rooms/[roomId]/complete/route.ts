@@ -1,3 +1,4 @@
+import { plannedAssigneeSnapshot } from '@/lib/work-assignments/server'
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -327,6 +328,7 @@ export async function POST(
      */
     const runCompletion = (checkIn: typeof verifiedCheckIn) =>
       prisma.$transaction(async (tx) => {
+        const assignmentSnapshot = await plannedAssigneeSnapshot(tx, 'room', roomId, roomSchedules[0].room.siteId, now)
         const completionIds: string[] = []
         const nextDueDates: Date[] = []
         const dueDatesBySchedule = new Map<string, Date>()
@@ -367,6 +369,7 @@ export async function POST(
 
           const completionLog = await tx.roomScheduleCompletionLog.create({
             data: {
+              ...assignmentSnapshot,
               roomScheduleId: requestedId,
               completedTasks: verifiedTasks.get(requestedId) ?? [],
               notes: cleanSessionNotes,

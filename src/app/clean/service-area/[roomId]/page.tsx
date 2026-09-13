@@ -1,5 +1,7 @@
 'use client'
 
+import { AssignmentBadge } from '@/components/work-assignments/assignment-badge'
+
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
@@ -126,6 +128,7 @@ export default function CleanerServiceAreaPage() {
             <PackageOpen className="h-4 w-4" aria-hidden="true" /> Service area
           </div>
           <h1 className="text-balance text-3xl font-bold tracking-[-0.03em] text-[rgb(var(--text-primary))]">{serviceArea.name}</h1>
+              <AssignmentBadge kind="room" targetId={serviceArea.id} />
           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-[rgb(var(--text-muted))]">
             {serviceArea.floor && <><MapPin className="h-4 w-4" aria-hidden="true" /><span>{serviceArea.floor}</span></>}
             {serviceArea.description && <span>· {serviceArea.description}</span>}

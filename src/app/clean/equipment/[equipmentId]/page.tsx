@@ -1,5 +1,7 @@
 "use client"
 
+import { AssignmentBadge } from '@/components/work-assignments/assignment-badge'
+
 import { useState, useEffect, useMemo, type CSSProperties } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
@@ -528,6 +530,7 @@ export default function CleanEquipmentPage() {
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-xl sm:text-2xl font-bold break-words" style={{ color: tc.textPrimary }}>{equipment.name}</h1>
+              <AssignmentBadge kind="equipment" targetId={equipment.id} />
                 {equipment.assetCode && (
                   <div className="text-xs font-mono px-2.5 py-1 rounded-sm" style={{ background: tc.surfaceBg, color: tc.accentGreen, border: `1px solid ${tc.accentGreen}` }}>
                     {equipment.assetCode}

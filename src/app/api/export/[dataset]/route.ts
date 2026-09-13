@@ -2,6 +2,7 @@ import { connection, NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/authz'
 import { datasetToCsv } from '@/lib/export/csv'
 import { exportFilename } from '@/lib/export/format'
+import { calendarDate } from '@/lib/work-assignments/policy'
 import { resolveDataset } from '@/lib/export/registry'
 
 /**
@@ -23,6 +24,11 @@ export async function GET(
 
   const { dataset: datasetId } = await params
   const searchParams = new URL(request.url).searchParams
+
+  if (datasetId === 'worklist' && searchParams.has('date')) {
+    try { calendarDate(searchParams.get('date')!) }
+    catch { return NextResponse.json({ error: 'Invalid calendar date' }, { status: 400 }) }
+  }
 
   const result = await resolveDataset(datasetId, auth.user, searchParams)
 

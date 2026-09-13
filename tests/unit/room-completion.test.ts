@@ -12,6 +12,8 @@ const {
   transaction: vi.fn(),
 }))
 
+vi.mock('@/lib/work-assignments/server', () => ({ plannedAssigneeSnapshot: vi.fn().mockResolvedValue({}) }))
+
 vi.mock('@/lib/db', () => ({
   prisma: {
     roomSchedule: {

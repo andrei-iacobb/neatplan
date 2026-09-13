@@ -1,3 +1,4 @@
+import { todayAssignmentDate } from '@/lib/work-assignments/policy'
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
@@ -132,10 +133,24 @@ export async function PUT(
       dataToUpdate.password = await bcrypt.hash(password, 12)
     }
 
-    const user = await prisma.user.update({
-      where: { id },
-      data: dataToUpdate,
-    })
+    const clearsAssignments =
+      (siteId !== undefined && dataToUpdate.siteId !== target.siteId) ||
+      (role !== undefined && role !== target.role) ||
+      isBlocked === true
+
+    const user = clearsAssignments
+      ? await prisma.$transaction(async (tx) => {
+          // Updating the user first holds its row lock against an allocator's
+          // membership check. A top-level update can clear the assignee FK;
+          // Prisma excludes that parent key from nested relation updates.
+          const updated = await tx.user.update({ where: { id }, data: dataToUpdate })
+          await tx.workAssignment.updateMany({
+            where: { assigneeId: id, workDate: { gte: todayAssignmentDate() } },
+            data: { assigneeId: null, assigneeName: null, revision: { increment: 1 } },
+          })
+          return updated
+        })
+      : await prisma.user.update({ where: { id }, data: dataToUpdate })
 
     const { password: _, ...userWithoutPassword } = user
     return NextResponse.json(userWithoutPassword)

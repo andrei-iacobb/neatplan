@@ -32,6 +32,9 @@ interface CompletionItem {
   scheduleName: string
   frequency: string
   completedBy: { name: string | null; email: string } | null
+  signedName?: string | null
+  plannedAssigneeName?: string | null
+  assignmentDate?: string | null
   completedTasks: any
   totalTasks: number
   notes: string | null
@@ -548,11 +551,23 @@ export default function AuditPage() {
                           </p>
                         </td>
                         <td className="px-4 py-3">
-                          {isExpanded ? (
-                            <ChevronUp className="w-4 h-4" style={{ color: tc.textMuted }} />
-                          ) : (
-                            <ChevronDown className="w-4 h-4" style={{ color: tc.textMuted }} />
-                          )}
+                          <button
+                            type="button"
+                            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                            aria-label={`${isExpanded ? 'Hide' : 'Show'} completion details for ${item.itemName}`}
+                            aria-expanded={isExpanded}
+                            aria-controls={`completion-details-${item.id}`}
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              setExpandedId(isExpanded ? null : item.id)
+                            }}
+                          >
+                            {isExpanded ? (
+                              <ChevronUp className="w-4 h-4" style={{ color: tc.textMuted }} />
+                            ) : (
+                              <ChevronDown className="w-4 h-4" style={{ color: tc.textMuted }} />
+                            )}
+                          </button>
                         </td>
                       </tr>
                       {isExpanded && (
@@ -566,11 +581,32 @@ export default function AuditPage() {
                             }}
                           >
                             <motion.div
+                              id={`completion-details-${item.id}`}
                               initial={{ opacity: 0, height: 0 }}
                               animate={{ opacity: 1, height: 'auto' }}
                               exit={{ opacity: 0, height: 0 }}
                               transition={{ duration: 0.2 }}
                             >
+                              <dl className="mb-4 grid gap-3 text-[13px] sm:grid-cols-3">
+                                <div>
+                                  <dt className="text-[12px]" style={{ color: tc.textMuted }}>Completed by</dt>
+                                  <dd className="mt-1 font-medium" style={{ color: tc.textPrimary }}>
+                                    {item.signedName || item.completedBy?.name || item.completedBy?.email || 'Not recorded'}
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt className="text-[12px]" style={{ color: tc.textMuted }}>Allocated to</dt>
+                                  <dd className="mt-1 font-medium" style={{ color: tc.textPrimary }}>
+                                    {item.plannedAssigneeName || 'No allocation recorded'}
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt className="text-[12px]" style={{ color: tc.textMuted }}>Allocation date</dt>
+                                  <dd className="mt-1 tabular-nums" style={{ color: tc.textPrimary }}>
+                                    {item.assignmentDate || 'Not recorded'}
+                                  </dd>
+                                </div>
+                              </dl>
                               <p
                                 className="text-[12px] font-semibold mb-2 uppercase tracking-wider"
                                 style={{ color: tc.textMuted }}

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { getFrequencyLabel } from '@/lib/schedule-utils'
 import Link from 'next/link'
+import { AssignmentBoard } from '@/components/work-assignments/assignment-board'
 import { ExportMenu } from '@/components/export/export-menu'
 
 interface DiaryItem {
@@ -182,6 +183,11 @@ export default function DiaryPage() {
         canPick={site.canPick}
         recents={site.recents}
       />
+
+      <details className="rounded-xl border p-4">
+        <summary className="cursor-pointer min-h-11 font-semibold">Allocate daily and weekly work</summary>
+        {site.ready && <AssignmentBoard management site={site.selected} />}
+      </details>
 
       {/* Content */}
       <div

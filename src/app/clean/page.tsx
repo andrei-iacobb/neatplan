@@ -32,6 +32,8 @@ import { apiRequest } from '@/lib/url-utils'
 import { AnimatePresence } from 'framer-motion'
 import { canUseCleaningPortal } from '@/lib/roles'
 import { CleanerFloorPlanView, type CleanerFloorPlan } from '@/components/cleaner/floor-plan-view'
+import { AssignmentBoard } from '@/components/work-assignments/assignment-board'
+import type { AssignmentBoard as AssignmentBoardData, AssignmentBadgeData } from '@/lib/work-assignments/policy'
 import { WorklistActions } from '@/components/export/worklist-actions'
 
 interface Schedule {
@@ -55,6 +57,7 @@ interface RoomSummary {
 }
 
 interface Room {
+  assignment?: AssignmentBadgeData
   id: string
   name: string
   type: string
@@ -76,6 +79,7 @@ interface EquipmentSummary {
 }
 
 interface Equipment {
+  assignment?: AssignmentBadgeData
   id: string
   name: string
   type: string
@@ -164,6 +168,8 @@ export default function CleanerDashboard() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   // Filter and search states
+  const [assignmentFilter, setAssignmentFilter] = useState<'mine' | 'unassigned' | 'all'>('all')
+  const [assignmentLoadError, setAssignmentLoadError] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [floorFilter, setFloorFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
@@ -227,11 +233,20 @@ export default function CleanerDashboard() {
       }
 
       const data = await response.json()
-      setRooms(data.rooms)
-      setEquipment(data.equipment)
+      let assignments: AssignmentBoardData | null = null
+      try {
+        const assignmentResponse = await apiRequest('/api/work-assignments')
+        if (!assignmentResponse.ok) throw new Error('Allocation request failed')
+        assignments = await assignmentResponse.json()
+        setAssignmentLoadError(false)
+      } catch { setAssignmentLoadError(true); setAssignmentFilter('all') }
+      const assignmentFor = (kind: string, id: string) => assignments?.rows.find((row) => row.kind === kind && row.targetId === id)?.assignment
+      setRooms(data.rooms.map((room: Room) => ({ ...room, assignment: assignmentFor('room', room.id) })))
+      setEquipment(data.equipment.map((item: Equipment) => ({ ...item, assignment: assignmentFor('equipment', item.id) })))
+      if (isInitialLoad && assignments?.rows.some((row) => row.assignment.assigneeId)) { setAssignmentFilter('mine'); setDashboardView('list') }
       const loadedFloorPlans = Array.isArray(data.floorPlans) ? data.floorPlans : []
       setFloorPlans(loadedFloorPlans)
-      if (isInitialLoad && loadedFloorPlans.length > 0) setDashboardView('map')
+      if (isInitialLoad && loadedFloorPlans.length > 0 && !assignments?.rows.some((row) => row.assignment.assigneeId)) setDashboardView('map')
       setStats(data.stats)
       setIsInitialLoad(false)
     } catch (err) {
@@ -354,7 +369,9 @@ export default function CleanerDashboard() {
   }
 
   // Filter and sort rooms
+  const matchesAssignment = (item: { assignment?: AssignmentBadgeData }) => assignmentFilter === 'all' || (assignmentFilter === 'unassigned' ? !item.assignment?.assigneeId : item.assignment?.assigneeId === session?.user.id)
   const filteredRooms = rooms.filter(room => {
+    if (!matchesAssignment(room)) return false
     const matchesSearch = room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          room.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          room.floor.toLowerCase().includes(searchTerm.toLowerCase())
@@ -421,6 +438,7 @@ export default function CleanerDashboard() {
 
   // NEW: Filter and sort equipment (mirrors room logic)
   const filteredEquipment = equipment.filter(equip => {
+    if (!matchesAssignment(equip)) return false
     const needle = searchTerm.toLowerCase()
     const matchesSearch = equip.name.toLowerCase().includes(needle) ||
                          equip.type.toLowerCase().includes(needle) ||
@@ -604,7 +622,16 @@ export default function CleanerDashboard() {
             hatch: a handover sheet, or a round to carry when the tablet stays on
             the trolley. */}
         <div className="mb-5 flex justify-end">
-          <WorklistActions />
+          <WorklistActions allocation={assignmentFilter === 'all' ? 'all' : assignmentFilter === 'unassigned' ? 'unassigned' : 'person'} userId={assignmentFilter === 'mine' ? session?.user.id : undefined} />
+        </div>
+
+        <div className="mb-5 space-y-3">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Today's allocation filter">
+            {(['mine', 'unassigned', 'all'] as const).map((filter) => <Button key={filter} variant={assignmentFilter === filter ? 'default' : 'outline'} aria-pressed={assignmentFilter === filter} onClick={() => { setAssignmentFilter(filter); setDashboardView('list') }}>{filter === 'mine' ? 'My work' : filter === 'unassigned' ? 'Unassigned' : 'All site work'} ({[...rooms, ...equipment].filter((item) => filter === 'all' || (filter === 'mine' ? item.assignment?.assigneeId === session?.user.id : !item.assignment?.assigneeId)).length})</Button>)}
+          </div>
+          <p className="text-sm">Across the site: {stats.overdueRooms + stats.overdueEquipment} overdue rooms or items. <button className="underline min-h-11" onClick={() => { setAssignmentFilter('all'); setDashboardView('list') }}>View all site work</button></p>
+          {assignmentLoadError && <p role="alert">Allocations could not be loaded. <button className="underline min-h-11" onClick={fetchDashboardData}>Retry</button></p>}
+          <details><summary className="cursor-pointer min-h-11 font-medium">Daily and weekly planned work</summary><AssignmentBoard /></details>
         </div>
 
         {floorPlans.length > 0 && (
@@ -612,7 +639,7 @@ export default function CleanerDashboard() {
             <div className="flex rounded-xl p-1" style={{ background: tc.inputBg, border: `1px solid ${tc.inputBorder}` }}>
               <button
                 type="button"
-                onClick={() => setDashboardView('map')}
+                onClick={() => { setDashboardView('map'); setAssignmentFilter('all') }}
                 aria-pressed={dashboardView === 'map'}
                 className="flex min-h-11 items-center gap-2 rounded-lg px-4 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 active:scale-[0.97]"
                 style={dashboardView === 'map' ? { background: tc.tabActiveBg, color: tc.tabActiveText } : { color: tc.tabInactiveText }}
@@ -634,6 +661,7 @@ export default function CleanerDashboard() {
 
         {dashboardView === 'map' && floorPlans.length > 0 && (
           <>
+            <p className="mb-3 text-sm">The floor plan shows all site work. Use the searchable list to filter by person.</p>
             <CleanerFloorPlanView plans={floorPlans} />
             {sortedEquipment.some((item) => !item.serviceArea) && (
               <section className="mb-8" aria-labelledby="map-equipment-title">
@@ -1034,6 +1062,7 @@ function RoomCard({ room, index, priority }: RoomCardProps) {
           )}
         </div>
 
+        <p className="text-sm mt-2" style={{ color: tc.textMuted }}>Assigned to {room.assignment?.assigneeName || 'nobody'}</p>
         {/* Footer - Fixed height */}
         <div className="mt-4 pt-4 min-h-[60px]" style={{ borderTop: `1px solid ${tc.divider}` }}>
           <div className="flex items-center justify-between text-xs mb-2" style={{ color: tc.textMuted }}>
@@ -1198,6 +1227,7 @@ function EquipmentCard({ equipment, index, priority }: EquipmentCardProps) {
           </div>
         </div>
 
+        <p className="text-sm mb-2" style={{ color: tc.textMuted }}>Assigned to {equipment.assignment?.assigneeName || 'nobody'}</p>
         {/* Schedules - Flexible content area */}
         <div className="flex-1 space-y-2 min-h-[80px] overflow-hidden">
           {equipment.schedules.slice(0, 3).map((schedule) => (

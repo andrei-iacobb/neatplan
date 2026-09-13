@@ -1,3 +1,4 @@
+import { todayAssignmentDate } from '@/lib/work-assignments/policy'
 import { NextResponse } from 'next/server'
 import { requireAuth, requireAdmin, canAccessSite } from '@/lib/authz'
 import { prisma } from '@/lib/db'
@@ -66,6 +67,19 @@ export async function PUT(
         ...(siteId !== undefined ? { siteId } : {}),
         // Remove old-site map links atomically with the transfer.
         ...(targetSiteId !== existing.siteId ? { floorPlanRegions: { deleteMany: {} } } : {}),
+        ...(targetSiteId !== existing.siteId ? {
+          workAssignments: {
+            updateMany: {
+              where: { workDate: { gte: todayAssignmentDate() } },
+              data: {
+                ...(targetSiteId ? { siteId: targetSiteId } : {}),
+                assigneeId: null,
+                assigneeName: null,
+                revision: { increment: 1 },
+              },
+            },
+          },
+        } : {}),
       },
     })
 
