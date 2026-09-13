@@ -41,8 +41,17 @@
 /* ---- screen presentation: a document on a desk ------------------------- */
 
 @media screen {
+  /*
+   * The app shell pins the viewport height and hides overflow. Rather than
+   * fight it, the document becomes the single scroller inside it - the same
+   * "chrome fixed, content scrolls" arrangement every other surface uses. This
+   * also keeps the toolbar's position: sticky working, since .pd-shell is then
+   * the scroll container it sticks within.
+   */
   .pd-shell {
-    min-height: 100dvh;
+    height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     background: #e9ecf1;
     padding: 16px 12px 64px;
   }
@@ -343,6 +352,17 @@
   }
 
   /*
+   * Unpin the root shell too. Without this the print job carries only the first
+   * sheet, because everything past 100dvh is clipped by the shell rather than
+   * by the page.
+   */
+  .app-shell {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /*
    * Anything that is navigation, a control, or app chrome leaves the page.
    * Buttons on paper are the clearest sign nobody looked at the printout.
    */
@@ -357,7 +377,9 @@
   .pd-shell {
     background: #fff;
     padding: 0;
+    height: auto;
     min-height: 0;
+    overflow: visible;
   }
 
   .pd {

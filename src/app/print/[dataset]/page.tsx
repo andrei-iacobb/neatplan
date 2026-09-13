@@ -4,8 +4,6 @@ import { getSessionUser } from '@/lib/authz'
 import { resolveDataset } from '@/lib/export/registry'
 import { PrintDocument } from '@/components/export/print-document'
 
-export const dynamic = 'force-dynamic'
-
 type SearchParams = Record<string, string | string[] | undefined>
 
 function toSearchParams(input: SearchParams): URLSearchParams {
@@ -23,6 +21,12 @@ export async function generateMetadata({ params }: { params: Promise<{ dataset: 
   return { title: DATASETS[dataset]?.title ?? 'Print' }
 }
 
+/*
+ * `connection()` at the top of the body is what makes this route request-time.
+ * The `dynamic` segment config that would normally say so is rejected when
+ * cacheComponents is enabled (next.config.js), and a document rendered from the
+ * caller's own session must never be prerendered into a shared static shell.
+ */
 export default async function PrintDatasetPage({
   params,
   searchParams,
