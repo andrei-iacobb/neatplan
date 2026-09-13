@@ -14,6 +14,7 @@ import { apiRequest } from '@/lib/url-utils'
 import { ListLoading } from '@/components/ui/loading'
 import { useThemeColors } from '@/hooks/useThemeColors'
 import { ALL_ROLES, ROLE_LABELS, canAssignRole, isManagementRole, requiresSite, roleRank, type Role } from '@/lib/roles'
+import { ExportMenu } from '@/components/export/export-menu'
 
 const userSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -401,6 +402,8 @@ export default function UsersPage() {
               <h1 className="text-[26px] sm:text-[32px] font-bold tracking-tight mb-1" style={{ color: tc.textPrimary }}>User Management</h1>
               <p className="text-[15px]" style={{ color: tc.textMuted }}>Add, edit, or remove users.</p>
             </div>
+            <div className="flex items-center gap-2 shrink-0">
+            <ExportMenu dataset="people" size="sm" />
             <button
               onClick={() => { setEditingUser({}); setIsModalOpen(true); }}
               className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors w-full sm:w-auto shrink-0"
@@ -411,6 +414,7 @@ export default function UsersPage() {
               <UserPlus className="w-4 h-4" />
               Add User
             </button>
+            </div>
           </div>
         </div>
 

@@ -13,6 +13,17 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const pathname = usePathname()
   const { data: session, status } = useSession()
 
+  /*
+   * Printable documents get no app chrome at all - no sidebar, no footer. They
+   * are documents, not screens, and anything else would end up on the paper.
+   * This check lives here rather than in PageWrapper because PageWrapper sits
+   * in the root layout, where reading the pathname would block prerendering for
+   * every route in the app.
+   */
+  if (pathname?.startsWith('/print')) {
+    return <>{children}</>
+  }
+
   // Routes that should not have a sidebar
   const noSidebarRoutes = ['/auth', '/clean']
 

@@ -16,6 +16,7 @@ import { useThemeColors } from '@/hooks/useThemeColors'
 import { useToast } from '@/components/ui/toast-context'
 import { canAccessAllSites } from '@/lib/roles'
 import type { PlacementSuggestion } from '@/lib/equipment-placement'
+import { ExportMenu } from '@/components/export/export-menu'
 
 interface Equipment {
   id: string
@@ -604,13 +605,19 @@ export default function EquipmentPage() {
       </AnimatePresence>
 
       {/* Header */}
-      <div className="mb-10">
-        <div className="flex items-center gap-2 mb-2">
-          <Sparkles className="w-4 h-4" style={{ color: 'rgb(16,185,129)' }} />
-          <p className="text-[13px] font-medium tracking-wide uppercase" style={{ color: tc.accentLabel }}>Equipment</p>
+      <div className="mb-10 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="w-4 h-4" style={{ color: 'rgb(16,185,129)' }} />
+            <p className="text-[13px] font-medium tracking-wide uppercase" style={{ color: tc.accentLabel }}>Equipment</p>
+          </div>
+          <h1 className="text-[32px] font-bold tracking-tight mb-1" style={{ color: tc.textPrimary }}>Equipment Management</h1>
+          <p className="text-[15px]" style={{ color: tc.textMuted }}>Manage maintenance equipment and schedules</p>
         </div>
-        <h1 className="text-[32px] font-bold tracking-tight mb-1" style={{ color: tc.textPrimary }}>Equipment Management</h1>
-        <p className="text-[15px]" style={{ color: tc.textMuted }}>Manage maintenance equipment and schedules</p>
+        <ExportMenu
+          dataset={viewMode === 'SCHEDULES' ? 'schedules' : 'equipment'}
+          filters={{ site: siteFilter, type: typeFilter, q: searchTerm }}
+        />
       </div>
 
       {/* Controls */}

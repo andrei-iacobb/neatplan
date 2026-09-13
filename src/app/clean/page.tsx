@@ -32,6 +32,7 @@ import { apiRequest } from '@/lib/url-utils'
 import { AnimatePresence } from 'framer-motion'
 import { canUseCleaningPortal } from '@/lib/roles'
 import { CleanerFloorPlanView, type CleanerFloorPlan } from '@/components/cleaner/floor-plan-view'
+import { WorklistActions } from '@/components/export/worklist-actions'
 
 interface Schedule {
   id: string
@@ -597,6 +598,13 @@ export default function CleanerDashboard() {
               <AlertTriangle className="w-8 h-8" style={{ color: tc.accentRed }} />
             </div>
           </motion.div>
+        </div>
+
+        {/* The dashboard below is where the work is done. This row is the escape
+            hatch: a handover sheet, or a round to carry when the tablet stays on
+            the trolley. */}
+        <div className="mb-5 flex justify-end">
+          <WorklistActions />
         </div>
 
         {floorPlans.length > 0 && (

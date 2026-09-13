@@ -14,6 +14,7 @@ import { apiRequest } from '@/lib/url-utils'
 import { PageLoading } from '@/components/ui/loading'
 import { useThemeColors } from '@/hooks/useThemeColors'
 import { canAccessAllSites } from '@/lib/roles'
+import { ExportMenu } from '@/components/export/export-menu'
 
 const siteSchema = z.object({
   name: z.string().min(1, 'Site name is required'),
@@ -303,6 +304,8 @@ export default function SitesPage() {
                 {canManage ? 'Add, edit, or remove the sites your team looks after.' : 'The site you are assigned to.'}
               </p>
             </div>
+            <div className="flex items-center gap-2 shrink-0">
+            <ExportMenu dataset="sites" size="sm" />
             {canManage && (
               <button
                 onClick={() => { setEditingSite({}); setIsModalOpen(true); }}
@@ -315,6 +318,7 @@ export default function SitesPage() {
                 Add Site
               </button>
             )}
+            </div>
           </div>
         </div>
 
