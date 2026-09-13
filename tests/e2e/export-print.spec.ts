@@ -23,10 +23,12 @@ const CREDENTIALS = {
 }
 
 /**
- * PageWrapper renders `children` inside its Suspense fallback AND inside the
- * resolved tree, so while the shell is streaming the login form can briefly
- * exist twice. Waiting for the count to settle at one is what keeps this from
- * being a strict-locator race.
+ * Waits for exactly one login form before touching it.
+ *
+ * PageWrapper used to render `children` inside its Suspense fallback as well as
+ * in the resolved tree, which put two of every form in the DOM at once. That is
+ * fixed, but asserting the settled count here is cheap and keeps this helper
+ * honest if the shell ever regresses.
  */
 async function login(page: Page, who: keyof typeof CREDENTIALS) {
   const { email, password } = CREDENTIALS[who]
@@ -40,6 +42,26 @@ async function login(page: Page, who: keyof typeof CREDENTIALS) {
   await page.getByRole('button', { name: /sign in/i }).click()
 
   await page.waitForURL((url) => !url.pathname.startsWith('/auth'), { timeout: 20_000 })
+}
+
+/**
+ * Wait for React's hydration handoff to finish.
+ *
+ * The streamed HTML and the hydrating client tree both sit in the DOM for a
+ * moment, one of them display:none. Measured against this app it appears around
+ * 150ms in and is gone by 300ms, and print media only ever sees the visible
+ * copy, so no sheet is ever duplicated.
+ *
+ * Waiting for the settled count rather than reaching for .first() keeps these
+ * assertions honest: a genuine double-render would never reach one and would
+ * fail here instead of passing quietly.
+ */
+async function settled(page: Page) {
+  // The stream has to finish first. Checking the count alone is not enough: it
+  // can pass in the window BEFORE the hydrating copy appears, and then the
+  // assertion that follows trips over two of everything.
+  await page.waitForLoadState('networkidle')
+  await expect(page.locator('.pd-shell')).toHaveCount(1, { timeout: 15_000 })
 }
 
 test.describe('export entrypoints', () => {
@@ -119,6 +141,7 @@ test.describe('print document', () => {
   test('renders a document with no app chrome', async ({ page }) => {
     await login(page, 'admin')
     await page.goto('/print/rooms')
+    await settled(page)
 
     await expect(page.getByRole('heading', { name: 'Room inventory', level: 1 })).toBeVisible()
 
@@ -127,6 +150,7 @@ test.describe('print document', () => {
 
     // Real column headers in a real table, which is what makes them repeat per page.
     const table = page.locator('table.pd-table')
+    await expect(table).toHaveCount(1)
     await expect(table).toBeVisible()
     await expect(table.locator('thead th').first()).toBeVisible()
     expect(await table.locator('tbody tr').count()).toBeGreaterThan(0)
@@ -135,6 +159,7 @@ test.describe('print document', () => {
   test('states the filter context that produced it', async ({ page }) => {
     await login(page, 'admin')
     await page.goto('/print/completions?dateFrom=2020-01-01&dateTo=2030-01-01')
+    await settled(page)
 
     await expect(page.getByText('Dates', { exact: true })).toBeVisible()
     await expect(page.getByText('2020-01-01 to 2030-01-01')).toBeVisible()
@@ -143,6 +168,7 @@ test.describe('print document', () => {
   test('hides every control when printed', async ({ page }) => {
     await login(page, 'admin')
     await page.goto('/print/rooms')
+    await settled(page)
 
     const toolbar = page.locator('.pd-toolbar')
     await expect(toolbar).toBeVisible()
@@ -160,6 +186,7 @@ test.describe('print document', () => {
   test('repeats table headers and avoids splitting rows across pages', async ({ page }) => {
     await login(page, 'admin')
     await page.goto('/print/rooms')
+    await settled(page)
     await page.emulateMedia({ media: 'print' })
 
     const theadDisplay = await page
@@ -180,15 +207,18 @@ test.describe('print document', () => {
     await login(page, 'admin')
 
     await page.goto('/print/completions')
+    await settled(page)
     await expect(page.locator('article.pd--landscape')).toHaveCount(1)
 
     await page.goto('/print/sites')
+    await settled(page)
     await expect(page.locator('article.pd--landscape')).toHaveCount(0)
   })
 
   test('tells a role it may not have this document, instead of an empty one', async ({ page }) => {
     await login(page, 'cleaner')
     await page.goto('/print/people')
+    await settled(page)
 
     await expect(page.getByText('Not available to you')).toBeVisible()
     await expect(page.locator('table.pd-table')).toHaveCount(0)
@@ -208,6 +238,7 @@ test.describe('print document', () => {
   test('reads without a sideways scroll on a tablet and on a phone', async ({ page }) => {
     await login(page, 'admin')
     await page.goto('/print/rooms')
+    await settled(page)
 
     for (const viewport of [
       { width: 1024, height: 1366, label: 'tablet-portrait' },
@@ -229,6 +260,7 @@ test.describe('print document', () => {
     await login(page, 'admin')
     await page.setViewportSize({ width: 1024, height: 1366 })
     await page.goto('/print/rooms')
+    await settled(page)
 
     for (const name of ['CSV', 'Print']) {
       const box = await page.getByRole(name === 'CSV' ? 'link' : 'button', { name }).boundingBox()
