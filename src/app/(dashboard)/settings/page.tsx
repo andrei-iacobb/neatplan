@@ -25,6 +25,7 @@ import { TotpSettings } from '@/components/admin/totp-settings'
 import { ROLE_LABELS, type Role } from '@/lib/roles'
 import { ExportMenu } from '@/components/export/export-menu'
 import { useToast } from '@/components/ui/toast-context'
+import { usePushSubscription } from '@/hooks/usePushSubscription'
 import { apiRequest } from '@/lib/url-utils'
 import { roleCanExport } from '@/lib/export/permissions'
 
@@ -72,6 +73,70 @@ function Toggle({
         style={{ left: checked ? '22px' : '2px' }}
       />
     </button>
+  )
+}
+
+/**
+ * The push row.
+ *
+ * This used to be a stored boolean that nothing read - the switch moved, the
+ * value saved, and no notification was ever sent. It now reflects the only thing
+ * that actually determines whether a notification arrives: whether this browser
+ * holds a live subscription.
+ *
+ * Each of the three ways it can be unavailable says which one it is, because
+ * "notifications are off" is not actionable and "your browser is blocking them"
+ * is.
+ */
+function PushNotificationSetting({ tc }: { tc: ReturnType<typeof useThemeColors> }) {
+  const { state, busy, error, subscribe, unsubscribe } = usePushSubscription()
+
+  if (state === 'checking') return null
+
+  const explanation =
+    state === 'unconfigured'
+      ? 'Not set up on this server yet. An administrator needs to configure it before it can be switched on.'
+      : state === 'unsupported'
+        ? 'This browser cannot receive push notifications. Try a different browser, or install NeatPlan to the home screen.'
+        : state === 'denied'
+          ? 'Your browser is blocking notifications for this site. Allow them in the browser settings for this page, then come back.'
+          : 'Alerts on this device when work goes overdue. Asked for per device, so each tablet is separate.'
+
+  const available = state === 'idle' || state === 'subscribed'
+
+  return (
+    <div className="flex items-center justify-between">
+      <div className="pr-4">
+        <label className="text-[13px] font-medium" style={{ color: tc.textSecondary }}>
+          Push notifications
+        </label>
+        <p className="text-[11px]" style={{ color: tc.textFaint }}>
+          {explanation}
+        </p>
+        {error ? (
+          <p className="mt-1 text-[11px] font-medium" style={{ color: tc.statusOverdue.text }}>
+            {error}
+          </p>
+        ) : null}
+      </div>
+
+      {available ? (
+        <Toggle
+          checked={state === 'subscribed'}
+          onChange={(next) => void (next ? subscribe() : unsubscribe())}
+          tc={tc}
+          label="Push notifications"
+        />
+      ) : (
+        // No switch at all rather than a disabled one: there is nothing to
+        // toggle, and the sentence above says why.
+        <span className="shrink-0 text-[11px] font-medium" style={{ color: tc.textFaint }}>
+          {state === 'denied' ? 'Blocked' : 'Unavailable'}
+        </span>
+      )}
+
+      {busy ? <span className="sr-only">Working</span> : null}
+    </div>
   )
 }
 
@@ -466,6 +531,9 @@ export default function SettingsPage() {
                     // cleaning. Drawing a switch for anyone else would be a
                     // control that silently does nothing.
                     .filter(([key]) => key !== 'weeklyDigest' || canReceiveDigest)
+                    // Push is not a stored preference any more - it is whether
+                    // THIS browser holds a subscription. It has its own row below.
+                    .filter(([key]) => key !== 'push')
                     .map(([key, value]) => (
                     <div key={key} className="flex items-center justify-between">
                       <div>
@@ -489,6 +557,8 @@ export default function SettingsPage() {
                       />
                     </div>
                   ))}
+
+                  <PushNotificationSetting tc={tc} />
 
                   {canReceiveDigest && settings.notifications.weeklyDigest && (
                     <div

@@ -32,12 +32,14 @@ export function startScheduler(): void {
         result.emailsFailed > 0 ||
         result.sessionsCleaned > 0 ||
         result.digestsSent > 0 ||
-        result.digestsFailed > 0
+        result.digestsFailed > 0 ||
+        result.pushesSent > 0
       ) {
         logger.info(
           `[scheduler] overdue=${result.totalOverdue} emailsSent=${result.emailsSent} ` +
             `emailsFailed=${result.emailsFailed} sessionsCleaned=${result.sessionsCleaned} ` +
-            `digestsSent=${result.digestsSent} digestsFailed=${result.digestsFailed}`
+            `digestsSent=${result.digestsSent} digestsFailed=${result.digestsFailed} ` +
+            `pushesSent=${result.pushesSent}`
         )
       }
     } catch (err) {
