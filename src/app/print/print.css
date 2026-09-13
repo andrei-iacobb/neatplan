@@ -448,8 +448,9 @@
 /*
  * Labels are sized in millimetres, not pixels. These get cut out and stuck to a
  * door frame or a hoist, so "about right on screen" is the wrong size on paper.
- * Eight to an A4 page: two columns of four, inside the 186mm x 269mm printable
- * area @page leaves.
+ * Eight to an A4 page: two columns of four. The @page margins above leave
+ * 186mm x 267mm printable (210 - 12 - 12, and 297 - 14 - 16); the grid needs
+ * 180mm across (2 x 88 + 4 gap) and 236mm down (4 x 56 + 3 x 4).
  */
 .lb-grid {
   display: grid;

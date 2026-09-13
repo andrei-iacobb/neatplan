@@ -317,8 +317,16 @@ export async function POST(
     // optimistic match on lastCompleted means the loser writes nothing and is reported
     // as an idempotent duplicate instead of creating a second log / skipping a cycle.
     let result: { completionIds: string[]; nextDueDates: Date[] }
-    try {
-      result = await prisma.$transaction(async (tx) => {
+
+    /*
+     * The check-in link is dropped and the completion retried if two concurrent
+     * submissions in the same room both carry the same `?checkIn=`. checkInId is
+     * unique on the log, so the loser of that race would otherwise hit P2002 and
+     * surface a bare 500 for work that was perfectly valid. The clean is the
+     * thing that matters; how the room was identified is not worth failing over.
+     */
+    const runCompletion = (checkIn: typeof verifiedCheckIn) =>
+      prisma.$transaction(async (tx) => {
         const completionIds: string[] = []
         const nextDueDates: Date[] = []
         const dueDatesBySchedule = new Map<string, Date>()
@@ -369,26 +377,39 @@ export async function POST(
               signedAt: now,
               roomName: roomSchedule.room?.name ?? null,
               scheduleTitle: roomSchedule.schedule?.title ?? null,
-              verificationMethod: verifiedCheckIn?.method ?? VerificationMethod.MANUAL,
-              checkedInAt: verifiedCheckIn?.checkedInAt ?? null,
-              checkInId: verifiedCheckIn && isPrimaryLog ? verifiedCheckIn.id : null,
+              verificationMethod: checkIn?.method ?? VerificationMethod.MANUAL,
+              checkedInAt: checkIn?.checkedInAt ?? null,
+              checkInId: checkIn && isPrimaryLog ? checkIn.id : null,
             },
           })
           completionIds.push(completionLog.id)
           nextDueDates.push(nextDue)
         }
 
-        if (verifiedCheckIn) {
+        if (checkIn) {
           // Consume inside the transaction: if the completion rolls back under a
           // concurrent double-submit, the check-in stays usable for the retry.
           await tx.roomCheckIn.update({
-            where: { id: verifiedCheckIn.id },
+            where: { id: checkIn.id },
             data: { consumedAt: now },
           })
         }
 
         return { completionIds, nextDueDates }
       })
+
+    try {
+      try {
+        result = await runCompletion(verifiedCheckIn)
+      } catch (error) {
+        const lostTheCheckInRace =
+          verifiedCheckIn &&
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+
+        if (!lostTheCheckInRace) throw error
+        result = await runCompletion(null)
+      }
     } catch (error) {
       if (error instanceof ConcurrentCompletionError) {
         return NextResponse.json(

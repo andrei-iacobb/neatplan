@@ -187,7 +187,11 @@ export function locationShortCode(kind: LocationKind, id: string, version: numbe
       }
     }
   }
-  return `${code.slice(0, 4)}-${code.slice(4)}`
+
+  // Unreachable while TAG_BYTES >= 5: eight base32 characters need 40 bits. If
+  // the tag is ever shortened, fail rather than returning a half-length code
+  // that would print on a label and never match.
+  throw new Error('Location digest exhausted before the short code was complete')
 }
 
 /**

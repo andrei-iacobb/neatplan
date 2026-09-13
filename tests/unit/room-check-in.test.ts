@@ -223,3 +223,65 @@ describe('a scan that should not count', () => {
     expect(mocks.completionLogCreate).toHaveBeenCalled()
   })
 })
+
+describe('two submissions racing for the same check-in', () => {
+  it('drops the link and still records the clean, instead of failing with a 500', async () => {
+    // checkInId is unique on the log. Two concurrent completions in the same room
+    // carrying the same ?checkIn= mean the loser violates that constraint - for
+    // work that was perfectly valid. The clean is what matters; how the room was
+    // identified is not worth failing over.
+    const { Prisma } = await import('@/generated/prisma/client')
+
+    mocks.checkInFindFirst.mockResolvedValue({
+      id: 'check-in-1',
+      checkedInAt: new Date(),
+      method: 'QR',
+      locationTokenVersion: 4,
+    })
+
+    let attempt = 0
+    mocks.transaction.mockImplementation(async (fn: (tx: unknown) => unknown) => {
+      attempt += 1
+      if (attempt === 1) {
+        throw new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+          code: 'P2002',
+          clientVersion: 'test',
+        })
+      }
+      return fn({
+        roomSchedule: { updateMany: mocks.roomScheduleUpdateMany },
+        roomScheduleCompletionLog: { create: mocks.completionLogCreate },
+        roomCheckIn: { update: mocks.checkInUpdate },
+      })
+    })
+
+    const response = await request({ ...validBody, checkInId: 'check-in-1' })
+
+    expect(attempt).toBe(2)
+    expect((response as { status?: number }).status).toBeUndefined()
+    // The retry records the clean without the contested link.
+    expect(writtenLog().checkInId).toBeNull()
+    expect(writtenLog().verificationMethod).toBe('MANUAL')
+  })
+
+  it('does not retry a unique violation that has nothing to do with a check-in', async () => {
+    const { Prisma } = await import('@/generated/prisma/client')
+
+    mocks.checkInFindFirst.mockResolvedValue(null)
+    let attempt = 0
+    mocks.transaction.mockImplementation(async () => {
+      attempt += 1
+      throw new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: 'test',
+      })
+    })
+
+    // No check-in was in play, so a P2002 here is a real failure. It surfaces as
+    // the route's own 500 rather than being swallowed by a pointless retry.
+    const response = await request({ ...validBody, checkInId: 'nope' })
+
+    expect((response as { status?: number }).status).toBe(500)
+    expect(attempt).toBe(1)
+  })
+})

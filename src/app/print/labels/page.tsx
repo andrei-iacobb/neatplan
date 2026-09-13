@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
 import { connection } from 'next/server'
-import { headers } from 'next/headers'
 import { getSessionUser, resolveReadSiteId } from '@/lib/authz'
 import { hasMinRole } from '@/lib/roles'
 import { buildLabelSet, MAX_LABELS } from '@/lib/labels'
@@ -21,33 +20,34 @@ function one(value: string | string[] | undefined): string | undefined {
 }
 
 /**
- * The absolute origin the QR codes should point at.
+ * The absolute origin the QR codes point at. Configuration only - never the
+ * request.
  *
- * NEXTAUTH_URL first. It is a required, validated environment variable and is
- * already what the app treats as its canonical public address for sign-in
- * redirects, so a label that agrees with it agrees with the rest of the app. A
- * label is a physical object that outlives the request that printed it, which is
- * exactly when guessing from the request host goes wrong: print from a LAN
- * address and every sticker points somewhere nobody outside the building can
- * reach.
+ * Deriving this from `x-forwarded-host` was the obvious thing and is wrong twice
+ * over. A label is a physical object that outlives the request that printed it,
+ * so printing from a LAN address would put an unreachable address on every
+ * sticker. Worse, the header is attacker-controlled: anyone who may print a sheet
+ * could send `X-Forwarded-Host: evil.example` and walk away with a stack of
+ * stickers whose QR codes send staff to someone else's login page. The middleware
+ * forces sign-in right after a scan, so staff are already trained to expect that
+ * prompt - which is exactly what makes it a good phishing setup.
  *
- * The forwarded headers are the fallback for a deployment that has not set it.
- * The protocol is only assumed to be https for a non-local host - assuming it
- * unconditionally produces labels that cannot be opened over plain HTTP.
+ * NEXTAUTH_URL is the app's canonical public address and is already what sign-in
+ * redirects use, so a label that agrees with it agrees with the rest of the app.
+ * If it is not configured, this refuses to print rather than guessing, the same
+ * way the token signer refuses to sign without a secret.
  */
-async function requestOrigin(): Promise<string> {
+function labelOrigin(): string | null {
   const configured = process.env.NEXTAUTH_URL?.trim()
-  if (configured) return configured.replace(/\/+$/, '')
+  if (!configured) return null
 
-  const headerList = await headers()
-  const host = headerList.get('x-forwarded-host') ?? headerList.get('host')
-  if (!host) return ''
-
-  const forwardedProto = headerList.get('x-forwarded-proto')
-  const isLocal = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(host)
-  const proto = forwardedProto ?? (isLocal ? 'http' : 'https')
-
-  return `${proto}://${host}`
+  try {
+    const url = new URL(configured)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null
+    return url.origin
+  } catch {
+    return null
+  }
 }
 
 export default async function LabelsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
@@ -93,6 +93,29 @@ export default async function LabelsPage({ searchParams }: { searchParams: Promi
   const kind: LocationKind | undefined =
     requestedKind === 'room' || requestedKind === 'equipment' ? requestedKind : undefined
 
+  const origin = labelOrigin()
+  if (!origin) {
+    return (
+      <div className="pd-shell">
+        <article className="pd">
+          <header className="pd-head">
+            <div>
+              <h1 className="pd-head__title">Labels are not configured yet</h1>
+              <p className="pd-head__subtitle">
+                NeatPlan does not know its own public address, so it cannot put one on a label.
+                Set NEXTAUTH_URL to the address staff use to reach NeatPlan, restart, and print
+                again. Printing without it would produce stickers nobody can scan.
+              </p>
+            </div>
+            <div className="pd-head__brand">
+              <span className="pd-head__brandname">NeatPlan</span>
+            </div>
+          </header>
+        </article>
+      </div>
+    )
+  }
+
   const ids = one(raw.ids)?.split(',').map((id) => id.trim()).filter(Boolean)
 
   const { labels, total, siteLabel } = await buildLabelSet({
@@ -101,7 +124,7 @@ export default async function LabelsPage({ searchParams }: { searchParams: Promi
     siteId: resolveReadSiteId(user, one(raw.site) ?? null),
     ids,
     floor: one(raw.floor),
-    origin: await requestOrigin(),
+    origin,
   })
 
   const showNfc = one(raw.nfc) === '1'

@@ -150,20 +150,37 @@ export async function buildLabelSet(request: LabelRequest): Promise<LabelSet> {
     }
   }
 
+  /*
+   * Share the cap between the two kinds rather than concatenating and slicing.
+   * A naive slice puts rooms first, so a site with more rooms than the cap would
+   * print zero equipment labels while the notice said "240 of 260" - which reads
+   * as "some were cut" rather than "one whole category is missing".
+   *
+   * Each kind gets at least a half share, and whatever the smaller one does not
+   * use goes to the larger.
+   */
+  const fairShare = Math.floor(MAX_LABELS / 2)
+  const roomQuota = Math.min(rooms.length, Math.max(fairShare, MAX_LABELS - equipment.length))
+  const equipmentQuota = Math.min(equipment.length, MAX_LABELS - roomQuota)
+
   const labels: LabelModel[] = [
-    ...rooms.map((room) =>
-      toLabel('room', room, room.floor ?? '', humanize(room.type), room.site?.name ?? '')
-    ),
-    ...equipment.map((item) =>
-      toLabel(
-        'equipment',
-        item,
-        item.serviceArea?.name ?? '',
-        item.assetCode ?? humanize(item.type),
-        item.site?.name ?? ''
-      )
-    ),
-  ].slice(0, MAX_LABELS)
+    ...rooms
+      .slice(0, roomQuota)
+      .map((room) =>
+        toLabel('room', room, room.floor ?? '', humanize(room.type), room.site?.name ?? '')
+      ),
+    ...equipment
+      .slice(0, equipmentQuota)
+      .map((item) =>
+        toLabel(
+          'equipment',
+          item,
+          item.serviceArea?.name ?? '',
+          item.assetCode ?? humanize(item.type),
+          item.site?.name ?? ''
+        )
+      ),
+  ]
 
   const site = siteId
     ? await prisma.site.findUnique({ where: { id: siteId }, select: { name: true } })

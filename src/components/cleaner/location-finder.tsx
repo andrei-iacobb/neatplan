@@ -5,6 +5,9 @@ import Link from 'next/link'
 import { ArrowLeft, DoorOpen, Search, Wrench } from 'lucide-react'
 import { normalizeShortCodeClient } from '@/lib/short-code-client'
 
+/** Enough to scan on a tablet without turning the page into a directory. */
+const RESULT_LIMIT = 40
+
 export interface FindableLocation {
   kind: 'room' | 'equipment'
   id: string
@@ -25,22 +28,26 @@ export function LocationFinder({ locations }: { locations: FindableLocation[] })
 
   const results = useMemo(() => {
     const raw = query.trim()
-    if (!raw) return locations.slice(0, 40)
+    if (!raw) return locations.slice(0, RESULT_LIMIT)
 
     const needle = raw.toLowerCase()
     // Somebody typing off a label may miss the hyphen or hit I for 1, so the
     // code path gets the same normalisation the server applies.
     const asCode = normalizeShortCodeClient(raw)
+    const exact = asCode ? locations.find((location) => location.code === asCode) : undefined
 
-    return locations
-      .filter(
-        (location) =>
-          (asCode && location.code === asCode) ||
-          location.name.toLowerCase().includes(needle) ||
+    const rest = locations.filter(
+      (location) =>
+        location !== exact &&
+        (location.name.toLowerCase().includes(needle) ||
           location.place.toLowerCase().includes(needle) ||
-          location.code.toLowerCase().includes(needle)
-      )
-      .slice(0, 40)
+          location.code.toLowerCase().includes(needle))
+    )
+
+    // The exact code goes first and is never cut by the limit. This is the one
+    // path that exists specifically because scanning failed, so a typed code
+    // disappearing behind forty substring matches would defeat the point.
+    return exact ? [exact, ...rest.slice(0, RESULT_LIMIT - 1)] : rest.slice(0, RESULT_LIMIT)
   }, [locations, query])
 
   return (

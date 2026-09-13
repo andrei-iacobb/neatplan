@@ -237,6 +237,7 @@ test.describe('scanning', () => {
     await cleanerPage.waitForURL((url) => !url.pathname.startsWith('/auth'))
 
     await cleanerPage.goto(`${baseURL}/c`)
+    await settledPage(cleanerPage)
     // Typed without the hyphen and in lower case, as somebody reading off a wall would.
     await cleanerPage
       .getByLabel('Search by name, floor or label code')
