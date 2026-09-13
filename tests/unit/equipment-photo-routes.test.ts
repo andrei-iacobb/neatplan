@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   photoDelete: vi.fn(),
   requireRole: vi.fn(),
   requireAuth: vi.fn(),
+  transaction: vi.fn(),
   processPhoto: vi.fn(),
   storePhoto: vi.fn(),
   readPhoto: vi.fn(),
@@ -25,6 +26,7 @@ vi.mock('@/lib/db', () => ({
       create: mocks.photoCreate,
       delete: mocks.photoDelete,
     },
+    $transaction: mocks.transaction,
   },
 }))
 
@@ -85,11 +87,14 @@ function allow(role = 'HEAD_OF_HOUSEKEEPING', siteId: string | null = MAPLE) {
 
 const refusal = { error: { json: async () => ({ error: 'Forbidden' }), status: 403 } }
 
-function upload(file?: unknown, caption?: string) {
+function upload(file?: unknown, caption?: string, contentLength?: string) {
   const form = new FormData()
   if (file !== undefined) form.append('photo', file as Blob)
   if (caption) form.append('caption', caption)
-  return { formData: async () => form } as unknown as Request
+  return {
+    formData: async () => form,
+    headers: new Headers(contentLength ? { 'content-length': contentLength } : {}),
+  } as unknown as Request
 }
 
 beforeEach(() => {
@@ -122,6 +127,9 @@ beforeEach(() => {
   })
   mocks.storePhoto.mockResolvedValue('/data/equipment-photos/equip-1/a.webp')
   mocks.readPhoto.mockResolvedValue(Buffer.from('webp-bytes'))
+  mocks.transaction.mockImplementation(async (fn: (tx: unknown) => unknown) =>
+    fn({ equipmentPhoto: { count: mocks.photoCount, create: mocks.photoCreate } })
+  )
 })
 
 describe('authorization', () => {
@@ -304,5 +312,73 @@ describe('deleting', () => {
 
     await detail.DELETE(new Request('http://localhost'), params('equip-1', 'photo-1'))
     expect(order).toEqual(['row', 'file'])
+  })
+})
+
+describe('bounding the request itself', () => {
+  it('refuses an oversized body before reading it', async () => {
+    // request.formData() buffers the WHOLE multipart body into memory before any
+    // per-file check can run, and Next puts no cap on a route handler's body.
+    // Refusing from the declared length is what stops a few hundred-megabyte
+    // posts exhausting the process.
+    const request = upload(
+      new File(['x'], 'p.jpg', { type: 'image/jpeg' }),
+      undefined,
+      String(500 * 1024 * 1024)
+    )
+    const spy = vi.spyOn(request, 'formData')
+
+    const response = await list.POST(request, params('equip-1'))
+
+    expect((response as { status: number }).status).toBe(413)
+    expect(spy).not.toHaveBeenCalled()
+    expect(mocks.processPhoto).not.toHaveBeenCalled()
+  })
+
+  it('lets a legitimate photo through its own multipart envelope', async () => {
+    // A 12 MB photo arrives inside a slightly larger body; refusing that would
+    // reject the maximum the app says it accepts.
+    const response = await list.POST(
+      upload(new File(['x'], 'p.jpg', { type: 'image/jpeg' }), undefined, String(12 * 1024 * 1024 + 2048)),
+      params('equip-1')
+    )
+
+    expect((response as { status?: number }).status).toBe(201)
+  })
+
+  it('does not refuse a request that declares no length', async () => {
+    // Content-Length is a hint, not a guarantee. The real per-file check still
+    // follows, so an absent header must not block an upload.
+    const response = await list.POST(
+      upload(new File(['x'], 'p.jpg', { type: 'image/jpeg' })),
+      params('equip-1')
+    )
+
+    expect((response as { status?: number }).status).toBe(201)
+  })
+})
+
+describe('the per-item cap under concurrency', () => {
+  it('re-counts inside the transaction rather than trusting the earlier read', async () => {
+    // Two uploads racing each other both read the same count outside a
+    // transaction and both pass. The check that actually holds is the one inside.
+    mocks.photoCount.mockResolvedValueOnce(3).mockResolvedValueOnce(4)
+
+    const response = await list.POST(
+      upload(new File(['x'], 'p.jpg', { type: 'image/jpeg' })),
+      params('equip-1')
+    )
+
+    expect((response as { status: number }).status).toBe(409)
+    expect(mocks.photoCreate).not.toHaveBeenCalled()
+    // And the file written before the transaction is cleaned up.
+    expect(mocks.removePhoto).toHaveBeenCalledWith('/data/equipment-photos/equip-1/a.webp')
+  })
+
+  it('numbers the new photo from the count seen inside the transaction', async () => {
+    mocks.photoCount.mockResolvedValueOnce(0).mockResolvedValueOnce(2)
+
+    await list.POST(upload(new File(['x'], 'p.jpg', { type: 'image/jpeg' })), params('equip-1'))
+    expect(mocks.photoCreate.mock.calls[0][0].data.sortOrder).toBe(2)
   })
 })

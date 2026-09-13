@@ -2,6 +2,7 @@ import { connection, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireRole, siteScopeWhere } from '@/lib/authz'
 import {
+  contentLengthExceedsLimit,
   EquipmentPhotoError,
   MAX_PHOTOS_PER_ITEM,
   processEquipmentPhoto,
@@ -17,6 +18,9 @@ import {
  * asset so a manager can tell four identical hoists apart, not the work done to
  * it.
  */
+
+/** Thrown inside the transaction so the limit check can roll the create back. */
+class PhotoLimitReached extends Error {}
 
 /** Whether this caller may see this item at all. Same scope as the equipment API. */
 async function findScopedEquipment(user: Parameters<typeof siteScopeWhere>[0], equipmentId: string) {
@@ -74,6 +78,12 @@ export async function POST(
   const auth = await requireRole('HEAD_OF_HOUSEKEEPING')
   if ('error' in auth) return auth.error
 
+  // Before formData(), which buffers the entire body into memory regardless of
+  // what is in it.
+  if (contentLengthExceedsLimit(request.headers.get('content-length'))) {
+    return NextResponse.json({ error: 'Photos must be smaller than 12 MB.' }, { status: 413 })
+  }
+
   const { id } = await context.params
   const equipment = await findScopedEquipment(auth.user, id)
   if (!equipment) return NextResponse.json({ error: 'Equipment not found' }, { status: 404 })
@@ -115,19 +125,30 @@ export async function POST(
   const imagePath = await storeEquipmentPhoto(id, processed.bytes)
 
   try {
-    const photo = await prisma.equipmentPhoto.create({
-      data: {
-        equipmentId: id,
-        imagePath,
-        mimeType: processed.mimeType,
-        width: processed.width,
-        height: processed.height,
-        byteSize: processed.byteSize,
-        caption,
-        sortOrder: existing,
-        uploadedById: auth.user.id,
-      },
-      select: { id: true, caption: true, width: true, height: true, byteSize: true, createdAt: true },
+    /*
+     * Re-count inside the transaction and refuse there too. The check above is
+     * the cheap one that avoids processing an image nobody can store; this is
+     * the one that actually holds, because two uploads racing each other both
+     * read the same count outside a transaction and both pass.
+     */
+    const photo = await prisma.$transaction(async (tx) => {
+      const current = await tx.equipmentPhoto.count({ where: { equipmentId: id } })
+      if (current >= MAX_PHOTOS_PER_ITEM) throw new PhotoLimitReached()
+
+      return tx.equipmentPhoto.create({
+        data: {
+          equipmentId: id,
+          imagePath,
+          mimeType: processed.mimeType,
+          width: processed.width,
+          height: processed.height,
+          byteSize: processed.byteSize,
+          caption,
+          sortOrder: current,
+          uploadedById: auth.user.id,
+        },
+        select: { id: true, caption: true, width: true, height: true, byteSize: true, createdAt: true },
+      })
     })
 
     return NextResponse.json(
@@ -135,9 +156,17 @@ export async function POST(
       { status: 201 }
     )
   } catch (error) {
-    // The file landed but the row did not. Without this the data volume
-    // accumulates images nothing references and nothing can ever delete.
+    // The file landed but the row did not - whether because the limit was
+    // reached or the write failed. Without this the data volume accumulates
+    // images nothing references and nothing can ever delete.
     await removeEquipmentPhoto(imagePath)
+
+    if (error instanceof PhotoLimitReached) {
+      return NextResponse.json(
+        { error: `Each item can hold ${MAX_PHOTOS_PER_ITEM} photos. Remove one first.` },
+        { status: 409 }
+      )
+    }
     throw error
   }
 }

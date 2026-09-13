@@ -47,6 +47,29 @@ const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/h
 
 export class EquipmentPhotoError extends Error {}
 
+/**
+ * Refuse an oversized upload from its declared length, before the body is read.
+ *
+ * `request.formData()` buffers the WHOLE multipart body into memory before any
+ * of the checks below can look at it, and Next puts no cap on a route handler's
+ * body. Without this, a few hundred-megabyte posts exhaust the process - and the
+ * per-file limit further down never gets a chance to run.
+ *
+ * A missing or unparseable Content-Length is allowed through: it is a hint, not
+ * a guarantee, and the real check still follows. This closes the cheap path, not
+ * every path - a reverse proxy body limit is still the right outer bound, which
+ * is why the returned message says so.
+ */
+export function contentLengthExceedsLimit(header: string | null): boolean {
+  if (!header) return false
+  const declared = Number(header)
+  if (!Number.isFinite(declared) || declared <= 0) return false
+
+  // Multipart framing adds a little to the file itself; a small allowance keeps
+  // a legitimate 12 MB photo from being refused by its own envelope.
+  return declared > MAX_UPLOAD_BYTES + 64 * 1024
+}
+
 export interface ProcessedEquipmentPhoto {
   bytes: Buffer
   mimeType: 'image/webp'
