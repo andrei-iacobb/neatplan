@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSessionUser, canAccessSite } from '@/lib/authz'
 import { prisma } from '@/lib/db'
 import { findServiceAreaAtSite, normalizeServiceAreaId } from '@/lib/service-areas'
+import { removeEquipmentPhotoDirectory } from '@/lib/equipment-photos'
 
 export async function GET(
   request: Request,
@@ -210,10 +211,15 @@ export async function DELETE(
       )
     }
 
-    // Delete equipment (schedules will be cascade deleted)
+    // Delete equipment (schedules and photo rows will be cascade deleted)
     await prisma.equipment.delete({
       where: { id }
     })
+
+    // The database cascade removes the photo ROWS; the files live on the data
+    // volume, which the application owns. Without this they accumulate forever
+    // with nothing left referencing them.
+    await removeEquipmentPhotoDirectory(id)
 
     return NextResponse.json({ 
       message: 'Equipment deleted successfully',

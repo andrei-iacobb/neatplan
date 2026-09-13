@@ -18,6 +18,7 @@ import { canAccessAllSites } from '@/lib/roles'
 import type { PlacementSuggestion } from '@/lib/equipment-placement'
 import { ExportMenu } from '@/components/export/export-menu'
 import { LabelActions } from '@/components/export/label-actions'
+import { EquipmentPhotos } from '@/components/admin/equipment-photos'
 
 interface Equipment {
   id: string
@@ -1094,6 +1095,10 @@ export default function EquipmentPage() {
                     onMouseEnter={(e) => (e.currentTarget.style.color = tc.accentGreen)}
                     onMouseLeave={(e) => (e.currentTarget.style.color = tc.textMuted)}
                     title="Edit equipment"
+                    // Icon-only, so it needs a name of its own - and naming the
+                    // item means a screen reader says which row is being edited
+                    // rather than reading "Edit equipment" forty times.
+                    aria-label={`Edit ${equip.name}`}
                   >
                     <Edit className="w-4 h-4" />
                   </button>
@@ -1104,6 +1109,7 @@ export default function EquipmentPage() {
                     onMouseEnter={(e) => (e.currentTarget.style.color = tc.accentRed)}
                     onMouseLeave={(e) => (e.currentTarget.style.color = tc.textMuted)}
                     title="Delete equipment"
+                    aria-label={`Delete ${equip.name}`}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -1643,6 +1649,19 @@ export default function EquipmentPage() {
                     />
                   </div>
 
+
+                  {/* Optional, and deliberately above the label block: telling two
+                      identical hoists apart is the everyday need, replacing a
+                      sticker is the rare one. */}
+                  <div className="pt-4" style={{ borderTop: '1px solid ' + tc.divider }}>
+                    <p className="mb-2 pt-3 text-[11px] font-semibold uppercase tracking-wide" style={{ color: tc.textMuted }}>
+                      Identification photos
+                    </p>
+                    <EquipmentPhotos
+                      equipmentId={selectedEquipment.id}
+                      equipmentName={selectedEquipment.name}
+                    />
+                  </div>
 
                   {/* The asset tag travels with the item, so it is managed here. */}
                   <div className="pt-4" style={{ borderTop: '1px solid ' + tc.divider }}>
