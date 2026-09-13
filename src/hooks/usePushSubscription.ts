@@ -46,6 +46,33 @@ function decodeKey(base64: string): Uint8Array<ArrayBuffer> {
   return output
 }
 
+/**
+ * What the browser says about notification permission.
+ *
+ * `Notification.permission` is the old, synchronous read and it is not always
+ * the authority: the Permissions API is what actually reflects the current
+ * grant, and the two can disagree - a browser can report `granted` through
+ * `permissions.query` while the legacy property still says `denied`. Reading
+ * only the legacy property means showing somebody "your browser is blocking
+ * this" when it is not.
+ *
+ * The Permissions API is consulted first and the legacy property is the
+ * fallback, since a few browsers still lack `notifications` in `permissions.query`.
+ */
+async function notificationPermission(): Promise<NotificationPermission> {
+  if (navigator.permissions?.query) {
+    try {
+      const status = await navigator.permissions.query({ name: 'notifications' as PermissionName })
+      if (status.state === 'granted') return 'granted'
+      if (status.state === 'denied') return 'denied'
+      return 'default'
+    } catch {
+      // Not every browser lists notifications here; fall through.
+    }
+  }
+  return Notification.permission
+}
+
 export interface UsePushSubscription {
   state: PushState
   /** True while a subscribe or unsubscribe is in flight. */
@@ -89,7 +116,7 @@ export function usePushSubscription(): UsePushSubscription {
       }
       setPublicKey(data.publicKey)
 
-      if (Notification.permission === 'denied') {
+      if ((await notificationPermission()) === 'denied') {
         setState('denied')
         return
       }
@@ -118,7 +145,12 @@ export function usePushSubscription(): UsePushSubscription {
       // Permission is requested from the click, not on page load. A browser
       // will refuse a prompt that did not come from a gesture, and a site that
       // asks the moment it loads is a site people click "block" on.
-      const permission = await Notification.requestPermission()
+      // Ask only when it has not already been decided. Calling requestPermission
+      // when the answer is already granted is harmless but pointless, and some
+      // browsers resolve it without a gesture in that case anyway.
+      const current = await notificationPermission()
+      const permission = current === 'granted' ? 'granted' : await Notification.requestPermission()
+
       if (permission !== 'granted') {
         setState(permission === 'denied' ? 'denied' : 'idle')
         setError(
