@@ -23,17 +23,31 @@ function one(value: string | string[] | undefined): string | undefined {
 /**
  * The absolute origin the QR codes should point at.
  *
- * Taken from the request rather than a build-time constant: the app is reached on
- * a LAN address, a tunnel hostname and a public domain depending on the site, and
- * a label pointing at the wrong one is a label nobody can scan. The forwarded
- * headers are set by the reverse proxy in front of the app.
+ * NEXTAUTH_URL first. It is a required, validated environment variable and is
+ * already what the app treats as its canonical public address for sign-in
+ * redirects, so a label that agrees with it agrees with the rest of the app. A
+ * label is a physical object that outlives the request that printed it, which is
+ * exactly when guessing from the request host goes wrong: print from a LAN
+ * address and every sticker points somewhere nobody outside the building can
+ * reach.
+ *
+ * The forwarded headers are the fallback for a deployment that has not set it.
+ * The protocol is only assumed to be https for a non-local host - assuming it
+ * unconditionally produces labels that cannot be opened over plain HTTP.
  */
 async function requestOrigin(): Promise<string> {
+  const configured = process.env.NEXTAUTH_URL?.trim()
+  if (configured) return configured.replace(/\/+$/, '')
+
   const headerList = await headers()
   const host = headerList.get('x-forwarded-host') ?? headerList.get('host')
-  const proto = headerList.get('x-forwarded-proto') ?? 'https'
-  if (host) return `${proto}://${host}`
-  return process.env.NEXTAUTH_URL ?? ''
+  if (!host) return ''
+
+  const forwardedProto = headerList.get('x-forwarded-proto')
+  const isLocal = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(host)
+  const proto = forwardedProto ?? (isLocal ? 'http' : 'https')
+
+  return `${proto}://${host}`
 }
 
 export default async function LabelsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
