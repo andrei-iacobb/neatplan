@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   getServerSession: vi.fn(),
@@ -31,6 +31,8 @@ function signIn(role = 'DIRECTOR', siteId: string | null = null, isAdmin = true)
 
 beforeEach(() => {
   vi.resetAllMocks()
+  vi.useFakeTimers()
+  vi.setSystemTime(new Date('2026-09-13T23:30:00Z'))
   signIn()
   mocks.findRoom.mockResolvedValue({
     siteId: 'site-a', type: 'SERVICE_AREA', _count: { storedEquipment: 0 },
@@ -38,8 +40,10 @@ beforeEach(() => {
   mocks.updateRoom.mockResolvedValue({ id: 'room-1', ...roomFields, siteId: 'site-b' })
 })
 
+afterEach(() => vi.useRealTimers())
+
 describe('room site transfer', () => {
-  it('removes old-site floor plan markers in the same nested write as the transfer', async () => {
+  it('removes map links and clears current/future allocations in the same transfer write', async () => {
     const response = await update({ ...roomFields, siteId: 'site-b' })
 
     expect(response.status).toBe(200)
@@ -50,6 +54,12 @@ describe('room site transfer', () => {
         description: undefined,
         siteId: 'site-b',
         floorPlanRegions: { deleteMany: {} },
+        workAssignments: {
+          updateMany: {
+            where: { workDate: { gte: new Date('2026-09-14T00:00:00Z') } },
+            data: { siteId: 'site-b', assigneeId: null, assigneeName: null, revision: { increment: 1 } },
+          },
+        },
       },
     })
     expect(await response.json()).toMatchObject({ id: 'room-1', siteId: 'site-b' })

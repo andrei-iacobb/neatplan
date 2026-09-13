@@ -70,18 +70,20 @@ export async function GET(request: NextRequest) {
       prisma.roomScheduleCompletionLog.count({ where: roomWhere }),
     ])
 
-    // Equipment completion logs (excluded when filtering by room or user - no such linkage)
+    // Equipment has its own signer; only a room filter excludes equipment.
     const equipWhere: any = {}
     if (completedAtFilter) equipWhere.completedAt = completedAtFilter
+    if (userId) equipWhere.completedByUserId = userId
     if (scoped) equipWhere.equipmentSchedule = { equipment: siteScopeWhere(session.user) }
 
-    const skipEquip = Boolean(roomId) || Boolean(userId)
+    const skipEquip = Boolean(roomId)
     const [equipLogs, equipTotal] = skipEquip
       ? [[] as any[], 0]
       : await Promise.all([
           prisma.equipmentScheduleCompletionLog.findMany({
             where: equipWhere,
             include: {
+              completedBy: { select: { id: true, name: true, email: true } },
               equipmentSchedule: {
                 include: {
                   equipment: { select: { id: true, name: true, type: true } },
@@ -111,6 +113,7 @@ export async function GET(request: NextRequest) {
       completedBy: log.completedBy
         ? { name: log.completedBy.name, email: log.completedBy.email }
         : null,
+      signedName: log.signedName,
       plannedAssigneeName: log.plannedAssigneeName,
       assignmentDate: log.assignmentDate?.toISOString().slice(0, 10) ?? null,
       completedTasks: log.completedTasks,
@@ -128,7 +131,10 @@ export async function GET(request: NextRequest) {
       itemType: log.equipmentSchedule?.equipment?.type ?? null,
       scheduleName: log.equipmentSchedule?.schedule?.title ?? log.scheduleTitle ?? 'Deleted schedule',
       frequency: log.equipmentSchedule?.frequency ?? null,
-      completedBy: null,
+      completedBy: log.completedBy
+        ? { name: log.completedBy.name, email: log.completedBy.email }
+        : null,
+      signedName: log.signedName,
       plannedAssigneeName: log.plannedAssigneeName,
       assignmentDate: log.assignmentDate?.toISOString().slice(0, 10) ?? null,
       completedTasks: log.completedTasks,
