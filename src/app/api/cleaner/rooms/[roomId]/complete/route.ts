@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { Prisma } from '@/generated/prisma/client'
-import { ScheduleStatus } from '@/generated/prisma/enums'
+import { ScheduleStatus, VerificationMethod } from '@/generated/prisma/enums'
 import { calculateNextDueDate } from '@/lib/schedule-utils'
 import { canAccessSite } from '@/lib/authz'
 import { canUseCleaningPortal } from '@/lib/roles'
@@ -90,7 +90,7 @@ export async function POST(
 
     const { roomId } = params
     const body = await request.json()
-    const { scheduleId, scheduleIds: submittedScheduleIds, completedTasks, notes, duration, signature, signedName } = body
+    const { scheduleId, scheduleIds: submittedScheduleIds, completedTasks, notes, duration, signature, signedName, checkInId } = body
     const parsedScheduleIds = parseScheduleIds(scheduleId, submittedScheduleIds)
 
     // Validate required fields
@@ -119,7 +119,7 @@ export async function POST(
         id: primaryScheduleId
       },
       include: {
-        room: { select: { name: true, siteId: true } },
+        room: { select: { name: true, siteId: true, locationTokenVersion: true } },
         schedule: {
           include: {
             tasks: true
@@ -139,7 +139,7 @@ export async function POST(
       ? await prisma.roomSchedule.findMany({
           where: { id: { in: additionalScheduleIds } },
           include: {
-            room: { select: { name: true, siteId: true } },
+            room: { select: { name: true, siteId: true, locationTokenVersion: true } },
             schedule: { include: { tasks: true } },
           },
         })
@@ -256,6 +256,48 @@ export async function POST(
     const startOfToday = new Date(now)
     startOfToday.setHours(0, 0, 0, 0)
 
+    /*
+     * An optional QR or NFC check-in, recorded as HOW the room was identified.
+     *
+     * It is deliberately not a gate. A static label is not proof of presence -
+     * anyone holding a photo of the sticker can replay it - so treating a scan as
+     * permission would weaken the record, not strengthen it. Every other rule
+     * above still applies unchanged, and a completion without a check-in is as
+     * valid as it was before this existed.
+     *
+     * A check-in that is expired, already used, for a different room, for a
+     * different person, or minted against a superseded label is simply ignored:
+     * the clean still records, as MANUAL.
+     */
+    let verifiedCheckIn: { id: string; checkedInAt: Date; method: VerificationMethod } | null = null
+    if (typeof checkInId === 'string' && checkInId.trim()) {
+      const candidate = await prisma.roomCheckIn.findFirst({
+        where: {
+          id: checkInId.trim(),
+          // Bound to the person and the room, so a check-in id overheard from
+          // somebody else's session is worth nothing.
+          userId: session.user.id,
+          roomId,
+          consumedAt: null,
+          expiresAt: { gt: now },
+        },
+        select: { id: true, checkedInAt: true, method: true, locationTokenVersion: true },
+      })
+
+      // The label it came from has to still be current, or a scan taken with a
+      // revoked sticker would keep verifying after the sticker was replaced.
+      // Prisma cannot compare a column against another model's column in a
+      // relation filter, so the comparison happens here against the version
+      // already loaded with the schedule's room.
+      if (candidate && candidate.locationTokenVersion === primarySchedule.room?.locationTokenVersion) {
+        verifiedCheckIn = {
+          id: candidate.id,
+          checkedInAt: candidate.checkedInAt,
+          method: candidate.method,
+        }
+      }
+    }
+
     // A schedule can be signed off once per day. Without this, the same completion could
     // be replayed back to back - each pass writing another compliance log and pushing
     // nextDue further out. Mirrors the `completedToday` flag the cleaner UI already shows.
@@ -275,8 +317,16 @@ export async function POST(
     // optimistic match on lastCompleted means the loser writes nothing and is reported
     // as an idempotent duplicate instead of creating a second log / skipping a cycle.
     let result: { completionIds: string[]; nextDueDates: Date[] }
-    try {
-      result = await prisma.$transaction(async (tx) => {
+
+    /*
+     * The check-in link is dropped and the completion retried if two concurrent
+     * submissions in the same room both carry the same `?checkIn=`. checkInId is
+     * unique on the log, so the loser of that race would otherwise hit P2002 and
+     * surface a bare 500 for work that was perfectly valid. The clean is the
+     * thing that matters; how the room was identified is not worth failing over.
+     */
+    const runCompletion = (checkIn: typeof verifiedCheckIn) =>
+      prisma.$transaction(async (tx) => {
         const completionIds: string[] = []
         const nextDueDates: Date[] = []
         const dueDatesBySchedule = new Map<string, Date>()
@@ -307,6 +357,14 @@ export async function POST(
           const nextDue = dueDatesBySchedule.get(requestedId)
           if (!roomSchedule || !nextDue) throw new ConcurrentCompletionError()
 
+          /*
+           * checkInId is unique on the log, so one scan backs exactly one row.
+           * A completion can cover several schedules at once, so the link goes on
+           * the first log written while every log records the method - the check-in
+           * describes the visit, not the individual schedule.
+           */
+          const isPrimaryLog = requestedId === parsedScheduleIds[0]
+
           const completionLog = await tx.roomScheduleCompletionLog.create({
             data: {
               roomScheduleId: requestedId,
@@ -319,14 +377,39 @@ export async function POST(
               signedAt: now,
               roomName: roomSchedule.room?.name ?? null,
               scheduleTitle: roomSchedule.schedule?.title ?? null,
+              verificationMethod: checkIn?.method ?? VerificationMethod.MANUAL,
+              checkedInAt: checkIn?.checkedInAt ?? null,
+              checkInId: checkIn && isPrimaryLog ? checkIn.id : null,
             },
           })
           completionIds.push(completionLog.id)
           nextDueDates.push(nextDue)
         }
 
+        if (checkIn) {
+          // Consume inside the transaction: if the completion rolls back under a
+          // concurrent double-submit, the check-in stays usable for the retry.
+          await tx.roomCheckIn.update({
+            where: { id: checkIn.id },
+            data: { consumedAt: now },
+          })
+        }
+
         return { completionIds, nextDueDates }
       })
+
+    try {
+      try {
+        result = await runCompletion(verifiedCheckIn)
+      } catch (error) {
+        const lostTheCheckInRace =
+          verifiedCheckIn &&
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+
+        if (!lostTheCheckInRace) throw error
+        result = await runCompletion(null)
+      }
     } catch (error) {
       if (error instanceof ConcurrentCompletionError) {
         return NextResponse.json(

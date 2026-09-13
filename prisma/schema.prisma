@@ -132,6 +132,10 @@ model Equipment {
   serialNumber  String?
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
+  // Mirrors Room.locationTokenVersion. Bumping it revokes every QR label and NFC
+  // tag already printed for this item, which is the recovery path when a sticker
+  // is lost or a tag is cloned.
+  locationTokenVersion Int          @default(1)
   siteId        String?
   site          Site?               @relation(fields: [siteId], references: [id], onDelete: Cascade)
   serviceAreaId String?

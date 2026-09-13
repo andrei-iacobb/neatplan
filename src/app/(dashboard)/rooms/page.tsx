@@ -18,6 +18,7 @@ import { getFrequencyLabel, getScheduleDisplayName } from '@/lib/schedule-utils'
 import { apiRequest } from '@/lib/url-utils'
 import { PageLoading, Spinner } from '@/components/ui/loading'
 import { ExportMenu } from '@/components/export/export-menu'
+import { LabelActions } from '@/components/export/label-actions'
 
 interface Room {
   id: string
@@ -281,10 +282,17 @@ export default function RoomsPage() {
         </div>
         {/* Exports carry the filters on screen and cover every matching room,
             not just the floor currently in view. */}
-        <ExportMenu
-          dataset="rooms"
-          filters={{ site: siteFilter, floor: viewMode === 'BEDROOMS' ? selectedFloor : null }}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <LabelActions
+            kind="room"
+            site={siteFilter}
+            floor={viewMode === 'BEDROOMS' ? selectedFloor : null}
+          />
+          <ExportMenu
+            dataset="rooms"
+            filters={{ site: siteFilter, floor: viewMode === 'BEDROOMS' ? selectedFloor : null }}
+          />
+        </div>
       </div>
 
       {/* Controls */}
@@ -713,6 +721,13 @@ export default function RoomsPage() {
                   onBlur={(e) => { e.currentTarget.style.borderColor = tc.inputBorder }}
                   rows={3} />
               </FormField>
+              {/* The label lives on the door, so it is managed where the door is. */}
+              <div className="pt-2" style={{ borderTop: `1px solid ${tc.divider}`, paddingTop: '16px' }}>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide" style={{ color: tc.textMuted }}>
+                  Door label
+                </p>
+                <LabelActions kind="room" id={selectedRoom.id} name={selectedRoom.name} size="sm" />
+              </div>
               <div className="flex gap-3 pt-2" style={{ borderTop: `1px solid ${tc.divider}`, paddingTop: '16px' }}>
                 <button type="submit" disabled={isSubmitting}
                   className="flex-1 flex items-center justify-center px-4 py-2 rounded-lg text-[13px] font-medium transition-colors disabled:opacity-50"

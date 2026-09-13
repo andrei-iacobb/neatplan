@@ -17,6 +17,7 @@ import { useToast } from '@/components/ui/toast-context'
 import { canAccessAllSites } from '@/lib/roles'
 import type { PlacementSuggestion } from '@/lib/equipment-placement'
 import { ExportMenu } from '@/components/export/export-menu'
+import { LabelActions } from '@/components/export/label-actions'
 
 interface Equipment {
   id: string
@@ -614,10 +615,13 @@ export default function EquipmentPage() {
           <h1 className="text-[32px] font-bold tracking-tight mb-1" style={{ color: tc.textPrimary }}>Equipment Management</h1>
           <p className="text-[15px]" style={{ color: tc.textMuted }}>Manage maintenance equipment and schedules</p>
         </div>
-        <ExportMenu
-          dataset={viewMode === 'SCHEDULES' ? 'schedules' : 'equipment'}
-          filters={{ site: siteFilter, type: typeFilter, q: searchTerm }}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          {viewMode !== 'SCHEDULES' && <LabelActions kind="equipment" site={siteFilter} />}
+          <ExportMenu
+            dataset={viewMode === 'SCHEDULES' ? 'schedules' : 'equipment'}
+            filters={{ site: siteFilter, type: typeFilter, q: searchTerm }}
+          />
+        </div>
       </div>
 
       {/* Controls */}
@@ -1639,6 +1643,19 @@ export default function EquipmentPage() {
                     />
                   </div>
 
+
+                  {/* The asset tag travels with the item, so it is managed here. */}
+                  <div className="pt-4" style={{ borderTop: '1px solid ' + tc.divider }}>
+                    <p className="mb-2 pt-3 text-[11px] font-semibold uppercase tracking-wide" style={{ color: tc.textMuted }}>
+                      Asset label
+                    </p>
+                    <LabelActions
+                      kind="equipment"
+                      id={selectedEquipment.id}
+                      name={selectedEquipment.name}
+                      size="sm"
+                    />
+                  </div>
 
                   <div className="flex items-center justify-end gap-3 pt-4">
                     <button

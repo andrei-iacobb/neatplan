@@ -442,3 +442,135 @@
     text-decoration: none;
   }
 }
+
+/* ---- location label sheets --------------------------------------------- */
+
+/*
+ * Labels are sized in millimetres, not pixels. These get cut out and stuck to a
+ * door frame or a hoist, so "about right on screen" is the wrong size on paper.
+ * Eight to an A4 page: two columns of four. The @page margins above leave
+ * 186mm x 267mm printable (210 - 12 - 12, and 297 - 14 - 16); the grid needs
+ * 180mm across (2 x 88 + 4 gap) and 236mm down (4 x 56 + 3 x 4).
+ */
+.lb-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 88mm);
+  gap: 4mm;
+  justify-content: center;
+  margin-top: 6mm;
+}
+
+.lb {
+  display: flex;
+  align-items: center;
+  gap: 4mm;
+  width: 88mm;
+  height: 56mm;
+  padding: 4mm;
+  border: 0.4mm dashed var(--pd-rule);
+  border-radius: 2mm;
+  /* A label must never be split by a page break - half a QR scans as nothing. */
+  break-inside: avoid;
+  page-break-inside: avoid;
+  overflow: hidden;
+}
+
+.lb__qr {
+  flex: 0 0 auto;
+  width: 40mm;
+  height: 40mm;
+}
+
+.lb__qr svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.lb__body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.lb__name {
+  margin: 0;
+  font-size: 15pt;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  /* Read from across a corridor; a long name drops to a second line rather than
+     being clipped, so three lines is the budget before it shrinks. */
+  overflow-wrap: anywhere;
+}
+
+.lb__place {
+  margin: 1mm 0 0;
+  font-size: 10pt;
+  font-weight: 600;
+  color: var(--pd-ink-soft);
+}
+
+.lb__detail {
+  margin: 1.5mm 0 0;
+  font-size: 7.5pt;
+  color: var(--pd-ink-faint);
+  overflow-wrap: anywhere;
+}
+
+.lb__code {
+  margin: 2.5mm 0 0;
+  font-size: 11pt;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.06em;
+}
+
+.lb__codelabel {
+  display: block;
+  font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  font-size: 6.5pt;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pd-ink-faint);
+}
+
+@media print {
+  /* The cut guide is for scissors, not for the printer to render as a box. */
+  .lb { border-style: dashed; }
+  .lb-sheet { break-before: auto; }
+}
+
+@media screen and (width < 760px) {
+  /* One per row on a phone, so the QR stays legible while checking a sheet. */
+  .lb-grid { grid-template-columns: minmax(0, 88mm); }
+  .lb { width: 100%; max-width: 88mm; }
+}
+
+/* ---- NFC writing sheet -------------------------------------------------- */
+
+.pd-steps {
+  margin: 8pt 0 0;
+  padding-left: 14pt;
+  font-size: 9pt;
+  line-height: 1.5;
+}
+
+.pd-steps li { margin-bottom: 3pt; }
+
+.pd-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 7.5pt;
+}
+
+.pd-nfc-toggle {
+  display: flex;
+  justify-content: center;
+  padding: 16px 12px 0;
+}
+
+@media print {
+  /* The writing sheet is its own job; start it on a fresh page. */
+  .pd + .pd { break-before: page; page-break-before: always; }
+  .pd-nfc-toggle { display: none !important; }
+}
