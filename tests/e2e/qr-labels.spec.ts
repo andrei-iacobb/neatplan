@@ -37,10 +37,23 @@ async function login(page: Page, who: keyof typeof CREDENTIALS) {
   await page.waitForURL((url) => !url.pathname.startsWith('/auth'), { timeout: 20_000 })
 }
 
-/** Wait for the hydration handoff, as in the export spec. */
+/**
+ * Wait for the hydration handoff, as in the export spec.
+ *
+ * React holds both the streamed HTML and the hydrating client tree in the DOM for
+ * a moment, one of them display:none, so an assertion made inside that window
+ * trips over two of everything. Waiting for the stream to finish is the part that
+ * matters; the count check then fails loudly if a real double-render appears.
+ */
 async function settled(page: Page) {
   await page.waitForLoadState('networkidle')
   await expect(page.locator('.pd-shell')).toHaveCount(1, { timeout: 15_000 })
+}
+
+/** The same wait for a page that is not a printable document. */
+async function settledPage(page: Page) {
+  await page.waitForLoadState('networkidle')
+  await expect(page.locator('h1')).toHaveCount(1, { timeout: 15_000 })
 }
 
 interface DecodedLabel {
@@ -202,6 +215,7 @@ test.describe('scanning', () => {
   test('refuses a forged token without saying why', async ({ page }) => {
     await login(page, 'cleaner')
     await page.goto('/c/bm90LWEtcmVhbC10b2tlbg.AAAAAAAAAAAAAAAAAAAAAA')
+    await settledPage(page)
 
     await expect(page.getByText('That code could not be read')).toBeVisible()
     // Every dead end offers a way to carry on working.
@@ -259,6 +273,7 @@ test.describe('revocation', () => {
 
     // The sticker on the wall is now dead, and says so rather than failing silently.
     await page.goto(new URL(original.url).pathname)
+    await settledPage(page)
     await expect(page.getByText('That label has been replaced')).toBeVisible()
 
     // A freshly printed one works, and carries a different code.
