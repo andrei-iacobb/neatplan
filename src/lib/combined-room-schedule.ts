@@ -12,6 +12,8 @@ export interface RoomScheduleInput {
   nextDue: string
   status: string
   completedToday?: boolean
+  /** Present on the API payload; not used by the merge itself. */
+  estimatedDuration?: string
   tasks: RoomScheduleTaskInput[]
 }
 
@@ -38,6 +40,8 @@ export interface RoomWorkPackage {
   estimatedDuration: string
   scheduleIds: string[]
   sourceTitles: string[]
+  /** Of those, the ones brought forward rather than due. Empty in the normal case. */
+  earlyScheduleIds: string[]
   tasks: MergedRoomTask[]
 }
 
@@ -180,19 +184,63 @@ function calendarDay(date: Date): string {
   return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
 }
 
-function schedulesForNextVisit(schedules: RoomScheduleInput[], now: Date): RoomScheduleInput[] {
+function schedulesForNextVisit(
+  schedules: RoomScheduleInput[],
+  now: Date,
+  alsoDoing: ReadonlySet<string>,
+): RoomScheduleInput[] {
+  // Completed today is the one exclusion nothing overrides. Asking to do a
+  // schedule early that has already been signed off today is asking to do it
+  // twice, which the completion endpoint refuses anyway.
   const outstanding = schedules.filter((schedule) => !schedule.completedToday)
   if (outstanding.length === 0) return []
 
   const tomorrow = nextDay(now)
   const dueNow = outstanding.filter((schedule) => new Date(schedule.nextDue) < tomorrow)
-  if (dueNow.length > 0) return dueNow
+
+  /*
+   * Work the cleaner has explicitly chosen to bring forward.
+   *
+   * The room is empty today, the quarterly deep clean is not due for six weeks,
+   * and doing it now is the sensible thing. This is what lets them - and it is
+   * strictly additive: the daily that IS due does not stop being required, and
+   * every task of both still has to be ticked before either can be signed off.
+   */
+  const chosen = outstanding.filter(
+    (schedule) => alsoDoing.has(schedule.id) && !dueNow.includes(schedule),
+  )
+
+  if (dueNow.length > 0) return [...dueNow, ...chosen]
+
+  // Nothing is due. An explicit choice stands on its own - that is the whole
+  // point of doing something early.
+  if (chosen.length > 0) return chosen
 
   const earliest = [...outstanding].sort(
     (left, right) => new Date(left.nextDue).getTime() - new Date(right.nextDue).getTime(),
   )[0]
   const earliestDay = calendarDay(new Date(earliest.nextDue))
   return outstanding.filter((schedule) => calendarDay(new Date(schedule.nextDue)) === earliestDay)
+}
+
+/**
+ * Schedules a cleaner could choose to bring forward on this visit.
+ *
+ * Everything outstanding that is not already part of today's due work. Each
+ * carries its real next due date, because "not due until 4 November" is the
+ * context somebody needs to decide whether doing it now is sensible or a waste
+ * of an afternoon.
+ */
+export function schedulesAvailableEarly(
+  schedules: RoomScheduleInput[],
+  now = new Date(),
+): RoomScheduleInput[] {
+  const outstanding = schedules.filter((schedule) => !schedule.completedToday)
+  const tomorrow = nextDay(now)
+
+  return outstanding
+    .filter((schedule) => new Date(schedule.nextDue) >= tomorrow)
+    .sort((left, right) => new Date(left.nextDue).getTime() - new Date(right.nextDue).getTime())
 }
 
 function mergeTasks(schedules: RoomScheduleInput[]): MergedRoomTask[] {
@@ -255,8 +303,14 @@ function mergeTasks(schedules: RoomScheduleInput[]): MergedRoomTask[] {
 export function buildRoomWorkPackage(
   schedules: RoomScheduleInput[],
   now = new Date(),
+  /**
+   * Schedule ids the cleaner has chosen to bring forward. Ids that are not
+   * outstanding, or are already due, are simply ignored - a stale selection in a
+   * URL must not change what is required.
+   */
+  alsoDoing: readonly string[] = [],
 ): RoomWorkPackage | null {
-  const included = schedulesForNextVisit(schedules, now)
+  const included = schedulesForNextVisit(schedules, now, new Set(alsoDoing))
   if (included.length === 0) return null
 
   const tasks = mergeTasks(included)
@@ -278,6 +332,10 @@ export function buildRoomWorkPackage(
     estimatedDuration: formatDuration(tasks.length),
     scheduleIds,
     sourceTitles: included.map((schedule) => schedule.title),
+    earlyScheduleIds: included
+      .filter((schedule) => new Date(schedule.nextDue) >= nextDay(now))
+      .map((schedule) => schedule.id)
+      .sort(),
     tasks,
   }
 }

@@ -25,6 +25,7 @@ import { useThemeColors } from '@/hooks/useThemeColors'
 import { PageLoading, Spinner } from '@/components/ui/loading'
 import { SignaturePad } from '@/components/cleaner/signature-pad'
 import { canUseCleaningPortal } from '@/lib/roles'
+import { EarlyWorkPicker } from '@/components/cleaner/early-work-picker'
 
 interface ScheduleTask {
   id: string
@@ -47,6 +48,15 @@ interface RoomSchedule {
   sourceTitles?: string[]
 }
 
+interface EarlySchedule {
+  id: string
+  title: string
+  frequency: string
+  nextDue: string
+  taskCount: number
+  estimatedDuration?: string
+}
+
 interface Room {
   id: string
   name: string
@@ -55,6 +65,8 @@ interface Room {
   description?: string
   schedules: RoomSchedule[]
   workPackage: RoomSchedule | null
+  /** Outstanding work that is NOT due yet, offered rather than required. */
+  availableEarly?: EarlySchedule[]
 }
 
 interface CompletedTask {
@@ -84,6 +96,12 @@ export default function CleanRoomPage() {
   // scan rather than picked from a list - see the note in the complete route
   // about why that is a description and not a permission.
   const searchParams = useSearchParams()
+  /*
+   * Schedules the cleaner has chosen to bring forward on this visit. Kept in
+   * component state, not stored: it is a decision about today, not a change to
+   * the schedule, and walking away should undo it.
+   */
+  const [alsoDoing, setAlsoDoing] = useState<string[]>([])
   const checkInId = searchParams.get('checkIn')
   const { data: session, status } = useSession()
   const tc = useThemeColors()
@@ -111,7 +129,13 @@ export default function CleanRoomPage() {
       setIsLoading(true)
       setError(null)
 
-      const response = await apiRequest(`/api/cleaner/rooms/${params.roomId}`)
+      /*
+       * The extra work is asked for on the request rather than merged on the
+       * client, so the checklist the cleaner ticks is the one the server built -
+       * the same merge that decides what the completion will require.
+       */
+      const query = alsoDoing.length > 0 ? `?also=${alsoDoing.join(',')}` : ''
+      const response = await apiRequest(`/api/cleaner/rooms/${params.roomId}${query}`)
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -128,7 +152,7 @@ export default function CleanRoomPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [params.roomId])
+  }, [params.roomId, alsoDoing])
 
   // Pre-print the cleaner's name the way a paper sign-off sheet does; still editable.
   useEffect(() => {
@@ -860,12 +884,25 @@ export default function CleanRoomPage() {
           )}
         </AnimatePresence>
 
+        {/* Work that is not due yet, offered rather than imposed. */}
+        <EarlyWorkPicker
+          options={room.availableEarly ?? []}
+          selected={alsoDoing}
+          onChange={setAlsoDoing}
+          hasDueWork={Boolean(room.workPackage)}
+          disabled={isSubmitting}
+        />
+
         {/* No Schedules */}
         {!room.workPackage && (
           <div className="text-center py-12">
             <CheckSquare className="w-16 h-16 mx-auto mb-4" style={{ color: tc.statusCompleted.text }} />
             <h3 className="text-xl font-semibold mb-2" style={{ color: tc.textPrimary }}>Nothing else to clean</h3>
-            <p className="mb-4" style={{ color: tc.textMuted }}>Every schedule due for this room has been completed today.</p>
+            <p className="mb-4" style={{ color: tc.textMuted }}>
+              {(room.availableEarly?.length ?? 0) > 0
+                ? 'Everything due for this room is done. There is work above you could bring forward if you have time.'
+                : 'Every schedule due for this room has been completed today.'}
+            </p>
             <Link
               href="/clean"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors"
