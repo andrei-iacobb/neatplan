@@ -3,11 +3,25 @@ import { test, expect, type Page } from '@playwright/test'
 /**
  * End-to-end cover for push notifications.
  *
- * This deployment has no VAPID keys, which is the useful case to assert: the
- * feature has to be honestly unavailable rather than half working. A switch that
- * moves and saves a value nothing reads is exactly what this change removes, so
- * the tests are mostly about what is NOT offered.
+ * These adapt to whether the deployment has VAPID keys, because both states have
+ * to be right. Without keys the feature must be honestly unavailable rather than
+ * half working - a switch that moves and saves a value nothing reads is exactly
+ * what this change removes. With keys, the subscription has to actually store.
+ *
+ * ONE THING IS NOT COVERED HERE, and cannot be: headless Chromium refuses
+ * `pushManager.subscribe()` outright ("Registration failed - permission denied")
+ * because there is no push service behind it, whatever permission is granted. So
+ * the browser-side registration call itself is unverified, and no notification
+ * has ever actually been delivered to a device. What IS asserted is that the
+ * failure is reported honestly: the switch stays off, the reason is shown, and
+ * no phantom subscription is recorded.
  */
+
+/** Whether this deployment can do push at all. */
+async function pushIsConfigured(page: Page): Promise<boolean> {
+  const data = await (await page.request.get('/api/push/subscribe')).json()
+  return Boolean(data.configured && data.publicKey)
+}
 const CREDENTIALS = {
   manager: {
     email: process.env.E2E_MANAGER_EMAIL ?? 'manager@neatplan.com',
@@ -32,20 +46,24 @@ async function login(page: Page, who: keyof typeof CREDENTIALS = 'manager') {
 }
 
 test.describe('what the server reports', () => {
-  test('says push is unconfigured rather than pretending otherwise', async ({ page }) => {
+  test('reports its own configuration honestly', async ({ page }) => {
     await login(page)
 
     const response = await page.request.get('/api/push/subscribe')
     expect(response.status()).toBe(200)
 
     const data = await response.json()
-    // No VAPID keys on this deployment.
-    expect(data.configured).toBe(false)
-    expect(data.publicKey).toBeNull()
+    // Configured means a key to hand out; unconfigured means null, never a
+    // placeholder that would produce a subscription nobody can deliver to.
+    expect(typeof data.configured).toBe('boolean')
+    expect(data.configured ? typeof data.publicKey : data.publicKey).toBe(
+      data.configured ? 'string' : null
+    )
   })
 
   test('refuses a subscription when it cannot deliver, and says why', async ({ page }) => {
     await login(page)
+    test.skip(await pushIsConfigured(page), 'push is configured on this deployment')
 
     const response = await page.request.post('/api/push/subscribe', {
       data: {
@@ -58,6 +76,29 @@ test.describe('what the server reports', () => {
     // fake-active state this change removes.
     expect(response.status()).toBe(503)
     expect((await response.json()).error).toMatch(/not set up/i)
+  })
+
+  test('stores a subscription once, however many times a browser re-sends it', async ({ page }) => {
+    await login(page)
+    test.skip(!(await pushIsConfigured(page)), 'push needs VAPID keys on this deployment')
+
+    // Browsers re-subscribe on their own schedule. Accumulating rows would mean
+    // one person receiving the same alert several times.
+    const endpoint = `https://fcm.googleapis.com/fcm/send/e2e-${Date.now()}`
+
+    const first = await page.request.post('/api/push/subscribe', {
+      data: { endpoint, keys: { p256dh: 'BJtest', auth: 'authsecret' } },
+    })
+    expect(first.status()).toBe(200)
+    expect((await (await page.request.get('/api/push/subscribe')).json()).devices).toBe(1)
+
+    await page.request.post('/api/push/subscribe', {
+      data: { endpoint, keys: { p256dh: 'BJrotated', auth: 'authsecret2' } },
+    })
+    expect((await (await page.request.get('/api/push/subscribe')).json()).devices).toBe(1)
+
+    await page.request.delete('/api/push/subscribe')
+    expect((await (await page.request.get('/api/push/subscribe')).json()).devices).toBe(0)
   })
 
   test('turns an anonymous request away', async ({ browser }) => {
@@ -105,6 +146,8 @@ test.describe('what the server reports', () => {
 test.describe('what the settings page shows', () => {
   test('explains that push is not set up, and offers no switch', async ({ page }) => {
     await login(page)
+    test.skip(await pushIsConfigured(page), 'push is configured on this deployment')
+
     await page.goto('/settings')
     await page.waitForLoadState('networkidle')
     await page.getByRole('button', { name: 'Notifications' }).click()
@@ -115,6 +158,38 @@ test.describe('what the settings page shows', () => {
 
     // The point of the change: no control that moves and does nothing.
     await expect(page.getByRole('switch', { name: 'Push notifications' })).toHaveCount(0)
+  })
+
+  test('reports a failed registration rather than pretending it worked', async ({ browser, baseURL }) => {
+    const context = await browser.newContext()
+    await context.grantPermissions(['notifications'], { origin: baseURL! })
+    const page = await context.newPage()
+
+    await login(page)
+    test.skip(!(await pushIsConfigured(page)), 'push needs VAPID keys on this deployment')
+
+    await page.goto('/settings')
+    await page.waitForLoadState('networkidle')
+    await page.getByRole('button', { name: 'Notifications' }).click()
+
+    const toggle = page.getByRole('switch', { name: 'Push notifications' })
+    await expect(toggle).toBeVisible()
+    await toggle.click()
+
+    /*
+     * Headless Chromium cannot complete a push registration - there is no push
+     * service behind it - so this exercises the FAILURE path, which is the one
+     * worth asserting anyway: the switch must not report success for a device
+     * that will never receive anything.
+     */
+    await expect(page.getByText(/could not be registered/i)).toBeVisible({ timeout: 15_000 })
+    await expect(toggle).toHaveAttribute('aria-checked', 'false')
+
+    // And nothing was recorded, so the server does not believe in a device the
+    // browser never registered.
+    expect((await (await page.request.get('/api/push/subscribe')).json()).devices).toBe(0)
+
+    await context.close()
   })
 
   test('no longer stores push as a preference that nothing reads', async ({ page }) => {
