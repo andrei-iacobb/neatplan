@@ -1,0 +1,422 @@
+/*
+ * The print theme.
+ *
+ * One stylesheet, loaded only by /print routes. It has to hold two jobs at once:
+ * a readable document on a tablet screen, and a clean A4 sheet on paper. The
+ * screen rules render a page-like card; the @media print block strips the card
+ * and hands the table to the printer.
+ *
+ * Deliberately not Tailwind. Print layout depends on properties Tailwind has no
+ * utilities for (break-inside, table-header-group, @page) and the whole file is
+ * ~200 lines, so a plain stylesheet is the greppable option.
+ */
+
+.pd {
+  /*
+   * A4 portrait content width: 210mm less the 12mm side margins declared in
+   * @page below. Held in a variable so the landscape override is one line.
+   */
+  --pd-page-width: 186mm;
+  --pd-ink: #111118;
+  --pd-ink-soft: #44444f;
+  --pd-ink-faint: #6e6e85;
+  --pd-rule: #d4d4dc;
+  --pd-rule-strong: #111118;
+  --pd-surface-alt: #f4f6fa;
+
+  color: var(--pd-ink);
+  background: #fff;
+  font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  font-size: 9.5pt;
+  line-height: 1.4;
+  /* Digits in a compliance table must not jiggle between rows. */
+  font-variant-numeric: tabular-nums;
+}
+
+.pd--landscape {
+  /* 297mm less the same side margins. */
+  --pd-page-width: 273mm;
+}
+
+/* ---- screen presentation: a document on a desk ------------------------- */
+
+@media screen {
+  .pd-shell {
+    min-height: 100dvh;
+    background: #e9ecf1;
+    padding: 16px 12px 64px;
+  }
+
+  .pd {
+    max-width: var(--pd-page-width);
+    margin: 0 auto;
+    padding: 14mm 12mm;
+    background: #fff;
+    border: 1px solid var(--pd-rule);
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+  }
+
+  /*
+   * Below A4 width the paper metaphor stops helping and starts forcing a
+   * horizontal scroll on a tablet, so the document goes full-bleed and the
+   * table scrolls on its own.
+   */
+  @media (width < 760px) {
+    .pd-shell { padding: 0 0 48px; }
+    .pd {
+      max-width: none;
+      padding: 20px 16px 28px;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    .pd-tablewrap { overflow-x: auto; }
+    .pd-table { min-width: 640px; }
+  }
+}
+
+/* ---- the toolbar: screen only ------------------------------------------ */
+
+.pd-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  background: #fff;
+  border-bottom: 1px solid var(--pd-rule);
+}
+
+.pd-toolbar__spacer { flex: 1 1 auto; }
+
+.pd-btn {
+  /* 44px clears the iPadOS touch floor; these are pressed with a thumb. */
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border-radius: 8px;
+  border: 1px solid var(--pd-rule);
+  background: #fff;
+  color: var(--pd-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 150ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.pd-btn:hover { background: var(--pd-surface-alt); }
+.pd-btn:active { transform: scale(0.97); }
+
+.pd-btn--primary {
+  background: #10b981;
+  border-color: #10b981;
+  color: #fff;
+}
+
+.pd-btn--primary:hover { background: #0ea271; }
+
+.pd-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #10b981;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pd-btn { transition: none; }
+  .pd-btn:active { transform: none; }
+}
+
+/* ---- masthead ---------------------------------------------------------- */
+
+.pd-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1.5pt solid var(--pd-rule-strong);
+}
+
+.pd-head__title {
+  margin: 0;
+  font-size: 16pt;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.pd-head__subtitle {
+  margin: 2pt 0 0;
+  font-size: 10pt;
+  color: var(--pd-ink-soft);
+}
+
+.pd-head__brand {
+  text-align: right;
+  font-size: 8pt;
+  color: var(--pd-ink-faint);
+  white-space: nowrap;
+}
+
+.pd-head__brandname {
+  display: block;
+  font-size: 11pt;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--pd-ink);
+}
+
+/* ---- filter context ---------------------------------------------------- */
+
+.pd-context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4pt 14pt;
+  margin: 7pt 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 8.5pt;
+}
+
+.pd-context__label {
+  color: var(--pd-ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 7.5pt;
+  font-weight: 700;
+  margin-right: 4pt;
+}
+
+.pd-context__value { color: var(--pd-ink); font-weight: 600; }
+
+/* ---- summary stats ----------------------------------------------------- */
+
+.pd-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin: 9pt 0 0;
+  padding: 0;
+  border: 0.75pt solid var(--pd-rule);
+  border-radius: 3pt;
+  overflow: hidden;
+}
+
+.pd-stat {
+  flex: 1 1 0;
+  min-width: 90pt;
+  padding: 6pt 9pt;
+  border-right: 0.75pt solid var(--pd-rule);
+}
+
+.pd-stat:last-child { border-right: 0; }
+
+.pd-stat__label {
+  display: block;
+  font-size: 7.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--pd-ink-faint);
+}
+
+.pd-stat__value {
+  display: block;
+  margin-top: 1pt;
+  font-size: 15pt;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* ---- the truncation notice --------------------------------------------- */
+
+.pd-notice {
+  margin: 9pt 0 0;
+  padding: 6pt 9pt;
+  border: 1pt solid var(--pd-rule-strong);
+  border-left-width: 3pt;
+  border-radius: 2pt;
+  font-size: 8.5pt;
+  font-weight: 600;
+}
+
+/* ---- the table --------------------------------------------------------- */
+
+.pd-tablewrap { margin-top: 10pt; }
+
+.pd-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.5pt;
+}
+
+.pd-table thead th {
+  padding: 4pt 5pt;
+  text-align: left;
+  font-size: 7.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--pd-ink);
+  background: var(--pd-surface-alt);
+  border-bottom: 1pt solid var(--pd-rule-strong);
+  vertical-align: bottom;
+}
+
+.pd-table tbody td {
+  padding: 3.5pt 5pt;
+  border-bottom: 0.5pt solid var(--pd-rule);
+  vertical-align: top;
+  /*
+   * Long values wrap rather than overflow. A clipped room name or a truncated
+   * completion note is the exact failure this document exists to avoid.
+   */
+  overflow-wrap: anywhere;
+}
+
+.pd-table td.pd-num,
+.pd-table th.pd-num { text-align: right; }
+
+.pd-table td.pd-wrap { min-width: 0; white-space: pre-wrap; }
+
+.pd-table .pd-identity { font-weight: 700; }
+
+.pd-empty {
+  padding: 18pt 0;
+  text-align: center;
+  color: var(--pd-ink-faint);
+  font-size: 9.5pt;
+}
+
+/* ---- footer ------------------------------------------------------------ */
+
+.pd-foot {
+  margin-top: 10pt;
+  padding-top: 5pt;
+  border-top: 0.75pt solid var(--pd-rule);
+  font-size: 7.5pt;
+  color: var(--pd-ink-faint);
+  display: flex;
+  justify-content: space-between;
+  gap: 12pt;
+}
+
+/*
+ * Repeated on every printed sheet. A fixed-position block is the only
+ * cross-browser way to get a running footer out of an HTML print job: Chrome,
+ * Safari and Firefox all repeat it per page. Page NUMBERS come from the
+ * browser's own print footer, because @page margin boxes are still unsupported
+ * outside paged-media engines - so the running block carries identity instead,
+ * and a page separated from its stack can still be traced back.
+ */
+.pd-runningfoot { display: none; }
+
+/* ---- print ------------------------------------------------------------- */
+
+@page {
+  size: A4 portrait;
+  margin: 14mm 12mm 16mm;
+}
+
+@page landscape {
+  size: A4 landscape;
+}
+
+.pd--landscape { page: landscape; }
+
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    /* The app shell pins height and hides overflow; a document must flow. */
+    height: auto !important;
+    overflow: visible !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  /*
+   * Anything that is navigation, a control, or app chrome leaves the page.
+   * Buttons on paper are the clearest sign nobody looked at the printout.
+   */
+  .pd-toolbar,
+  nav,
+  header[role='banner'],
+  footer[role='contentinfo'],
+  [data-print-hide] {
+    display: none !important;
+  }
+
+  .pd-shell {
+    background: #fff;
+    padding: 0;
+    min-height: 0;
+  }
+
+  .pd {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    font-size: 8.5pt;
+  }
+
+  /* The screen card's shading must survive as real ink, not be dropped. */
+  .pd-table thead th,
+  .pd-stats {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Repeat the column headers at the top of every page. */
+  .pd-table thead { display: table-header-group; }
+  .pd-table tfoot { display: table-footer-group; }
+
+  /* Never split a row, and never orphan a header at the foot of a page. */
+  .pd-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .pd-head,
+  .pd-stats,
+  .pd-notice {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .pd-head { break-after: avoid; }
+
+  .pd-tablewrap {
+    overflow: visible !important;
+  }
+
+  .pd-table { min-width: 0 !important; }
+
+  .pd-runningfoot {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding-top: 2pt;
+    border-top: 0.5pt solid var(--pd-rule);
+    font-size: 7pt;
+    color: var(--pd-ink-faint);
+    background: #fff;
+  }
+
+  a[href] {
+    color: inherit;
+    text-decoration: none;
+  }
+}
