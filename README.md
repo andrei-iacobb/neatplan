@@ -249,12 +249,20 @@ scripts\windows\start.bat
 <summary><b>Deploy with Docker</b></summary>
 
 ```bash
-# Build image
-docker build -t neatplan .
-
-# Run container
-docker run -p 3000:3000 --env-file .env neatplan
+# Set database and authentication values in .env, then build and migrate
+docker compose up --build --detach
 ```
+
+The app listens on `127.0.0.1:4040`. Put an HTTPS reverse proxy in front of it and set
+`NEXTAUTH_URL` and `NEXT_PUBLIC_APP_BASE_URL` to that public origin. Push notifications
+also require a persistent VAPID key pair and `VAPID_SUBJECT`.
+
+Back up the database and both upload volumes. `neatplan_files` retains `/app/data`,
+including equipment and completion photos; `neatplan_uploads` retains existing floor
+plans. When upgrading an older deployment, copy any files from the old container's
+`/app/data` before replacing it, because that directory previously used temporary
+storage. Restore those files into the new volume with ownership `1001:1001` before
+starting the app. Never use `docker compose down --volumes` on a deployment with data.
 
 </details>
 
