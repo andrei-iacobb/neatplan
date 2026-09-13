@@ -142,5 +142,7 @@ export function PrintDocument<T>({ dataset, csvHref, emptyMessage }: PrintDocume
 }
 
 function totalWidth<T>(columns: ExportColumn<T>[]): number {
-  return columns.reduce((sum, column) => sum + (column.width ?? 1), 0)
+  // No dataset currently marks every column csv-only, but one that did would
+  // divide by zero and render every column width as NaN%.
+  return Math.max(1, columns.reduce((sum, column) => sum + (column.width ?? 1), 0))
 }

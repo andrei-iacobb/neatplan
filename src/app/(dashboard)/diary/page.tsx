@@ -170,7 +170,7 @@ export default function DiaryPage() {
           <ExportMenu
             dataset="diary"
             size="sm"
-            filters={{ site: site.selected, date: currentWeekStart.toISOString().slice(0, 10) }}
+            filters={{ site: site.selected, date: getDateKey(currentWeekStart) }}
           />
         </div>
       </header>

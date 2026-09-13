@@ -34,10 +34,27 @@ export function formatDateTime(value: Date | string | null | undefined): string 
   return `${formatDate(date)} ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
-/** `2026-09-13`, for filenames and for spreadsheet columns that get sorted. */
+/**
+ * `2026-09-13` in UTC. For round-tripping a value that was itself parsed as an
+ * instant, where shifting it would change what it means.
+ */
 export function formatIsoDate(value: Date | string | null | undefined): string {
   const date = toDate(value)
   return date ? date.toISOString().slice(0, 10) : EMPTY_CELL
+}
+
+/**
+ * `2026-09-13` as the calendar day the USER is living in.
+ *
+ * toISOString would answer the wrong question here. Local midnight on Monday is
+ * still Sunday in UTC anywhere east of Greenwich, so a "what day is it" value
+ * serialised through toISOString silently becomes the previous day for the whole
+ * of BST - and a week anchor built from it lands a full week early.
+ */
+export function toLocalIsoDate(value: Date | string | null | undefined): string {
+  const date = toDate(value)
+  if (!date) return EMPTY_CELL
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
 function toDate(value: Date | string | null | undefined): Date | null {
@@ -101,5 +118,7 @@ export function formatExportValue(value: ExportValue): string {
  * of exports stays sortable.
  */
 export function exportFilename(slug: string, extension: string, now = new Date()): string {
-  return `neatplan-${slug}-${formatIsoDate(now)}.${extension}`
+  // The user's calendar day, not UTC's - an export taken at 00:30 BST belongs to
+  // today in the folder it lands in.
+  return `neatplan-${slug}-${toLocalIsoDate(now)}.${extension}`
 }

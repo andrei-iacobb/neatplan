@@ -15,7 +15,6 @@ import {
   Save,
   RefreshCw,
   Settings as SettingsIcon,
-  Download,
   Sparkles
 } from 'lucide-react'
 import { useSettings } from '@/contexts/settings-context'
@@ -24,6 +23,8 @@ import { Spinner } from '@/components/ui/loading'
 import { SMTPConfiguration } from '@/components/admin/smtp-configuration'
 import { TotpSettings } from '@/components/admin/totp-settings'
 import { ROLE_LABELS, type Role } from '@/lib/roles'
+import { ExportMenu } from '@/components/export/export-menu'
+import { roleCanExport } from '@/lib/export/permissions'
 
 function formatUptime(seconds?: number): string {
   if (!seconds || seconds < 0) return '-'
@@ -66,13 +67,12 @@ export default function SettingsPage() {
   const [hoveredTab, setHoveredTab] = useState<string | null>(null)
   const [saveHovered, setSaveHovered] = useState(false)
   const [profileSaveHovered, setProfileSaveHovered] = useState(false)
-  const [exportHovered, setExportHovered] = useState(false)
-  const [exportLoading, setExportLoading] = useState(false)
   const [hoveredTestBtn, setHoveredTestBtn] = useState<string | null>(null)
   const [sysInfo, setSysInfo] = useState<any>(null)
   // System settings (SMTP, session timeout, system info) are OP-only -
   // directors and managers never see the tab.
   const isOp = (session?.user as any)?.role === 'OP'
+  const canExportCompliance = roleCanExport('completions', (session?.user as any)?.role)
 
   // Safety net: if a non-OP ends up on the hidden System tab, bounce to Profile.
   React.useEffect(() => {
@@ -155,18 +155,6 @@ export default function SettingsPage() {
 
   const handleSettingChange = (section: keyof typeof settings, key: string, value: any) => {
     updateSetting(section, key, value)
-  }
-
-  const handleExportData = () => {
-    if (exportLoading) return
-
-    setExportLoading(true)
-    const link = document.createElement('a')
-    link.href = '/api/admin/export-report'
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    setTimeout(() => setExportLoading(false), 1000)
   }
 
   const tabs = [
@@ -537,30 +525,18 @@ export default function SettingsPage() {
                     <Toggle checked={settings.privacy.analyticsOptIn} onChange={(v) => handleSettingChange('privacy', 'analyticsOptIn', v)} tc={tc} />
                   </div>
 
-                  <div className="pt-4" style={{ borderTop: '1px solid ' + tc.divider }}>
-                    <h3 className="text-[15px] font-medium mb-4" style={{ color: tc.textPrimary }}>Data Management</h3>
-                    <div>
-                      <button
-                        onClick={handleExportData}
-                        disabled={exportLoading}
-                        onMouseEnter={() => setExportHovered(true)}
-                        onMouseLeave={() => setExportHovered(false)}
-                        className="flex items-center justify-center px-4 py-2 rounded-lg text-[13px] font-medium transition-colors"
-                        style={{
-                          background: exportHovered ? tc.btnSecondaryHoverBg : tc.btnSecondaryBg,
-                          color: tc.btnSecondaryText,
-                          border: '1px solid ' + tc.btnSecondaryBorder
-                        }}
-                      >
-                        {exportLoading ? (
-                          <Spinner size="sm" className="mr-2" />
-                        ) : (
-                          <Download className="w-4 h-4 mr-2" />
-                        )}
-                        {exportLoading ? 'Exporting...' : 'Export Data'}
-                      </button>
+                  {/* Only drawn for a role that may actually export; the hand-rolled
+                      button this replaces pointed at a route that required admin and
+                      silently downloaded nothing for everyone else. */}
+                  {canExportCompliance && (
+                    <div className="pt-4" style={{ borderTop: '1px solid ' + tc.divider }}>
+                      <h3 className="text-[15px] font-medium mb-1" style={{ color: tc.textPrimary }}>Data Management</h3>
+                      <p className="text-[11px] mb-4" style={{ color: tc.textFaint }}>
+                        Download the completion history as a spreadsheet, or open it as a printable report.
+                      </p>
+                      <ExportMenu dataset="completions" size="sm" />
                     </div>
-                  </div>
+                  )}
                 </div>
               </motion.div>
             )}

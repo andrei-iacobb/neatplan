@@ -8,6 +8,7 @@ import {
   formatExportValue,
   formatIsoDate,
   humanizeEnum,
+  toLocalIsoDate,
 } from '@/lib/export/format'
 
 describe('formatExportValue', () => {
@@ -103,5 +104,27 @@ describe('exportFilename', () => {
     expect(exportFilename('completions', 'csv', new Date('2026-09-13T10:00:00Z'))).toBe(
       'neatplan-completions-2026-09-13.csv'
     )
+  })
+})
+
+describe('toLocalIsoDate', () => {
+  it('reports the calendar day the user is living in', () => {
+    // Local midnight on a Monday is still Sunday in UTC anywhere east of
+    // Greenwich. A week anchor built with toISOString lands a full week early,
+    // which is exactly the bug this exists to prevent.
+    const localMondayMidnight = new Date(2026, 8, 14, 0, 0, 0)
+    expect(toLocalIsoDate(localMondayMidnight)).toBe('2026-09-14')
+  })
+
+  it('holds across a late-evening local time', () => {
+    expect(toLocalIsoDate(new Date(2026, 8, 13, 23, 59))).toBe('2026-09-13')
+  })
+
+  it('pads single-digit months and days', () => {
+    expect(toLocalIsoDate(new Date(2026, 0, 5, 12, 0))).toBe('2026-01-05')
+  })
+
+  it('gives an empty cell for an absent value', () => {
+    expect(toLocalIsoDate(null)).toBe(EMPTY_CELL)
   })
 })

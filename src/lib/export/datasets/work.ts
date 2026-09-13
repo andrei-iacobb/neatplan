@@ -2,7 +2,7 @@ import { prisma } from '@/lib/db'
 import { siteScopeWhere, nestedSiteScopeWhere, nestedReadSiteWhere } from '@/lib/authz'
 import type { SessionUser } from '@/lib/authz'
 import { ScheduleStatus } from '@/generated/prisma/enums'
-import { formatDate, formatDateTime, formatDueLabel, humanizeEnum } from '../format'
+import { formatDate, formatDateTime, formatDueLabel, humanizeEnum, toLocalIsoDate } from '../format'
 import {
   buildFilterChips,
   dateWindowWhere,
@@ -404,9 +404,26 @@ export function dayBounds(date: Date): { start: Date; end: Date } {
   return { start, end }
 }
 
+/** Matches a bare calendar day with no time or zone attached. */
+const CALENDAR_DAY = /^(\d{4})-(\d{2})-(\d{2})$/
+
 function parseAnchorDate(params: URLSearchParams): Date {
   const raw = params.get('date')
   if (!raw) return new Date()
+
+  /*
+   * A bare YYYY-MM-DD is parsed by the Date constructor as UTC midnight, which
+   * is the previous evening anywhere west of Greenwich. weekBounds and dayBounds
+   * both work in local time, so that would put the anchor in the wrong week for
+   * a server running at a negative offset. Reading the three fields directly
+   * keeps the calendar day the caller meant.
+   */
+  const day = CALENDAR_DAY.exec(raw)
+  if (day) {
+    const parsed = new Date(Number(day[1]), Number(day[2]) - 1, Number(day[3]))
+    return Number.isNaN(parsed.getTime()) ? new Date() : parsed
+  }
+
   const parsed = new Date(raw)
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed
 }
@@ -429,7 +446,7 @@ export const diaryDataset: DatasetDefinition<DiaryRow> = {
       subtitle: site.label,
       filters: buildFilterChips([
         ['Site', site.label],
-        ['Week', `${start.toISOString().slice(0, 10)} to ${new Date(end.getTime() - 1).toISOString().slice(0, 10)}`],
+        ['Week', `${toLocalIsoDate(start)} to ${toLocalIsoDate(new Date(end.getTime() - 1))}`],
       ]),
       summary: [
         { label: 'Due this week', value: String(rows.filter((r) => r.status !== ScheduleStatus.OVERDUE).length) },
@@ -478,8 +495,8 @@ export const worklistDataset: DatasetDefinition<DiaryRow> = {
         ['Site', site.label],
         ['For', personName],
         [scope === 'week' ? 'Week' : 'Day', scope === 'week'
-          ? `${start.toISOString().slice(0, 10)} to ${new Date(end.getTime() - 1).toISOString().slice(0, 10)}`
-          : start.toISOString().slice(0, 10)],
+          ? `${toLocalIsoDate(start)} to ${toLocalIsoDate(new Date(end.getTime() - 1))}`
+          : toLocalIsoDate(start)],
       ]),
       summary: [
         { label: scope === 'week' ? 'Due this week' : 'Due today', value: String(rows.filter((r) => r.status !== ScheduleStatus.OVERDUE).length) },

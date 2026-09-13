@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { toLocalIsoDate } from '@/lib/export/format'
 import { ExportMenu } from './export-menu'
 
 interface WorklistActionsProps {
@@ -27,7 +28,9 @@ type Scope = (typeof SCOPES)[number]['id']
  */
 export function WorklistActions({ site, userId, className }: WorklistActionsProps) {
   const [scope, setScope] = useState<Scope>('day')
-  const today = new Date().toISOString().slice(0, 10)
+  // Local, not UTC: between local midnight and UTC midnight in BST, toISOString
+  // would hand a cleaner yesterday's round.
+  const today = toLocalIsoDate(new Date())
 
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className ?? ''}`} data-print-hide>

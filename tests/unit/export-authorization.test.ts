@@ -20,6 +20,7 @@ vi.mock('@/lib/db', () => ({ prisma: prismaMocks }))
 
 const { resolveDataset, canExport, exportableDatasets, DATASETS } = await import('@/lib/export/registry')
 const { DATASET_MIN_ROLE, roleCanExport } = await import('@/lib/export/permissions')
+const { weekBounds, dayBounds } = await import('@/lib/export/datasets/work')
 
 const MAPLE = 'site_maple'
 const OTHER = 'site_other'
@@ -374,5 +375,116 @@ describe('filter chip label lookups', () => {
     const where = prismaMocks.room.findFirst.mock.calls[0][0].where
     // An empty scope fragment, not a site filter.
     expect(where.AND).toContainEqual({})
+  })
+})
+
+describe('completion sources', () => {
+  it('drops equipment from both rows and total when filtering by room', async () => {
+    // Equipment completions have no room, so a room filter cannot apply to them.
+    // If the count still ran, the document would report a total larger than the
+    // rows it contains and appear to have been truncated when it was not.
+    prismaMocks.roomScheduleCompletionLog.count.mockResolvedValue(4)
+    prismaMocks.roomScheduleCompletionLog.findMany.mockResolvedValue([])
+
+    const result = await resolveDataset('completions', user('OP'), new URLSearchParams('roomId=room_1'))
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    expect(prismaMocks.equipmentScheduleCompletionLog.count).not.toHaveBeenCalled()
+    expect(prismaMocks.equipmentScheduleCompletionLog.findMany).not.toHaveBeenCalled()
+    expect(result.dataset.summary).toContainEqual({ label: 'Completions', value: '4' })
+  })
+
+  it('includes equipment when no room filter is applied', async () => {
+    await resolveDataset('completions', user('OP'), new URLSearchParams())
+
+    expect(prismaMocks.equipmentScheduleCompletionLog.count).toHaveBeenCalled()
+    expect(prismaMocks.equipmentScheduleCompletionLog.findMany).toHaveBeenCalled()
+  })
+
+  it('still includes equipment when filtering by person, who can clean both', async () => {
+    await resolveDataset('completions', user('OP'), new URLSearchParams('userId=u9'))
+
+    expect(prismaMocks.equipmentScheduleCompletionLog.findMany).toHaveBeenCalled()
+  })
+})
+
+describe('week and day anchors', () => {
+  it('starts a week on Monday', () => {
+    // Wednesday 16 Sep 2026.
+    const { start, end } = weekBounds(new Date(2026, 8, 16, 13, 0))
+    expect(start.getDay()).toBe(1)
+    expect(start.getDate()).toBe(14)
+    expect(end.getDate()).toBe(21)
+  })
+
+  it('treats Sunday as the END of its week, not the start of the next', () => {
+    // The classic off-by-one: getDay() is 0 for Sunday, so a naive shift lands a
+    // week early or a week late depending on which way it is written.
+    const { start } = weekBounds(new Date(2026, 8, 20, 10, 0)) // Sunday 20 Sep
+    expect(start.getDate()).toBe(14) // Monday 14 Sep
+    expect(start.getMonth()).toBe(8)
+  })
+
+  it('crosses a month boundary correctly', () => {
+    const { start } = weekBounds(new Date(2026, 9, 1, 9, 0)) // Thursday 1 Oct
+    expect(start.getMonth()).toBe(8) // September
+    expect(start.getDate()).toBe(28)
+  })
+
+  it('crosses a year boundary correctly', () => {
+    const { start } = weekBounds(new Date(2027, 0, 1, 9, 0)) // Friday 1 Jan 2027
+    expect(start.getFullYear()).toBe(2026)
+    expect(start.getMonth()).toBe(11)
+    expect(start.getDate()).toBe(28)
+  })
+
+  it('makes a day window exactly one local day', () => {
+    const { start, end } = dayBounds(new Date(2026, 8, 16, 23, 30))
+    expect(start.getHours()).toBe(0)
+    expect(start.getDate()).toBe(16)
+    expect(end.getDate()).toBe(17)
+  })
+})
+
+describe('calendar-day anchors survive the trip to the server', () => {
+  it('reads a bare YYYY-MM-DD as that local day, not as UTC midnight', async () => {
+    // Monday 14 Sep 2026. Parsed as UTC midnight this is Sunday evening anywhere
+    // west of Greenwich, which would roll the anchor back a full week.
+    const result = await resolveDataset('diary', user('OP'), new URLSearchParams('date=2026-09-14'))
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    const week = result.dataset.filters.find((f) => f.label === 'Week')
+    expect(week?.value).toBe('2026-09-14 to 2026-09-20')
+  })
+
+  it('anchors a Sunday to the Monday that opened its week', async () => {
+    const result = await resolveDataset('diary', user('OP'), new URLSearchParams('date=2026-09-20'))
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    expect(result.dataset.filters.find((f) => f.label === 'Week')?.value).toBe(
+      '2026-09-14 to 2026-09-20'
+    )
+  })
+
+  it('reports a single day window for a day-scoped worklist', async () => {
+    prismaMocks.user.findFirst.mockResolvedValue({ name: 'Sam', email: 's@x' })
+
+    const result = await resolveDataset(
+      'worklist',
+      user('CLEANER', MAPLE),
+      new URLSearchParams('scope=day&date=2026-09-16')
+    )
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    expect(result.dataset.filters.find((f) => f.label === 'Day')?.value).toBe('2026-09-16')
+  })
+
+  it('falls back to now for an unparseable date rather than throwing', async () => {
+    const result = await resolveDataset('diary', user('OP'), new URLSearchParams('date=garbage'))
+    expect(result.ok).toBe(true)
   })
 })
