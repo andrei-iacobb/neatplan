@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterEach } from 'vitest'
 import jsQR from 'jsqr'
 import { qrPathForUrl } from '@/lib/qr'
 import { mintLocationToken, locationTokenUrl, resetLocationTokenKeyCache } from '@/lib/location-tokens'
+import { labelOrigin } from '@/lib/labels'
 
 process.env.NEXTAUTH_SECRET = 'a-test-secret-long-enough-for-hkdf-derivation'
 resetLocationTokenKeyCache()
@@ -89,5 +90,50 @@ describe('qrPathForUrl', () => {
     expect(runs).toBeGreaterThan(0)
     // A per-module path would be well over one command per module.
     expect(runs).toBeLessThan(size * size)
+  })
+})
+
+describe('labelOrigin', () => {
+  const original = process.env.NEXTAUTH_URL
+
+  afterEach(() => {
+    if (original === undefined) delete process.env.NEXTAUTH_URL
+    else process.env.NEXTAUTH_URL = original
+  })
+
+  it('uses the configured public address', () => {
+    process.env.NEXTAUTH_URL = 'https://neatplan.iacob.co.uk'
+    expect(labelOrigin()).toBe('https://neatplan.iacob.co.uk')
+  })
+
+  it('strips a path or trailing slash down to the origin', () => {
+    process.env.NEXTAUTH_URL = 'https://neatplan.iacob.co.uk/'
+    expect(labelOrigin()).toBe('https://neatplan.iacob.co.uk')
+
+    process.env.NEXTAUTH_URL = 'https://neatplan.iacob.co.uk/app/'
+    expect(labelOrigin()).toBe('https://neatplan.iacob.co.uk')
+  })
+
+  it('accepts plain HTTP, which is every LAN deployment', () => {
+    process.env.NEXTAUTH_URL = 'http://192.168.1.9:4040'
+    expect(labelOrigin()).toBe('http://192.168.1.9:4040')
+  })
+
+  it('refuses rather than guessing when it is not configured', () => {
+    // A label is physical and outlives the request that printed it. Guessing the
+    // origin from a request header would let anyone who may print a sheet send
+    // X-Forwarded-Host and walk away with stickers pointing at their own site.
+    delete process.env.NEXTAUTH_URL
+    expect(labelOrigin()).toBeNull()
+
+    process.env.NEXTAUTH_URL = '   '
+    expect(labelOrigin()).toBeNull()
+  })
+
+  it('refuses a value that is not a usable web address', () => {
+    for (const bad of ['not-a-url', 'javascript:alert(1)', 'file:///etc/passwd', 'ftp://host']) {
+      process.env.NEXTAUTH_URL = bad
+      expect(labelOrigin(), bad).toBeNull()
+    }
   })
 })

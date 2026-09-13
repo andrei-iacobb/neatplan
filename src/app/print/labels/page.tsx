@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { connection } from 'next/server'
 import { getSessionUser, resolveReadSiteId } from '@/lib/authz'
 import { hasMinRole } from '@/lib/roles'
-import { buildLabelSet, MAX_LABELS } from '@/lib/labels'
+import { buildLabelSet, labelOrigin, MAX_LABELS } from '@/lib/labels'
 import { LabelSheet } from '@/components/export/label-sheet'
 import type { LocationKind } from '@/lib/location-tokens'
 
@@ -17,37 +17,6 @@ function one(value: string | string[] | undefined): string | undefined {
   if (typeof value === 'string') return value.trim() || undefined
   if (Array.isArray(value) && value.length > 0) return value[0].trim() || undefined
   return undefined
-}
-
-/**
- * The absolute origin the QR codes point at. Configuration only - never the
- * request.
- *
- * Deriving this from `x-forwarded-host` was the obvious thing and is wrong twice
- * over. A label is a physical object that outlives the request that printed it,
- * so printing from a LAN address would put an unreachable address on every
- * sticker. Worse, the header is attacker-controlled: anyone who may print a sheet
- * could send `X-Forwarded-Host: evil.example` and walk away with a stack of
- * stickers whose QR codes send staff to someone else's login page. The middleware
- * forces sign-in right after a scan, so staff are already trained to expect that
- * prompt - which is exactly what makes it a good phishing setup.
- *
- * NEXTAUTH_URL is the app's canonical public address and is already what sign-in
- * redirects use, so a label that agrees with it agrees with the rest of the app.
- * If it is not configured, this refuses to print rather than guessing, the same
- * way the token signer refuses to sign without a secret.
- */
-function labelOrigin(): string | null {
-  const configured = process.env.NEXTAUTH_URL?.trim()
-  if (!configured) return null
-
-  try {
-    const url = new URL(configured)
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null
-    return url.origin
-  } catch {
-    return null
-  }
 }
 
 export default async function LabelsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
