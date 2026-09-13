@@ -41,8 +41,10 @@ export default async function PrintDatasetPage({
   const user = await getSessionUser()
   if (!user) {
     // Send them through the normal sign-in and back to this exact document,
-    // filters intact.
-    const target = `/print/${datasetId}?${toSearchParams(rawSearch).toString()}`
+    // filters intact. The path is rebuilt from the encoded route segment rather
+    // than interpolated raw, so the callbackUrl can only ever be a same-origin
+    // /print path even if something downstream later decodes it before checking.
+    const target = `/print/${encodeURIComponent(datasetId)}?${toSearchParams(rawSearch).toString()}`
     redirect(`/auth?callbackUrl=${encodeURIComponent(target)}`)
   }
 

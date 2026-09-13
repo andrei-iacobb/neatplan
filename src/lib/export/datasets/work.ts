@@ -221,8 +221,8 @@ export const completionsDataset: DatasetDefinition<CompletionRow> = {
       filters: buildFilterChips([
         ['Site', site.label],
         ['Dates', describeDateWindow(window)],
-        ['Room', roomId ? await roomLabel(roomId) : undefined],
-        ['Person', userId ? await personLabel(userId) : undefined],
+        ['Room', roomId ? await scopedRoomLabel(user, roomId) : undefined],
+        ['Person', userId ? await scopedPersonLabel(user, userId) : undefined],
         ['Search', q],
       ]),
       summary: [
@@ -233,14 +233,30 @@ export const completionsDataset: DatasetDefinition<CompletionRow> = {
   },
 }
 
-async function roomLabel(roomId: string): Promise<string> {
-  const room = await prisma.room.findUnique({ where: { id: roomId }, select: { name: true } })
+/*
+ * Filter chips name the thing that was filtered on, which means they resolve an
+ * id the caller supplied into a human label - and that lookup is a read in its
+ * own right. Scoping the ROWS is not enough: a pinned caller passing another
+ * site's room id would get an empty table under a header naming a room they are
+ * not entitled to know exists.
+ *
+ * Both helpers therefore AND the caller's site scope into the lookup and fail
+ * closed. For OP and DIRECTOR the scope is empty, so they still resolve
+ * anything.
+ */
+async function scopedRoomLabel(user: SessionUser, roomId: string): Promise<string> {
+  const room = await prisma.room.findFirst({
+    where: { AND: [{ id: roomId }, siteScopeWhere(user)] },
+    select: { name: true },
+  })
   return room?.name ?? 'Unknown room'
 }
 
-async function personLabel(userId: string): Promise<string> {
-  const person = await prisma.user.findUnique({
-    where: { id: userId },
+async function scopedPersonLabel(user: SessionUser, userId: string): Promise<string> {
+  const person = await prisma.user.findFirst({
+    // isHidden keeps the owner account out of a document header, the same way it
+    // is kept out of every listing.
+    where: { AND: [{ id: userId }, siteScopeWhere(user), { isHidden: false }] },
     select: { name: true, email: true },
   })
   if (!person) return 'Unknown person'
@@ -438,14 +454,20 @@ export const worklistDataset: DatasetDefinition<DiaryRow> = {
     const { rows, total } = await loadDueWork(user, site.siteId, start, end, cap)
 
     const requestedUserId = params.get('userId')?.trim()
-    // A cleaner may only ever name themselves; anyone above the line may name a
-    // member of a site they can already see.
+    // A cleaner may only ever name themselves; anyone above that line may name a
+    // person at a site they can already see.
     const personId = requestedUserId && user.role !== 'CLEANER' ? requestedUserId : user.id
-    const person = await prisma.user.findUnique({
-      where: { id: personId },
-      select: { name: true, email: true, siteId: true },
+    const person = await prisma.user.findFirst({
+      // Scoped, not a bare findUnique. Without the site scope a manager pinned to
+      // one site could put any employee's name and email into a document header
+      // just by guessing an id, even though the rows below stayed empty.
+      where: { AND: [{ id: personId }, siteScopeWhere(user), { isHidden: false }] },
+      select: { name: true, email: true },
     })
 
+    // A person the caller cannot see resolves to nobody, and the sheet falls back
+    // to being the site's - the same "ignore the request, use your own" rule
+    // resolveReadSiteId already applies to site ids.
     const personName = person?.name ?? person?.email ?? null
 
     return {

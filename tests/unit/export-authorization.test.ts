@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 const prismaMocks = vi.hoisted(() => {
-  const model = () => ({ findMany: vi.fn(), count: vi.fn(), findUnique: vi.fn() })
+  const model = () => ({ findMany: vi.fn(), count: vi.fn(), findUnique: vi.fn(), findFirst: vi.fn() })
   return {
     room: model(),
     equipment: model(),
@@ -33,6 +33,7 @@ function resetPrisma() {
     model.findMany.mockReset().mockResolvedValue([])
     model.count.mockReset().mockResolvedValue(0)
     model.findUnique.mockReset().mockResolvedValue({ name: 'Beech House' })
+    model.findFirst.mockReset().mockResolvedValue({ name: 'Beech House', email: 'x@y' })
   }
 }
 
@@ -287,34 +288,91 @@ describe('filter handling', () => {
 
 describe('worklist allocation', () => {
   it('lets a cleaner name only themselves', async () => {
-    prismaMocks.user.findUnique.mockResolvedValue({ name: 'Sam', email: 's@x', siteId: MAPLE })
+    prismaMocks.user.findFirst.mockResolvedValue({ name: 'Sam', email: 's@x' })
 
     await resolveDataset('worklist', user('CLEANER', MAPLE), new URLSearchParams('userId=someone_else'))
 
     // A cleaner passing another person's id gets their own sheet, matching the
     // convention the write side already uses for site ids.
-    expect(prismaMocks.user.findUnique).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'u1' } })
-    )
+    const where = prismaMocks.user.findFirst.mock.calls[0][0].where
+    expect(where.AND).toContainEqual({ id: 'u1' })
+    expect(JSON.stringify(where)).not.toContain('someone_else')
   })
 
   it('lets a manager pull a named person at a site they can already see', async () => {
-    prismaMocks.user.findUnique.mockResolvedValue({ name: 'Sam', email: 's@x', siteId: MAPLE })
+    prismaMocks.user.findFirst.mockResolvedValue({ name: 'Sam', email: 's@x' })
 
     await resolveDataset('worklist', user('MANAGER', MAPLE), new URLSearchParams('userId=cleaner_7'))
 
-    expect(prismaMocks.user.findUnique).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'cleaner_7' } })
-    )
+    const where = prismaMocks.user.findFirst.mock.calls[0][0].where
+    expect(where.AND).toContainEqual({ id: 'cleaner_7' })
+  })
+
+  it('scopes the person lookup so a header cannot name someone at another site', async () => {
+    // The row set was always scoped. The leak this guards is narrower: a MANAGER
+    // at site A passing a site-B employee's id would get an empty table under a
+    // header carrying that person's real name and email.
+    await resolveDataset('worklist', user('MANAGER', MAPLE), new URLSearchParams('userId=cleaner_7'))
+
+    const where = prismaMocks.user.findFirst.mock.calls[0][0].where
+    expect(where.AND).toContainEqual({ siteId: MAPLE })
+    expect(where.AND).toContainEqual({ isHidden: false })
+  })
+
+  it('falls back to a site sheet when the named person is not visible', async () => {
+    prismaMocks.user.findFirst.mockResolvedValue(null)
+
+    const result = await resolveDataset('worklist', user('MANAGER', MAPLE), new URLSearchParams('userId=stranger'))
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    expect(result.dataset.filters.some((f) => f.label === 'For')).toBe(false)
+    expect(result.dataset.subtitle).toBe('Beech House')
   })
 
   it('states the per-site allocation basis on the document', async () => {
-    prismaMocks.user.findUnique.mockResolvedValue({ name: 'Sam', email: 's@x', siteId: MAPLE })
+    prismaMocks.user.findFirst.mockResolvedValue({ name: 'Sam', email: 's@x' })
 
     const result = await resolveDataset('worklist', user('CLEANER', MAPLE), new URLSearchParams())
     expect(result.ok).toBe(true)
     if (!result.ok) return
 
     expect(result.dataset.note).toContain('allocated per site')
+  })
+})
+
+describe('filter chip label lookups', () => {
+  it('scopes the room label so a header cannot name another site\'s room', async () => {
+    await resolveDataset('completions', user('HEAD_OF_HOUSEKEEPING', MAPLE), new URLSearchParams('roomId=room_at_other_site'))
+
+    const where = prismaMocks.room.findFirst.mock.calls[0][0].where
+    expect(where.AND).toContainEqual({ id: 'room_at_other_site' })
+    expect(where.AND).toContainEqual({ siteId: MAPLE })
+  })
+
+  it('fails closed when the room is not visible', async () => {
+    prismaMocks.room.findFirst.mockResolvedValue(null)
+
+    const result = await resolveDataset('completions', user('MANAGER', MAPLE), new URLSearchParams('roomId=elsewhere'))
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    expect(result.dataset.filters).toContainEqual({ label: 'Room', value: 'Unknown room' })
+  })
+
+  it('scopes the person label on the completions header too', async () => {
+    await resolveDataset('completions', user('MANAGER', MAPLE), new URLSearchParams('userId=someone'))
+
+    const where = prismaMocks.user.findFirst.mock.calls[0][0].where
+    expect(where.AND).toContainEqual({ siteId: MAPLE })
+    expect(where.AND).toContainEqual({ isHidden: false })
+  })
+
+  it('leaves an all-sites role able to resolve any label', async () => {
+    await resolveDataset('completions', user('OP'), new URLSearchParams('roomId=any_room'))
+
+    const where = prismaMocks.room.findFirst.mock.calls[0][0].where
+    // An empty scope fragment, not a site filter.
+    expect(where.AND).toContainEqual({})
   })
 })
