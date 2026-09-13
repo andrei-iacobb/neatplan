@@ -111,6 +111,8 @@ export async function GET(request: NextRequest) {
       completedBy: log.completedBy
         ? { name: log.completedBy.name, email: log.completedBy.email }
         : null,
+      plannedAssigneeName: log.plannedAssigneeName,
+      assignmentDate: log.assignmentDate?.toISOString().slice(0, 10) ?? null,
       completedTasks: log.completedTasks,
       totalTasks: log.roomSchedule?.schedule?.tasks.length ?? null,
       notes: log.notes,
@@ -127,6 +129,8 @@ export async function GET(request: NextRequest) {
       scheduleName: log.equipmentSchedule?.schedule?.title ?? log.scheduleTitle ?? 'Deleted schedule',
       frequency: log.equipmentSchedule?.frequency ?? null,
       completedBy: null,
+      plannedAssigneeName: log.plannedAssigneeName,
+      assignmentDate: log.assignmentDate?.toISOString().slice(0, 10) ?? null,
       completedTasks: log.completedTasks,
       totalTasks: log.equipmentSchedule?.schedule?.tasks.length ?? null,
       notes: log.notes,

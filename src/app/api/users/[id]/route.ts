@@ -1,3 +1,4 @@
+import { todayAssignmentDate } from '@/lib/work-assignments/policy'
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
@@ -134,7 +135,17 @@ export async function PUT(
 
     const user = await prisma.user.update({
       where: { id },
-      data: dataToUpdate,
+      data: {
+        ...dataToUpdate,
+        ...((siteId !== undefined && dataToUpdate.siteId !== target.siteId) || (role !== undefined && role !== target.role) || isBlocked === true ? {
+          workAssignments: {
+            updateMany: {
+              where: { workDate: { gte: todayAssignmentDate() } },
+              data: { assigneeId: null, assigneeName: null, revision: { increment: 1 } },
+            },
+          },
+        } : {}),
+      },
     })
 
     const { password: _, ...userWithoutPassword } = user

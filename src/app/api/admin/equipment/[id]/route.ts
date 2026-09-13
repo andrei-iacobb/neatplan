@@ -1,3 +1,4 @@
+import { todayAssignmentDate } from '@/lib/work-assignments/policy'
 import { NextResponse } from 'next/server'
 import { getSessionUser, canAccessSite } from '@/lib/authz'
 import { prisma } from '@/lib/db'
@@ -145,6 +146,19 @@ export async function PUT(
         model: normalize(model),
         serialNumber: normalize(serialNumber),
         serviceAreaId: targetServiceAreaId,
+        ...(targetSiteId !== existing.siteId ? {
+          workAssignments: {
+            updateMany: {
+              where: { workDate: { gte: todayAssignmentDate() } },
+              data: {
+                ...(targetSiteId ? { siteId: targetSiteId } : {}),
+                assigneeId: null,
+                assigneeName: null,
+                revision: { increment: 1 },
+              },
+            },
+          },
+        } : {}),
       }
     })
 
