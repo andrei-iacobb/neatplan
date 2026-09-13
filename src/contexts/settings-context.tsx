@@ -12,6 +12,12 @@ export interface SettingsState {
     taskReminders: boolean
     scheduleUpdates: boolean
     systemAlerts: boolean
+    /**
+     * The Monday morning digest. Off unless somebody turns it on - an existing
+     * account has no value stored here, and reading that as consent is how a
+     * release becomes a surprise inbox.
+     */
+    weeklyDigest: boolean
   }
   privacy: {
     profileVisibility: 'public' | 'private' | 'team'
@@ -37,7 +43,8 @@ const defaultSettings: SettingsState = {
     push: true,
     taskReminders: true,
     scheduleUpdates: true,
-    systemAlerts: true
+    systemAlerts: true,
+    weeklyDigest: false
   },
   privacy: {
     profileVisibility: 'team',

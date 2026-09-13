@@ -24,6 +24,8 @@ import { SMTPConfiguration } from '@/components/admin/smtp-configuration'
 import { TotpSettings } from '@/components/admin/totp-settings'
 import { ROLE_LABELS, type Role } from '@/lib/roles'
 import { ExportMenu } from '@/components/export/export-menu'
+import { useToast } from '@/components/ui/toast-context'
+import { apiRequest } from '@/lib/url-utils'
 import { roleCanExport } from '@/lib/export/permissions'
 
 function formatUptime(seconds?: number): string {
@@ -36,18 +38,40 @@ function formatUptime(seconds?: number): string {
   return `${m}m`
 }
 
-function Toggle({ checked, onChange, tc }: { checked: boolean; onChange: (v: boolean) => void; tc: ReturnType<typeof useThemeColors> }) {
+/**
+ * A real switch.
+ *
+ * This was a bare div with an onClick, which meant every setting on this page -
+ * notifications, privacy, the lot - could not be reached by keyboard and was
+ * announced as nothing at all by a screen reader. A button with role="switch"
+ * gets Enter and Space for free, reports its own state, and can carry a name.
+ */
+function Toggle({
+  checked,
+  onChange,
+  tc,
+  label,
+}: {
+  checked: boolean
+  onChange: (v: boolean) => void
+  tc: ReturnType<typeof useThemeColors>
+  label?: string
+}) {
   return (
-    <div
-      style={{ background: checked ? tc.toggleActiveBg : tc.toggleBg }}
-      className="w-11 h-6 rounded-full relative cursor-pointer transition-colors duration-200"
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
       onClick={() => onChange(!checked)}
+      style={{ background: checked ? tc.toggleActiveBg : tc.toggleBg }}
+      className="relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-2"
     >
-      <div
-        className="absolute top-[2px] h-5 w-5 bg-white rounded-full transition-all duration-200"
+      <span
+        className="absolute top-[2px] h-5 w-5 rounded-full bg-white transition-all duration-200 motion-reduce:transition-none"
         style={{ left: checked ? '22px' : '2px' }}
       />
-    </div>
+    </button>
   )
 }
 
@@ -72,7 +96,33 @@ export default function SettingsPage() {
   // System settings (SMTP, session timeout, system info) are OP-only -
   // directors and managers never see the tab.
   const isOp = (session?.user as any)?.role === 'OP'
+  const { showToast } = useToast()
   const canExportCompliance = roleCanExport('completions', (session?.user as any)?.role)
+  // Managers and Heads of Housekeeping are the roles the digest is addressed to;
+  // it covers one site, which a site-spanning role does not have.
+  const digestRole = (session?.user as any)?.role
+  const canReceiveDigest = digestRole === 'MANAGER' || digestRole === 'HEAD_OF_HOUSEKEEPING'
+  const [digestTesting, setDigestTesting] = useState(false)
+
+  const handleDigestTest = async () => {
+    if (digestTesting) return
+    setDigestTesting(true)
+    try {
+      const response = await apiRequest('/api/admin/digest/test', { method: 'POST' })
+      const data = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        // The server phrases these for the person reading them, so pass them on.
+        showToast(data?.error ?? 'The test digest could not be sent.', 'error')
+        return
+      }
+      showToast(`Test digest sent to ${data.to}`, 'success')
+    } catch {
+      showToast('Could not reach the server. Try again.', 'error')
+    } finally {
+      setDigestTesting(false)
+    }
+  }
 
   // Safety net: if a non-OP ends up on the hidden System tab, bounce to Profile.
   React.useEffect(() => {
@@ -411,11 +461,16 @@ export default function SettingsPage() {
                 <h2 className="text-[17px] font-semibold mb-4" style={{ color: tc.textPrimary }}>Notification Settings</h2>
 
                 <div className="space-y-4">
-                  {Object.entries(settings.notifications).map(([key, value]) => (
+                  {Object.entries(settings.notifications)
+                    // The digest only goes to roles that act on one site's
+                    // cleaning. Drawing a switch for anyone else would be a
+                    // control that silently does nothing.
+                    .filter(([key]) => key !== 'weeklyDigest' || canReceiveDigest)
+                    .map(([key, value]) => (
                     <div key={key} className="flex items-center justify-between">
                       <div>
                         <label className="text-[13px] font-medium capitalize" style={{ color: tc.textSecondary }}>
-                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                          {key === 'weeklyDigest' ? 'Weekly digest' : key.replace(/([A-Z])/g, ' $1').trim()}
                         </label>
                         <p className="text-[11px]" style={{ color: tc.textFaint }}>
                           {key === 'email' && 'Receive notifications via email'}
@@ -423,11 +478,46 @@ export default function SettingsPage() {
                           {key === 'taskReminders' && 'Get reminders for upcoming tasks'}
                           {key === 'scheduleUpdates' && 'Notifications when schedules change'}
                           {key === 'systemAlerts' && 'Important system notifications'}
+                          {key === 'weeklyDigest' && 'A Monday morning summary of what is due and overdue at your site. Off unless you turn it on.'}
                         </p>
                       </div>
-                      <Toggle checked={value} onChange={(v) => handleSettingChange('notifications', key, v)} tc={tc} />
+                      <Toggle
+                        checked={value}
+                        onChange={(v) => handleSettingChange('notifications', key, v)}
+                        tc={tc}
+                        label={key === 'weeklyDigest' ? 'Weekly digest' : key.replace(/([A-Z])/g, ' $1').trim()}
+                      />
                     </div>
                   ))}
+
+                  {canReceiveDigest && settings.notifications.weeklyDigest && (
+                    <div
+                      className="flex flex-wrap items-center gap-2 rounded-lg p-3"
+                      style={{ background: tc.surfaceBg, border: '1px solid ' + tc.divider }}
+                    >
+                      <p className="mr-auto text-[11px]" style={{ color: tc.textFaint }}>
+                        See it before Monday. The test goes to your address only.
+                      </p>
+                      <a
+                        href="/api/admin/digest/preview"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex min-h-11 items-center rounded-lg px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60"
+                        style={{ background: tc.btnSecondaryBg, color: tc.btnSecondaryText, border: '1px solid ' + tc.btnSecondaryBorder }}
+                      >
+                        Preview
+                      </a>
+                      <button
+                        type="button"
+                        onClick={handleDigestTest}
+                        disabled={digestTesting}
+                        className="flex min-h-11 items-center rounded-lg px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 disabled:opacity-50"
+                        style={{ background: tc.btnSecondaryBg, color: tc.btnSecondaryText, border: '1px solid ' + tc.btnSecondaryBorder }}
+                      >
+                        {digestTesting ? 'Sending...' : 'Send me a test'}
+                      </button>
+                    </div>
+                  )}
 
                   {/* Test Email Section */}
                   <div className="pt-4" style={{ borderTop: '1px solid ' + tc.divider }}>
