@@ -139,15 +139,15 @@ export async function loadAssignmentBoard(
         ? []
         : dates.map((date) => {
             const assignment = asset.workAssignments.find(
-              (item) =>
-                item.siteId === asset.siteId && item.workDate.toISOString().slice(0, 10) === date,
+              (item) => item.workDate.toISOString().slice(0, 10) === date,
             )
             // Historical allocation names are snapshots. Current/future names must still
             // belong to a usable account at this asset's current site.
             const active =
-              date < today
-                ? !!assignment?.assigneeName
-                : eligibleAssignee(assignment?.assignee ?? null, asset.siteId!)
+              assignment?.siteId === asset.siteId &&
+              (date < today
+                ? !!assignment.assigneeName
+                : eligibleAssignee(assignment.assignee, asset.siteId!))
             const dayEnd = assignmentDayStart(nextDate(date))
             const dayStart = assignmentDayStart(date)
             const completed = asset.schedules.flatMap((schedule) =>

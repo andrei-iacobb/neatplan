@@ -235,6 +235,7 @@ describe('board and sign-off snapshots', () => {
     ])
     const board = await loadAssignmentBoard(manager, new URLSearchParams('date=2026-09-14'), now)
     expect(board.rows[0].assignment.assigneeName).toBeNull()
+    expect(board.rows[0].assignment.revision).toBe(1)
   })
   it('retains a completed visit and its actual signer in the personal day list', async () => {
     mocks.tx.room.findMany.mockResolvedValue([
