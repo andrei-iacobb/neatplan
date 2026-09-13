@@ -43,6 +43,7 @@ test('allocates tablet rounds, records cover, and rejects concurrent stale or tr
   const personId = `allocation-cleaner-${token}`
   const otherSiteId = `allocation-site-${token}`
   const scheduleId = `allocation-schedule-${token}`
+  const earlyTemplateId = `allocation-early-${token}`
   const name = `Allocation room ${token}`
   const date = localDateKey(new Date())
   let releaseLock: (() => void) | undefined
@@ -73,12 +74,44 @@ test('allocates tablet rounds, records cover, and rejects concurrent stale or tr
         tasks: { create: { description: 'Wipe the work surface' } },
       },
     })
+    await prisma.schedule.create({
+      data: {
+        id: earlyTemplateId,
+        title: `Allocation quarterly ${token}`,
+        suggestedFrequency: 'QUARTERLY',
+        sites: { connect: { id: siteId } },
+        tasks: { create: { description: 'Clean the window frames' } },
+      },
+    })
     await prisma.room.create({
       data: {
         id: roomId,
         name,
         siteId,
         type: 'OFFICE',
+        schedules: {
+          create: [
+            {
+              scheduleId,
+              frequency: 'DAILY',
+              nextDue: new Date(Date.now() - 86_400_000),
+              status: 'OVERDUE',
+            },
+            {
+              scheduleId: earlyTemplateId,
+              frequency: 'QUARTERLY',
+              nextDue: new Date(Date.now() + 30 * 86_400_000),
+              status: 'PENDING',
+            },
+          ],
+        },
+      },
+    })
+    await prisma.equipment.create({
+      data: {
+        id: equipmentId,
+        name: `Allocation hoover ${token}`,
+        siteId,
         schedules: {
           create: {
             scheduleId,
@@ -88,9 +121,6 @@ test('allocates tablet rounds, records cover, and rejects concurrent stale or tr
           },
         },
       },
-    })
-    await prisma.equipment.create({
-      data: { id: equipmentId, name: `Allocation hoover ${token}`, siteId },
     })
 
     await admin.goto('/diary')
@@ -150,7 +180,16 @@ test('allocates tablet rounds, records cover, and rejects concurrent stale or tr
     const allCsv = await cleanerPage.request.get(`/api/export/worklist?allocation=all&date=${date}`)
     expect(await allCsv.text()).toContain(name)
 
-    const detail = await (await cleanerPage.request.get(`/api/cleaner/rooms/${roomId}`)).json()
+    const initialDetail = await (
+      await cleanerPage.request.get(`/api/cleaner/rooms/${roomId}`)
+    ).json()
+    expect(initialDetail.availableEarly).toHaveLength(1)
+    const earlyId = initialDetail.availableEarly[0].id
+    const detail = await (
+      await cleanerPage.request.get(`/api/cleaner/rooms/${roomId}?also=${earlyId}`)
+    ).json()
+    expect(detail.workPackage.scheduleIds).toHaveLength(2)
+    expect(detail.workPackage.earlyScheduleIds).toContain(earlyId)
     const completed = await cleanerPage.request.post(`/api/cleaner/rooms/${roomId}/complete`, {
       data: {
         scheduleIds: detail.workPackage.scheduleIds,
@@ -168,6 +207,44 @@ test('allocates tablet rounds, records cover, and rejects concurrent stale or tr
     expect(log.completedByUserId).toBe(session.user.id)
     expect(log.plannedAssigneeId).toBe(personId)
     expect(log.plannedAssigneeName).toBe(`Assigned colleague ${token}`)
+
+    const createdEquipment = await Promise.all(
+      Array.from({ length: 8 }, () =>
+        admin.request.put('/api/work-assignments', {
+          data: {
+            kind: 'equipment',
+            targetId: equipmentId,
+            date,
+            assigneeId: personId,
+            revision: 0,
+          },
+        }),
+      ),
+    )
+    expect(createdEquipment.map((response) => response.status()).sort()).toEqual([
+      200, 409, 409, 409, 409, 409, 409, 409,
+    ])
+    const equipmentSchedule = await prisma.equipmentSchedule.findFirstOrThrow({
+      where: { equipmentId },
+      include: { schedule: { include: { tasks: true } } },
+    })
+    const equipmentCompletion = await cleanerPage.request.post(
+      `/api/cleaner/equipment/${equipmentId}/complete`,
+      {
+        data: {
+          scheduleId: equipmentSchedule.id,
+          completedTasks: equipmentSchedule.schedule.tasks.map((task) => task.id),
+          signature,
+          signedName: 'Cover cleaner',
+        },
+      },
+    )
+    expect(equipmentCompletion.status(), await equipmentCompletion.text()).toBe(200)
+    const equipmentLog = await prisma.equipmentScheduleCompletionLog.findFirstOrThrow({
+      where: { equipmentScheduleId: equipmentSchedule.id },
+    })
+    expect(equipmentLog.completedByUserId).toBe(session.user.id)
+    expect(equipmentLog.plannedAssigneeId).toBe(personId)
 
     // Hold the person row, queue the real transfer route first, then queue an
     // allocation. Waiting for PostgreSQL's blocker graph avoids timing guesses.
@@ -206,7 +283,9 @@ test('allocates tablet rounds, records cover, and rejects concurrent stale or tr
     await lockTransaction
     expect((await transfer).status()).toBe(200)
     expect((await allocationAttempt).status()).toBe(400)
-    expect(await prisma.workAssignment.count({ where: { equipmentId } })).toBe(0)
+    expect(
+      (await prisma.workAssignment.findFirstOrThrow({ where: { equipmentId } })).assigneeId,
+    ).toBeNull()
     const cleared = await prisma.workAssignment.findFirstOrThrow({ where: { roomId } })
     expect(cleared.assigneeId).toBeNull()
     expect(
@@ -247,9 +326,12 @@ test('allocates tablet rounds, records cover, and rejects concurrent stale or tr
     if (lockTransaction) await lockTransaction.catch(() => undefined)
     await Promise.allSettled(pending)
     await prisma.roomScheduleCompletionLog.deleteMany({ where: { roomSchedule: { roomId } } })
+    await prisma.equipmentScheduleCompletionLog.deleteMany({
+      where: { equipmentSchedule: { equipmentId } },
+    })
     await prisma.room.deleteMany({ where: { id: roomId } })
     await prisma.equipment.deleteMany({ where: { id: equipmentId } })
-    await prisma.schedule.deleteMany({ where: { id: scheduleId } })
+    await prisma.schedule.deleteMany({ where: { id: { in: [scheduleId, earlyTemplateId] } } })
     await prisma.user.deleteMany({ where: { id: personId } })
     await prisma.site.deleteMany({ where: { id: otherSiteId } })
     await adminContext.close()
