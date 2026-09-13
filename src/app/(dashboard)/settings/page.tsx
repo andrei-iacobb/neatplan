@@ -38,18 +38,40 @@ function formatUptime(seconds?: number): string {
   return `${m}m`
 }
 
-function Toggle({ checked, onChange, tc }: { checked: boolean; onChange: (v: boolean) => void; tc: ReturnType<typeof useThemeColors> }) {
+/**
+ * A real switch.
+ *
+ * This was a bare div with an onClick, which meant every setting on this page -
+ * notifications, privacy, the lot - could not be reached by keyboard and was
+ * announced as nothing at all by a screen reader. A button with role="switch"
+ * gets Enter and Space for free, reports its own state, and can carry a name.
+ */
+function Toggle({
+  checked,
+  onChange,
+  tc,
+  label,
+}: {
+  checked: boolean
+  onChange: (v: boolean) => void
+  tc: ReturnType<typeof useThemeColors>
+  label?: string
+}) {
   return (
-    <div
-      style={{ background: checked ? tc.toggleActiveBg : tc.toggleBg }}
-      className="w-11 h-6 rounded-full relative cursor-pointer transition-colors duration-200"
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
       onClick={() => onChange(!checked)}
+      style={{ background: checked ? tc.toggleActiveBg : tc.toggleBg }}
+      className="relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-2"
     >
-      <div
-        className="absolute top-[2px] h-5 w-5 bg-white rounded-full transition-all duration-200"
+      <span
+        className="absolute top-[2px] h-5 w-5 rounded-full bg-white transition-all duration-200 motion-reduce:transition-none"
         style={{ left: checked ? '22px' : '2px' }}
       />
-    </div>
+    </button>
   )
 }
 
@@ -459,7 +481,12 @@ export default function SettingsPage() {
                           {key === 'weeklyDigest' && 'A Monday morning summary of what is due and overdue at your site. Off unless you turn it on.'}
                         </p>
                       </div>
-                      <Toggle checked={value} onChange={(v) => handleSettingChange('notifications', key, v)} tc={tc} />
+                      <Toggle
+                        checked={value}
+                        onChange={(v) => handleSettingChange('notifications', key, v)}
+                        tc={tc}
+                        label={key === 'weeklyDigest' ? 'Weekly digest' : key.replace(/([A-Z])/g, ' $1').trim()}
+                      />
                     </div>
                   ))}
 
