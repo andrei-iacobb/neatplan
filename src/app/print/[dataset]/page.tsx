@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { connection } from 'next/server'
 import { getSessionUser } from '@/lib/authz'
+import { calendarDate } from '@/lib/work-assignments/policy'
 import { resolveDataset } from '@/lib/export/registry'
 import { PrintDocument } from '@/components/export/print-document'
 
@@ -49,6 +50,10 @@ export default async function PrintDatasetPage({
   }
 
   const search = toSearchParams(rawSearch)
+  if (datasetId === 'worklist' && search.has('date')) {
+    try { calendarDate(search.get('date')!) }
+    catch { return <main className="pd-shell"><h1>Invalid work date</h1><p>Return to the worklist and select a valid calendar day.</p></main> }
+  }
   const result = await resolveDataset(datasetId, user, search)
 
   if (!result.ok) {

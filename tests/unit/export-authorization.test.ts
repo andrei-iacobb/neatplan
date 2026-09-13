@@ -331,14 +331,14 @@ describe('worklist allocation', () => {
     expect(result.dataset.subtitle).toBe('Beech House')
   })
 
-  it('states the per-site allocation basis on the document', async () => {
+  it('explains allocation and cover on the document', async () => {
     prismaMocks.user.findFirst.mockResolvedValue({ name: 'Sam', email: 's@x' })
 
     const result = await resolveDataset('worklist', user('CLEANER', MAPLE), new URLSearchParams())
     expect(result.ok).toBe(true)
     if (!result.ok) return
 
-    expect(result.dataset.note).toContain('allocated per site')
+    expect(result.dataset.note).toContain('colleagues may cover work')
   })
 })
 

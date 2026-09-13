@@ -1,5 +1,7 @@
 "use client"
 
+import { AssignmentBadge } from '@/components/work-assignments/assignment-badge'
+
 import { useState, useEffect, useCallback, type CSSProperties } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
@@ -489,6 +491,7 @@ export default function CleanRoomPage() {
             <span className="text-3xl shrink-0">{getRoomTypeIcon(room.type)}</span>
             <div className="min-w-0">
               <h1 className="text-xl sm:text-2xl font-bold break-words" style={{ color: tc.textPrimary }}>{room.name}</h1>
+              <AssignmentBadge kind="room" targetId={room.id} />
               <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm" style={{ color: tc.textMuted }}>
                 <div className="flex items-center gap-1 min-w-0">
                   <MapPin className="w-4 h-4 shrink-0" />

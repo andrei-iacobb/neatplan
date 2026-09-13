@@ -9,6 +9,7 @@ interface WorklistActionsProps {
   site?: string | null
   /** Person the sheet is for. Only honoured for roles above CLEANER. */
   userId?: string | null
+  allocation?: 'person' | 'all' | 'unassigned'
   className?: string
 }
 
@@ -26,7 +27,7 @@ type Scope = (typeof SCOPES)[number]['id']
  * done, and this is the escape hatch for a handover sheet or a manager's round.
  * Printing is never on the critical path.
  */
-export function WorklistActions({ site, userId, className }: WorklistActionsProps) {
+export function WorklistActions({ site, userId, allocation = 'all', className }: WorklistActionsProps) {
   const [scope, setScope] = useState<Scope>('day')
   // Local, not UTC: between local midnight and UTC midnight in BST, toISOString
   // would hand a cleaner yesterday's round.
@@ -63,7 +64,7 @@ export function WorklistActions({ site, userId, className }: WorklistActionsProp
         ))}
       </div>
 
-      <ExportMenu dataset="worklist" filters={{ scope, date: today, site, userId }} />
+      <ExportMenu dataset="worklist" filters={{ scope, date: today, site, userId, allocation }} />
     </div>
   )
 }

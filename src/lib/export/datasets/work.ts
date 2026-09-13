@@ -1,3 +1,5 @@
+import { loadAssignmentBoard } from '@/lib/work-assignments/server'
+import type { AssignmentRow } from '@/lib/work-assignments/policy'
 import { prisma } from '@/lib/db'
 import { siteScopeWhere, nestedSiteScopeWhere, nestedReadSiteWhere } from '@/lib/authz'
 import type { SessionUser } from '@/lib/authz'
@@ -22,6 +24,7 @@ type CompletionRow = {
   scheduleTitle: string
   frequency: string | null
   completedBy: string
+  plannedAssignee: string | null
   tasksDone: number
   totalTasks: number
   verification: string
@@ -47,6 +50,7 @@ export const completionsDataset: DatasetDefinition<CompletionRow> = {
     { key: 'schedule', header: 'Schedule', value: (r) => r.scheduleTitle, width: 3 },
     { key: 'frequency', header: 'Frequency', value: (r) => humanizeEnum(r.frequency), width: 2 },
     { key: 'by', header: 'Completed by', value: (r) => r.completedBy, width: 3 },
+    { key: 'planned', header: 'Assigned to', value: (r) => r.plannedAssignee, width: 3 },
     { key: 'done', header: 'Done', value: (r) => r.tasksDone, align: 'right', width: 1 },
     { key: 'total', header: 'Of', value: (r) => r.totalTasks, align: 'right', width: 1 },
     { key: 'pct', header: '%', value: (r) => completionPercent(r.tasksDone, r.totalTasks), align: 'right', width: 1 },
@@ -130,6 +134,7 @@ export const completionsDataset: DatasetDefinition<CompletionRow> = {
           scheduleTitle: true,
           verificationMethod: true,
           signedName: true,
+          plannedAssigneeName: true,
           completedBy: { select: { name: true, email: true } },
           roomSchedule: {
             select: {
@@ -153,6 +158,7 @@ export const completionsDataset: DatasetDefinition<CompletionRow> = {
               equipmentName: true,
               scheduleTitle: true,
               signedName: true,
+          plannedAssigneeName: true,
               // The list API hardcodes this to null; the column exists and the
               // export reads it, so an equipment clean is attributable too.
               completedBy: { select: { name: true, email: true } },
@@ -185,6 +191,7 @@ export const completionsDataset: DatasetDefinition<CompletionRow> = {
         scheduleTitle: log.roomSchedule?.schedule?.title ?? log.scheduleTitle ?? 'Deleted schedule',
         frequency: log.roomSchedule?.frequency ?? null,
         completedBy: describePerson(log.completedBy),
+        plannedAssignee: log.plannedAssigneeName,
         tasksDone: countTasks(log.completedTasks),
         totalTasks: log.roomSchedule?.schedule?._count.tasks ?? 0,
         verification: log.verificationMethod,
@@ -200,6 +207,7 @@ export const completionsDataset: DatasetDefinition<CompletionRow> = {
         scheduleTitle: log.equipmentSchedule?.schedule?.title ?? log.scheduleTitle ?? 'Deleted schedule',
         frequency: log.equipmentSchedule?.frequency ?? null,
         completedBy: describePerson(log.completedBy),
+        plannedAssignee: log.plannedAssigneeName,
         tasksDone: countTasks(log.completedTasks),
         totalTasks: log.equipmentSchedule?.schedule?._count.tasks ?? 0,
         // Equipment cleans have no check-in flow, so they are always manual.
@@ -457,56 +465,39 @@ export const diaryDataset: DatasetDefinition<DiaryRow> = {
   },
 }
 
-export const worklistDataset: DatasetDefinition<DiaryRow> = {
+export const worklistDataset: DatasetDefinition<AssignmentRow> = {
   title: 'Cleaning worklist',
   slug: 'worklist',
-  cap: 2_000,
-  columns: diaryColumns,
+  cap: 7_000,
+  columns: [
+    { key: 'date', header: 'Work date', value: (r) => r.date, width: 2 },
+    { key: 'site', header: 'Site', value: (r) => r.siteName, width: 2 },
+    { key: 'kind', header: 'Kind', value: (r) => r.kind, width: 1 },
+    { key: 'item', header: 'Room / equipment', value: (r) => r.targetName, width: 3 },
+    { key: 'floor', header: 'Floor', value: (r) => r.floor, width: 1 },
+    { key: 'assignee', header: 'Assigned to', value: (r) => r.assignment.assigneeName || 'Unassigned', width: 2 },
+    { key: 'due', header: 'Outstanding schedules', value: (r) => r.due.join('; '), wrap: true, width: 4 },
+    { key: 'completed', header: 'Completed / signed by', value: (r) => r.completed.join('; '), wrap: true, width: 4 },
+  ],
   async load({ user, params }, cap) {
     const site = await resolveSiteContext(user, params)
-    const anchor = parseAnchorDate(params)
-    const scope = params.get('scope') === 'week' ? 'week' : 'day'
-    const { start, end } = scope === 'week' ? weekBounds(anchor) : dayBounds(anchor)
-
-    const { rows, total } = await loadDueWork(user, site.siteId, start, end, cap)
-
-    const requestedUserId = params.get('userId')?.trim()
-    // A cleaner may only ever name themselves; anyone above that line may name a
-    // person at a site they can already see.
-    const personId = requestedUserId && user.role !== 'CLEANER' ? requestedUserId : user.id
-    const person = await prisma.user.findFirst({
-      // Scoped, not a bare findUnique. Without the site scope a manager pinned to
-      // one site could put any employee's name and email into a document header
-      // just by guessing an id, even though the rows below stayed empty.
-      where: { AND: [{ id: personId }, siteScopeWhere(user), { isHidden: false }] },
-      select: { name: true, email: true },
+    const allocation = params.get('allocation') || (params.has('userId') ? 'person' : 'all')
+    const personId = allocation === 'person' ? (user.role === 'CLEANER' ? user.id : params.get('userId') || user.id) : null
+    const person = personId ? await prisma.user.findFirst({ where: { AND: [{ id: personId }, { isHidden: false }, siteScopeWhere(user), ...(site.siteId ? [{ siteId: site.siteId }] : [])] }, select: { name: true, email: true } }) : null
+    if (personId && !person) return { rows: [], total: 0, subtitle: site.label, filters: [], note: 'No accessible cleaner selected.' }
+    const board = await loadAssignmentBoard(user, params)
+    const matching = board.rows.filter((row) => {
+      if (allocation === 'person') return row.assignment.assigneeId === personId
+      if (allocation === 'unassigned' && row.assignment.assigneeId) return false
+      return !!row.assignment.assigneeId || row.due.length > 0 || row.completed.length > 0
     })
-
-    // A person the caller cannot see resolves to nobody, and the sheet falls back
-    // to being the site's - the same "ignore the request, use your own" rule
-    // resolveReadSiteId already applies to site ids.
-    const personName = person?.name ?? person?.email ?? null
-
+    const personName = person?.name || person?.email
     return {
-      rows,
-      total,
+      rows: matching.slice(0, cap), total: matching.length,
       subtitle: personName ? `${personName} - ${site.label}` : site.label,
-      filters: buildFilterChips([
-        ['Site', site.label],
-        ['For', personName],
-        [scope === 'week' ? 'Week' : 'Day', scope === 'week'
-          ? `${toLocalIsoDate(start)} to ${toLocalIsoDate(new Date(end.getTime() - 1))}`
-          : toLocalIsoDate(start)],
-      ]),
-      summary: [
-        { label: scope === 'week' ? 'Due this week' : 'Due today', value: String(rows.filter((r) => r.status !== ScheduleStatus.OVERDUE).length) },
-        { label: 'Overdue', value: String(rows.filter((r) => r.status === ScheduleStatus.OVERDUE).length) },
-      ],
-      // Stated on the document rather than implied, because the allocation model
-      // is a real constraint a reader needs to know about: NeatPlan assigns work
-      // to a site, not to a named cleaner. Everyone rostered at this site shares
-      // this list, and whoever signs a task off is recorded on the completion.
-      note: 'Work is allocated per site, not per person. Everyone cleaning at this site works from this list; the completion record names whoever signed each task off.',
+      filters: buildFilterChips([['Site', site.label], ['For', personName || (allocation === 'unassigned' ? 'Unassigned work' : 'All site work')], [board.dates.length === 1 ? 'Day' : 'Week', board.dates.length === 1 ? board.dates[0] : `${board.dates[0]} to ${board.dates[board.dates.length - 1]}`]]),
+      summary: [{ label: 'Planned visits', value: String(matching.length) }],
+      note: 'Allocations guide the round; colleagues may cover work. Outstanding schedules reflect the current state, not a prediction of future recurring tasks. The site list also contains unassigned and overdue work.' + (board.truncated ? ' The site exceeded the asset limit; this list is incomplete.' : ''),
     }
   },
 }
